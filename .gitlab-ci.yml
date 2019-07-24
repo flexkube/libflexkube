@@ -1,0 +1,11 @@
+image: golang:1.12-alpine
+
+before_script:
+  - apk add curl git build-base
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.17.1
+
+test:
+  script:
+    - go build -v
+    - go test -v ./...
+    - $HOME/bin/golangci-lint run
