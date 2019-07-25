@@ -17,11 +17,11 @@ func NewState() *EtcdState {
 	}
 }
 
-func (etcd *EtcdState) AddNode(name string) error {
-	if etcd.Nodes[name] != nil {
+func (state *EtcdState) AddNode(name string) error {
+	if state.Nodes[name] != nil {
 		return fmt.Errorf("Node already exists")
 	}
-	etcd.Nodes[name] = &EtcdNode{
+	state.Nodes[name] = &EtcdNode{
 		Name: name,
 	}
 
