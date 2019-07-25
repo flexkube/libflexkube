@@ -2,24 +2,72 @@ package etcd
 
 import "testing"
 
-func TestAddNode(t *testing.T) {
+func TestNewCluster(t *testing.T) {
 	etcd := New()
-	node := "foo"
-	if err := etcd.DesiredState.AddNode(node); err != nil {
-		t.Errorf("Failed to add '%s' node ", node)
+	if etcd.PreviousState == nil {
+		t.Error("Previous state is empty in new cluster")
 	}
-	if etcd.DesiredState.Nodes[node] == nil {
-		t.Errorf("Node %s has not been added", node)
+
+	if etcd.currentState != nil {
+		t.Error("current state should be empty in new cluster")
+	}
+
+	if etcd.DesiredState == nil {
+		t.Error("Desired state is empty in new cluster")
 	}
 }
 
-func TestDuplicatedNode(t *testing.T) {
+func TestAddNewClusterNode(t *testing.T) {
 	etcd := New()
 	node := "foo"
-	if err := etcd.DesiredState.AddNode(node); err != nil {
-		t.Errorf("Failed to add '%s' node ", node)
+	if err := etcd.AddNewNode(node); err != nil {
+		t.Errorf("Adding new node should not fail, got: %s", err)
 	}
-	if err := etcd.DesiredState.AddNode(node); err == nil {
-		t.Errorf("Duplicated node '%s' has been added", node)
+	if etcd.DesiredState.Nodes[node] == nil {
+		t.Errorf("Adding new node should not fail")
+	}
+}
+
+func TestReadEmptyClusterState(t *testing.T) {
+	etcd := New()
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if etcd.currentState == nil {
+		t.Errorf("Reading current state should set current state")
+	}
+}
+
+func TestReadClusterState(t *testing.T) {
+	etcd := New()
+	node := "foo"
+	if err := etcd.AddNewNode(node); err != nil {
+		t.Errorf("Adding new node should not fail, got: %s", err)
+	}
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if etcd.currentState == nil {
+		t.Errorf("Reading cluster state should set current state")
+	}
+	if etcd.currentState.Nodes[node] != nil {
+		t.Errorf("Current state should not have node set on fresh cluster")
+	}
+}
+
+func TestPlanOnUnknownCluster(t *testing.T) {
+	etcd := New()
+	if err := etcd.Plan(); err == nil {
+		t.Errorf("Planning should fail on cluster without read state")
+	}
+}
+
+func TestPlanCluster(t *testing.T) {
+	etcd := New()
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if err := etcd.Plan(); err != nil {
+		t.Errorf("Planning should succeed, got: %s", err)
 	}
 }
