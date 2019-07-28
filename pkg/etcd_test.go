@@ -19,11 +19,13 @@ func TestNewCluster(t *testing.T) {
 
 func TestAddNewClusterNode(t *testing.T) {
 	etcd := New()
-	node := "foo"
-	if err := etcd.AddNewNode(node); err != nil {
+	node := &Node{
+		Name: "foo",
+	}
+	if err := etcd.AddNode(node); err != nil {
 		t.Errorf("Adding new node should not fail, got: %s", err)
 	}
-	if etcd.DesiredState.Nodes[node] == nil {
+	if etcd.DesiredState.Nodes[node.Name] == nil {
 		t.Errorf("Adding new node should not fail")
 	}
 }
@@ -40,8 +42,10 @@ func TestReadEmptyClusterState(t *testing.T) {
 
 func TestReadClusterState(t *testing.T) {
 	etcd := New()
-	node := "foo"
-	if err := etcd.AddNewNode(node); err != nil {
+	node := &Node{
+		Name: "foo",
+	}
+	if err := etcd.AddNode(node); err != nil {
 		t.Errorf("Adding new node should not fail, got: %s", err)
 	}
 	if err := etcd.ReadCurrentState(); err != nil {
@@ -50,7 +54,7 @@ func TestReadClusterState(t *testing.T) {
 	if etcd.currentState == nil {
 		t.Errorf("Reading cluster state should set current state")
 	}
-	if etcd.currentState.Nodes[node] != nil {
+	if etcd.currentState.Nodes[node.Name] != nil {
 		t.Errorf("Current state should not have node set on fresh cluster")
 	}
 }
@@ -69,5 +73,16 @@ func TestPlanCluster(t *testing.T) {
 	}
 	if err := etcd.Plan(); err != nil {
 		t.Errorf("Planning should succeed, got: %s", err)
+	}
+}
+
+func TestSetImage(t *testing.T) {
+	etcd := New()
+	image := "gcr.io/etcd-development/etcd:v3.3.13"
+	if err := etcd.SetImage(image); err != nil {
+		t.Errorf("Setting image should succeed, got: %s", err)
+	}
+	if etcd.DesiredState.Image != image {
+		t.Errorf("Desired Image should be '%s', got: '%s'", image, etcd.DesiredState.Image)
 	}
 }

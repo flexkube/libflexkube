@@ -1,5 +1,7 @@
 package etcd
 
+import "fmt"
+
 // Node represents cluster member, information how it should be set up, how
 // to connect to it etc.
 type Node struct {
@@ -21,5 +23,14 @@ func (node *Node) ReadState() error {
 // and sets it in the node object.
 func (node *Node) ReadImage() error {
 	node.Image = "notimplemented"
+	return nil
+}
+
+// Validate valdiates node configuration
+func (node *Node) Validate() error {
+	if node.Name == "" {
+		return fmt.Errorf("name must be set")
+	}
+
 	return nil
 }

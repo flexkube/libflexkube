@@ -19,13 +19,17 @@ func NewState() *State {
 	}
 }
 
-func (state *State) AddNode(name string) error {
-	if state.Nodes[name] != nil {
-		return fmt.Errorf("node already exists")
+func (state *State) AddNode(node *Node) error {
+	if err := node.Validate(); err != nil {
+		return fmt.Errorf("node validation failed: %s", err)
 	}
-	state.Nodes[name] = &Node{
-		Name: name,
+	if state.Nodes[node.Name] != nil {
+		return fmt.Errorf("node '%s' is already added", node.Name)
 	}
+	if node.Image == "" && state.Image != "" {
+		node.Image = state.Image
+	}
+	state.Nodes[node.Name] = node
 
 	return nil
 }

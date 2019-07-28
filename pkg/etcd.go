@@ -28,8 +28,8 @@ func New() *Etcd {
 	}
 }
 
-func (etcd *Etcd) AddNewNode(name string) error {
-	return etcd.DesiredState.AddNode(name)
+func (etcd *Etcd) AddNode(node *Node) error {
+	return etcd.DesiredState.AddNode(node)
 }
 
 func (etcd *Etcd) LoadPreviousState() error {
@@ -52,5 +52,12 @@ func (etcd *Etcd) Plan() error {
 			fmt.Println(fmt.Sprintf("Node '%s' should be created.", i))
 		}
 	}
+	return nil
+}
+
+func (etcd *Etcd) SetImage(image string) error {
+	// TODO add validation logic?
+	etcd.DesiredState.Image = image
+
 	return nil
 }

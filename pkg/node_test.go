@@ -32,3 +32,19 @@ func TestReadStateSetImage(t *testing.T) {
 		t.Errorf("Reading node state should read node image")
 	}
 }
+
+func TestNodeNoName(t *testing.T) {
+	node := &Node{}
+	if err := node.Validate(); err == nil {
+		t.Errorf("Node without name should not be a valid node")
+	}
+}
+
+func TestNodeValidate(t *testing.T) {
+	node := &Node{
+		Name: "foo",
+	}
+	if err := node.Validate(); err != nil {
+		t.Errorf("Node should be valid")
+	}
+}
