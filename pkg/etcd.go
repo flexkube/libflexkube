@@ -47,8 +47,8 @@ func (etcd *Etcd) Plan() error {
 	if etcd.currentState == nil {
 		return fmt.Errorf("can't plan without knowing current state of the cluster")
 	}
-	for i, _ := range etcd.DesiredState.Nodes {
-		if etcd.currentState.Nodes[i] == nil {
+	for i, node := range etcd.DesiredState.Nodes {
+		if node == nil {
 			fmt.Println(fmt.Sprintf("Node '%s' should be created.", i))
 		}
 	}
