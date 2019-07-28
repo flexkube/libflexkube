@@ -14,10 +14,14 @@ notifications:
 matrix:
   allow_failures:
     - go: master
+
 install: go get
 
 before_script:
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.16.0
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.17.1
+  - cp .netrc ~/.netrc
+  - chmod 600 ~/.netrc
+  - echo "  password $GITHUB_TOKEN" >> ~/.netrc
 
 script:
   - go build -v
@@ -30,5 +34,5 @@ after_success:
 env:
   global:
     - GO111MODULE=on
-    - CODECOV_TOKEN:
-        secure: dl2AAtAb5D1/+YyvUNrJ/25dRPSQIr44JGGsx4GK4EMVt9oi7LYRMI05+F04QAy76O3FexNywkCUi9M152BnqDx0mTg0UVAsGGNODdxjkaKNT7svD4T5sJnnjBWb/KMpXpxNDkrGPt56aCBTo3sTMfP0crDvIIx5mwLKAYeTDWV9dGxt20sY98VidDsB1esyA7/vd381rt7cfN5i2Y3D8wglMq2ZTbVcoHviIiEAKdfSldS8g1Tmk18oYfZah9/uZM0en4070ObO5Ui6l4qydygh0gSkmTK3vdqTqZEi2l5Nt/jiTGPqV7mcO7J6SNDzKTHdKZhtdqwsNDVe2dyKgNfG5L1qRApphRuapgofYA8k8i9nbaQJHdP9+Q1DExdwE0wWjEcFIUXg8uMdGqNnBt+h+TZf95i8MFrHZhBLE1GYWx/i8hSpq7Spx5TSztJmhFCSsuqJZryb30vkDDEQGd/pSXMXKtKVcgJHcaT7KYbjFtVe3VNxh9GDZdGQ7doZKxvY+tht1daJzjbhVlzAC9cCevIMyEjPVXdJD0kN/nSlPQJ/3ZhGmNUjkmunfyHwwUHT51YrF50K+jatkHNmS0BG3LCDo7qhHPQxyCg2ckZWUx70ItqguJa6Jg9//SQ5GGN5C2UoQDXPVYOaBJSs8ZOkNsg9HXC5G1CXK9taV2Q=
+    - secure: dl2AAtAb5D1/+YyvUNrJ/25dRPSQIr44JGGsx4GK4EMVt9oi7LYRMI05+F04QAy76O3FexNywkCUi9M152BnqDx0mTg0UVAsGGNODdxjkaKNT7svD4T5sJnnjBWb/KMpXpxNDkrGPt56aCBTo3sTMfP0crDvIIx5mwLKAYeTDWV9dGxt20sY98VidDsB1esyA7/vd381rt7cfN5i2Y3D8wglMq2ZTbVcoHviIiEAKdfSldS8g1Tmk18oYfZah9/uZM0en4070ObO5Ui6l4qydygh0gSkmTK3vdqTqZEi2l5Nt/jiTGPqV7mcO7J6SNDzKTHdKZhtdqwsNDVe2dyKgNfG5L1qRApphRuapgofYA8k8i9nbaQJHdP9+Q1DExdwE0wWjEcFIUXg8uMdGqNnBt+h+TZf95i8MFrHZhBLE1GYWx/i8hSpq7Spx5TSztJmhFCSsuqJZryb30vkDDEQGd/pSXMXKtKVcgJHcaT7KYbjFtVe3VNxh9GDZdGQ7doZKxvY+tht1daJzjbhVlzAC9cCevIMyEjPVXdJD0kN/nSlPQJ/3ZhGmNUjkmunfyHwwUHT51YrF50K+jatkHNmS0BG3LCDo7qhHPQxyCg2ckZWUx70ItqguJa6Jg9//SQ5GGN5C2UoQDXPVYOaBJSs8ZOkNsg9HXC5G1CXK9taV2Q=
+    - secure: "gGJ+QGy/8YY4KU3gWHEu04mEs6iCxL9w1IIge8Y6Cuq4F7B1NC1I2SEZuqcOZA1PVlIAoxrT0vrc8wgVmZG+M29pJGZycqhUxCwy31sfVDfw2Ba2ciMoGNyPFM+8Pa3kRa6kxHz0N392nfYFY4LSjiuOHXnra/x5K7u58qZHQd/X+TUtgmeZikU6UzrCCFz6iQT1nn7HPHQwrugi/tN2JejOaaabwfpeJKMFani2qG8SPB/HM+UZxcavUNggUVQjC64iv1s3HtjOJruRN98E91dzNgVMISfYsPcuWdWf6YG0twuAXhGBSwLJXKJrFxZZ63czcqdHf4c9O5s+p5g60wNvWO9DAVkBYiipLBaMKAQmt1muxJsItZmn4ueh1gAoVB0BrrpzyE9t4CcAqapEPnupR0sS0cKN5JG/md753DdfiEEHdrVFm8UXK/CZYbR18GLD6KgGfmr8Dkg97us7m19dPshsgExLbGqrWLy5XBvcxNr2/mhC30wiK721ec5oZo2Iqvd1Win51eAkqOjfspQBf3r6McYiEnUYKMzDMX+/TPcwems+rbT3o4oXjMYPDuA8lwjV86YPzy+2fLQwLDcuzciWrcZwpNEy+fm1BNxwY2FJlYbmanaWxWOrDvNmgUc7/06+3LdnGoYihm5TaZ3sNcJ3rD7jlM236sbsvvU="
