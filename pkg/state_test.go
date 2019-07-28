@@ -33,8 +33,10 @@ func TestRemoveNode(t *testing.T) {
 	node := &Node{
 		Name: "foo",
 	}
-	err := state.AddNode(node)
-	if err = state.RemoveNode(node.Name); err != nil {
+	if err := state.AddNode(node); err != nil {
+		t.Errorf("Adding ndoe should not fail, got: %s", err)
+	}
+	if err := state.RemoveNode(node.Name); err != nil {
 		t.Errorf("Node should be removed, got: %s", err)
 	}
 }
