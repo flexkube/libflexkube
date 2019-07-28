@@ -1,10 +1,14 @@
 package etcd
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/node"
+)
 
 func TestAddNode(t *testing.T) {
 	state := NewState()
-	node := &Node{
+	node := &node.Node{
 		Name: "foo",
 	}
 	if err := state.AddNode(node); err != nil {
@@ -17,7 +21,7 @@ func TestAddNode(t *testing.T) {
 
 func TestDuplicatedNode(t *testing.T) {
 	state := NewState()
-	node := &Node{
+	node := &node.Node{
 		Name: "foo",
 	}
 	if err := state.AddNode(node); err != nil {
@@ -30,7 +34,7 @@ func TestDuplicatedNode(t *testing.T) {
 
 func TestRemoveNode(t *testing.T) {
 	state := NewState()
-	node := &Node{
+	node := &node.Node{
 		Name: "foo",
 	}
 	if err := state.AddNode(node); err != nil {
@@ -54,7 +58,7 @@ func TestAddNodeDefaultImage(t *testing.T) {
 	imageName := "gcr.io/etcd-development/etcd:v3.3.13"
 	state.Image = imageName
 	nodeName := "foo"
-	node := &Node{
+	node := &node.Node{
 		Name: nodeName,
 	}
 	if err := state.AddNode(node); err != nil {
@@ -68,7 +72,7 @@ func TestAddNodeDefaultImage(t *testing.T) {
 func TestAddNodeNoDefaultImage(t *testing.T) {
 	state := NewState()
 	nodeName := "foo"
-	node := &Node{
+	node := &node.Node{
 		Name: nodeName,
 	}
 	if err := state.AddNode(node); err != nil {

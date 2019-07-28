@@ -1,6 +1,12 @@
 package etcd
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/node"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/step"
+)
 
 func TestNewCluster(t *testing.T) {
 	etcd := New()
@@ -19,7 +25,7 @@ func TestNewCluster(t *testing.T) {
 
 func TestAddNewClusterNode(t *testing.T) {
 	etcd := New()
-	node := &Node{
+	node := &node.Node{
 		Name: "foo",
 	}
 	if err := etcd.AddNode(node); err != nil {
@@ -42,7 +48,7 @@ func TestReadEmptyClusterState(t *testing.T) {
 
 func TestReadClusterState(t *testing.T) {
 	etcd := New()
-	node := &Node{
+	node := &node.Node{
 		Name: "foo",
 	}
 	if err := etcd.AddNode(node); err != nil {
@@ -84,5 +90,53 @@ func TestSetImage(t *testing.T) {
 	}
 	if etcd.DesiredState.Image != image {
 		t.Errorf("Desired Image should be '%s', got: '%s'", image, etcd.DesiredState.Image)
+	}
+}
+
+func TestPlanClusterWithOneNode(t *testing.T) {
+	etcd := New()
+	node := &node.Node{
+		Name: "foo",
+	}
+	if err := etcd.AddNode(node); err != nil {
+		t.Errorf("Adding new node should not fail, got: %s", err)
+	}
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if err := etcd.Plan(); err != nil {
+		t.Errorf("Planning should succeed, got: %s", err)
+	}
+	steps := step.Steps{
+		&step.Step{
+			StepType: step.AddNode,
+			Node:     node,
+		},
+	}
+	if !reflect.DeepEqual(etcd.Steps, steps) {
+		t.Errorf("Plan should contain one AddNode step")
+	}
+}
+
+func TestPlanClusterRemoveOneNode(t *testing.T) {
+	etcd := New()
+	node := &node.Node{
+		Name: "foo",
+	}
+	etcd.PreviousState.Nodes[node.Name] = node
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if err := etcd.Plan(); err != nil {
+		t.Errorf("Planning should succeed, got: %s", err)
+	}
+	steps := step.Steps{
+		&step.Step{
+			StepType: step.RemoveNode,
+			Node:     node,
+		},
+	}
+	if !reflect.DeepEqual(etcd.Steps, steps) {
+		t.Errorf("Plan should contain one RemoveNode step")
 	}
 }

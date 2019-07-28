@@ -1,25 +1,29 @@
 package etcd
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/node"
+)
 
 // State contains abstact state of the etcd cluster, which might represent
 // both existing, desired and historical state.
 type State struct {
 	// List of cluster nodes
-	Nodes map[string]*Node
+	Nodes map[string]*node.Node
 	// Image, which should be used by all nodes.
 	// If this field is nil, it means cluster consist of 2 or more different images.
 	Image string
 }
 
 func NewState() *State {
-	nodes := make(map[string]*Node)
+	nodes := make(map[string]*node.Node)
 	return &State{
 		Nodes: nodes,
 	}
 }
 
-func (state *State) AddNode(node *Node) error {
+func (state *State) AddNode(node *node.Node) error {
 	if err := node.Validate(); err != nil {
 		return fmt.Errorf("node validation failed: %s", err)
 	}

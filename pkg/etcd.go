@@ -1,6 +1,11 @@
 package etcd
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/node"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/step"
+)
 
 // Etcd stores all etcd cluster states
 type Etcd struct {
@@ -16,6 +21,8 @@ type Etcd struct {
 	// checks what is missing in CurrentState and attempts to fullfil it
 	// This struct is public and can be interacted with from outside
 	DesiredState *State
+	// Steps contains all steps, which should be applied to the cluster.
+	Steps step.Steps
 }
 
 func New() *Etcd {
@@ -28,7 +35,7 @@ func New() *Etcd {
 	}
 }
 
-func (etcd *Etcd) AddNode(node *Node) error {
+func (etcd *Etcd) AddNode(node *node.Node) error {
 	return etcd.DesiredState.AddNode(node)
 }
 
@@ -44,14 +51,32 @@ func (etcd *Etcd) ReadCurrentState() error {
 }
 
 func (etcd *Etcd) Plan() error {
+	var steps step.Steps
 	if etcd.currentState == nil {
 		return fmt.Errorf("can't plan without knowing current state of the cluster")
 	}
-	for i, node := range etcd.DesiredState.Nodes {
-		if node == nil {
-			fmt.Println(fmt.Sprintf("Node '%s' should be created.", i))
+
+	// Iterate over previous state to find nodes, which should be removed
+	for i, node := range etcd.PreviousState.Nodes {
+		if etcd.DesiredState.Nodes[i] == nil {
+			step, err := step.RemoveNodeStep(node)
+			if err != nil {
+				return fmt.Errorf("failed to create RemoveNode step: %s", err)
+			}
+			steps = append(steps, step)
 		}
 	}
+
+	// Iterate over desired state to find which nodes should be created
+	for _, node := range etcd.DesiredState.Nodes {
+		step, err := step.AddNodeStep(node)
+		if err != nil {
+			return fmt.Errorf("failed to create AddNode step: %s", err)
+		}
+		steps = append(steps, step)
+	}
+
+	etcd.Steps = steps
 	return nil
 }
 
@@ -60,4 +85,15 @@ func (etcd *Etcd) SetImage(image string) error {
 	etcd.DesiredState.Image = image
 
 	return nil
+}
+
+func (etcd *Etcd) PresentPlan() {
+	for i, step := range etcd.Steps {
+		desc, err := step.Describe()
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Unable to describe step %d: %s", i+1, err))
+			continue
+		}
+		fmt.Println(fmt.Sprintf("%d: %s", i+1, desc))
+	}
 }
