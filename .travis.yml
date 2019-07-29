@@ -21,6 +21,7 @@ before_script:
   - cp .netrc ~/.netrc
   - chmod 600 ~/.netrc
   - echo "  password $GITHUB_TOKEN" >> ~/.netrc
+  - go get -u golang.org/x/lint/golint
 
 script:
   - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
