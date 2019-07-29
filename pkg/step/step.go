@@ -57,5 +57,4 @@ func (step *Step) Validate() error {
 	default:
 		return fmt.Errorf("Unable to validate unknown step")
 	}
-	return nil
 }
