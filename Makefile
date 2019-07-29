@@ -18,7 +18,7 @@ test-race:
 
 lint:
 	which golangci-lint 2>&1 >/dev/null && golangci-lint run || echo "'golangci-lint' binary not found, skipping linting."
-	golint -set_exit_status $$(go list ./...)
+	which golint 2>&1 >/dev/null && golint -set_exit_status $$(go list ./...) || echo "'golint' binary not found, skipping linting."
 
 update:
 	$(GOGET) -u
