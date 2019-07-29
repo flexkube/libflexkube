@@ -18,6 +18,7 @@ type State struct {
 	Image string
 }
 
+// NewState creates new state object with initialized nodes map
 func NewState() *State {
 	nodes := make(map[string]*node.Node)
 	return &State{
@@ -25,6 +26,7 @@ func NewState() *State {
 	}
 }
 
+// AddNode validates and adds node object to the state
 func (state *State) AddNode(node *node.Node) error {
 	if err := node.Validate(); err != nil {
 		return fmt.Errorf("node validation failed: %s", err)
@@ -40,6 +42,7 @@ func (state *State) AddNode(node *node.Node) error {
 	return nil
 }
 
+// RemoveNode removes node from the state. Returns error if node does not exist.
 func (state *State) RemoveNode(name string) error {
 	if state.Nodes[name] == nil {
 		return fmt.Errorf("node does not exist")
@@ -49,6 +52,7 @@ func (state *State) RemoveNode(name string) error {
 	return nil
 }
 
+// Read reads state of each node
 func (state *State) Read() error {
 	for _, node := range state.Nodes {
 		if err := node.ReadState(); err != nil {

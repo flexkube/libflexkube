@@ -24,8 +24,8 @@ func TestRemoveNodeStep(t *testing.T) {
 		t.Errorf("Step with valid node should be created")
 	}
 	expectedStep := &Step{
-		StepType: RemoveNode,
-		Node:     node,
+		Type: RemoveNode,
+		Node: node,
 	}
 	if !reflect.DeepEqual(expectedStep, step) {
 		t.Errorf("Step does not match expected step")

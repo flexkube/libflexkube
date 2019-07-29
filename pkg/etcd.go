@@ -25,6 +25,7 @@ type Etcd struct {
 	Steps step.Steps
 }
 
+// New creates new etcd cluster object
 func New() *Etcd {
 	previousState := NewState()
 	desiredState := NewState()
@@ -35,14 +36,13 @@ func New() *Etcd {
 	}
 }
 
+// AddNode should be used for adding new nodes to the cluster
 func (etcd *Etcd) AddNode(node *node.Node) error {
 	return etcd.DesiredState.AddNode(node)
 }
 
-func (etcd *Etcd) LoadPreviousState() error {
-	return nil
-}
-
+// ReadCurrentState copies previous state to current state and then
+// reads the cluster status and writes it to current state.
 func (etcd *Etcd) ReadCurrentState() error {
 	// Copy previous state to existing state, so we can refresh it
 	etcd.currentState = etcd.PreviousState
@@ -50,6 +50,8 @@ func (etcd *Etcd) ReadCurrentState() error {
 	return etcd.currentState.Read()
 }
 
+// Plan compares current state with desired state and sets cluster steps
+// which needs to be applied.
 func (etcd *Etcd) Plan() error {
 	var steps step.Steps
 	if etcd.currentState == nil {
@@ -57,7 +59,7 @@ func (etcd *Etcd) Plan() error {
 	}
 
 	// Iterate over previous state to find nodes, which should be removed
-	for i, node := range etcd.PreviousState.Nodes {
+	for i, node := range etcd.currentState.Nodes {
 		if etcd.DesiredState.Nodes[i] == nil {
 			step, err := step.RemoveNodeStep(node)
 			if err != nil {
@@ -80,6 +82,8 @@ func (etcd *Etcd) Plan() error {
 	return nil
 }
 
+// SetImage sets which image should be used on all nodes.
+// If this is not called, image needs to be set on all nodes.
 func (etcd *Etcd) SetImage(image string) error {
 	// TODO add validation logic?
 	etcd.DesiredState.Image = image
@@ -87,6 +91,7 @@ func (etcd *Etcd) SetImage(image string) error {
 	return nil
 }
 
+// PresentPlan prints planned steps in human-friendly form.
 func (etcd *Etcd) PresentPlan() {
 	for i, step := range etcd.Steps {
 		desc, err := step.Describe()

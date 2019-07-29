@@ -14,7 +14,7 @@ func RemoveNodeStep(node *node.Node) (*Step, error) {
 		return nil, fmt.Errorf("node not valid: %s", err)
 	}
 	return &Step{
-		StepType: RemoveNode,
-		Node:     node,
+		Type: RemoveNode,
+		Node: node,
 	}, nil
 }

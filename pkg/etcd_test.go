@@ -109,8 +109,8 @@ func TestPlanClusterWithOneNode(t *testing.T) {
 	}
 	steps := step.Steps{
 		&step.Step{
-			StepType: step.AddNode,
-			Node:     node,
+			Type: step.AddNode,
+			Node: node,
 		},
 	}
 	if !reflect.DeepEqual(etcd.Steps, steps) {
@@ -132,8 +132,8 @@ func TestPlanClusterRemoveOneNode(t *testing.T) {
 	}
 	steps := step.Steps{
 		&step.Step{
-			StepType: step.RemoveNode,
-			Node:     node,
+			Type: step.RemoveNode,
+			Node: node,
 		},
 	}
 	if !reflect.DeepEqual(etcd.Steps, steps) {

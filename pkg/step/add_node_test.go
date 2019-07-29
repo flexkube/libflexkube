@@ -25,7 +25,7 @@ func TestAddNodeStep(t *testing.T) {
 
 func TestDescribeAddNodeInvalidType(t *testing.T) {
 	step := &Step{
-		StepType: RemoveNode,
+		Type: RemoveNode,
 	}
 	if _, err := step.DescribeAddNode(); err == nil {
 		t.Errorf("Invalid step type shouldn't be described")
@@ -34,7 +34,7 @@ func TestDescribeAddNodeInvalidType(t *testing.T) {
 
 func TestValidateAddNodeInvalidType(t *testing.T) {
 	step := &Step{
-		StepType: RemoveNode,
+		Type: RemoveNode,
 	}
 	if err := step.ValidateAddNode(); err == nil {
 		t.Errorf("Invalid step type shouldn't be valid")

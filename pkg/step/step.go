@@ -6,8 +6,8 @@ import (
 	"github.com/invidian/etcd-ariadnes-thread/pkg/node"
 )
 
-// StepType is Go method for clear enums
-type StepType int
+// Type is Go method for clear enums
+type Type int
 
 // List of possible steps
 // TODO consider adding backup/restore steps?
@@ -22,7 +22,7 @@ const (
 	HealNode
 )
 
-func (d StepType) String() string {
+func (d Type) String() string {
 	return [...]string{"AddNode", "RemoveNode", "UpdateNode", "HealNode"}[d]
 }
 
@@ -32,7 +32,7 @@ type Steps []*Step
 // Step describes single action of etcd cluster modification
 type Step struct {
 	Description string
-	StepType    StepType
+	Type        Type
 	Node        *node.Node
 }
 
@@ -41,7 +41,7 @@ func (step *Step) Describe() (string, error) {
 	if err := step.Validate(); err != nil {
 		return "", fmt.Errorf("Unable to describe invalid step")
 	}
-	switch step.StepType {
+	switch step.Type {
 	case AddNode:
 		return step.DescribeAddNode()
 	default:
@@ -51,7 +51,7 @@ func (step *Step) Describe() (string, error) {
 
 // Validate makes sure the step is valid
 func (step *Step) Validate() error {
-	switch step.StepType {
+	switch step.Type {
 	case AddNode:
 		return step.ValidateAddNode()
 	default:

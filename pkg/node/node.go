@@ -11,7 +11,7 @@ type Node struct {
 	Image string
 }
 
-// This function reads general state of the node.
+// ReadState reads general state of the node.
 func (node *Node) ReadState() error {
 	if err := node.ReadImage(); err != nil {
 		return err
@@ -19,7 +19,7 @@ func (node *Node) ReadState() error {
 	return nil
 }
 
-// This function reads which image is currently running on existing deployment
+// ReadImage reads which image is currently running on existing deployment
 // and sets it in the node object.
 func (node *Node) ReadImage() error {
 	node.Image = "notimplemented"

@@ -14,15 +14,15 @@ func AddNodeStep(node *node.Node) (*Step, error) {
 		return nil, fmt.Errorf("node not valid: %s", err)
 	}
 	return &Step{
-		StepType: AddNode,
-		Node:     node,
+		Type: AddNode,
+		Node: node,
 	}, nil
 }
 
 // DescribeAddNode returns human readable description of AddNode step
 func (step *Step) DescribeAddNode() (string, error) {
-	if step.StepType != AddNode {
-		return "", fmt.Errorf("wrong step type, expected AddNode, got '%s'", step.StepType)
+	if step.Type != AddNode {
+		return "", fmt.Errorf("wrong step type, expected AddNode, got '%s'", step.Type)
 	}
 	if step.Node.Image == "" {
 		return fmt.Sprintf("Add node '%s' with unknown image", step.Node.Name), nil
@@ -30,9 +30,10 @@ func (step *Step) DescribeAddNode() (string, error) {
 	return fmt.Sprintf("Add node '%s' with image '%s'", step.Node.Name, step.Node.Image), nil
 }
 
+// ValidateAddNode validates step of type AddNode
 func (step *Step) ValidateAddNode() error {
-	if step.StepType != AddNode {
-		return fmt.Errorf("wrong step type, expected AddNode, got '%s'", step.StepType)
+	if step.Type != AddNode {
+		return fmt.Errorf("wrong step type, expected AddNode, got '%s'", step.Type)
 	}
 
 	if step.Node == nil {
