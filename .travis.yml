@@ -25,6 +25,7 @@ before_script:
 script:
   - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
   - golangci-lint run
+  - golint -set_exit_status $(go list ./...)
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
