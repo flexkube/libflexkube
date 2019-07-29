@@ -19,6 +19,17 @@ func TestAddNode(t *testing.T) {
 	}
 }
 
+func TestAddNodeInvalid(t *testing.T) {
+	state := NewState()
+	node := &node.Node{}
+	if err := state.AddNode(node); err == nil {
+		t.Errorf("Invalid node shouldn't be added")
+	}
+	if state.Nodes[node.Name] != nil {
+		t.Errorf("Invalid node shouldn't be added")
+	}
+}
+
 func TestDuplicatedNode(t *testing.T) {
 	state := NewState()
 	node := &node.Node{

@@ -140,3 +140,20 @@ func TestPlanClusterRemoveOneNode(t *testing.T) {
 		t.Errorf("Plan should contain one RemoveNode step")
 	}
 }
+
+func TestPlanClusterWithOneNodeAndPresentPlan(t *testing.T) {
+	etcd := New()
+	node := &node.Node{
+		Name: "foo",
+	}
+	if err := etcd.AddNode(node); err != nil {
+		t.Errorf("Adding new node should not fail, got: %s", err)
+	}
+	if err := etcd.ReadCurrentState(); err != nil {
+		t.Errorf("Reading state of empty cluster should succeed, got: %s", err)
+	}
+	if err := etcd.Plan(); err != nil {
+		t.Errorf("Planning should succeed, got: %s", err)
+	}
+	etcd.PresentPlan()
+}
