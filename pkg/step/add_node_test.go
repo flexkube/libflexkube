@@ -40,3 +40,15 @@ func TestValidateAddNodeInvalidType(t *testing.T) {
 		t.Errorf("Invalid step type shouldn't be valid")
 	}
 }
+
+func TestDescribeAddNode(t *testing.T) {
+	step := &Step{
+		Type: AddNode,
+		Node: &node.Node{
+			Name: "foo",
+		},
+	}
+	if _, err := step.DescribeAddNode(); err != nil {
+		t.Errorf("Describing AddNode step should pass, got: %s", err)
+	}
+}
