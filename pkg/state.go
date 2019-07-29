@@ -8,6 +8,8 @@ import (
 
 // State contains abstact state of the etcd cluster, which might represent
 // both existing, desired and historical state.
+//
+// TODO State struct should be serializable, so it's easier to persist
 type State struct {
 	// List of cluster nodes
 	Nodes map[string]*node.Node
