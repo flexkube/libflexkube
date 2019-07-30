@@ -61,11 +61,11 @@ func (etcd *Etcd) Plan() error {
 	// Iterate over previous state to find nodes, which should be removed
 	for i, node := range etcd.currentState.Nodes {
 		if etcd.DesiredState.Nodes[i] == nil {
-			step, err := step.RemoveNodeStep(node)
+			s, err := step.RemoveNodeStep(node)
 			if err != nil {
 				return fmt.Errorf("failed to create RemoveNode step: %s", err)
 			}
-			steps = append(steps, step)
+			steps = append(steps, s)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (etcd *Etcd) SetImage(image string) error {
 // PresentPlan prints planned steps in human-friendly form.
 func (etcd *Etcd) PresentPlan() {
 	for i, step := range etcd.Steps {
-		desc, err := step.Describe()
+		desc, err := step.String()
 		if err != nil {
 			fmt.Println(fmt.Sprintf("Unable to describe step %d: %s", i+1, err))
 			continue

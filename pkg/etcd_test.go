@@ -108,8 +108,7 @@ func TestPlanClusterWithOneNode(t *testing.T) {
 		t.Errorf("Planning should succeed, got: %s", err)
 	}
 	steps := step.Steps{
-		&step.Step{
-			Type: step.AddNode,
+		&step.AddNode{
 			Node: node,
 		},
 	}
@@ -131,8 +130,7 @@ func TestPlanClusterRemoveOneNode(t *testing.T) {
 		t.Errorf("Planning should succeed, got: %s", err)
 	}
 	steps := step.Steps{
-		&step.Step{
-			Type: step.RemoveNode,
+		&step.RemoveNode{
 			Node: node,
 		},
 	}
