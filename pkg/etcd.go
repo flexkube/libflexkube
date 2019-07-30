@@ -102,3 +102,16 @@ func (etcd *Etcd) PresentPlan() {
 		fmt.Println(fmt.Sprintf("%d: %s", i+1, desc))
 	}
 }
+
+// Apply applies planned changes to the cluster
+func (etcd *Etcd) Apply() error {
+	for _, step := range etcd.Steps {
+		node, err := step.Apply()
+		// TODO have some retry logic here?
+		if err != nil {
+			return err
+		}
+		etcd.currentState.Nodes[node.Name] = node
+	}
+	return nil
+}
