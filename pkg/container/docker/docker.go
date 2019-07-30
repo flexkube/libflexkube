@@ -3,8 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
@@ -45,11 +43,10 @@ func (d *Docker) Start(config *container.Config) error {
 		}
 	}
 
-	reader, err := cli.ImagePull(ctx, config.Image, types.ImagePullOptions{})
+	_, err = cli.ImagePull(ctx, config.Image, types.ImagePullOptions{})
 	if err != nil {
 		return errors.Wrap(err, "pulling image")
 	}
-	io.Copy(os.Stdout, reader)
 
 	dockerConfig := containertypes.Config{
 		Image: config.Image,
