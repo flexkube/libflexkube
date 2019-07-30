@@ -20,8 +20,8 @@ test-integration:
 	$(GOTEST) -tags=integration ./...
 
 lint:
-	which golangci-lint 2>&1 >/dev/null && golangci-lint run || echo "'golangci-lint' binary not found, skipping linting."
-	which golint 2>&1 >/dev/null && golint -set_exit_status $$(go list ./...) || echo "'golint' binary not found, skipping linting."
+	golangci-lint run
+	golint -set_exit_status $$(go list ./...)
 
 update:
 	$(GOGET) -u
