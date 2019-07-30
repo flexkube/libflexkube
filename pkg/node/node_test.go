@@ -2,6 +2,7 @@ package node
 
 import "testing"
 
+// ReadImage()
 func TestReadImageFail(t *testing.T) {
 	node := &Node{}
 	err := node.ReadImage()
@@ -18,6 +19,7 @@ func TestReadImageOk(t *testing.T) {
 	}
 }
 
+// ReadState()
 func TestReadState(t *testing.T) {
 	node := &Node{}
 	if err := node.ReadState(); err != nil {
@@ -33,6 +35,7 @@ func TestReadStateSetImage(t *testing.T) {
 	}
 }
 
+// Validate()
 func TestNodeNoName(t *testing.T) {
 	node := &Node{}
 	if err := node.Validate(); err == nil {
@@ -46,5 +49,15 @@ func TestNodeValidate(t *testing.T) {
 	}
 	if err := node.Validate(); err != nil {
 		t.Errorf("Node should be valid")
+	}
+}
+
+// node.SelectContainerRuntime()
+func TestNodeSelectContainerRuntimeDocker(t *testing.T) {
+	node := &Node{
+		Name: "foo",
+	}
+	if _, err := node.SelectContainerRuntime(); err != nil {
+		t.Errorf("Selecting container runtime for default node should work")
 	}
 }

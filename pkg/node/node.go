@@ -1,6 +1,11 @@
 package node
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/docker"
+)
 
 // Node represents cluster member, information how it should be set up, how
 // to connect to it etc.
@@ -33,4 +38,9 @@ func (node *Node) Validate() error {
 	}
 
 	return nil
+}
+
+// SelectContainerRuntime returns container runtime configured for node
+func (node *Node) SelectContainerRuntime() (container.Container, error) {
+	return &docker.Docker{}, nil
 }
