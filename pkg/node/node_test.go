@@ -1,63 +1,109 @@
 package node
 
-import "testing"
+import (
+	"testing"
+)
 
-// ReadImage()
-func TestReadImageFail(t *testing.T) {
-	node := &Node{}
-	err := node.ReadImage()
-	if err != nil && node.Image != "" {
-		t.Errorf("If reading iamge failed, node image should be nil, got '%s'", node.Image)
+// New()
+func TestNewEmptyConfiguration(t *testing.T) {
+	if _, err := New(&Node{}); err == nil {
+		t.Errorf("Creating node with wrong configuration should fail")
 	}
 }
 
-func TestReadImageOk(t *testing.T) {
-	node := &Node{}
-	err := node.ReadImage()
-	if err == nil && node.Image == "" {
-		t.Errorf("If reading image succeeded, node image should not be empty")
+func TestNewGoodConfiguration(t *testing.T) {
+	n := &Node{
+		Name:          "foo",
+		ContainerName: "bar",
+	}
+	if _, err := New(n); err != nil {
+		t.Errorf("Creating node with good configuration should pass, got: %v", err)
 	}
 }
 
-// ReadState()
-func TestReadState(t *testing.T) {
-	node := &Node{}
-	if err := node.ReadState(); err != nil {
-		t.Errorf("Reading node state should not fail")
+func TestNewValidateContainerRuntime(t *testing.T) {
+	n := &Node{
+		Name:                 "foo",
+		ContainerName:        "bar",
+		ContainerRuntimeName: "doh",
 	}
-}
-
-func TestReadStateSetImage(t *testing.T) {
-	node := &Node{}
-	err := node.ReadState()
-	if err == nil && node.Image == "" {
-		t.Errorf("Reading node state should read node image")
+	if _, err := New(n); err == nil {
+		t.Errorf("Creating node should validate container runtime configuration")
 	}
 }
 
 // Validate()
-func TestNodeNoName(t *testing.T) {
-	node := &Node{}
-	if err := node.Validate(); err == nil {
-		t.Errorf("Node without name should not be a valid node")
+func TestValidateNoName(t *testing.T) {
+	n := &Node{
+		ContainerName: "foo",
+	}
+	if err := n.Validate(); err == nil {
+		t.Errorf("Validating node without name should fail")
 	}
 }
 
-func TestNodeValidate(t *testing.T) {
-	node := &Node{
+func TestValidateNoContainerName(t *testing.T) {
+	n := &Node{
 		Name: "foo",
 	}
-	if err := node.Validate(); err != nil {
-		t.Errorf("Node should be valid")
+	if err := n.Validate(); err == nil {
+		t.Errorf("Validating node without container name should fail")
 	}
 }
 
-// node.SelectContainerRuntime()
-func TestNodeSelectContainerRuntimeDocker(t *testing.T) {
-	node := &Node{
-		Name: "foo",
+func TestValidate(t *testing.T) {
+	n := &Node{
+		Name:          "foo",
+		ContainerName: "foo",
 	}
-	if _, err := node.SelectContainerRuntime(); err != nil {
-		t.Errorf("Selecting container runtime for default node should work")
+	if err := n.Validate(); err != nil {
+		t.Errorf("Validating node with valid configuration should pass, got: %v", err)
+	}
+}
+
+func TestValidateUnsupportedRuntime(t *testing.T) {
+	n := &Node{
+		Name:                 "foo",
+		ContainerName:        "foo",
+		ContainerRuntimeName: "foo",
+	}
+	if err := n.Validate(); err == nil {
+		t.Errorf("Validating node with unsupported container runtime should fail")
+	}
+}
+
+// selectContainerRuntime()
+func TestSelectDockerContainerRuntime(t *testing.T) {
+	n := &node{
+		nodeBase{
+			containerRuntimeName: "docker",
+		},
+	}
+	if err := n.selectContainerRuntime(); err != nil {
+		t.Errorf("Selecting Docker container runtime should succeed, got %v", err)
+	}
+	if n.containerRuntime == nil {
+		t.Errorf("Selecting container runtime should set container runtime field")
+	}
+}
+
+func TestSelectDefaultContainerRuntime(t *testing.T) {
+	n := &node{}
+	if err := n.selectContainerRuntime(); err != nil {
+		t.Errorf("Selecting container runtime on empty node should succeed, got %v", err)
+	}
+	if n.containerRuntime == nil {
+		t.Errorf("Selecting container runtime should set container runtime field")
+	}
+}
+
+func TestSelectBadContainerRuntime(t *testing.T) {
+	n := &node{
+		nodeBase{
+			containerRuntimeName: "foo",
+		},
+	}
+	if err := n.selectContainerRuntime(); err == nil {
+		t.Errorf("Unsupported container runtime name should be rejected")
 	}
 }
