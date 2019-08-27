@@ -1,6 +1,45 @@
 package container
 
-// Container interface describes universal way of starting containers
+import (
+	"fmt"
+
+	"github.com/invidian/etcd-ariadnes-thread/internal/util"
+)
+
+const defaultRuntime = "docker"
+
+// runtimes is the map of registered container runtimes
+var runtimes map[string]bool
+
+func init() {
+	runtimes = make(map[string]bool)
+}
+
+// Register should be used in each container implementation init() to register support
+// for new container runtime
+func Register(name string) {
+	if _, exists := runtimes[name]; exists {
+		panic(fmt.Sprintf("container runtime with name %q registered already", name))
+	}
+	runtimes[name] = true
+}
+
+// Get should be used to obtain container runtime specific implementation
+func IsRuntimeSupported(name string) bool {
+	n := GetRuntimeName(name)
+	_, exists := runtimes[n]
+	return exists
+}
+
+// GetRuntimeName expands given runtime name
+//
+// If name is empty, it returns default runtime name
+func GetRuntimeName(name string) string {
+	return util.DefaultString(name, defaultRuntime)
+}
+
+// Container interface describes universal way of managing containers
+// across different container runtimes.
 type Container interface {
 	// Create creates container and returns it's unique identifier
 	Create(*Config) (string, error)
@@ -14,7 +53,7 @@ type Container interface {
 	Stop(string) error
 }
 
-// Config describes how container should be started
+// Config describes how container should be created
 type Config struct {
 	Name  string
 	Image string
