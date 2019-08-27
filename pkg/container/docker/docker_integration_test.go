@@ -6,16 +6,17 @@ import (
 	"testing"
 
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
 // Create
 func TestContainerCreate(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &container.Config{
-		Image: "gcr.io/etcd-development/etcd:v3.3.13",
+		Image: defaults.EtcdImage,
 	}
 
 	if _, err = d.Create(c); err != nil {
@@ -24,12 +25,12 @@ func TestContainerCreate(t *testing.T) {
 }
 
 func TestContainerCreateDelete(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &container.Config{
-		Image: "gcr.io/etcd-development/etcd:v3.3.13",
+		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
@@ -43,12 +44,12 @@ func TestContainerCreateDelete(t *testing.T) {
 
 // Start()
 func TestContainerStart(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &container.Config{
-		Image: "gcr.io/etcd-development/etcd:v3.3.13",
+		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
@@ -62,12 +63,12 @@ func TestContainerStart(t *testing.T) {
 
 // Stop()
 func TestContainerStop(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &container.Config{
-		Image: "gcr.io/etcd-development/etcd:v3.3.13",
+		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
@@ -84,12 +85,12 @@ func TestContainerStop(t *testing.T) {
 
 // Status()
 func TestContainerStatus(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &container.Config{
-		Image: "gcr.io/etcd-development/etcd:v3.3.13",
+		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
@@ -102,7 +103,7 @@ func TestContainerStatus(t *testing.T) {
 }
 
 func TestContainerStatusNonExistent(t *testing.T) {
-	d, err := New()
+	d, err := New(&Docker{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}

@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -13,31 +12,32 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
+const runtimeName = "docker"
+
+func init() {
+	container.Register(runtimeName)
+}
+
 // Docker struct represents Docker container runtime
-type Docker struct {
+type Docker struct{}
+
+type docker struct {
 	ctx context.Context
 	cli *client.Client
 }
 
-func New() (*Docker, error) {
-	cli, err := client.NewEnvClient()
+func New(d *Docker) (*docker, error) {
+	cli, err := client.NewClientWithOpts(client.WithVersion(defaults.DockerAPIVersion))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Docker client")
 	}
-	return &Docker{
+	return &docker{
 		ctx: context.Background(),
 		cli: cli,
 	}, nil
-}
-
-func (d *Docker) validate() error {
-	if d.cli == nil || d.ctx == nil {
-		return fmt.Errorf("container runtime is not properly intialized")
-	}
-
-	return nil
 }
 
 // Start starts Docker container
@@ -45,10 +45,7 @@ func (d *Docker) validate() error {
 // This should be generic, so it can be used to start any kind of containers!
 //
 // TODO figure out how to do that on remote machine with SSH
-func (d *Docker) Create(config *container.Config) (string, error) {
-	if err := d.validate(); err != nil {
-		return "", errors.Wrap(err, "creating container failed")
-	}
+func (d *docker) Create(config *container.Config) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
 	if _, err := d.cli.ImagePull(d.ctx, config.Image, types.ImagePullOptions{}); err != nil {
@@ -77,31 +74,18 @@ func (d *Docker) Create(config *container.Config) (string, error) {
 // This should be generic, so it can be used to start any kind of containers!
 //
 // TODO figure out how to do that on remote machine with SSH
-func (d *Docker) Start(ID string) error {
-	if err := d.validate(); err != nil {
-		return errors.Wrap(err, "creating container failed")
-	}
-
-	// And start requested container
+func (d *docker) Start(ID string) error {
 	return d.cli.ContainerStart(d.ctx, ID, types.ContainerStartOptions{})
 }
 
 // Stop stops Docker container
-func (d *Docker) Stop(ID string) error {
-	if err := d.validate(); err != nil {
-		return errors.Wrap(err, "creating container failed")
-	}
-
+func (d *docker) Stop(ID string) error {
 	timeout := time.Duration(30) * time.Second
 	return d.cli.ContainerStop(d.ctx, ID, &timeout)
 }
 
 // Status returns container status
-func (d *Docker) Status(ID string) (*container.Status, error) {
-	if err := d.validate(); err != nil {
-		return nil, errors.Wrap(err, "creating container failed")
-	}
-
+func (d *docker) Status(ID string) (*container.Status, error) {
 	status, err := d.cli.ContainerInspect(d.ctx, ID)
 	if err != nil {
 		// If container is missing, return no status
@@ -120,10 +104,6 @@ func (d *Docker) Status(ID string) (*container.Status, error) {
 }
 
 // Delete removes the container
-func (d *Docker) Delete(ID string) error {
-	if err := d.validate(); err != nil {
-		return errors.Wrap(err, "creating container failed")
-	}
-
+func (d *docker) Delete(ID string) error {
 	return d.cli.ContainerRemove(d.ctx, ID, types.ContainerRemoveOptions{})
 }
