@@ -88,16 +88,16 @@ func (c *Container) Validate() error {
 // selectRuntime returns container runtime configured for container
 //
 // It returns error if container runtime configuration is invalid
-func (container *container) selectRuntime() error {
-	switch runtime.GetRuntimeName(container.runtimeName) {
+func (c *container) selectRuntime() error {
+	switch runtime.GetRuntimeName(c.runtimeName) {
 	case "docker":
-		c, err := docker.New(&docker.Docker{})
+		r, err := docker.New(&docker.Docker{})
 		if err != nil {
 			return errors.Wrap(err, "selecting container runtime failed")
 		}
-		container.runtime = c
+		c.runtime = r
 	default:
-		return fmt.Errorf("not supported container runtime: %s", container.runtimeName)
+		return fmt.Errorf("not supported container runtime: %s", c.runtimeName)
 	}
 	return nil
 }

@@ -29,6 +29,8 @@ type docker struct {
 	cli *client.Client
 }
 
+// New validates Docker runtime configuration and returns configured
+// runtime client.
 func New(d *Docker) (*docker, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion(defaults.DockerAPIVersion))
 	if err != nil {

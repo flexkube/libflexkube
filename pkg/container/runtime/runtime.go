@@ -24,7 +24,8 @@ func Register(name string) {
 	runtimes[name] = true
 }
 
-// Get should be used to obtain container runtime specific implementation
+// IsRuntimeSupported is a handy helper which unwraps default runtime name
+// and then check if it is supported.
 func IsRuntimeSupported(name string) bool {
 	n := GetRuntimeName(name)
 	_, exists := runtimes[n]
@@ -38,7 +39,7 @@ func GetRuntimeName(name string) string {
 	return util.DefaultString(name, defaultRuntime)
 }
 
-// Container interface describes universal way of managing containers
+// Runtime interface describes universal way of managing containers
 // across different container runtimes.
 type Runtime interface {
 	// Create creates container and returns it's unique identifier
