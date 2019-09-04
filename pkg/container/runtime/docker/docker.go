@@ -11,14 +11,14 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
 const runtimeName = "docker"
 
 func init() {
-	container.Register(runtimeName)
+	runtime.Register(runtimeName)
 }
 
 // Docker struct represents Docker container runtime
@@ -45,7 +45,7 @@ func New(d *Docker) (*docker, error) {
 // This should be generic, so it can be used to start any kind of containers!
 //
 // TODO figure out how to do that on remote machine with SSH
-func (d *docker) Create(config *container.Config) (string, error) {
+func (d *docker) Create(config *runtime.Config) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
 	if _, err := d.cli.ImagePull(d.ctx, config.Image, types.ImagePullOptions{}); err != nil {
@@ -85,7 +85,7 @@ func (d *docker) Stop(ID string) error {
 }
 
 // Status returns container status
-func (d *docker) Status(ID string) (*container.Status, error) {
+func (d *docker) Status(ID string) (*runtime.Status, error) {
 	status, err := d.cli.ContainerInspect(d.ctx, ID)
 	if err != nil {
 		// If container is missing, return no status
@@ -95,7 +95,7 @@ func (d *docker) Status(ID string) (*container.Status, error) {
 		return nil, errors.Wrap(err, "inspecting container failed")
 	}
 
-	return &container.Status{
+	return &runtime.Status{
 		Image:  status.Image,
 		ID:     ID,
 		Name:   status.Name,

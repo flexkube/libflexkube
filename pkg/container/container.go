@@ -3,66 +3,165 @@ package container
 import (
 	"fmt"
 
-	"github.com/invidian/etcd-ariadnes-thread/internal/util"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime/docker"
+
+	"github.com/pkg/errors"
 )
 
-const defaultRuntime = "docker"
-
-// runtimes is the map of registered container runtimes
-var runtimes map[string]bool
-
-func init() {
-	runtimes = make(map[string]bool)
-}
-
-// Register should be used in each container implementation init() to register support
-// for new container runtime
-func Register(name string) {
-	if _, exists := runtimes[name]; exists {
-		panic(fmt.Sprintf("container runtime with name %q registered already", name))
-	}
-	runtimes[name] = true
-}
-
-// Get should be used to obtain container runtime specific implementation
-func IsRuntimeSupported(name string) bool {
-	n := GetRuntimeName(name)
-	_, exists := runtimes[n]
-	return exists
-}
-
-// GetRuntimeName expands given runtime name
+// Container represents public, serializable version of the container object.
 //
-// If name is empty, it returns default runtime name
-func GetRuntimeName(name string) string {
-	return util.DefaultString(name, defaultRuntime)
+// It should be used for persisting and restoring container state with combination
+// with New(), which make sure that the configuration is actually correct.
+type Container struct {
+	// Stores runtime configuration of the container.
+	Config runtime.Config
+	// Status of the container
+	Status *runtime.Status `json:"status"`
+	// Name of the container runtime to use. If not specified, container runtime
+	// will be automatically determined based on configuration options. If no configuration
+	// options are specified, "docker" will be chosen.
+	RuntimeName string `json:"runtime_name,omit_empty"`
 }
 
-// Container interface describes universal way of managing containers
-// across different container runtimes.
-type Container interface {
-	// Create creates container and returns it's unique identifier
-	Create(*Config) (string, error)
-	// Delete removes the container
-	Delete(string) error
-	// Start starts created container
-	Start(string) error
-	// Status returns status of the container
-	Status(string) (*Status, error)
-	// Stop takes unique identifier as a parameter and stops the container
-	Stop(string) error
+// container represents validated version of Container object, which contains all requires
+// information for instantiating (by calling Create()).
+type container struct {
+	// Contains common information between container and containerInstance
+	base
+	// Optional container status
+	status *runtime.Status
 }
 
-// Config describes how container should be created
-type Config struct {
-	Name  string
-	Image string
+// container represents created container. It guarantees that container status is initialised.
+type containerInstance struct {
+	// Contains common information between container and containerInstance
+	base
+	// Status of the container
+	status runtime.Status
 }
 
-// Status describes what informations are returned about container
-type Status struct {
-	Image  string `json:"image"`
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+// base contains basic information about created and not created container.
+type base struct {
+	// Runtime config which will be used when starting the container.
+	config runtime.Config
+	// Container runtime which will be used to manage the container
+	runtime runtime.Runtime
+	// name of container runtime to use
+	runtimeName string
+}
+
+// New creates new instance of container from Container and validates it's configuration
+func New(c *Container) (*container, error) {
+	if err := c.Validate(); err != nil {
+		return nil, errors.Wrap(err, "container configuration validation failed")
+	}
+	nc := &container{
+		base{
+			config: runtime.Config{
+				Name:  c.Config.Name,
+				Image: c.Config.Image,
+			},
+			runtimeName: c.RuntimeName,
+		},
+		c.Status,
+	}
+	if err := nc.selectRuntime(); err != nil {
+		return nil, errors.Wrap(err, "unable to determine container runtime")
+	}
+	return nc, nil
+}
+
+// Validate validates container configuration
+func (c *Container) Validate() error {
+	if c.Config.Name == "" {
+		return fmt.Errorf("name must be set")
+	}
+
+	if !runtime.IsRuntimeSupported(c.RuntimeName) {
+		return fmt.Errorf("configured runtime '%s' is not supported", c.RuntimeName)
+	}
+
+	return nil
+}
+
+// selectRuntime returns container runtime configured for container
+//
+// It returns error if container runtime configuration is invalid
+func (container *container) selectRuntime() error {
+	switch runtime.GetRuntimeName(container.runtimeName) {
+	case "docker":
+		c, err := docker.New(&docker.Docker{})
+		if err != nil {
+			return errors.Wrap(err, "selecting container runtime failed")
+		}
+		container.runtime = c
+	default:
+		return fmt.Errorf("not supported container runtime: %s", container.runtimeName)
+	}
+	return nil
+}
+
+// Create creates container container from it's defintion
+func (c *container) Create() (*containerInstance, error) {
+	id, err := c.runtime.Create(&c.config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating container")
+	}
+
+	return &containerInstance{
+		base{
+			config:      c.config,
+			runtime:     c.runtime,
+			runtimeName: c.runtimeName,
+		},
+		runtime.Status{
+			ID: id,
+		},
+	}, nil
+}
+
+// FromStatus creates containerInstance from previously restored status
+func (c *container) FromStatus() (*containerInstance, error) {
+	if c.status == nil || c.status.ID == "" {
+		return nil, fmt.Errorf("can't create container instance from invalid status")
+	}
+	return &containerInstance{
+		base:   c.base,
+		status: *c.status,
+	}, nil
+}
+
+// ReadState reads state of the container from container runtime
+//
+// TODO Should we store the status here or return it instead?
+func (container *containerInstance) Status() (*runtime.Status, error) {
+	status, err := container.runtime.Status(container.status.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting container status failed")
+	}
+	if status == nil {
+		return nil, fmt.Errorf("container '%s' does not exist", container.status.ID)
+	}
+
+	container.status = *status
+
+	return status, nil
+}
+
+// Start starts the container container
+func (container *containerInstance) Start() error {
+	return container.runtime.Start(container.status.ID)
+}
+
+// Stop stops the container container
+func (container *containerInstance) Stop() error {
+	return container.runtime.Stop(container.status.ID)
+}
+
+// Delete removes container container
+//
+// TODO should we also clean up host directories here?
+func (container *containerInstance) Delete() error {
+	return container.runtime.Delete(container.status.ID)
 }

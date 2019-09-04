@@ -1,6 +1,6 @@
 // +build integration
 
-package node
+package container
 
 import (
 	"crypto/md5"
@@ -8,16 +8,17 @@ import (
 	"fmt"
 	"testing"
 
-	//"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
 // Create()
 func TestDockerCreateNonExistingImage(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: "bar",
-		Image:         "notexisting",
+	node := &Container{
+		Config: runtime.Config{
+			Name:  "foo",
+			Image: "notexisting",
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -29,10 +30,11 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 }
 
 func TestDockerCreate(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -45,10 +47,11 @@ func TestDockerCreate(t *testing.T) {
 
 // Status()
 func TestDockerStatus(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -64,10 +67,11 @@ func TestDockerStatus(t *testing.T) {
 }
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -77,7 +81,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
-	c.containerStatus.ID = "nonexistent"
+	c.status.ID = "nonexistent"
 	if _, err := c.Status(); err == nil {
 		t.Fatalf("Checking node status for non existing container should fail")
 	}
@@ -85,10 +89,11 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 
 // Start()
 func TestDockerStart(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -105,10 +110,11 @@ func TestDockerStart(t *testing.T) {
 
 // Stop()
 func TestDockerStop(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
@@ -128,10 +134,11 @@ func TestDockerStop(t *testing.T) {
 
 // Delete()
 func TestDockerDelete(t *testing.T) {
-	node := &Node{
-		Name:          "foo",
-		ContainerName: randomContainerName(),
-		Image:         defaults.EtcdImage,
+	node := &Container{
+		Config: runtime.Config{
+			Name:  randomContainerName(),
+			Image: defaults.EtcdImage,
+		},
 	}
 	n, err := New(node)
 	if err != nil {
