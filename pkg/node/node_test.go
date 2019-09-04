@@ -83,7 +83,7 @@ func TestSelectDockerContainerRuntime(t *testing.T) {
 		&container.Status{},
 	}
 	if err := n.selectContainerRuntime(); err != nil {
-		t.Errorf("Selecting Docker container runtime should succeed, got %v", err)
+		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
 	}
 	if n.containerRuntime == nil {
 		t.Errorf("Selecting container runtime should set container runtime field")
@@ -93,7 +93,7 @@ func TestSelectDockerContainerRuntime(t *testing.T) {
 func TestSelectDefaultContainerRuntime(t *testing.T) {
 	n := &node{}
 	if err := n.selectContainerRuntime(); err != nil {
-		t.Errorf("Selecting container runtime on empty node should succeed, got %v", err)
+		t.Errorf("Selecting container runtime on empty node should succeed, got: %v", err)
 	}
 	if n.containerRuntime == nil {
 		t.Errorf("Selecting container runtime should set container runtime field")
