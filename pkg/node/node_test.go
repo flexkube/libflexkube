@@ -2,6 +2,8 @@ package node
 
 import (
 	"testing"
+
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
 )
 
 // New()
@@ -78,6 +80,7 @@ func TestSelectDockerContainerRuntime(t *testing.T) {
 		nodeBase{
 			containerRuntimeName: "docker",
 		},
+		&container.Status{},
 	}
 	if err := n.selectContainerRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got %v", err)
@@ -102,6 +105,7 @@ func TestSelectBadContainerRuntime(t *testing.T) {
 		nodeBase{
 			containerRuntimeName: "foo",
 		},
+		&container.Status{},
 	}
 	if err := n.selectContainerRuntime(); err == nil {
 		t.Errorf("Unsupported container runtime name should be rejected")

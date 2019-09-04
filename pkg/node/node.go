@@ -33,6 +33,8 @@ type Node struct {
 type node struct {
 	// Contains common information between node and nodeInstance
 	nodeBase
+	// Optional container status
+	containerStatus *container.Status
 }
 
 // node represents created container. It guarantees that container status is initialised.
@@ -69,6 +71,7 @@ func New(n *Node) (*node, error) {
 			containerName:        n.ContainerName,
 			containerRuntimeName: n.ContainerRuntimeName,
 		},
+		n.ContainerStatus,
 	}
 	if err := nn.selectContainerRuntime(); err != nil {
 		return nil, errors.Wrap(err, "unable to determine container runtime")
