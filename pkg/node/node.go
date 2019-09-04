@@ -141,18 +141,18 @@ func (n *node) Create() (*nodeInstance, error) {
 // ReadState reads state of the node from container runtime
 //
 // TODO Should we store the status here or return it instead?
-func (node *nodeInstance) Status() error {
+func (node *nodeInstance) Status() (*container.Status, error) {
 	status, err := node.containerRuntime.Status(node.containerStatus.ID)
 	if err != nil {
-		return errors.Wrap(err, "getting container status failed")
+		return nil, errors.Wrap(err, "getting container status failed")
 	}
 	if status == nil {
-		return fmt.Errorf("container '%s' does not exist", node.containerStatus.ID)
+		return nil, fmt.Errorf("container '%s' does not exist", node.containerStatus.ID)
 	}
 
 	node.containerStatus = *status
 
-	return nil
+	return status, nil
 }
 
 // Start starts the node container
