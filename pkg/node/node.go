@@ -138,6 +138,17 @@ func (n *node) Create() (*nodeInstance, error) {
 	}, nil
 }
 
+// FromStatus creates nodeInstance from previously restored status
+func (n *node) FromStatus() (*nodeInstance, error) {
+	if n.containerStatus == nil || n.containerStatus.ID == "" {
+		return nil, fmt.Errorf("can't create node instance from invalid status")
+	}
+	return &nodeInstance{
+		nodeBase:        n.nodeBase,
+		containerStatus: *n.containerStatus,
+	}, nil
+}
+
 // ReadState reads state of the node from container runtime
 //
 // TODO Should we store the status here or return it instead?

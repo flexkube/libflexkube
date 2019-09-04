@@ -111,3 +111,42 @@ func TestSelectBadContainerRuntime(t *testing.T) {
 		t.Errorf("Unsupported container runtime name should be rejected")
 	}
 }
+
+// FromStatus()
+func TestFromStatusValid(t *testing.T) {
+	n := &node{
+		nodeBase{
+			containerRuntimeName: "docker",
+		},
+		&container.Status{
+			ID: "nonexistent",
+		},
+	}
+	if _, err := n.FromStatus(); err != nil {
+		t.Fatalf("Node instance should be created from valid node, got: %v", err)
+	}
+}
+
+func TestFromStatusNoID(t *testing.T) {
+	n := &node{
+		nodeBase{
+			containerRuntimeName: "docker",
+		},
+		&container.Status{},
+	}
+	if _, err := n.FromStatus(); err == nil {
+		t.Fatalf("Node instance should not be created from node with no container ID")
+	}
+}
+
+func TestFromStatusNoStatus(t *testing.T) {
+	n := &node{
+		nodeBase{
+			containerRuntimeName: "docker",
+		},
+		nil,
+	}
+	if _, err := n.FromStatus(); err == nil {
+		t.Fatalf("Node instance should not be created from node without status")
+	}
+}
