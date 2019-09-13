@@ -16,7 +16,8 @@ func TestNewEmptyConfiguration(t *testing.T) {
 func TestNewGoodConfiguration(t *testing.T) {
 	c := &Container{
 		Config: runtime.Config{
-			Name: "foo",
+			Name:  "foo",
+			Image: "nonexistent",
 		},
 	}
 	if _, err := New(c); err != nil {
@@ -49,7 +50,8 @@ func TestValidateNoName(t *testing.T) {
 func TestValidate(t *testing.T) {
 	c := &Container{
 		Config: runtime.Config{
-			Name: "foo",
+			Name:  "foo",
+			Image: "nonexistent",
 		},
 	}
 	if err := c.Validate(); err != nil {
@@ -60,12 +62,25 @@ func TestValidate(t *testing.T) {
 func TestValidateUnsupportedRuntime(t *testing.T) {
 	c := &Container{
 		Config: runtime.Config{
-			Name: "foo",
+			Name:  "foo",
+			Image: "nonexistent",
 		},
 		RuntimeName: "foo",
 	}
 	if err := c.Validate(); err == nil {
 		t.Errorf("Validating container with unsupported container runtime should fail")
+	}
+}
+
+func TestValidateRequireImage(t *testing.T) {
+	c := &Container{
+		Config: runtime.Config{
+			Name: "foo",
+		},
+		RuntimeName: "foo",
+	}
+	if err := c.Validate(); err == nil {
+		t.Errorf("Validating container with no image set should fail")
 	}
 }
 

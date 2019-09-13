@@ -77,6 +77,9 @@ func (c *Container) Validate() error {
 	if c.Config.Name == "" {
 		return fmt.Errorf("name must be set")
 	}
+	if c.Config.Image == "" {
+		return fmt.Errorf("image must be set")
+	}
 
 	if !runtime.IsRuntimeSupported(c.RuntimeName) {
 		return fmt.Errorf("configured runtime '%s' is not supported", c.RuntimeName)
