@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -50,8 +52,15 @@ func New(d *Docker) (*docker, error) {
 func (d *docker) Create(config *runtime.Config) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
-	if _, err := d.cli.ImagePull(d.ctx, config.Image, types.ImagePullOptions{}); err != nil {
+	out, err := d.cli.ImagePull(d.ctx, config.Image, types.ImagePullOptions{})
+	if err != nil {
 		return "", fmt.Errorf("pulling image: %w", err)
+	}
+
+	defer out.Close()
+
+	if _, err := io.Copy(ioutil.Discard, out); err != nil {
+		return "", fmt.Errorf("failed to pull image: %w", err)
 	}
 
 	// Just structs required for starting container.
