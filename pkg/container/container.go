@@ -143,12 +143,6 @@ func (container *containerInstance) Status() (*runtime.Status, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getting container status failed")
 	}
-	if status == nil {
-		return nil, fmt.Errorf("container '%s' does not exist", container.status.ID)
-	}
-
-	container.status = *status
-
 	return status, nil
 }
 

@@ -82,8 +82,12 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
 	c.status.ID = "nonexistent"
-	if _, err := c.Status(); err == nil {
-		t.Fatalf("Checking node status for non existing container should fail")
+	status, err := c.Status()
+	if err != nil {
+		t.Fatalf("Checking node status for non existing container should succeed")
+	}
+	if status != nil {
+		t.Fatalf("Node status for non existing container should be nil")
 	}
 }
 
