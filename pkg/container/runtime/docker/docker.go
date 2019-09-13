@@ -65,7 +65,9 @@ func (d *docker) Create(config *runtime.Config) (string, error) {
 
 	// Just structs required for starting container.
 	dockerConfig := containertypes.Config{
-		Image: config.Image,
+		Image:      config.Image,
+		Cmd:        config.Args,
+		Entrypoint: config.Entrypoint,
 	}
 	hostConfig := containertypes.HostConfig{
 		Mounts: []mount.Mount{},

@@ -56,8 +56,11 @@ type Runtime interface {
 
 // Config describes how container should be created
 type Config struct {
-	Name  string `json:"name" yaml:"name"`
-	Image string `json:"image" yaml:"image"`
+	Name       string   `json:"name" yaml:"name"`
+	Image      string   `json:"image" yaml:"image"`
+	Args       []string `json:"args,omitempty" yaml:"args,omitempty"`
+	Entrypoint []string `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	IP         string   `json:"ip,omitempty" yaml:"ip,omitempty"`
 }
 
 // Status describes what informations are returned about container

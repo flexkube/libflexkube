@@ -3,6 +3,7 @@
 package docker
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -90,6 +91,57 @@ func TestContainerCreatePullImage(t *testing.T) {
 
 	if err := d.Delete(id); err != nil {
 		t.Errorf("Removing container should succeed, got: %s", err)
+	}
+}
+
+func TestContainerCreateWithArgs(t *testing.T) {
+	args := []string{"--logger=zap"}
+	d, err := New(&Docker{})
+	if err != nil {
+		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
+	}
+	c := &runtime.Config{
+		Image:      defaults.EtcdImage,
+		Args:       args,
+		Entrypoint: []string{"/usr/local/bin/etcd"},
+	}
+
+	id, err := d.Create(c)
+	if err != nil {
+		t.Fatalf("Creating container with args should succeed, got: %w", err)
+	}
+
+	data, err := d.cli.ContainerInspect(d.ctx, id)
+	if err != nil {
+		t.Fatalf("Inspecting created container should suceed, got: %w", err)
+	}
+	if !reflect.DeepEqual(data.Args, args) {
+		t.Fatalf("Container created with args set should have args set\nExpected: %+v\nGot: %+v\n", args, data.Args)
+	}
+}
+
+func TestContainerCreateWithEntrypoint(t *testing.T) {
+	entrypoint := []string{"/bin/bash"}
+	d, err := New(&Docker{})
+	if err != nil {
+		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
+	}
+	c := &runtime.Config{
+		Image:      defaults.EtcdImage,
+		Entrypoint: entrypoint,
+	}
+
+	id, err := d.Create(c)
+	if err != nil {
+		t.Fatalf("Creating container with entrypoint should succeed, got: %w", err)
+	}
+
+	data, err := d.cli.ContainerInspect(d.ctx, id)
+	if err != nil {
+		t.Fatalf("Inspecting created container should suceed, got: %w", err)
+	}
+	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
+		t.Fatalf("Container created with entrypoint set should have entrypoint set\nExpected: %+v\nGot: %+v\n", entrypoint[0], data.Path)
 	}
 }
 

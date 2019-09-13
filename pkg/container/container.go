@@ -59,8 +59,10 @@ func New(c *Container) (*container, error) {
 	nc := &container{
 		base{
 			config: runtime.Config{
-				Name:  c.Config.Name,
-				Image: c.Config.Image,
+				Name:       c.Config.Name,
+				Image:      c.Config.Image,
+				Args:       c.Config.Args,
+				Entrypoint: c.Config.Entrypoint,
 			},
 			runtimeName: c.RuntimeName,
 		},
