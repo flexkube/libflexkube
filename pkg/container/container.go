@@ -15,13 +15,13 @@ import (
 // with New(), which make sure that the configuration is actually correct.
 type Container struct {
 	// Stores runtime configuration of the container.
-	Config runtime.Config
+	Config runtime.Config `json:"config" yaml:"config"`
 	// Status of the container
-	Status *runtime.Status `json:"status"`
+	Status *runtime.Status `json:"status" yaml:"status"`
 	// Name of the container runtime to use. If not specified, container runtime
 	// will be automatically determined based on configuration options. If no configuration
 	// options are specified, "docker" will be chosen.
-	RuntimeName string `json:"runtime_name,omit_empty"`
+	RuntimeName string `json:"runtime_name,omitempty" yaml:"runtime_name,omitempty"`
 }
 
 // container represents validated version of Container object, which contains all requires
