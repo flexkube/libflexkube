@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -9,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/pkg/errors"
 
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
@@ -34,7 +34,7 @@ type docker struct {
 func New(d *Docker) (*docker, error) {
 	cli, err := client.NewClientWithOpts(client.WithVersion(defaults.DockerAPIVersion))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating Docker client")
+		return nil, fmt.Errorf("creating Docker client: %w", err)
 	}
 	return &docker{
 		ctx: context.Background(),
@@ -51,7 +51,7 @@ func (d *docker) Create(config *runtime.Config) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
 	if _, err := d.cli.ImagePull(d.ctx, config.Image, types.ImagePullOptions{}); err != nil {
-		return "", errors.Wrap(err, "pulling image")
+		return "", fmt.Errorf("pulling image: %w", err)
 	}
 
 	// Just structs required for starting container.
@@ -65,7 +65,7 @@ func (d *docker) Create(config *runtime.Config) (string, error) {
 	// Create container
 	c, err := d.cli.ContainerCreate(d.ctx, &dockerConfig, &hostConfig, &network.NetworkingConfig{}, config.Name)
 	if err != nil {
-		return "", errors.Wrap(err, "creating container")
+		return "", fmt.Errorf("creating container: %w", err)
 	}
 
 	return c.ID, nil
@@ -94,7 +94,7 @@ func (d *docker) Status(ID string) (*runtime.Status, error) {
 		if client.IsErrNotFound(err) {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "inspecting container failed")
+		return nil, fmt.Errorf("inspecting container failed: %w", err)
 	}
 
 	return &runtime.Status{

@@ -34,7 +34,7 @@ func TestContainerCreateDelete(t *testing.T) {
 	}
 	id, err := d.Create(c)
 	if err != nil {
-		t.Errorf("Creating container should succeed, got: %s", err)
+		t.Fatalf("Creating container should pull image and succeed, got: %s", err)
 	}
 
 	if err := d.Delete(id); err != nil {
@@ -46,14 +46,14 @@ func TestContainerCreateDelete(t *testing.T) {
 func TestContainerStart(t *testing.T) {
 	d, err := New(&Docker{})
 	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
+		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
-		t.Errorf("Creating container should succeed, got: %s", err)
+		t.Fatalf("Creating container should succeed, got: %s", err)
 	}
 
 	if err := d.Start(id); err != nil {
@@ -65,17 +65,17 @@ func TestContainerStart(t *testing.T) {
 func TestContainerStop(t *testing.T) {
 	d, err := New(&Docker{})
 	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
+		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
 	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
 	if err != nil {
-		t.Errorf("Creating container should succeed, got: %s", err)
+		t.Fatalf("Creating container should succeed, got: %s", err)
 	}
 	if err := d.Start(id); err != nil {
-		t.Errorf("Starting container should work, got: %s", err)
+		t.Fatalf("Starting container should work, got: %s", err)
 	}
 
 	if err := d.Stop(id); err != nil {
