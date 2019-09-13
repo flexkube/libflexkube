@@ -59,6 +59,8 @@ func TestContainerCreateNonExistingImage(t *testing.T) {
 }
 
 func TestContainerCreatePullImage(t *testing.T) {
+	// Don't use default version of image, to have better chance it can be removed
+	image := "gcr.io/etcd-development/etcd:v3.3.0"
 	d, err := New(&Docker{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
@@ -70,7 +72,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	}
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
-			if tag == defaults.EtcdImage {
+			if tag == image {
 				if _, err := d.cli.ImageRemove(d.ctx, i.ID, types.ImageRemoveOptions{}); err != nil {
 					t.Fatalf("Removing existing docker image should succeed, got: %w", err)
 				}
@@ -79,7 +81,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	}
 
 	c := &runtime.Config{
-		Image: defaults.EtcdImage,
+		Image: image,
 	}
 	id, err := d.Create(c)
 	if err != nil {
