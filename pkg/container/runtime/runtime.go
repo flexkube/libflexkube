@@ -56,14 +56,14 @@ type Runtime interface {
 
 // Config describes how container should be created
 type Config struct {
-	Name  string
-	Image string
+	Name  string `json:"name" yaml:"name"`
+	Image string `json:"image" yaml:"image"`
 }
 
 // Status describes what informations are returned about container
 type Status struct {
-	Image  string `json:"image"`
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Image  string `json:"image" yaml:"image"`
+	ID     string `json:"id" yaml:"id"`
+	Name   string `json:"name", yaml:"name"`
+	Status string `json:"status", yaml:"status"`
 }
