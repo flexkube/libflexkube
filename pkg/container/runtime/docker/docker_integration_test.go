@@ -5,7 +5,7 @@ package docker
 import (
 	"testing"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
@@ -15,7 +15,7 @@ func TestContainerCreate(t *testing.T) {
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &container.Config{
+	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 
@@ -29,7 +29,7 @@ func TestContainerCreateDelete(t *testing.T) {
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &container.Config{
+	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -48,7 +48,7 @@ func TestContainerStart(t *testing.T) {
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &container.Config{
+	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -67,7 +67,7 @@ func TestContainerStop(t *testing.T) {
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &container.Config{
+	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -89,7 +89,7 @@ func TestContainerStatus(t *testing.T) {
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &container.Config{
+	c := &runtime.Config{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
