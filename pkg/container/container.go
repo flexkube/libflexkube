@@ -135,9 +135,7 @@ func (c *container) FromStatus() (*containerInstance, error) {
 	}, nil
 }
 
-// ReadState reads state of the container from container runtime
-//
-// TODO Should we store the status here or return it instead?
+// ReadState reads state of the container from container runtime and returns it to the user
 func (container *containerInstance) Status() (*runtime.Status, error) {
 	status, err := container.runtime.Status(container.status.ID)
 	if err != nil {
@@ -157,8 +155,6 @@ func (container *containerInstance) Stop() error {
 }
 
 // Delete removes container container
-//
-// TODO should we also clean up host directories here?
 func (container *containerInstance) Delete() error {
 	return container.runtime.Delete(container.status.ID)
 }
