@@ -158,3 +158,99 @@ func (container *containerInstance) Stop() error {
 func (container *containerInstance) Delete() error {
 	return container.runtime.Delete(container.status.ID)
 }
+
+// UpdateStatus reads container existing status and updates it by communicating with container daemon
+// This is a helper function, which simplifies calling containerInstance.Status() from Container.
+func (container *Container) UpdateStatus() error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return err
+	}
+	s, err := ci.Status()
+	if err != nil {
+		return err
+	}
+	container.Status = s
+	return nil
+}
+
+// Start starts existing Container and updates it's status
+func (container *Container) Start() error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return err
+	}
+	if err := ci.Start(); err != nil {
+		return err
+	}
+	s, err := ci.Status()
+	if err != nil {
+		return err
+	}
+	container.Status = s
+	return nil
+}
+
+// Stop stops existing Container and updates it's status
+func (container *Container) Stop() error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return err
+	}
+	if err := ci.Stop(); err != nil {
+		return err
+	}
+	s, err := ci.Status()
+	if err != nil {
+		return err
+	}
+	container.Status = s
+	return nil
+}
+
+// Create creates container and gets it's status
+func (container *Container) Create() error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.Create()
+	if err != nil {
+		return err
+	}
+	s, err := ci.Status()
+	if err != nil {
+		return err
+	}
+	container.Status = s
+	return nil
+}
+
+// Delete removes container and removes it's status
+func (container *Container) Delete() error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return err
+	}
+	if err := ci.Delete(); err != nil {
+		return err
+	}
+	container.Status = nil
+	return nil
+}
