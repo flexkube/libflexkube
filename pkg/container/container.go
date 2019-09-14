@@ -5,8 +5,6 @@ import (
 
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime/docker"
-
-	"github.com/pkg/errors"
 )
 
 // Container represents public, serializable version of the container object.
@@ -54,7 +52,7 @@ type base struct {
 // New creates new instance of container from Container and validates it's configuration
 func New(c *Container) (*container, error) {
 	if err := c.Validate(); err != nil {
-		return nil, errors.Wrap(err, "container configuration validation failed")
+		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
 	nc := &container{
 		base{
@@ -69,7 +67,7 @@ func New(c *Container) (*container, error) {
 		c.Status,
 	}
 	if err := nc.selectRuntime(); err != nil {
-		return nil, errors.Wrap(err, "unable to determine container runtime")
+		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
 	}
 	return nc, nil
 }
@@ -98,7 +96,7 @@ func (c *container) selectRuntime() error {
 	case "docker":
 		r, err := docker.New(&docker.Docker{})
 		if err != nil {
-			return errors.Wrap(err, "selecting container runtime failed")
+			return fmt.Errorf("selecting container runtime failed: %w", err)
 		}
 		c.runtime = r
 	default:
@@ -111,7 +109,7 @@ func (c *container) selectRuntime() error {
 func (c *container) Create() (*containerInstance, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating container")
+		return nil, fmt.Errorf("creating container failed: %w", err)
 	}
 
 	return &containerInstance{
@@ -143,7 +141,7 @@ func (c *container) FromStatus() (*containerInstance, error) {
 func (container *containerInstance) Status() (*runtime.Status, error) {
 	status, err := container.runtime.Status(container.status.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting container status failed")
+		return nil, fmt.Errorf("getting status for container '%s' failed: %w", container.config.Name, err)
 	}
 	return status, nil
 }
