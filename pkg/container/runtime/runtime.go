@@ -60,7 +60,6 @@ type Config struct {
 	Image      string   `json:"image" yaml:"image"`
 	Args       []string `json:"args,omitempty" yaml:"args,omitempty"`
 	Entrypoint []string `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
-	IP         string   `json:"ip,omitempty" yaml:"ip,omitempty"`
 }
 
 // Status describes what informations are returned about container
