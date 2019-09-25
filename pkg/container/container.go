@@ -2,9 +2,12 @@ package container
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime/docker"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
 )
 
 // Container represents public, serializable version of the container object.
@@ -13,13 +16,15 @@ import (
 // with New(), which make sure that the configuration is actually correct.
 type Container struct {
 	// Stores runtime configuration of the container.
-	Config runtime.Config `json:"config" yaml:"config"`
+	Config types.ContainerConfig `json:"config" yaml:"config"`
 	// Status of the container
-	Status *runtime.Status `json:"status" yaml:"status"`
-	// Name of the container runtime to use. If not specified, container runtime
-	// will be automatically determined based on configuration options. If no configuration
-	// options are specified, "docker" will be chosen.
-	RuntimeName string `json:"runtime_name,omitempty" yaml:"runtime_name,omitempty"`
+	Status *types.ContainerStatus `json:"status" yaml:"status"`
+	// Runtime stores configuration for various container runtimes
+	Runtime RuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+}
+
+type RuntimeConfig struct {
+	Docker *docker.ClientConfig `json:"docker,omitempty" yaml:"docker,omitempty"`
 }
 
 // container represents validated version of Container object, which contains all requires
@@ -28,7 +33,7 @@ type container struct {
 	// Contains common information between container and containerInstance
 	base
 	// Optional container status
-	status *runtime.Status
+	status *types.ContainerStatus
 }
 
 // container represents created container. It guarantees that container status is initialised.
@@ -36,33 +41,29 @@ type containerInstance struct {
 	// Contains common information between container and containerInstance
 	base
 	// Status of the container
-	status runtime.Status
+	status types.ContainerStatus
 }
 
 // base contains basic information about created and not created container.
 type base struct {
 	// Runtime config which will be used when starting the container.
-	config runtime.Config
+	config types.ContainerConfig
 	// Container runtime which will be used to manage the container
-	runtime runtime.Runtime
-	// name of container runtime to use
-	runtimeName string
+	runtime       runtime.Runtime
+	runtimeConfig runtime.RuntimeConfig
 }
 
 // New creates new instance of container from Container and validates it's configuration
+// It also validates container runtime configuration.
 func New(c *Container) (*container, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
+
 	nc := &container{
 		base{
-			config: runtime.Config{
-				Name:       c.Config.Name,
-				Image:      c.Config.Image,
-				Args:       c.Config.Args,
-				Entrypoint: c.Config.Entrypoint,
-			},
-			runtimeName: c.RuntimeName,
+			config:        c.Config,
+			runtimeConfig: c.Runtime.Docker,
 		},
 		c.Status,
 	}
@@ -80,11 +81,11 @@ func (c *Container) Validate() error {
 	if c.Config.Image == "" {
 		return fmt.Errorf("image must be set")
 	}
-
-	if !runtime.IsRuntimeSupported(c.RuntimeName) {
-		return fmt.Errorf("configured runtime '%s' is not supported", c.RuntimeName)
+	if c.Runtime.Docker == nil {
+		return fmt.Errorf("docker runtime must be set")
 	}
 
+	// TODO check runtime configurations here
 	return nil
 }
 
@@ -92,17 +93,21 @@ func (c *Container) Validate() error {
 //
 // It returns error if container runtime configuration is invalid
 func (c *container) selectRuntime() error {
-	switch runtime.GetRuntimeName(c.runtimeName) {
-	case "docker":
-		r, err := docker.New(&docker.Docker{})
-		if err != nil {
-			return fmt.Errorf("selecting container runtime failed: %w", err)
-		}
-		c.runtime = r
-	default:
-		return fmt.Errorf("not supported container runtime: %s", c.runtimeName)
+	// TODO once we add more runtimes, if there is more than one defined, return an error here
+	r, err := c.runtimeConfig.New()
+	if err != nil {
+		return fmt.Errorf("selecting container runtime failed: %w", err)
 	}
+	c.runtime = r
 	return nil
+}
+
+func (c *container) GetRuntimeAddress() string {
+	return c.runtimeConfig.GetAddress()
+}
+
+func (c *container) SetRuntimeAddress(a string) {
+	c.runtimeConfig.SetAddress(a)
 }
 
 // Create creates container container from it's defintion
@@ -114,11 +119,11 @@ func (c *container) Create() (*containerInstance, error) {
 
 	return &containerInstance{
 		base{
-			config:      c.config,
-			runtime:     c.runtime,
-			runtimeName: c.runtimeName,
+			config:        c.config,
+			runtime:       c.runtime,
+			runtimeConfig: c.runtimeConfig,
 		},
-		runtime.Status{
+		types.ContainerStatus{
 			ID: id,
 		},
 	}, nil
@@ -136,12 +141,32 @@ func (c *container) FromStatus() (*containerInstance, error) {
 }
 
 // ReadState reads state of the container from container runtime and returns it to the user
-func (container *containerInstance) Status() (*runtime.Status, error) {
+func (container *containerInstance) Status() (*types.ContainerStatus, error) {
 	status, err := container.runtime.Status(container.status.ID)
 	if err != nil {
 		return nil, fmt.Errorf("getting status for container '%s' failed: %w", container.config.Name, err)
 	}
 	return status, nil
+}
+
+// Read reads given path from the container and returns reader with TAR format with file content
+func (c *containerInstance) Read(srcPath string) (io.ReadCloser, error) {
+	return c.runtime.Read(c.status.ID, srcPath)
+}
+
+// Copy takes output path and TAR reader as arguments and extracts this TAR archive into container
+func (c *containerInstance) Copy(dstPath string, content io.Reader) error {
+	return c.runtime.Copy(c.status.ID, dstPath, content)
+}
+
+// Stat checks if given path exists on the container and if yes, returns information wheather
+// it is file, or directory etc.
+func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
+	s, err := c.runtime.Stat(c.status.ID, path)
+	if err != nil {
+		return nil, err
+	}
+	return s, err
 }
 
 // Start starts the container container
@@ -161,6 +186,7 @@ func (container *containerInstance) Delete() error {
 
 // UpdateStatus reads container existing status and updates it by communicating with container daemon
 // This is a helper function, which simplifies calling containerInstance.Status() from Container.
+// TODO look how to remove the boilerplate
 func (container *Container) UpdateStatus() error {
 	c, err := New(container)
 	if err != nil {
@@ -253,4 +279,40 @@ func (container *Container) Delete() error {
 	}
 	container.Status = nil
 	return nil
+}
+
+func (container *Container) Read(srcPath string) (io.ReadCloser, error) {
+	c, err := New(container)
+	if err != nil {
+		return nil, err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return nil, err
+	}
+	return ci.Read(srcPath)
+}
+
+func (container *Container) Copy(dstPath string, content io.Reader) error {
+	c, err := New(container)
+	if err != nil {
+		return err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return err
+	}
+	return ci.Copy(dstPath, content)
+}
+
+func (container *Container) Stat(path string) (*os.FileMode, error) {
+	c, err := New(container)
+	if err != nil {
+		return nil, err
+	}
+	ci, err := c.FromStatus()
+	if err != nil {
+		return nil, err
+	}
+	return ci.Stat(path)
 }

@@ -3,7 +3,7 @@ package container
 import (
 	"testing"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
 )
 
 // New()
@@ -15,7 +15,7 @@ func TestNewEmptyConfiguration(t *testing.T) {
 
 func TestNewGoodConfiguration(t *testing.T) {
 	c := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
 		},
@@ -25,22 +25,10 @@ func TestNewGoodConfiguration(t *testing.T) {
 	}
 }
 
-func TestNewValidateRuntime(t *testing.T) {
-	c := &Container{
-		Config: runtime.Config{
-			Name: "foo",
-		},
-		RuntimeName: "doh",
-	}
-	if _, err := New(c); err == nil {
-		t.Errorf("Creating container should validate container runtime configuration")
-	}
-}
-
 // Validate()
 func TestValidateNoName(t *testing.T) {
 	c := &Container{
-		Config: runtime.Config{},
+		Config: types.ContainerConfig{},
 	}
 	if err := c.Validate(); err == nil {
 		t.Errorf("Validating container without name should fail")
@@ -49,7 +37,7 @@ func TestValidateNoName(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	c := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
 		},
@@ -61,11 +49,10 @@ func TestValidate(t *testing.T) {
 
 func TestValidateUnsupportedRuntime(t *testing.T) {
 	c := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
 		},
-		RuntimeName: "foo",
 	}
 	if err := c.Validate(); err == nil {
 		t.Errorf("Validating container with unsupported container runtime should fail")
@@ -74,10 +61,9 @@ func TestValidateUnsupportedRuntime(t *testing.T) {
 
 func TestValidateRequireImage(t *testing.T) {
 	c := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name: "foo",
 		},
-		RuntimeName: "foo",
 	}
 	if err := c.Validate(); err == nil {
 		t.Errorf("Validating container with no image set should fail")
@@ -87,10 +73,8 @@ func TestValidateRequireImage(t *testing.T) {
 // selectRuntime()
 func TestSelectDockerRuntime(t *testing.T) {
 	c := &container{
-		base{
-			runtimeName: "docker",
-		},
-		&runtime.Status{},
+		base{},
+		&types.ContainerStatus{},
 	}
 	if err := c.selectRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
@@ -100,35 +84,11 @@ func TestSelectDockerRuntime(t *testing.T) {
 	}
 }
 
-func TestSelectDefaultRuntime(t *testing.T) {
-	c := &container{}
-	if err := c.selectRuntime(); err != nil {
-		t.Errorf("Selecting container runtime on empty container should succeed, got: %v", err)
-	}
-	if c.runtime == nil {
-		t.Errorf("Selecting container runtime should set container runtime field")
-	}
-}
-
-func TestSelectBadRuntime(t *testing.T) {
-	c := &container{
-		base{
-			runtimeName: "foo",
-		},
-		&runtime.Status{},
-	}
-	if err := c.selectRuntime(); err == nil {
-		t.Errorf("Unsupported container runtime name should be rejected")
-	}
-}
-
 // FromStatus()
 func TestFromStatusValid(t *testing.T) {
 	c := &container{
-		base{
-			runtimeName: "docker",
-		},
-		&runtime.Status{
+		base{},
+		&types.ContainerStatus{
 			ID: "nonexistent",
 		},
 	}
@@ -139,10 +99,8 @@ func TestFromStatusValid(t *testing.T) {
 
 func TestFromStatusNoID(t *testing.T) {
 	c := &container{
-		base{
-			runtimeName: "docker",
-		},
-		&runtime.Status{},
+		base{},
+		&types.ContainerStatus{},
 	}
 	if _, err := c.FromStatus(); err == nil {
 		t.Fatalf("Container instance should not be created from container with no container ID")
@@ -151,9 +109,7 @@ func TestFromStatusNoID(t *testing.T) {
 
 func TestFromStatusNoStatus(t *testing.T) {
 	c := &container{
-		base{
-			runtimeName: "docker",
-		},
+		base{},
 		nil,
 	}
 	if _, err := c.FromStatus(); err == nil {

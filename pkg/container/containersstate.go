@@ -30,9 +30,13 @@ func (s ContainersState) New() (containersState, error) {
 }
 
 // CheckState updates the state of all previously configured containers
+// and their configuration on the host
 func (s containersState) CheckState() error {
-	for _, m := range s {
-		if err := m.Status(); err != nil {
+	for _, hcc := range s {
+		if err := hcc.Status(); err != nil {
+			return err
+		}
+		if err := hcc.ConfigurationStatus(); err != nil {
 			return err
 		}
 	}

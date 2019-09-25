@@ -28,7 +28,7 @@ type containers struct {
 	desiredState containersState
 }
 
-// New validates Containers configuration and returns operational containers
+// New validates Containers configuration and returns "executable" containers object
 func (c *Containers) New() (*containers, error) {
 	if c.PreviousState == nil && c.DesiredState == nil {
 		return nil, fmt.Errorf("either current state or desired state must be defined")
@@ -60,6 +60,7 @@ func (c *containers) CheckCurrentState() error {
 	if c.currentState == nil {
 		// We just assing the pointer, but it's fine, since we don't need previous
 		// state anyway.
+		// TODO we could keep previous state to inform user, that some external changes happened since last run
 		c.currentState = c.previousState
 	}
 	return c.currentState.CheckState()
@@ -68,9 +69,37 @@ func (c *containers) CheckCurrentState() error {
 // Execute checks for containers configurion drifts and tries to reach desired state
 //
 // TODO we should break down this function into smaller functions
+// TODO add planning, so it is possible to inspect what will be done
+// TODO currently we only compare previous configuration with new configuration.
+// We should also read runtime parameters and confirm that everything is according
+// to the spec.
 func (c *containers) Execute() error {
 	if c.currentState == nil {
 		return fmt.Errorf("can't execute without knowing current state of the containers")
+	}
+
+	fmt.Println("Checking for configuration files updates")
+	for i, _ := range c.currentState {
+		if _, exists := c.desiredState[i]; !exists {
+			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
+			continue
+		}
+
+		// Loop over desired config files, check if they exist
+		for p, content := range c.desiredState[i].configFiles {
+			currentContent, exists := c.currentState[i].configFiles[p]
+			// If file does not exist or it content differs, deploy it
+			if !exists || content != currentContent {
+				fmt.Printf("Detected configuration drift for file '%s'\n", p)
+				fmt.Printf("  current: \n%+v\n", currentContent)
+				fmt.Printf("  desired: \n%+v\n", content)
+				if err := c.desiredState[i].Configure(p); err != nil {
+					return err
+				}
+			}
+		}
+
+		c.currentState[i].configFiles = c.desiredState[i].configFiles
 	}
 
 	fmt.Println("Checking for stopped containers")
@@ -109,17 +138,42 @@ func (c *containers) Execute() error {
 		}
 	}
 
-	fmt.Println("Checking for configuration updates on containers")
-	// Update containers to desired image version
+	fmt.Println("Checking for host configuration updates")
+	// Update containers on hosts
+	// This can move containers between hosts, but NOT the data
 	for i, _ := range c.currentState {
 		// Don't update nodes sheduled for removal
+		if _, exists := c.desiredState[i]; !exists {
+			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
+			continue
+		}
+
+		if !reflect.DeepEqual(c.currentState[i].host, c.desiredState[i].host) {
+			fmt.Printf("Detected host configuration drift '%s'\n", i)
+			fmt.Printf("  From: %+v\n%+v\n%+v\n", c.currentState[i].host, c.currentState[i].host.DirectConfig, c.currentState[i].host.SSHConfig)
+			fmt.Printf("  To:   %+v\n%+v\n%+v\n", c.desiredState[i].host, c.desiredState[i].host.DirectConfig, c.desiredState[i].host.SSHConfig)
+
+			if err := c.currentState.RemoveContainer(i); err != nil {
+				return fmt.Errorf("failed removing old container: %w", err)
+			}
+			if err := c.desiredState.CreateAndStart(i); err != nil {
+				return fmt.Errorf("failed creating new container: %w", err)
+			}
+			// After new container is created, add it to current state, so it can be returned to the user
+			c.currentState[i].host = c.desiredState[i].host
+		}
+	}
+
+	fmt.Println("Checking for configuration updates on containers")
+	// Update containers configurations
+	for i, _ := range c.currentState {
+		// Don't update containers sheduled for removal
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping configuration check for container '%s', as it will be removed\n", i)
 			continue
 		}
 
-		// If image differs, re-create the container
-		// TODO compare image SHA from state rather than what we store
+		// If container configuration differs, re-create the container
 		if !reflect.DeepEqual(c.currentState[i].container.Config, c.desiredState[i].container.Config) {
 			fmt.Printf("Updating container configuration '%s'\n", i)
 			fmt.Printf("  From: %+v\n", c.currentState[i].container.Config)
@@ -153,14 +207,13 @@ func (c *containers) Execute() error {
 // FromYaml allows to restore containers state from YAML.
 func FromYaml(c []byte) (*containers, error) {
 	containers := &Containers{}
-	if err := yaml.Unmarshal(c, containers); err != nil {
+	if err := yaml.Unmarshal(c, &containers); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
 	cl, err := containers.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containers object: %w", err)
 	}
-
 	return cl, nil
 }
 
@@ -171,7 +224,9 @@ func (c *containers) ToYaml() ([]byte, error) {
 	}
 	for i, m := range c.currentState {
 		containers.PreviousState[i] = &HostConfiguredContainer{
-			Container: m.container,
+			Container:   m.container,
+			Host:        m.host,
+			ConfigFiles: m.configFiles,
 		}
 	}
 	return yaml.Marshal(containers)

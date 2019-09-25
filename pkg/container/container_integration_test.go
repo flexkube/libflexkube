@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
 // Create()
 func TestDockerCreateNonExistingImage(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "notexisting",
 		},
@@ -31,7 +31,7 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 
 func TestDockerCreate(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},
@@ -48,7 +48,7 @@ func TestDockerCreate(t *testing.T) {
 // Status()
 func TestDockerStatus(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},
@@ -68,7 +68,7 @@ func TestDockerStatus(t *testing.T) {
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},
@@ -94,7 +94,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 // Start()
 func TestDockerStart(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},
@@ -115,7 +115,7 @@ func TestDockerStart(t *testing.T) {
 // Stop()
 func TestDockerStop(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},
@@ -139,7 +139,7 @@ func TestDockerStop(t *testing.T) {
 // Delete()
 func TestDockerDelete(t *testing.T) {
 	node := &Container{
-		Config: runtime.Config{
+		Config: types.ContainerConfig{
 			Name:  randomContainerName(),
 			Image: defaults.EtcdImage,
 		},

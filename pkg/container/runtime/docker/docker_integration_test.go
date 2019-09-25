@@ -6,19 +6,19 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	dockertypes "github.com/docker/docker/api/types"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
+	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
 	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
 )
 
 // Create
 func TestContainerCreate(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 
@@ -28,11 +28,11 @@ func TestContainerCreate(t *testing.T) {
 }
 
 func TestContainerCreateDelete(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -46,11 +46,11 @@ func TestContainerCreateDelete(t *testing.T) {
 }
 
 func TestContainerCreateNonExistingImage(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: "nonexistingimage",
 	}
 
@@ -62,26 +62,26 @@ func TestContainerCreateNonExistingImage(t *testing.T) {
 func TestContainerCreatePullImage(t *testing.T) {
 	// Don't use default version of image, to have better chance it can be removed
 	image := "gcr.io/etcd-development/etcd:v3.3.0"
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
 
-	images, err := d.cli.ImageList(d.ctx, types.ImageListOptions{})
+	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
 	if err != nil {
 		t.Fatalf("Listing docker images should succeed, got: %w", err)
 	}
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
 			if tag == image {
-				if _, err := d.cli.ImageRemove(d.ctx, i.ID, types.ImageRemoveOptions{}); err != nil {
+				if _, err := d.cli.ImageRemove(d.ctx, i.ID, dockertypes.ImageRemoveOptions{}); err != nil {
 					t.Fatalf("Removing existing docker image should succeed, got: %w", err)
 				}
 			}
 		}
 	}
 
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: image,
 	}
 	id, err := d.Create(c)
@@ -96,11 +96,11 @@ func TestContainerCreatePullImage(t *testing.T) {
 
 func TestContainerCreateWithArgs(t *testing.T) {
 	args := []string{"--logger=zap"}
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image:      defaults.EtcdImage,
 		Args:       args,
 		Entrypoint: []string{"/usr/local/bin/etcd"},
@@ -122,11 +122,11 @@ func TestContainerCreateWithArgs(t *testing.T) {
 
 func TestContainerCreateWithEntrypoint(t *testing.T) {
 	entrypoint := []string{"/bin/bash"}
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image:      defaults.EtcdImage,
 		Entrypoint: entrypoint,
 	}
@@ -147,11 +147,11 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 
 // Start()
 func TestContainerStart(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -166,11 +166,11 @@ func TestContainerStart(t *testing.T) {
 
 // Stop()
 func TestContainerStop(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -188,11 +188,11 @@ func TestContainerStop(t *testing.T) {
 
 // Status()
 func TestContainerStatus(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
-	c := &runtime.Config{
+	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 	id, err := d.Create(c)
@@ -206,7 +206,7 @@ func TestContainerStatus(t *testing.T) {
 }
 
 func TestContainerStatusNonExistent(t *testing.T) {
-	d, err := New(&Docker{})
+	d, err := New(&ClientConfig{})
 	if err != nil {
 		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
 	}
