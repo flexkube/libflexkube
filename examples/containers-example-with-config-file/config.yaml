@@ -1,0 +1,160 @@
+desiredState:
+    bar:
+        configFiles:
+            /etc/kubernetes/pki/etcd/ca.crt: |
+                -----BEGIN CERTIFICATE-----
+                MIICKjCCAZOgAwIBAgIQVTkt6ZcwCH+gWcUdAMqGWDANBgkqhkiG9w0BAQsFADAh
+                MQ0wCwYDVQQKEwRUT0RPMRAwDgYDVQQDEwdyb290LWNhMB4XDTE5MDkyMzE0MTky
+                M1oXDTIwMDkyMjE0MTkyM1owITENMAsGA1UEChMEVE9ETzEQMA4GA1UEAxMHZXRj
+                ZC1jYTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAznpCe0M//YZ3cu8cnTSu
+                /ho6kWrHlzmLtCYE9VwhtlxsWF/vAZYKyzoECcnnAzZFi3neO9TPCJo1KYuhr5bM
+                MTnbx4Ji9SQ/6SCahdhihm97j93QXc1XXUoR0OdlclSYGK+E+lPs8aSgNR7joYEj
+                fj/dgcv8E+ogJX5Pp4OG9cUCAwEAAaNjMGEwDgYDVR0PAQH/BAQDAgKkMA8GA1Ud
+                EwEB/wQFMAMBAf8wHQYDVR0OBBYEFAZu+VuQ9o37Ab1+JEi0ekrIfsylMB8GA1Ud
+                IwQYMBaAFFmPqhGc2J+0ZYWtdGTfqESSic0kMA0GCSqGSIb3DQEBCwUAA4GBANre
+                TPSzUeW+fKXfeyZY/CmvCi7K8M8DVW+E42goVh00p7Ar8QguyvSbqBkPRmgMphKR
+                EDQnqmpgpiaLxaWEnHkZk4YxsInhYpxBae3fcgg0GzXLKqrXDfq8SMstkg0K8zL9
+                mJ3LUNYdIB1k/doqsFvVwyXsG96n/aGd4JNGhUGl
+                -----END CERTIFICATE-----
+            /etc/kubernetes/pki/etcd/peer.crt: |
+                -----BEGIN CERTIFICATE-----
+                MIICTTCCAbagAwIBAgIRAOMHI2Q8m8rGeuknMo1ELZYwDQYJKoZIhvcNAQELBQAw
+                ITENMAsGA1UEChMEVE9ETzEQMA4GA1UEAxMHZXRjZC1jYTAeFw0xOTA5MjMxNDE5
+                MjNaFw0yMDA5MjIxNDE5MjNaMCIxDTALBgNVBAoTBFRPRE8xETAPBgNVBAMTCGV0
+                Y2QtYmFyMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDWjPHYWvawHgAavVrT
+                kVrYcYqM3JrOFfolQD2Q6c4nTtSffV+yU6l2wCwUuYkT96r8xUbzoM/6WQnnTyNB
+                HkFc6gpmTeJ/GEMFGAUNRh71hCLQMf0RV7lJOwZ+oeKegqjievFrPD5y7Y18EScc
+                HX6QMAYlw2pkocZrn5YjmOPr+QIDAQABo4GDMIGAMA4GA1UdDwEB/wQEAwIFoDAd
+                BgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAfBgNV
+                HSMEGDAWgBQGbvlbkPaN+wG9fiRItHpKyH7MpTAgBgNVHREEGTAXgglsb2NhbGhv
+                c3SHBH8AAAGHBArIyBowDQYJKoZIhvcNAQELBQADgYEAWXVq9kzEXW5A4yLoPzhi
+                8XBk5lPSjbWC2Aq0qW7Q+gMYnQqJD7zW1rAmVKRZM4QCfmAwdhWAeWwHKnJCjJs5
+                gsjVIIzKaMVMGR3rbs0d3uJGp8YHyesrT5OrddpUTJtLJ/DDEvEubgQEUK0OyQIl
+                KuwU3kFs+cgYHI6MQnsR6js=
+                -----END CERTIFICATE-----
+            /etc/kubernetes/pki/etcd/peer.key: |
+        host:
+            ssh:
+                address: ""
+                port: 22
+                user: "invidian"
+                connectionTimeout: "30s"
+                privateKey: |
+        container:
+            runtime:
+                  docker: {}
+            config:
+                name: "bar"
+                image: "gcr.io/etcd-development/etcd:v3.4.0"
+                entrypoint:
+                - /usr/local/bin/etcd
+                ports:
+                - ip: 10.200.200.26
+                  protocol: tcp
+                  port: 2379
+                - ip: 10.200.200.26
+                  protocol: tcp
+                  port: 2380
+                mounts:
+                - source: /tmp/etcd-cluster-2/bar.etcd/
+                  target: /bar.etcd
+                - source: /etc/kubernetes/pki/etcd/
+                  target: /etc/kubernetes/pki/etcd
+                args:
+                - --logger=zap
+                # Listen parts to expose it from container
+                - --listen-client-urls=http://0.0.0.0:2379
+                - --listen-peer-urls=https://0.0.0.0:2380
+                # Required by listen
+                - --advertise-client-urls=http://10.200.200.26:2379
+                - --initial-advertise-peer-urls=https://10.200.200.26:2380
+                - --initial-cluster=bar=https://10.200.200.26:2380,baz=https://10.200.200.22:2380
+                # Required by initial-cluster
+                - --name=bar
+                # Highly recommended while clustering
+                - --initial-cluster-token=etcd-cluster-2
+                # TLS setup
+                # TODO add support for CRL (that would have to be added to terraform-provider-tls)
+                # https://github.com/terraform-providers/terraform-provider-tls/issues/20
+                - --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+                - --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+                - --peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+                - --peer-client-cert-auth
+                # TODO check if we should use allowed-cn or allowed-hostname
+                - --peer-cert-allowed-cn=etcd-baz
+    noh:
+        configFiles:
+            /etc/kubernetes/pki/etcd/ca.crt: |
+                -----BEGIN CERTIFICATE-----
+                MIICKjCCAZOgAwIBAgIQVTkt6ZcwCH+gWcUdAMqGWDANBgkqhkiG9w0BAQsFADAh
+                MQ0wCwYDVQQKEwRUT0RPMRAwDgYDVQQDEwdyb290LWNhMB4XDTE5MDkyMzE0MTky
+                M1oXDTIwMDkyMjE0MTkyM1owITENMAsGA1UEChMEVE9ETzEQMA4GA1UEAxMHZXRj
+                ZC1jYTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAznpCe0M//YZ3cu8cnTSu
+                /ho6kWrHlzmLtCYE9VwhtlxsWF/vAZYKyzoECcnnAzZFi3neO9TPCJo1KYuhr5bM
+                MTnbx4Ji9SQ/6SCahdhihm97j93QXc1XXUoR0OdlclSYGK+E+lPs8aSgNR7joYEj
+                fj/dgcv8E+ogJX5Pp4OG9cUCAwEAAaNjMGEwDgYDVR0PAQH/BAQDAgKkMA8GA1Ud
+                EwEB/wQFMAMBAf8wHQYDVR0OBBYEFAZu+VuQ9o37Ab1+JEi0ekrIfsylMB8GA1Ud
+                IwQYMBaAFFmPqhGc2J+0ZYWtdGTfqESSic0kMA0GCSqGSIb3DQEBCwUAA4GBANre
+                TPSzUeW+fKXfeyZY/CmvCi7K8M8DVW+E42goVh00p7Ar8QguyvSbqBkPRmgMphKR
+                EDQnqmpgpiaLxaWEnHkZk4YxsInhYpxBae3fcgg0GzXLKqrXDfq8SMstkg0K8zL9
+                mJ3LUNYdIB1k/doqsFvVwyXsG96n/aGd4JNGhUGl
+                -----END CERTIFICATE-----
+            /etc/kubernetes/pki/etcd/peer.crt: |
+                -----BEGIN CERTIFICATE-----
+                MIICTDCCAbWgAwIBAgIQCtnKmNBmuH9JGJbaG/hpPjANBgkqhkiG9w0BAQsFADAh
+                MQ0wCwYDVQQKEwRUT0RPMRAwDgYDVQQDEwdldGNkLWNhMB4XDTE5MDkyMzE0MTky
+                M1oXDTIwMDkyMjE0MTkyM1owIjENMAsGA1UEChMEVE9ETzERMA8GA1UEAxMIZXRj
+                ZC1iYXowgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAOCPoghGUOh+ZyWKqEj+
+                JylLJ1iKRB1PxBn5EDpGUkmy3J9d++FBqtJHM01A3EA/WvEiEphDW6jkE9OsCQlx
+                o1ge5FsZPsQ/f6bvp6yfyOhqXQqljufxIqy5nL72P9zvLEQGvF9UcXRK8Kmk5TTq
+                2L/NluopVWxQFvNGeCGfPY+PAgMBAAGjgYMwgYAwDgYDVR0PAQH/BAQDAgWgMB0G
+                A1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB8GA1Ud
+                IwQYMBaAFAZu+VuQ9o37Ab1+JEi0ekrIfsylMCAGA1UdEQQZMBeCCWxvY2FsaG9z
+                dIcEfwAAAYcECsjIFjANBgkqhkiG9w0BAQsFAAOBgQBGxN0zCChJgYYbN6zKOyA2
+                +u63KuNT+Hq2Vck0kBruR2EzlFEYH8l5Sv35uZyy3Pn1FIfxAM3+whw9NgHlIpyL
+                UKWPfSdcszVvQS5vuyX9+6G/T2Gr+aM9wybeJNHJFlWv1T+T37EDU4IyijDyPtdu
+                vX6ONCtp6EcSygtuF1zTJA==
+                -----END CERTIFICATE-----
+            /etc/kubernetes/pki/etcd/peer.key: |
+        host:
+            direct: {}
+        container:
+            runtime:
+                  docker: {}
+            config:
+                name: "baz"
+                image: "gcr.io/etcd-development/etcd:v3.4.0"
+                entrypoint:
+                - /usr/local/bin/etcd
+                ports:
+                - ip: 10.200.200.22
+                  protocol: tcp
+                  port: 2379
+                - ip: 10.200.200.22
+                  protocol: tcp
+                  port: 2380
+                mounts:
+                - source: /tmp/etcd-cluster-2/baz.etcd/
+                  target: /baz.etcd
+                - source: /etc/kubernetes/pki/etcd/
+                  target: /etc/kubernetes/pki/etcd
+                args:
+                - --logger=zap
+                # Listen parts to expose it from container
+                - --listen-client-urls=http://0.0.0.0:2379
+                - --listen-peer-urls=https://0.0.0.0:2380
+                # Required by listen
+                - --advertise-client-urls=http://10.200.200.22:2379
+                - --initial-advertise-peer-urls=https://10.200.200.22:2380
+                - --initial-cluster=bar=https://10.200.200.26:2380,baz=https://10.200.200.22:2380
+                # Required by initial-cluster
+                - --name=baz
+                # Highly recommended while clustering
+                - --initial-cluster-token=etcd-cluster-2
+                # TLS setup
+                - --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+                - --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+                - --peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+                - --peer-client-cert-auth
+                # TODO check if we should use allowed-cn or allowed-hostname
+                - --peer-cert-allowed-cn=etcd-bar
