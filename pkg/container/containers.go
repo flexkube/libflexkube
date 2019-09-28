@@ -232,8 +232,7 @@ func FromYaml(c []byte) (*containers, error) {
 	return cl, nil
 }
 
-// ToYaml allows to dump containers state to YAML, so it can be restored later.
-func (c *containers) ToYaml() ([]byte, error) {
+func (c *containers) CurrentStateToExported() *Containers {
 	containers := &Containers{
 		PreviousState: ContainersState{},
 	}
@@ -244,5 +243,41 @@ func (c *containers) ToYaml() ([]byte, error) {
 			ConfigFiles: m.configFiles,
 		}
 	}
-	return yaml.Marshal(containers)
+
+	return containers
+}
+
+func (c *containers) CurrentStateToYaml() ([]byte, error) {
+	return yaml.Marshal(c.CurrentStateToExported())
+}
+
+func (c *containers) DesiredStateToExported() *Containers {
+	containers := &Containers{
+		DesiredState: ContainersState{},
+	}
+	for i, m := range c.desiredState {
+		containers.DesiredState[i] = &HostConfiguredContainer{
+			Container:   m.container,
+			Host:        m.host,
+			ConfigFiles: m.configFiles,
+		}
+	}
+
+	return containers
+}
+
+func (c *containers) DesiredStateToYAML() ([]byte, error) {
+	return yaml.Marshal(c.DesiredStateToExported())
+}
+
+func (c *containers) ToExported() *Containers {
+	ccs := c.CurrentStateToExported()
+	ds := c.DesiredStateToExported()
+	ccs.DesiredState = ds.DesiredState
+	return ccs
+}
+
+// ToYaml allows to dump containers state to YAML, so it can be restored later.
+func (c *containers) ToYaml() ([]byte, error) {
+	return yaml.Marshal(c.ToExported())
 }
