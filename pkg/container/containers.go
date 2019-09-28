@@ -91,26 +91,29 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for configuration files updates")
-	for i, _ := range c.currentState {
-		if _, exists := c.desiredState[i]; !exists {
-			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
-			continue
-		}
-
+	for i, _ := range c.desiredState {
 		// Loop over desired config files, check if they exist
 		for p, content := range c.desiredState[i].configFiles {
-			currentContent, exists := c.currentState[i].configFiles[p]
-			// If file does not exist or it content differs, deploy it
-			if !exists || content != currentContent {
-				fmt.Printf("Detected configuration drift for file '%s'\n", p)
-				fmt.Printf("  current: \n%+v\n", currentContent)
-				fmt.Printf("  desired: \n%+v\n", content)
-				if err := c.desiredState[i].Configure(p); err != nil {
-					return err
+			var currentContent string
+			if _, exists := c.currentState[i]; exists {
+				currentContent, exists := c.currentState[i].configFiles[p]
+				// If file does not exist or it content differs, deploy it
+				if exists && content == currentContent {
+					continue
 				}
+			}
+			// TODO convert all prints to logging, so we can add more verbose information too
+			fmt.Printf("Detected configuration drift for file '%s'\n", p)
+			fmt.Printf("  current: \n%+v\n", currentContent)
+			fmt.Printf("  desired: \n%+v\n", content)
+			if err := c.desiredState[i].Configure(p); err != nil {
+				return err
 			}
 		}
 
+		if _, exists := c.currentState[i]; !exists {
+			c.currentState[i] = c.desiredState[i]
+		}
 		c.currentState[i].configFiles = c.desiredState[i].configFiles
 	}
 
