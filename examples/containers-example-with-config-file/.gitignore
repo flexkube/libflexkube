@@ -1,2 +1,3 @@
 .terraform
 single-etcd-node-cluster
+state.yaml
