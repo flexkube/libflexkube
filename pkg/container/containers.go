@@ -30,28 +30,40 @@ type containers struct {
 
 // New validates Containers configuration and returns "executable" containers object
 func (c *Containers) New() (*containers, error) {
-	if c.PreviousState == nil && c.DesiredState == nil {
-		return nil, fmt.Errorf("either current state or desired state must be defined")
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("failed to validate containers configuration: %w", err)
 	}
 
-	previousState, err := c.PreviousState.New()
-	if err != nil {
-		return nil, err
-	}
-
-	desiredState, err := c.DesiredState.New()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(previousState) == 0 && len(desiredState) == 0 {
-		return nil, fmt.Errorf("either current state or desired state should have containers defined")
-	}
+	// Validate already checks for errors, so we can skip checking here
+	previousState, _ := c.PreviousState.New()
+	desiredState, _ := c.DesiredState.New()
 
 	return &containers{
 		previousState: previousState,
 		desiredState:  desiredState,
 	}, nil
+}
+
+func (c *Containers) Validate() error {
+	if c.PreviousState == nil && c.DesiredState == nil {
+		return fmt.Errorf("either current state or desired state must be defined")
+	}
+
+	previousState, err := c.PreviousState.New()
+	if err != nil {
+		return err
+	}
+
+	desiredState, err := c.DesiredState.New()
+	if err != nil {
+		return err
+	}
+
+	if len(previousState) == 0 && len(desiredState) == 0 {
+		return fmt.Errorf("either current state or desired state should have containers defined")
+	}
+
+	return nil
 }
 
 // CheckCurrentState copies previous state to current state, to mark, that it has been called at least once
