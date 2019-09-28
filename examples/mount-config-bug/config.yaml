@@ -1,0 +1,21 @@
+desiredState:
+    bar:
+        configFiles:
+            /tmp/foo/bar: |
+                baz
+        host:
+            direct: {}
+        container:
+            runtime:
+                  docker: {}
+            config:
+                name: "baz"
+                image: "busybox"
+                entrypoint:
+                - /bin/tail
+                mounts:
+                - source: /tmp/foo/
+                  target: /tmp/foo
+                args:
+                - -f
+                - /dev/null
