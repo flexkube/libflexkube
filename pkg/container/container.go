@@ -131,9 +131,13 @@ func (c *container) Create() (*containerInstance, error) {
 
 // FromStatus creates containerInstance from previously restored status
 func (c *container) FromStatus() (*containerInstance, error) {
-	if c.status == nil || c.status.ID == "" {
-		return nil, fmt.Errorf("can't create container instance from invalid status")
+	if c.status == nil {
+		return nil, fmt.Errorf("can't create container instance from empty status")
 	}
+	if c.status != nil && c.status.ID == "" {
+		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
+	}
+
 	return &containerInstance{
 		base:   c.base,
 		status: *c.status,
