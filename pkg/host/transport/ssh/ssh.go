@@ -100,6 +100,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
+	// TODO make it retry when it fails
 	connection, err := gossh.Dial("tcp", d.address, sshConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
