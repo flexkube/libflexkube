@@ -100,8 +100,23 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
-	// TODO make it retry when it fails
-	connection, err := gossh.Dial("tcp", d.address, sshConfig)
+	// TODO Make those intervals configurable
+	// TODO alternatively, we could move connecting part to separated method
+	// and let user take care of it.
+	retryTimeout, _ := time.ParseDuration("60s")
+	retryInterval, _ := time.ParseDuration("1s")
+	var connection *gossh.Client
+	var err error
+	start := time.Now()
+
+	// Try until we timeout
+	for time.Since(start) < retryTimeout {
+		connection, err = gossh.Dial("tcp", d.address, sshConfig)
+		if err == nil {
+			break
+		}
+		time.Sleep(retryInterval)
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
@@ -128,6 +143,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	// For every listener spawn the following routine
 	go func(l net.Listener, remote string, dir string) {
 		defer localSock.Close()
+		// TODO this does not work and pollutes /tmp dir at the moment!
 		defer os.RemoveAll(dir)
 		for {
 			c, err := l.Accept()
