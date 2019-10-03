@@ -11,3 +11,9 @@ variable "organization" {
   # TODO pick better default here
   default     = "TODO"
 }
+
+variable "validity_period_hours" {
+  description = "Validity of Root CA in hours"
+  type        = string
+  default     = 8760
+}

@@ -15,7 +15,7 @@ resource "tls_self_signed_cert" "root_ca" {
 
   is_ca_certificate     = true
   # TODO make it configurable, root cert should be valid for a long time
-  validity_period_hours = 8760
+  validity_period_hours = var.validity_period_hours
 
   allowed_uses = [
     "key_encipherment",
