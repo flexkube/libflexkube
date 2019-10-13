@@ -11,6 +11,7 @@ type ContainerConfig struct {
 	Entrypoint []string  `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
 	Ports      []PortMap `json:"ports,omitempty" yaml:"ports,omitempty"`
 	Mounts     []Mount   `json:"mounts,omitempty" yaml:"mounts,omitempty"`
+	Privileged bool      `json:"privileged,omitempty" yaml:"privileged,omitempty"`
 }
 
 // ContainerStatus stores status information received from the runtime
