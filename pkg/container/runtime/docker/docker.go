@@ -115,6 +115,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	hostConfig := containertypes.HostConfig{
 		Mounts:       mounts,
 		PortBindings: portBindings,
+		Privileged:   config.Privileged,
 	}
 
 	// Create container
