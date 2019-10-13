@@ -3,7 +3,7 @@ package direct
 import (
 	"fmt"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport"
+	"github.com/invidian/flexkube/pkg/host/transport"
 )
 
 type DirectConfig struct{}

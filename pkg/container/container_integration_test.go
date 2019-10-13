@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/defaults"
+	"github.com/invidian/flexkube/pkg/container/types"
+	"github.com/invidian/flexkube/pkg/defaults"
 )
 
 // Create()

@@ -3,9 +3,9 @@ package host
 import (
 	"fmt"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport/direct"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport/ssh"
+	"github.com/invidian/flexkube/pkg/host/transport"
+	"github.com/invidian/flexkube/pkg/host/transport/direct"
+	"github.com/invidian/flexkube/pkg/host/transport/ssh"
 )
 
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish

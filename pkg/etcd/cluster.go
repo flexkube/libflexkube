@@ -6,10 +6,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport/direct"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport/ssh"
+	"github.com/invidian/flexkube/pkg/container"
+	"github.com/invidian/flexkube/pkg/host"
+	"github.com/invidian/flexkube/pkg/host/transport/direct"
+	"github.com/invidian/flexkube/pkg/host/transport/ssh"
 )
 
 // Cluster represents etcd cluster configuration and state from the user

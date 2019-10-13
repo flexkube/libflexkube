@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/etcd"
+	"github.com/invidian/flexkube/pkg/etcd"
 )
 
 func main() {

@@ -12,7 +12,7 @@ import (
 
 	gossh "golang.org/x/crypto/ssh"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport"
+	"github.com/invidian/flexkube/pkg/host/transport"
 )
 
 type SSHConfig struct {
@@ -129,7 +129,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
 	}
 
-	dir, err := ioutil.TempDir("", "etcd-ariadnes-thread")
+	dir, err := ioutil.TempDir("", "flexkube")
 	if err != nil {
 		return "", fmt.Errorf("unable to create temp directory for socket forwarding: %w", err)
 	}

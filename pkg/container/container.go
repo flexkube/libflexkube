@@ -5,9 +5,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/runtime/docker"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
+	"github.com/invidian/flexkube/pkg/container/runtime"
+	"github.com/invidian/flexkube/pkg/container/runtime/docker"
+	"github.com/invidian/flexkube/pkg/container/types"
 )
 
 // Container represents public, serializable version of the container object.

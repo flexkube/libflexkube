@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
+	"github.com/invidian/flexkube/pkg/container/types"
 )
 
 // Runtime interface describes universal way of managing containers

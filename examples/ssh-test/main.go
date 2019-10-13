@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host/transport/ssh"
+	"github.com/invidian/flexkube/pkg/host/transport/ssh"
 )
 
 func main() {

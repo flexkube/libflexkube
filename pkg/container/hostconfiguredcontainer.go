@@ -8,8 +8,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
-	"github.com/invidian/etcd-ariadnes-thread/pkg/host"
+	"github.com/invidian/flexkube/pkg/container/types"
+	"github.com/invidian/flexkube/pkg/host"
 )
 
 const ConfigMountpoint = "/mnt/host"

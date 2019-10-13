@@ -1,4 +1,4 @@
-module github.com/invidian/etcd-ariadnes-thread
+module github.com/invidian/flexkube
 
 go 1.12
 

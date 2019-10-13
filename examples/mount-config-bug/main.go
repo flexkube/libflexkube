@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container"
+	"github.com/invidian/flexkube/pkg/container"
 )
 
 func readYamlFile(file string) ([]byte, error) {

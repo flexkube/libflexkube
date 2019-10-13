@@ -3,7 +3,7 @@ package container
 import (
 	"testing"
 
-	"github.com/invidian/etcd-ariadnes-thread/pkg/container/types"
+	"github.com/invidian/flexkube/pkg/container/types"
 )
 
 // New()
