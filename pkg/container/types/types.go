@@ -35,6 +35,7 @@ type PortMap struct {
 // Mount describe host bind mount
 // TODO Same as PortMap
 type Mount struct {
-	Source string `json:"source" yaml:"source"`
-	Target string `json:"target" yaml:"target"`
+	Source      string `json:"source" yaml:"source"`
+	Target      string `json:"target" yaml:"target"`
+	Propagation string `json:"propagation,omitempty" yaml:"propagation,omitempty"`
 }
