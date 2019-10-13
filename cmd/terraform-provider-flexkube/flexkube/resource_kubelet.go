@@ -1,35 +1,17 @@
-package main
+package flexkube
 
 import (
-	"crypto/sha256"
-	"fmt"
-
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/plugin"
-	"github.com/hashicorp/terraform/terraform"
 
 	"github.com/invidian/flexkube/pkg/etcd"
 )
 
-func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: Provider})
-}
-
-func Provider() terraform.ResourceProvider {
-	return &schema.Provider{
-		ResourcesMap: map[string]*schema.Resource{
-			"lokomotive_etcd_cluster": resourceEtcdCluster(),
-		},
-	}
-}
-
-func resourceEtcdCluster() *schema.Resource {
+func resourceKubelet() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceEtcdClusterCreate,
-		Read:   resourceEtcdClusterRead,
-		Delete: resourceEtcdClusterDelete,
-		Update: resourceEtcdClusterCreate,
+		Create: resourceKubeletCreate,
+		Read:   resourceKubeletRead,
+		Delete: resourceKubeletDelete,
+		Update: resourceKubeletCreate,
 		Schema: map[string]*schema.Schema{
 			"config": &schema.Schema{
 				Type:     schema.TypeString,
@@ -43,7 +25,7 @@ func resourceEtcdCluster() *schema.Resource {
 	}
 }
 
-func resourceEtcdClusterCreate(d *schema.ResourceData, m interface{}) error {
+func resourceKubeletCreate(d *schema.ResourceData, m interface{}) error {
 	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
 	if err != nil {
 		return err
@@ -61,10 +43,10 @@ func resourceEtcdClusterCreate(d *schema.ResourceData, m interface{}) error {
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
-	return resourceEtcdClusterRead(d, m)
+	return resourceKubeletRead(d, m)
 }
 
-func resourceEtcdClusterRead(d *schema.ResourceData, m interface{}) error {
+func resourceKubeletRead(d *schema.ResourceData, m interface{}) error {
 	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
 	if err != nil {
 		return err
@@ -85,11 +67,7 @@ func resourceEtcdClusterRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceEtcdClusterDelete(d *schema.ResourceData, m interface{}) error {
+func resourceKubeletDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
-}
-
-func sha256sum(data []byte) string {
-	return fmt.Sprintf("%x", sha256.Sum256(data))
 }

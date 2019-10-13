@@ -1,7 +1,7 @@
 provider "local" {
   version = "~> 1.3"
 }
-provider "lokomotive" {}
+provider "flexkube" {}
 
 variable "hcloud_token" {}
 variable "domain" {
@@ -42,7 +42,7 @@ module "etcd_pki" {
   peer_names = module.hetzner_machines.node_names
 }
 
-resource "lokomotive_etcd_cluster" "foo" {
+resource "flexkube_etcd_cluster" "foo" {
   config = templatefile("./config.yaml.tmpl", {
     peer_ssh_addresses = module.hetzner_machines.node_public_ips
     peer_ips           = module.etcd_pki.etcd_peer_ips
@@ -59,11 +59,11 @@ resource "lokomotive_etcd_cluster" "foo" {
 }
 
 resource "local_file" "config" {
-  sensitive_content = lokomotive_etcd_cluster.foo.config
+  sensitive_content = flexkube_etcd_cluster.foo.config
   filename          = "./config.yaml"
 }
 
 resource "local_file" "state" {
-  sensitive_content = lokomotive_etcd_cluster.foo.state
+  sensitive_content = flexkube_etcd_cluster.foo.state
   filename          = "./state.yaml"
 }

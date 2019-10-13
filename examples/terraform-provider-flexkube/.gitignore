@@ -1,5 +1,5 @@
 secrets.auto.tfvars
 crash.log
 terraform.tfstate*
-terraform-provider-lokomotive
 .terraform
+terraform-provider-flexkube
