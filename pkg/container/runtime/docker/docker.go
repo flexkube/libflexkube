@@ -99,6 +99,10 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 			Type:   "bind",
 			Source: m.Source,
 			Target: m.Target,
+			// TODO validate!
+			BindOptions: &mount.BindOptions{
+				Propagation: mount.Propagation(m.Propagation),
+			},
 		})
 	}
 
