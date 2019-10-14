@@ -3,15 +3,15 @@ package flexkube
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/invidian/flexkube/pkg/etcd"
+	"github.com/invidian/flexkube/pkg/kubelet"
 )
 
-func resourceKubelet() *schema.Resource {
+func resourceKubeletPool() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceKubeletCreate,
-		Read:   resourceKubeletRead,
-		Delete: resourceKubeletDelete,
-		Update: resourceKubeletCreate,
+		Create: resourceKubeletPoolCreate,
+		Read:   resourceKubeletPoolRead,
+		Delete: resourceKubeletPoolDelete,
+		Update: resourceKubeletPoolCreate,
 		Schema: map[string]*schema.Schema{
 			"config": &schema.Schema{
 				Type:     schema.TypeString,
@@ -25,8 +25,8 @@ func resourceKubelet() *schema.Resource {
 	}
 }
 
-func resourceKubeletCreate(d *schema.ResourceData, m interface{}) error {
-	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
+func resourceKubeletPoolCreate(d *schema.ResourceData, m interface{}) error {
+	c, err := kubelet.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
 	if err != nil {
 		return err
 	}
@@ -43,11 +43,11 @@ func resourceKubeletCreate(d *schema.ResourceData, m interface{}) error {
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
-	return resourceKubeletRead(d, m)
+	return resourceKubeletPoolRead(d, m)
 }
 
-func resourceKubeletRead(d *schema.ResourceData, m interface{}) error {
-	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
+func resourceKubeletPoolRead(d *schema.ResourceData, m interface{}) error {
+	c, err := kubelet.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func resourceKubeletRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceKubeletDelete(d *schema.ResourceData, m interface{}) error {
+func resourceKubeletPoolDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
 }
