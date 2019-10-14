@@ -123,6 +123,8 @@ func (c *Cluster) Validate() error {
 	}
 
 	for n, m := range c.Members {
+		// TODO validate only fills default fields here which will be done in a separated step anyway.
+		// we should make this a function!
 		if m.Name == "" {
 			m.Name = n
 		}

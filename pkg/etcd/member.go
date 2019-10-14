@@ -153,6 +153,7 @@ func (m *Member) Validate() error {
 		return fmt.Errorf("member name must be set")
 	}
 
+	// TODO actually direct, local container is fine too, this check can be removed
 	if m.Host == nil {
 		return fmt.Errorf("host configuration must be defined")
 	}
