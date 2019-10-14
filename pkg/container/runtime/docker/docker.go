@@ -78,6 +78,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 
 	// TODO That should be validated at ContainerConfig level!
 	portBindings := nat.PortMap{}
+	exposedPorts := nat.PortSet{}
 	for _, ip := range config.Ports {
 		port, err := nat.NewPort(ip.Protocol, strconv.Itoa(ip.Port))
 		if err != nil {
@@ -90,6 +91,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 			HostIP:   ip.IP,
 			HostPort: strconv.Itoa(ip.Port),
 		})
+		exposedPorts[port] = struct{}{}
 	}
 
 	// TODO validate that
@@ -108,9 +110,10 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 
 	// Just structs required for starting container.
 	dockerConfig := containertypes.Config{
-		Image:      config.Image,
-		Cmd:        config.Args,
-		Entrypoint: config.Entrypoint,
+		Image:        config.Image,
+		Cmd:          config.Args,
+		Entrypoint:   config.Entrypoint,
+		ExposedPorts: exposedPorts,
 	}
 	hostConfig := containertypes.HostConfig{
 		Mounts:       mounts,
