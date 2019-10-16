@@ -119,6 +119,9 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		Mounts:       mounts,
 		PortBindings: portBindings,
 		Privileged:   config.Privileged,
+		NetworkMode:  containertypes.NetworkMode(config.NetworkMode),
+		PidMode:      containertypes.PidMode(config.PidMode),
+		IpcMode:      containertypes.IpcMode(config.IpcMode),
 	}
 
 	// Create container
