@@ -5,13 +5,16 @@ package types
 
 // ContainerConfig stores runtime-agnostic information how to run the container
 type ContainerConfig struct {
-	Name       string    `json:"name" yaml:"name"`
-	Image      string    `json:"image" yaml:"image"`
-	Args       []string  `json:"args,omitempty" yaml:"args,omitempty"`
-	Entrypoint []string  `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
-	Ports      []PortMap `json:"ports,omitempty" yaml:"ports,omitempty"`
-	Mounts     []Mount   `json:"mounts,omitempty" yaml:"mounts,omitempty"`
-	Privileged bool      `json:"privileged,omitempty" yaml:"privileged,omitempty"`
+	Name        string    `json:"name" yaml:"name"`
+	Image       string    `json:"image" yaml:"image"`
+	Args        []string  `json:"args,omitempty" yaml:"args,omitempty"`
+	Entrypoint  []string  `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	Ports       []PortMap `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Mounts      []Mount   `json:"mounts,omitempty" yaml:"mounts,omitempty"`
+	Privileged  bool      `json:"privileged,omitempty" yaml:"privileged,omitempty"`
+	NetworkMode string    `json:"networkMode,omitempty" yaml:"networkMode,omitempty"`
+	PidMode     string    `json:"pidMode,omitempty" yaml:"pidMode,omitempty"`
+	IpcMode     string    `json:"ipcMode,omitempty" yaml:ipcMode,omitempty"`
 }
 
 // ContainerStatus stores status information received from the runtime
