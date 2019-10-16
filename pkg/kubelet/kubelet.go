@@ -16,6 +16,9 @@ type Kubelet struct {
 	Image               string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
 	BootstrapKubeconfig string     `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
+
+	// Depending on the network plugin, this should be optional, but for now it's required.
+	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet
@@ -24,9 +27,11 @@ type kubelet struct {
 	image               string
 	host                *host.Host
 	bootstrapKubeconfig string
+	podCIDR             string
 }
 
 func (k *Kubelet) New() (*kubelet, error) {
+	// TODO when creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate kubelet configuration: %w", err)
 	}
@@ -36,6 +41,7 @@ func (k *Kubelet) New() (*kubelet, error) {
 		address:             k.Address,
 		host:                k.Host,
 		bootstrapKubeconfig: k.BootstrapKubeconfig,
+		podCIDR:             k.PodCIDR,
 	}
 
 	if nk.image == "" {
@@ -57,14 +63,16 @@ func (k *Kubelet) Validate() error {
 func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO maybe we store that as a struct, and we marshal here to YAML?
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = `apiVersion: kubelet.config.k8s.io/v1beta1
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
-staticPodPath: /etc/kubernetes/manifests
 rotateCertificates: true
 cgroupsPerQOS: false
 enforceNodeAllocatable: []
 cgroupDriver: systemd
-`
+podCIDR: %s
+address: %s
+`, k.podCIDR, k.address)
+
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 
 	c := container.Container{
@@ -86,18 +94,27 @@ cgroupDriver: systemd
 				},
 			},
 			Privileged: true,
+			// Required for detecting node IP address
+			NetworkMode: "host",
+			// Required for adding containers into correct network namespaces
+			PidMode: "host",
 			Mounts: []types.Mount{
 				types.Mount{
 					Source: "/etc/kubernetes/kubelet/",
 					Target: "/etc/kubernetes/",
 				},
 				types.Mount{
-					Source: "/etc/kubernetes/kubelet/manifests/",
-					Target: "/etc/kubernetes/manifests",
-				},
-				types.Mount{
 					Source: "/run/docker.sock",
 					Target: "/var/run/docker.sock",
+				},
+				// For testing kubenet
+				types.Mount{
+					Source: "/etc/cni/net.d/",
+					Target: "/etc/cni/net.d",
+				},
+				types.Mount{
+					Source: "/opt/cni/bin/",
+					Target: "/opt/cni/bin",
 				},
 				types.Mount{
 					Source:      "/var/lib/docker/",
@@ -108,6 +125,15 @@ cgroupDriver: systemd
 					Source:      "/var/lib/kubelet/",
 					Target:      "/var/lib/kubelet",
 					Propagation: "shared",
+				},
+				types.Mount{
+					Source: "/var/lib/cni/",
+					Target: "/var/lib/cni",
+				},
+				types.Mount{
+					// For loading kernel modules for kubenet plugin
+					Source: "/lib/modules/",
+					Target: "/lib/modules",
 				},
 			},
 			Args: []string{
