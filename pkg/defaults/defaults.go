@@ -1,5 +1,6 @@
 package defaults
 
-const EtcdImage = "gcr.io/etcd-development/etcd:v3.4.2"
+// use etcd 3.3.17, because 3.4.x is not yet supported
+const EtcdImage = "gcr.io/etcd-development/etcd:v3.3.17"
 const KubernetesImage = "k8s.gcr.io/hyperkube:v1.16.1"
 const DockerAPIVersion = "v1.40"
