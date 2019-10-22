@@ -80,7 +80,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 			Args: []string{
 				//TODO Add descriptions explaining why we need each line.
 				// Default value 'capnslog' for logger is deprecated and prints warning now.
-				"--logger=zap",
+				//"--logger=zap", // Available only from 3.4.x
 				// Since we are in container, listen on all interfaces
 				"--listen-client-urls=http://0.0.0.0:2379",
 				"--listen-peer-urls=https://0.0.0.0:2380",
@@ -95,7 +95,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 				"--peer-client-cert-auth",
 				fmt.Sprintf("--data-dir=/%s.etcd", m.name),
 				// To get rid of warning with default configuration
-				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
+				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512", //,ttl=10m", // ttl parameter support has been added in 3.4.x
 				// This is set by typhoon, seems like extra safety knob
 				"--strict-reconfig-check",
 				// TODO enable metrics
