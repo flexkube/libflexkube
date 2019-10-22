@@ -67,7 +67,9 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 			},
 			Mounts: []types.Mount{
 				types.Mount{
-					Source: fmt.Sprintf("/tmp/etcd-cluster-2/%s.etcd/", m.name),
+					// TODO between /var/lib/etcd and data dir we should probably put cluster name, to group them
+					// TODO make data dir configurable
+					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.name),
 					Target: fmt.Sprintf("/%s.etcd", m.name),
 				},
 				types.Mount{
