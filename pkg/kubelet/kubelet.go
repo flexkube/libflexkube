@@ -71,6 +71,9 @@ enforceNodeAllocatable: []
 cgroupDriver: systemd
 podCIDR: %s
 address: %s
+# Disable healht port for now, since we don't use it
+# TODO check how to use it and re-enable it
+healthzPort: 0
 `, k.podCIDR, k.address)
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
