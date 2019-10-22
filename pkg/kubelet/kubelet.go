@@ -16,6 +16,9 @@ type Kubelet struct {
 	Image               string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
 	BootstrapKubeconfig string     `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
+	// TODO we requre CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
+	// bootstrap-kubeconfig too then?
+	KubernetesCACertificate string `json:"kubernetesCACertificate,omitempty" yaml"kubernetesCACertificate,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
@@ -23,11 +26,12 @@ type Kubelet struct {
 
 // kubelet is a validated, executable version of Kubelet
 type kubelet struct {
-	address             string
-	image               string
-	host                *host.Host
-	bootstrapKubeconfig string
-	podCIDR             string
+	address                 string
+	image                   string
+	host                    *host.Host
+	bootstrapKubeconfig     string
+	kubernetesCACertificate string
+	podCIDR                 string
 }
 
 func (k *Kubelet) New() (*kubelet, error) {
@@ -37,11 +41,12 @@ func (k *Kubelet) New() (*kubelet, error) {
 	}
 
 	nk := &kubelet{
-		image:               k.Image,
-		address:             k.Address,
-		host:                k.Host,
-		bootstrapKubeconfig: k.BootstrapKubeconfig,
-		podCIDR:             k.PodCIDR,
+		image:                   k.Image,
+		address:                 k.Address,
+		host:                    k.Host,
+		bootstrapKubeconfig:     k.BootstrapKubeconfig,
+		kubernetesCACertificate: k.KubernetesCACertificate,
+		podCIDR:                 k.PodCIDR,
 	}
 
 	if nk.image == "" {
@@ -77,6 +82,7 @@ healthzPort: 0
 `, k.podCIDR, k.address)
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
+	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
