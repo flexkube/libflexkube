@@ -15,10 +15,11 @@ import (
 // Pool represents group of kubelet instances and their configuration
 type Pool struct {
 	// User-configurable fields
-	Image               string         `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH                 *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	BootstrapKubeconfig string         `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
-	Kubelets            []Kubelet      `josn:"kubelets,omitempty" yaml:"kubelets,omitempty"`
+	Image                   string         `json:"image,omitempty" yaml:"image,omitempty"`
+	SSH                     *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	BootstrapKubeconfig     string         `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
+	Kubelets                []Kubelet      `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
+	KubernetesCACertificate string         `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
@@ -50,6 +51,9 @@ func (p *Pool) New() (*pool, error) {
 		}
 		if k.BootstrapKubeconfig == "" && p.BootstrapKubeconfig != "" {
 			k.BootstrapKubeconfig = p.BootstrapKubeconfig
+		}
+		if k.KubernetesCACertificate == "" && p.KubernetesCACertificate != "" {
+			k.KubernetesCACertificate = p.KubernetesCACertificate
 		}
 
 		// TODO find better way to handle defaults!!!
