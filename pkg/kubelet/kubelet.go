@@ -151,6 +151,9 @@ healthzPort: 0
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 				"--v=2",
 				"--network-plugin=kubenet",
+				// Disable listening on random port for exec streaming. May degrade performance!
+				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
+				"--redirect-container-streaming=false",
 			},
 		},
 	}
