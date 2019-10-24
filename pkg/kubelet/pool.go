@@ -20,6 +20,7 @@ type Pool struct {
 	BootstrapKubeconfig     string         `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
 	Kubelets                []Kubelet      `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
 	KubernetesCACertificate string         `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs           []string       `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
@@ -54,6 +55,9 @@ func (p *Pool) New() (*pool, error) {
 		}
 		if k.KubernetesCACertificate == "" && p.KubernetesCACertificate != "" {
 			k.KubernetesCACertificate = p.KubernetesCACertificate
+		}
+		if len(k.ClusterDNSIPs) <= 0 && len(p.ClusterDNSIPs) > 0 {
+			k.ClusterDNSIPs = p.ClusterDNSIPs
 		}
 
 		// TODO find better way to handle defaults!!!
