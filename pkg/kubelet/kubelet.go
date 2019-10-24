@@ -19,6 +19,7 @@ type Kubelet struct {
 	// TODO we requre CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
 	KubernetesCACertificate string   `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs           []string `json:"clusterDNSIPs,omityempty" yaml:"clusterDNSIPs,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
@@ -31,6 +32,7 @@ type kubelet struct {
 	host                    *host.Host
 	bootstrapKubeconfig     string
 	kubernetesCACertificate string
+	clusterDNSIPs           []string
 	podCIDR                 string
 }
 
@@ -46,6 +48,7 @@ func (k *Kubelet) New() (*kubelet, error) {
 		host:                    k.Host,
 		bootstrapKubeconfig:     k.BootstrapKubeconfig,
 		kubernetesCACertificate: k.KubernetesCACertificate,
+		clusterDNSIPs:           k.ClusterDNSIPs,
 		podCIDR:                 k.PodCIDR,
 	}
 
@@ -67,6 +70,13 @@ func (k *Kubelet) Validate() error {
 
 func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
+
+	// TODO we should use proper templating engine or marshalling for those values.
+	clusterDNS := ""
+	for e := range k.clusterDNSIPs {
+		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
+	}
+
 	// TODO maybe we store that as a struct, and we marshal here to YAML?
 	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -79,7 +89,10 @@ address: %s
 # Disable healht port for now, since we don't use it
 # TODO check how to use it and re-enable it
 healthzPort: 0
-`, k.podCIDR, k.address)
+# Configure cluster DNS IP addresses
+clusterDNS:
+\%s
+`, k.podCIDR, k.address, clusterDNS)
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
