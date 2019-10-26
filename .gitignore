@@ -1,8 +1,3 @@
 coverage.txt
 state.yaml
 config.yaml
-api-loadbalancers
-container-runner
-controlplane
-kubelet-pool
-terraform-provider-flexkube
