@@ -3,6 +3,7 @@ package apiloadbalancer
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/invidian/flexkube/pkg/container"
 	"github.com/invidian/flexkube/pkg/container/runtime/docker"
@@ -30,9 +31,10 @@ type apiLoadBalancer struct {
 
 // TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
 func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
-	servers := ""
+	servers := []string{}
 	for i, s := range a.servers {
-		servers = fmt.Sprintf("%s	server %d %s:8443 check\n	server %d-k8s %s:30443 check\n", servers, i, s, i, s)
+		servers = append(servers, fmt.Sprintf("server %d %s:8443 check", i, s))
+		servers = append(servers, fmt.Sprintf("server %d-k8s %s:30443 check", i, s))
 	}
 
 	configFiles := make(map[string]string)
@@ -60,7 +62,7 @@ frontend stats
 	stats enable
 	stats uri /stats
 	stats refresh 10s
-`, servers, a.metricsBindAddress, a.metricsBindPort)
+`, strings.Join(servers, "\n	"), a.metricsBindAddress, a.metricsBindPort)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
