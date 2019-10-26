@@ -2,6 +2,7 @@ package kubelet
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/invidian/flexkube/pkg/container"
 	"github.com/invidian/flexkube/pkg/container/runtime/docker"
@@ -73,7 +74,7 @@ func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer
 
 	// TODO we should use proper templating engine or marshalling for those values.
 	clusterDNS := ""
-	for e := range k.clusterDNSIPs {
+	for _, e := range k.clusterDNSIPs {
 		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
 	}
 
@@ -91,8 +92,9 @@ address: %s
 healthzPort: 0
 # Configure cluster DNS IP addresses
 clusterDNS:
-\%s
-`, k.podCIDR, k.address, clusterDNS)
+`, k.podCIDR, k.address)
+	// TODO ugly!
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
