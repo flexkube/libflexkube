@@ -98,6 +98,8 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				// For static api-server use non-standard port, so haproxy can use standard one
 				"--secure-port=8443",
 				"--v=2",
+				// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
+				"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
 			},
 		},
 	}
