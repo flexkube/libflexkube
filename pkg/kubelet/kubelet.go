@@ -111,7 +111,8 @@ clusterDNS:
 			// TODO perhaps entrypoint should be a string, not array of strings? we use args for arguments anyway
 			Entrypoint: []string{"/kubelet"},
 			Privileged: true,
-			// Required for detecting node IP address
+			// Required for detecting node IP address, --node-ip is not enough as kubelet is trying to verify
+			// that this IP address is present on the node.
 			NetworkMode: "host",
 			// Required for adding containers into correct network namespaces
 			PidMode: "host",
