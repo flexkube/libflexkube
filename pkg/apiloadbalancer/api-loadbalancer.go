@@ -16,9 +16,8 @@ type APILoadBalancer struct {
 	Image              string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host               *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
 	MetricsBindAddress string     `json:"metricsBindAddress,omitempty" yaml:"metricsBindAddress,omitempty"`
-	// TODO should perhaps be int
-	MetricsBindPort string   `json:"metricsBindPort,omitempty" yaml:"metricsBindPort,omitempty"`
-	Servers         []string `json:"servers,omitempty" yaml:"servers,omitempty"`
+	MetricsBindPort    int        `json:"metricsBindPort,omitempty" yaml:"metricsBindPort,omitempty"`
+	Servers            []string   `json:"servers,omitempty" yaml:"servers,omitempty"`
 }
 
 type apiLoadBalancer struct {
@@ -26,7 +25,7 @@ type apiLoadBalancer struct {
 	host               *host.Host
 	servers            []string
 	metricsBindAddress string
-	metricsBindPort    string
+	metricsBindPort    int
 }
 
 // TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
@@ -55,7 +54,7 @@ backend kube-apiserver
 	%s
 
 frontend stats
-	bind %s:%s
+	bind %s:%d
 	mode http
 	option http-use-htx
 	http-request use-service prometheus-exporter if { path /metrics }
@@ -110,8 +109,8 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 	if na.image == "" {
 		na.image = defaults.HAProxyImage
 	}
-	if na.metricsBindPort == "" {
-		na.metricsBindPort = "8080"
+	if na.metricsBindPort == 0 {
+		na.metricsBindPort = 8080
 	}
 
 	return na, nil
