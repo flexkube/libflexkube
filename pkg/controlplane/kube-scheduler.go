@@ -44,10 +44,9 @@ func (k *kubeScheduler) ToHostConfiguredContainer() *container.HostConfiguredCon
 			Docker: &docker.ClientConfig{},
 		},
 		Config: types.ContainerConfig{
-			Name:        "kube-scheduler",
-			Image:       k.image,
-			Entrypoint:  []string{"/hyperkube"},
-			NetworkMode: "host",
+			Name:       "kube-scheduler",
+			Image:      k.image,
+			Entrypoint: []string{"/hyperkube"},
 			Mounts: []types.Mount{
 				types.Mount{
 					Source: "/etc/kubernetes/kube-scheduler/kubeconfig",
