@@ -47,10 +47,9 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 			Docker: &docker.ClientConfig{},
 		},
 		Config: types.ContainerConfig{
-			Name:        "kube-apiserver",
-			Image:       k.image,
-			Entrypoint:  []string{"/hyperkube"},
-			NetworkMode: "host",
+			Name:       "kube-apiserver",
+			Image:      k.image,
+			Entrypoint: []string{"/hyperkube"},
 			Mounts: []types.Mount{
 				types.Mount{
 					Source: "/etc/kubernetes/pki/ca.crt",
@@ -69,10 +68,16 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 					Target: "/etc/kubernetes/pki/service-account.crt",
 				},
 			},
+			Ports: []types.PortMap{
+				types.PortMap{
+					IP:       k.address,
+					Protocol: "tcp",
+					Port:     8443,
+				},
+			},
 			Args: []string{
 				"kube-apiserver",
 				fmt.Sprintf("--etcd-servers=%s", strings.Join(k.etcdServers[:], ",")),
-				fmt.Sprintf("--bind-address=%s", k.address),
 				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
 				"--tls-cert-file=/etc/kubernetes/pki/apiserver.crt",
 				"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
