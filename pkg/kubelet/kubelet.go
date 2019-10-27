@@ -118,6 +118,13 @@ clusterDNS:
 			PidMode: "host",
 			Mounts: []types.Mount{
 				types.Mount{
+					// Kubelet is using this file to determine what OS it runs on and then reports that to API server
+					// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
+					// based on Debian Docker images.
+					Source: "/etc/os-release",
+					Target: "/etc/os-release",
+				},
+				types.Mount{
 					Source: "/etc/kubernetes/kubelet/",
 					Target: "/etc/kubernetes/",
 				},
