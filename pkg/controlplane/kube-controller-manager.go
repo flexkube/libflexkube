@@ -37,6 +37,8 @@ type kubeControllerManager struct {
 	adminKey                 string
 }
 
+// TODO refactor this method, to have a generic method, which takes host as an argument and returns you
+// a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
 func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
