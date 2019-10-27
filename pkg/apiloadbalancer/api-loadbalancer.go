@@ -54,14 +54,14 @@ backend kube-apiserver
 	%s
 
 frontend stats
-	bind %s:%d
+	bind 0.0.0.0:%d
 	mode http
 	option http-use-htx
 	http-request use-service prometheus-exporter if { path /metrics }
 	stats enable
 	stats uri /stats
 	stats refresh 10s
-`, strings.Join(servers, "\n	"), a.metricsBindAddress, a.metricsBindPort)
+`, strings.Join(servers, "\n	"), a.metricsBindPort)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -72,8 +72,17 @@ frontend stats
 			// TODO make it configurable? And don't force user to use HAProxy
 			Name:  "api-loadbalancer-haproxy",
 			Image: a.image,
-			// TODO perhaps entrypoint should be a string, not array of strings? we use args for arguments anyway
-			NetworkMode: "host",
+			Ports: []types.PortMap{
+				types.PortMap{
+					Protocol: "tcp",
+					Port:     6443,
+				},
+				types.PortMap{
+					Protocol: "tcp",
+					Port:     a.metricsBindPort,
+					IP:       a.metricsBindAddress,
+				},
+			},
 			Mounts: []types.Mount{
 				types.Mount{
 					Source: "/etc/haproxy/haproxy.cfg",
