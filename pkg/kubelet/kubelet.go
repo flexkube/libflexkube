@@ -110,13 +110,6 @@ clusterDNS:
 			Image: k.image,
 			// TODO perhaps entrypoint should be a string, not array of strings? we use args for arguments anyway
 			Entrypoint: []string{"/kubelet"},
-			Ports: []types.PortMap{
-				types.PortMap{
-					IP:       k.address,
-					Protocol: "tcp",
-					Port:     10250,
-				},
-			},
 			Privileged: true,
 			// Required for detecting node IP address
 			NetworkMode: "host",
