@@ -68,9 +68,16 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 			},
 			Args: []string{
 				"kube-controller-manager",
+				// This kubeconfig file will be used for talking to API server
 				"--kubeconfig=/etc/kubernetes/kubeconfig",
+				// signing-cert and signing-key flags are required for issuing certificates
+				// inside cluster. This is for example required for kubelet TLS bootstrapping.
 				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
 				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+				// Specifies private RSA key which will be used for signing service account tokens,
+				// as one of kube-controller-manager roles is to create tokens for each service account.
+				//
+				// Kubernetes API server has private key configured for verification.
 				"--service-account-private-key-file=/etc/kubernetes/pki/service-account.key",
 			},
 		},

@@ -72,7 +72,8 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				types.PortMap{
 					IP:       k.address,
 					Protocol: "tcp",
-					Port:     8443,
+					// TODO make port configurable
+					Port: 8443,
 				},
 			},
 			Args: []string{
@@ -90,6 +91,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				"--insecure-port=0",
 				// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
 				"--allow-privileged=true",
+				// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
 				"--authorization-mode=RBAC,Node",
 				// Required to validate service account tokens created by controller manager
 				"--service-account-key-file=/etc/kubernetes/pki/service-account.crt",
@@ -97,6 +99,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				fmt.Sprintf("--advertise-address=%s", k.address),
 				// For static api-server use non-standard port, so haproxy can use standard one
 				"--secure-port=8443",
+				// Be a bit more verbose.
 				"--v=2",
 				// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
 				"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
