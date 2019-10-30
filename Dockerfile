@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine
+FROM golang:1.13-alpine
 
 # Enable go modules
 ENV GO111MODULE=on
@@ -7,7 +7,7 @@ ENV GO111MODULE=on
 RUN apk add curl git build-base
 
 # Install linter
-RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.17.1
+RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.21.0
 
 # Copy go mod files first and install dependencies to cache this layer
 ADD ./go.mod /usr/src/flexkube/
