@@ -49,7 +49,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20191026110619-0b21df46bc1d
 	helm.sh/helm/v3 v3.0.0-rc.1
 	k8s.io/apiextensions-apiserver v0.0.0-20191028232452-c47e10e6d5a3
-	k8s.io/apimachinery v0.0.0-20191025225532-af6325b3a843
+	k8s.io/apimachinery v0.0.0-20191030190112-bb31b70367b7
 	k8s.io/client-go v0.0.0-20191028230319-1a481fb1e32d
 	k8s.io/component-base v0.0.0-20191029070825-5e0e35147053 // indirect
 	k8s.io/kubectl v0.0.0-20191027032433-6b77b0790ab4

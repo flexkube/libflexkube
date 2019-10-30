@@ -1033,6 +1033,8 @@ k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8 h1:Iieh/ZEgT3BWwbLD5qEKcY
 k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8/go.mod h1:llRdnznGEAqC3DcNm6yEj472xaFVfLM7hnYofMb12tQ=
 k8s.io/apimachinery v0.0.0-20191025225532-af6325b3a843 h1:Ge6Np+ecN6pKYcAaFXR53I88+UL5ch+KpLxkKREpsJ4=
 k8s.io/apimachinery v0.0.0-20191025225532-af6325b3a843/go.mod h1:gA1T9z4LIup7PIegBwxkF2UYXUNVKhOAPvQWWnAc34k=
+k8s.io/apimachinery v0.0.0-20191030190112-bb31b70367b7 h1:81UYA9Qq3JXPpZMmRBnq6T3qU+b71Dvnm6sV3NSQTVk=
+k8s.io/apimachinery v0.0.0-20191030190112-bb31b70367b7/go.mod h1:gA1T9z4LIup7PIegBwxkF2UYXUNVKhOAPvQWWnAc34k=
 k8s.io/apiserver v0.0.0-20191016112112-5190913f932d/go.mod h1:7OqfAolfWxUM/jJ/HBLyE+cdaWFBUoo5Q5pHgJVj2ws=
 k8s.io/apiserver v0.0.0-20191026070530-d1b1b64dd924/go.mod h1:2icax/zfCfh218n2Nr4gHB9qYsb8ZrGngG1qkdHvww0=
 k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5 h1:8ZfMjkMBzcXEawLsYHg9lDM7aLEVso3NiVKfUTnN56A=
