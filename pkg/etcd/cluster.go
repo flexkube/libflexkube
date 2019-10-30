@@ -51,7 +51,7 @@ func (c *Cluster) New() (*cluster, error) {
 	peerCertAllowedCNArr := []string{}
 
 	for n, m := range c.Members {
-		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", n, m.PeerAddress))
+		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", fmt.Sprintf("etcd-%s", n), m.PeerAddress))
 		peerCertAllowedCNArr = append(peerCertAllowedCNArr, fmt.Sprintf("etcd-%s", n))
 	}
 
@@ -60,7 +60,7 @@ func (c *Cluster) New() (*cluster, error) {
 
 	for n, m := range c.Members {
 		if m.Name == "" {
-			m.Name = n
+			m.Name = fmt.Sprintf("etcd-%s", n)
 		}
 		if m.Image == "" && c.Image != "" {
 			m.Image = c.Image
