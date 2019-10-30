@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform/plugin"
 
-	"github.com/invidian/flexkube/cmd/terraform-provider-flexkube/flexkube"
+	"github.com/invidian/libflexkube/cmd/terraform-provider-flexkube/flexkube"
 )
 
 func main() {

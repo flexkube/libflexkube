@@ -12,7 +12,7 @@ import (
 
 	gossh "golang.org/x/crypto/ssh"
 
-	"github.com/invidian/flexkube/pkg/host/transport"
+	"github.com/invidian/libflexkube/pkg/host/transport"
 )
 
 type SSHConfig struct {

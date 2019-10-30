@@ -3,7 +3,7 @@ package flexkube
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/invidian/flexkube/pkg/controlplane"
+	"github.com/invidian/libflexkube/pkg/controlplane"
 )
 
 func resourceControlplane() *schema.Resource {

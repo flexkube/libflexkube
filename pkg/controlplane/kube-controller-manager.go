@@ -4,11 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/invidian/flexkube/pkg/container"
-	"github.com/invidian/flexkube/pkg/container/runtime/docker"
-	"github.com/invidian/flexkube/pkg/container/types"
-	"github.com/invidian/flexkube/pkg/defaults"
-	"github.com/invidian/flexkube/pkg/host"
+	"github.com/invidian/libflexkube/pkg/container"
+	"github.com/invidian/libflexkube/pkg/container/runtime/docker"
+	"github.com/invidian/libflexkube/pkg/container/types"
+	"github.com/invidian/libflexkube/pkg/defaults"
+	"github.com/invidian/libflexkube/pkg/host"
 )
 
 type KubeControllerManager struct {

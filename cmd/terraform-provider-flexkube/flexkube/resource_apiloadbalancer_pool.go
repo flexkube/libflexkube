@@ -3,7 +3,7 @@ package flexkube
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/invidian/flexkube/pkg/apiloadbalancer"
+	"github.com/invidian/libflexkube/pkg/apiloadbalancer"
 )
 
 func resourceAPILoadBalancerPool() *schema.Resource {

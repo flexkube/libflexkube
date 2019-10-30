@@ -7,9 +7,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/invidian/flexkube/pkg/container"
-	"github.com/invidian/flexkube/pkg/host"
-	"github.com/invidian/flexkube/pkg/host/transport/ssh"
+	"github.com/invidian/libflexkube/pkg/container"
+	"github.com/invidian/libflexkube/pkg/host"
+	"github.com/invidian/libflexkube/pkg/host/transport/ssh"
 )
 
 type APILoadBalancers struct {

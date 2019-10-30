@@ -8,8 +8,8 @@ import (
 
 	dockertypes "github.com/docker/docker/api/types"
 
-	"github.com/invidian/flexkube/pkg/container/types"
-	"github.com/invidian/flexkube/pkg/defaults"
+	"github.com/invidian/libflexkube/pkg/container/types"
+	"github.com/invidian/libflexkube/pkg/defaults"
 )
 
 // Create

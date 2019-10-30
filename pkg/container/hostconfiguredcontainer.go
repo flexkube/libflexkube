@@ -8,8 +8,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/invidian/flexkube/pkg/container/types"
-	"github.com/invidian/flexkube/pkg/host"
+	"github.com/invidian/libflexkube/pkg/container/types"
+	"github.com/invidian/libflexkube/pkg/host"
 )
 
 const ConfigMountpoint = "/mnt/host"

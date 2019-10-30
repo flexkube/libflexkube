@@ -3,7 +3,7 @@ package container
 import (
 	"testing"
 
-	"github.com/invidian/flexkube/pkg/container/types"
+	"github.com/invidian/libflexkube/pkg/container/types"
 )
 
 // New()

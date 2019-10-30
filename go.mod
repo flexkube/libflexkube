@@ -1,4 +1,4 @@
-module github.com/invidian/flexkube
+module github.com/invidian/libflexkube
 
 go 1.13
 
