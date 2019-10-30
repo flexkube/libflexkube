@@ -78,14 +78,25 @@ func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer
 		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
 	}
 
+	// kubelet.yaml file is a recommended way to configure the kubelet
+	//
 	// TODO maybe we store that as a struct, and we marshal here to YAML?
 	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
+# Enables TLS certificate rotation, which is good from security point of view.
 rotateCertificates: true
+# To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
+# This disables QoS based cgroup hierarchy, which is important from resource management perspective.
 cgroupsPerQOS: false
+# When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
 enforceNodeAllocatable: []
+# If Docker is configured to use systemd as a cgroup driver and Docker is used as container
+# runtime, this needs to be set to match Docker.
+# TODO pull that information dynamically based on what container runtime is configured.
 cgroupDriver: systemd
+# CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
 podCIDR: %s
+# Address where kubelet should listen on.
 address: %s
 # Disable healht port for now, since we don't use it
 # TODO check how to use it and re-enable it
@@ -110,6 +121,10 @@ clusterDNS:
 			Image: k.image,
 			// TODO perhaps entrypoint should be a string, not array of strings? we use args for arguments anyway
 			Entrypoint: []string{"/kubelet"},
+			// When kubelet runs as a container, it should be privileged, so it can adjust it's OOM settings.
+			// Without this, you get following errors:
+			// failed to set "/proc/self/oom_score_adj" to "-999": write /proc/self/oom_score_adj: permission denied
+			// write /proc/self/oom_score_adj: permission denied
 			Privileged: true,
 			// Required for detecting node IP address, --node-ip is not enough as kubelet is trying to verify
 			// that this IP address is present on the node.
@@ -125,33 +140,53 @@ clusterDNS:
 					Target: "/etc/os-release",
 				},
 				types.Mount{
+					// Kubelet will create kubeconfig file for itself from, so it needs to be able to write
+					// to /etc/kubernetes, as we want to use default paths when possible in the container.
+					// However, on the host, /etc/kubernetes may contain some other files, which shouldn't be
+					// visible on kubelet, like etcd pki, so we isolate and expose only ./kubelet subdirectory
+					// to the kubelet.
+					// TODO make sure if that actually make sense. If kubelet is hijacked, it perhaps has access to entire node
+					// anyway
 					Source: "/etc/kubernetes/kubelet/",
 					Target: "/etc/kubernetes/",
 				},
 				types.Mount{
+					// Pass docker socket to kubelet container, so it can use it as a container runtime.
+					// TODO make it configurable
+					// TODO check what happens when Docker daemon gets restarted. Will kubelet be restarted
+					// then as well? Should we pass entire /run instead, so new socket gets propagated to container?
 					Source: "/run/docker.sock",
 					Target: "/var/run/docker.sock",
 				},
-				// For testing kubenet
 				types.Mount{
+					// For testing kubenet
+					// TODO do we need it?
 					Source: "/etc/cni/net.d/",
 					Target: "/etc/cni/net.d",
 				},
 				types.Mount{
+					// TODO do we need it?
 					Source: "/opt/cni/bin/",
 					Target: "/opt/cni/bin",
 				},
 				types.Mount{
+					// Required by kubelet when creating Docker containers. rslave borrowed from Rancher.
+					// TODO add better explanation
 					Source:      "/var/lib/docker/",
 					Target:      "/var/lib/docker",
 					Propagation: "rslave",
 				},
 				types.Mount{
+					// Required for kubelet when running Docker containers. Since kubelet mounts stuff there several times
+					// mounts should be propagated, hence the "shared". "shared" borrowed from Rancher.
+					// TODO add better explanation
 					Source:      "/var/lib/kubelet/",
 					Target:      "/var/lib/kubelet",
 					Propagation: "shared",
 				},
 				types.Mount{
+					// To persist CNI configuration managed by kubelet. Might be only required with 'kubenet' network plugin.
+					// TODO check if this is needed. Maybe explain what is stored there.
 					Source: "/var/lib/cni/",
 					Target: "/var/lib/cni",
 				},
@@ -162,10 +197,18 @@ clusterDNS:
 				},
 			},
 			Args: []string{
+				// Tell kubelet to use config file
 				"--config=/etc/kubernetes/kubelet.yaml",
+				// Specify kubeconfig file for kubelet. This enabled API server mode and
+				// specifies when kubelet will write kubeconfig file after TLS bootstrapping.
 				"--kubeconfig=/etc/kubernetes/kubeconfig",
+				// kubeconfig with access token for TLS bootstrapping
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
+				// Be a bit more verbose
+				// TODO should probably be configurable
 				"--v=2",
+				// Use 'kubenet' network plugin, as it's the simplest one.
+				// TODO allow to use different CNI plugins (just 'cni' to be precise)
 				"--network-plugin=kubenet",
 				// Disable listening on random port for exec streaming. May degrade performance!
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
