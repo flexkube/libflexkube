@@ -1,6 +1,0 @@
-.terraform
-containers-example-with-config-file
-state.yaml
-id_rsa*
-pki
-terraform.tfstate*

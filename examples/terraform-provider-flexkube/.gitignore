@@ -1,5 +1,0 @@
-secrets.auto.tfvars
-crash.log
-terraform.tfstate*
-.terraform
-terraform-provider-flexkube
