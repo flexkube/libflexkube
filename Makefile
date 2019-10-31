@@ -8,7 +8,7 @@ GOBUILD=$(GOCMD) build -v -buildmode=exe
 all: test lint build
 
 build:
-	$(GOBUILD)
+	$(GOBUILD) ./cmd/...
 
 test:
 	$(GOTEST) ./...
