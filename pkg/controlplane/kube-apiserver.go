@@ -20,6 +20,7 @@ type KubeAPIServer struct {
 	ServiceAccountPublicKey string     `json:"serviceAccountPublicKey,omitempty" yaml:"serviceAccountPublicKey,omitempty"`
 	Address                 string     `json:"address,omitempty" yaml:"address,omitempty"`
 	EtcdServers             []string   `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
+	ServiceCIDR             string     `json:"serviceCIDR,omitempty" yaml:"serviceCIDR,omitempty"`
 }
 
 type kubeAPIServer struct {
@@ -31,6 +32,7 @@ type kubeAPIServer struct {
 	serviceAccountPublicKey string
 	address                 string
 	etcdServers             []string
+	serviceCIDR             string
 }
 
 func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
@@ -84,9 +86,8 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
 				// Required for TLS bootstrapping
 				"--enable-bootstrap-token-auth=true",
-				// Override default service cluster IP, as it conflicts with host CIDR.
-				// TODO make it configurable
-				"--service-cluster-ip-range=11.0.0.0/24",
+				// Allow user to configure service CIDR, so it does not conflict with host nor pods CIDRs.
+				fmt.Sprintf("--service-cluster-ip-range=%s", k.serviceCIDR),
 				// To disable access without authentication
 				"--insecure-port=0",
 				// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
@@ -128,6 +129,7 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		serviceAccountPublicKey: k.ServiceAccountPublicKey,
 		address:                 k.Address,
 		etcdServers:             k.EtcdServers,
+		serviceCIDR:             k.ServiceCIDR,
 	}
 
 	// The only optional parameter
@@ -157,6 +159,9 @@ func (k *KubeAPIServer) Validate() error {
 	}
 	if len(k.EtcdServers) == 0 {
 		return fmt.Errorf("At least one etcd server must be defined")
+	}
+	if k.ServiceCIDR == "" {
+		return fmt.Errorf("serviceCIDR is empty")
 	}
 
 	return nil
