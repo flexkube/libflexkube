@@ -26,3 +26,10 @@ lint:
 update:
 	$(GOGET) -u
 	$(GOMOD) tidy
+
+codespell:
+	codespell  -S .git,state.yaml,go.sum
+
+codespell-pr:
+	git diff master..HEAD | grep -v ^- | codespell -
+	git log master..HEAD | codespell -
