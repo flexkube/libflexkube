@@ -113,7 +113,7 @@ func TestContainerCreateWithArgs(t *testing.T) {
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
-		t.Fatalf("Inspecting created container should suceed, got: %w", err)
+		t.Fatalf("Inspecting created container should succeed, got: %w", err)
 	}
 	if !reflect.DeepEqual(data.Args, args) {
 		t.Fatalf("Container created with args set should have args set\nExpected: %+v\nGot: %+v\n", args, data.Args)
@@ -138,7 +138,7 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
-		t.Fatalf("Inspecting created container should suceed, got: %w", err)
+		t.Fatalf("Inspecting created container should succeed, got: %w", err)
 	}
 	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
 		t.Fatalf("Container created with entrypoint set should have entrypoint set\nExpected: %+v\nGot: %+v\n", entrypoint[0], data.Path)

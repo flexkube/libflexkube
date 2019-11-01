@@ -70,7 +70,7 @@ func (c *Containers) Validate() error {
 // and then updates state of all containers
 func (c *containers) CheckCurrentState() error {
 	if c.currentState == nil {
-		// We just assing the pointer, but it's fine, since we don't need previous
+		// We just assign the pointer, but it's fine, since we don't need previous
 		// state anyway.
 		// TODO we could keep previous state to inform user, that some external changes happened since last run
 		c.currentState = c.previousState
@@ -157,7 +157,7 @@ func (c *containers) Execute() error {
 	// Update containers on hosts
 	// This can move containers between hosts, but NOT the data
 	for i, _ := range c.currentState {
-		// Don't update nodes sheduled for removal
+		// Don't update nodes scheduled for removal
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
 			continue
@@ -182,7 +182,7 @@ func (c *containers) Execute() error {
 	fmt.Println("Checking for configuration updates on containers")
 	// Update containers configurations
 	for i, _ := range c.currentState {
-		// Don't update containers sheduled for removal
+		// Don't update containers scheduled for removal
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping configuration check for container '%s', as it will be removed\n", i)
 			continue

@@ -38,7 +38,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredC
 
 	configFiles := make(map[string]string)
 	configFiles["/etc/haproxy/haproxy.cfg"] = fmt.Sprintf(`defaults
-	# Do TLS passtrough
+	# Do TLS passthrough
 	mode tcp
 	# Required values for both frontend and backend
 	timeout connect 5000ms

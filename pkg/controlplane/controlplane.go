@@ -326,7 +326,7 @@ func (c *controlplane) Deploy() error {
 	// differ.
 	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
 	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control wheather we should
+	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
 	// make additional validation or not.
 	if err := containers.CheckCurrentState(); err != nil {
 		return err

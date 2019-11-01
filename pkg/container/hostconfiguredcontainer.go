@@ -53,7 +53,7 @@ func (m *HostConfiguredContainer) Validate() error {
 	return nil
 }
 
-// connectAndForward instanciates new host object, connects to it and then
+// connectAndForward instantiates new host object, connects to it and then
 // forwards connection to container runtime and reconfigures container runtime
 // to connect to forwarded endpoint.
 // TODO maybe we make this take a function to remove boilerplate from helper functions?
@@ -178,7 +178,7 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 //
 // With Kubelet runtime, 'tar' binary is required on the container to be able to write and read the configurations.
 // By default, the image which will be deployed will be used for copying the configuration as well, to avoid pulling
-// mulitple images, which will save disk space and time. If it happens that this image does not have 'tar' binary,
+// multiple images, which will save disk space and time. If it happens that this image does not have 'tar' binary,
 // user can override ConfigImage field in the configuration, to specify different image which should be
 // pulled and used for configuration management.
 func (m *hostConfiguredContainer) Configure(p string) error {
@@ -261,7 +261,7 @@ func (m *hostConfiguredContainer) Create() error {
 
 // Status updates container status
 func (m *hostConfiguredContainer) Status() error {
-	// TODO maybe we can cache fowarding somehow?
+	// TODO maybe we can cache forwarding somehow?
 	a := m.container.Runtime.Docker.GetAddress()
 	if err := m.connectAndForward(); err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
@@ -295,7 +295,7 @@ func (m *hostConfiguredContainer) Stop() error {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
 	if err := m.container.Stop(); err != nil {
-		return fmt.Errorf("stoping failed: %w", err)
+		return fmt.Errorf("stopping failed: %w", err)
 	}
 	m.container.Runtime.Docker.SetAddress(a)
 	return nil

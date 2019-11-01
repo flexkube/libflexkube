@@ -110,7 +110,7 @@ func (c *container) SetRuntimeAddress(a string) {
 	c.runtimeConfig.SetAddress(a)
 }
 
-// Create creates container container from it's defintion
+// Create creates container container from it's definition
 func (c *container) Create() (*containerInstance, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
@@ -163,7 +163,7 @@ func (c *containerInstance) Copy(dstPath string, content io.Reader) error {
 	return c.runtime.Copy(c.status.ID, dstPath, content)
 }
 
-// Stat checks if given path exists on the container and if yes, returns information wheather
+// Stat checks if given path exists on the container and if yes, returns information whether
 // it is file, or directory etc.
 func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
 	s, err := c.runtime.Stat(c.status.ID, path)

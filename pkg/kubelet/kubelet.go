@@ -17,7 +17,7 @@ type Kubelet struct {
 	Image               string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
 	BootstrapKubeconfig string     `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
-	// TODO we requre CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
+	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
 	KubernetesCACertificate string   `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
 	ClusterDNSIPs           []string `json:"clusterDNSIPs,omityempty" yaml:"clusterDNSIPs,omitempty"`
