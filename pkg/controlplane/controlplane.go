@@ -26,7 +26,7 @@ type Controlplane struct {
 	AdminCertificate         string         `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
 	AdminKey                 string         `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
 
-	KubeAPIServer         KubeAPIServer         `json:"kubeApiServer,omitempty" yaml:"kubeApiServer,omitempty"`
+	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty" yaml:"kubeAPIServer,omitempty"`
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty" yaml:"kubeControllerManager,omitempty"`
 	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty" yaml"kubeScheduler,omitempty"`
 
