@@ -61,6 +61,7 @@ func (r *Release) New() (*release, error) {
 	actionConfig.RESTClientGetter = g
 	actionConfig.KubeClient = kc
 	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
+	actionConfig.Log = func(_ string, _ ...interface{}) {}
 
 	values, _ := r.parseValues()
 
@@ -111,20 +112,18 @@ func (r *Release) Validate() error {
 // However, if user wants know that the chart is already available and wants to avoid runtime
 // errors, this function can be called in addition to Validate().
 func (r *release) ValidateChart() error {
-	client := r.installClient()
-
-	if _, err := r.loadChart(client); err != nil {
+	if _, err := r.loadChart(); err != nil {
 		return fmt.Errorf("failed validating chart: %w", err)
 	}
 
 	return nil
 }
 
-// Install installs configured chart as release
+// Install installs configured chart as release. Equivalent of 'helm install'.
 func (r *release) Install() error {
 	client := r.installClient()
 
-	chart, err := r.loadChart(client)
+	chart, err := r.loadChart()
 	if err != nil {
 		return fmt.Errorf("loading chart failed: %w", err)
 	}
@@ -137,9 +136,57 @@ func (r *release) Install() error {
 	return nil
 }
 
+// Upgrade upgrades already existing release. Equivalent of 'helm upgrade'.
+func (r *release) Upgrade() error {
+	client := r.upgradeClient()
+
+	chart, err := r.loadChart()
+	if err != nil {
+		return fmt.Errorf("loading chart failed: %w", err)
+	}
+
+	if _, err := client.Run(r.name, chart, r.values); err != nil {
+		return fmt.Errorf("upgrading a release failed: %w", err)
+	}
+
+	return nil
+}
+
+// InstallOrUpgrade checks if release already exists, and if it does it tries to upgrade it
+// If the release does not exist, it will be created.
+func (r *release) InstallOrUpgrade() error {
+	e, err := r.Exists()
+	if err != nil {
+		return err
+	}
+
+	if e {
+		return r.Upgrade()
+	}
+
+	return r.Install()
+}
+
+// Exists checks if configured release exists.
+func (r *release) Exists() (bool, error) {
+	histClient := action.NewHistory(r.actionConfig)
+	histClient.Max = 1
+	_, err := histClient.Run(r.name)
+	if err == driver.ErrReleaseNotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // loadChart locates and loads the chart
-func (r *release) loadChart(client *action.Install) (*chart.Chart, error) {
-	// Locate chart to install, here we install chart from local folder
+func (r *release) loadChart() (*chart.Chart, error) {
+	client := action.NewInstall(r.actionConfig)
+
+	// Locate chart to install
 	cp, err := client.ChartPathOptions.LocateChart(r.chart, r.settings)
 	if err != nil {
 		return nil, fmt.Errorf("locating chart failed: %w", err)
@@ -156,6 +203,18 @@ func (r *release) installClient() *action.Install {
 
 	client.Version = r.version
 	client.ReleaseName = r.name
+	client.Namespace = r.namespace
+
+	return client
+}
+
+// installClient returns action install client for helm
+func (r *release) upgradeClient() *action.Upgrade {
+	// Initialize install action client
+	// TODO maybe there is more generic action we could use?
+	client := action.NewUpgrade(r.actionConfig)
+
+	client.Version = r.version
 	client.Namespace = r.namespace
 
 	return client
