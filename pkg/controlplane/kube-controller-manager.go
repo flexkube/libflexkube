@@ -22,8 +22,9 @@ type KubeControllerManager struct {
 	// which will have a group + create a binding to system:kube-controller-manager clusterRole
 	// as done in self-hosted chart.
 	// TODO since we have access to CA cert and key, we could generate certificate ourselves here
-	AdminCertificate string `json:"adminCertificate,omitempty" yaml"adminCertificate,omitempty"`
-	AdminKey         string `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
+	AdminCertificate  string `json:"adminCertificate,omitempty" yaml"adminCertificate,omitempty"`
+	AdminKey          string `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
+	RootCACertificate string `josn:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
 }
 
 type kubeControllerManager struct {
@@ -35,6 +36,7 @@ type kubeControllerManager struct {
 	apiServer                string
 	adminCertificate         string
 	adminKey                 string
+	rootCACertificate        string
 }
 
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
@@ -46,6 +48,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/service-account.key"] = k.serviceAccountPrivateKey
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.crt"] = k.kubernetesCACertificate
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.key"] = k.kubernetesCAKey
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = fmt.Sprintf("%s%s", k.rootCACertificate, k.kubernetesCACertificate)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -79,6 +82,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 				//
 				// Kubernetes API server has private key configured for verification.
 				"--service-account-private-key-file=/etc/kubernetes/pki/service-account.key",
+				"--root-ca-file=/etc/kubernetes/pki/root.crt",
 			},
 		},
 	}
@@ -104,6 +108,7 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 		apiServer:                k.APIServer,
 		adminCertificate:         k.AdminCertificate,
 		adminKey:                 k.AdminKey,
+		rootCACertificate:        k.RootCACertificate,
 	}
 
 	// The only optional parameter
@@ -133,6 +138,9 @@ func (k *KubeControllerManager) Validate() error {
 	}
 	if k.AdminKey == "" {
 		return fmt.Errorf("AdminKey is empty")
+	}
+	if k.RootCACertificate == "" {
+		return fmt.Errorf("rootCACertificate is empty")
 	}
 
 	return nil

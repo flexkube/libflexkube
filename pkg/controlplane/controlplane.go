@@ -13,6 +13,8 @@ import (
 // Controlplane represents etcd controlplane configuration and state from the user
 type Controlplane struct {
 	// User-configurable fields
+	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
+	// should be defined directly there.
 	Image                    string         `json:"image,omitempty" yaml:"image,omitempty"`
 	SSH                      *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 	KubernetesCACertificate  string         `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
@@ -25,6 +27,7 @@ type Controlplane struct {
 	EtcdServers              []string       `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
 	AdminCertificate         string         `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
 	AdminKey                 string         `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
+	RootCACertificate        string         `json:"rootCACertificate,omitempty" yaml"rootCACertificate,omitempty"`
 
 	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty" yaml:"kubeAPIServer,omitempty"`
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty" yaml:"kubeControllerManager,omitempty"`
@@ -48,6 +51,7 @@ type controlplane struct {
 	etcdServers              []string
 	adminCertificate         string
 	adminKey                 string
+	rootCACertificate        string
 
 	containers container.Containers
 }
@@ -128,6 +132,9 @@ func (c *Controlplane) buildKubeControllerManager() {
 
 	if c.KubeControllerManager.APIServer == "" && c.APIServerAddress != "" {
 		c.KubeControllerManager.APIServer = c.APIServerAddress
+	}
+	if c.KubeControllerManager.RootCACertificate == "" && c.RootCACertificate != "" {
+		c.KubeControllerManager.RootCACertificate = c.RootCACertificate
 	}
 
 	// TODO find better way to handle defaults!!!
@@ -245,6 +252,7 @@ func (c *Controlplane) New() (*controlplane, error) {
 		etcdServers:              c.EtcdServers,
 		adminCertificate:         c.AdminCertificate,
 		adminKey:                 c.AdminKey,
+		rootCACertificate:        c.RootCACertificate,
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
