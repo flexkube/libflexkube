@@ -182,6 +182,27 @@ func (r *release) Exists() (bool, error) {
 	return true, nil
 }
 
+func (r *release) Uninstall() error {
+	// Check if release exists
+	e, err := r.Exists()
+	if err != nil {
+		return err
+	}
+
+	// If it does not exist anymore, simply return
+	if !e {
+		return nil
+	}
+
+	client := r.uninstallClient()
+
+	if _, err := client.Run(r.name); err != nil {
+		return fmt.Errorf("uninstalling a release failed: %w", err)
+	}
+
+	return nil
+}
+
 // loadChart locates and loads the chart
 func (r *release) loadChart() (*chart.Chart, error) {
 	client := action.NewInstall(r.actionConfig)
@@ -208,7 +229,7 @@ func (r *release) installClient() *action.Install {
 	return client
 }
 
-// installClient returns action install client for helm
+// upgradeClient returns action install client for helm
 func (r *release) upgradeClient() *action.Upgrade {
 	// Initialize install action client
 	// TODO maybe there is more generic action we could use?
@@ -216,6 +237,15 @@ func (r *release) upgradeClient() *action.Upgrade {
 
 	client.Version = r.version
 	client.Namespace = r.namespace
+
+	return client
+}
+
+// uninstallClient returns action uninstall client for helm
+func (r *release) uninstallClient() *action.Uninstall {
+	// Initialize install action client
+	// TODO maybe there is more generic action we could use?
+	client := action.NewUninstall(r.actionConfig)
 
 	return client
 }
