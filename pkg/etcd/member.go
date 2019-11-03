@@ -53,18 +53,6 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 			Name:       m.name,
 			Image:      m.image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
-			Ports: []types.PortMap{
-				types.PortMap{
-					IP:       m.peerAddress,
-					Protocol: "tcp",
-					Port:     2379,
-				},
-				types.PortMap{
-					IP:       m.peerAddress,
-					Protocol: "tcp",
-					Port:     2380,
-				},
-			},
 			Mounts: []types.Mount{
 				types.Mount{
 					// TODO between /var/lib/etcd and data dir we should probably put cluster name, to group them
@@ -77,13 +65,14 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 					Target: "/etc/kubernetes/pki/etcd",
 				},
 			},
+			NetworkMode: "host",
 			Args: []string{
 				//TODO Add descriptions explaining why we need each line.
 				// Default value 'capnslog' for logger is deprecated and prints warning now.
 				//"--logger=zap", // Available only from 3.4.x
 				// Since we are in container, listen on all interfaces
-				"--listen-client-urls=http://0.0.0.0:2379",
-				"--listen-peer-urls=https://0.0.0.0:2380",
+				fmt.Sprintf("--listen-client-urls=http://%s:2379", m.peerAddress),
+				fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
 				fmt.Sprintf("--advertise-client-urls=http://%s:2379", m.peerAddress),
 				fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
 				fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
