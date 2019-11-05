@@ -27,7 +27,7 @@ Here is high-level overview of what packages are provided:
 - [pkg/controlplane](pkg/controlplane) - allows to create and orchestrate Kubernetes static control plane containers
 - [pkg/apiloadbalancer](pkg/apiloadbalancer) - allows to create and orchestrate loadbalancer containers for Kubernetes API server
 
-Currently, the main strategy this library use is to talk to container runtime on remote hosts using SSH. However, as the library tries to separate data loading/saving
+Currently, the main strategy this library use is to talk to container runtime on remote hosts using SSH. However, as the library tries to separate data processing
 from operational logic, other modes can be implemented easily in the future, for example:
 - Binary packed in Docker container, which runs and evaluates local config
 - Creating local configs per host to feed the binary mentioned above
@@ -46,11 +46,14 @@ Using this library has minimal target host (where containers will run) requireme
 
 No Public DNS or any other public discovery service is required for getting cluster up and running either.
 
-## Frontends
+On executig host, the user-writable `/tmp` directory is required. This is where the forwarded UNIX sockets are stored.
+In the future this requirement might be removed, if we implement using virtual sockets.
 
-### CLI tools
+## User tools
 
-Currently, following frontends are implemented:
+### CLI binaries
+
+Currently, following binaries are implemented:
 - [cmd/container-runner](cmd/container-runner) - low-level tool, which allows to create any kind of containers
 - [cmd/etcd-cluster](cmd/etcd-cluster) - allows to create and manage etcd clusters
 - [cmd/api-loadbalancers](cmd/api-loadbalancers) - allows to create and manage Kubernetes API loadbalancers
@@ -58,7 +61,7 @@ Currently, following frontends are implemented:
 - [cmd/kubelet-pool](cmd/kubelet-pool) - allows to create and manage kubelet pools
 - [cmd/helm-release](cmd/helm-release) - allows to create and update helm 3 releases
 
-All mentioned CLI tools currently takes `config.yaml` file from working directory as an input
+All mentioned CLI binaries currently takes `config.yaml` file from working directory as an input
 and produces `state.yaml` file when they finish working. `state.yaml` file contains information about created containers and it shouldn't
 be modified manually. On subsequent runs, `state.yaml` file is read as well and it's used to track and update created containers.
 
@@ -66,7 +69,7 @@ Both `state.yaml` and `config.yaml` should be kept secure, as they will contain 
 
 ### Terraform provider
 
-In addition to CLI tools, there is Terraform provider `terraform-provider-flexkube` available in [cmd/terraform-provider-flexkube](cmd/terraform-provider-flexkube).
+In addition to CLI binaries, there is Terraform provider `terraform-provider-flexkube` available in [cmd/terraform-provider-flexkube](cmd/terraform-provider-flexkube).
 This provider allows to create all resources mentioned above using Terraform.
 
 Current implementation is very minimal, as each resource simply takes `config.yaml` file content using `config` parameter and it stores `state.yaml`
@@ -98,7 +101,32 @@ Following Terraform modules are the recommended way to manage those certificates
 - [terraform-etcd-pki](https://github.com/invidian/terraform-etcd-pki) - generates etcd CA certificate, peer certificates and client certificates
 - [terraform-kubernetes-pki](https://github.com/invidian/terraform-kubernetes-pki) - generates Kubernetes CA and all other required certificates for functional Kubernetes cluster
 
-## Installing self-hosted Kubernetes Control Plane
+In the future go package might be added to manage them, to avoid having Terraform as a dependency.
+
+## Getting started
+
+### Deploying etcd cluster
+
+First thing required for Kubernetes cluster is etcd cluster. It can be deployed using [cmd/etcd-cluster](cmd/etcd-cluster) binary. Please refer to [pkg/etcd/cluster.go#L18](pkg/etcd/cluster.go#L18) and [pkg/etcd/member.go#L15](pkg/etcd/member.go#L15) for required configuration.
+
+### Deploying API Load Balancer (Optional)
+
+If you plan to have more than one control plane node, it is recommended to use the API Load Balancer, which will take care of HA on the client side, as currently `Kubelet` is not able to handle multiple API servers. It can be deployed using [cmd/api-loadbalancers](cmd/api-loadbalancers).
+
+Configuration reference:
+- [pkg/apiloadbalancer/api-loadbalancers.go#L16](pkg/apiloadbalancer/api-loadbalancers.go#L16)
+- [pkg/apiloadbalancer/api-loadbalancer.go#L16](pkg/apiloadbalancer/api-loadbalancer.go#L16)
+
+### Bootstrap control plane
+
+Kubernetes static Control Plane is required to kick off the self-hosted control plane. It consist of minimal set of processes:
+- kube-apiserver
+- kube-controller-manager
+- kube-scheduler
+
+All those 3 containers can be created using [cmd/controlplane](cmd/controlplane) binary. The available parameters are described here: [pkg/controlplane/controlplane.go#L18](pkg/controlplane/controlplane.go#L18).
+
+### Installing self-hosted Kubernetes Control Plane
 
 Once bootstrap (static) control plane is running and functional, self-hosted version of it should be installed on top of that, to ensure better survivability and graceful updates.
 
@@ -112,6 +140,14 @@ The helm chart can be installed using one of the following methods:
 Once the chart is installed and it's pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm chart configuration is updated.
 
 Currently, this needs to be done manually using `docker stop` command.
+
+### Deploying kubelet pools
+
+Even though the self-hosted control plane can be installed, it won't be running without any nodes registered in the cluster. In order to get nodes in the cluster, `kubelet`s needs to be deployed.
+
+This can be done using [cmd/kubelet-pool](cmd/kubelet-pool), which deploys kubelet containers with the same configuration to multiple nodes. If you need kubelets with different configurations, please create multiple pools.
+
+The configuration reference can be found in [pkg/kubelet/pool.go#L18](pkg/kubelet/pool.go#L18).
 
 ## Current known issues and limitations
 
