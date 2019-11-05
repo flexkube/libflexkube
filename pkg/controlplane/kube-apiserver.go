@@ -18,7 +18,8 @@ type KubeAPIServer struct {
 	APIServerCertificate    string     `json:"apiServerCertificate,omitempty" yaml:"apiServerCertificate,omitempty"`
 	APIServerKey            string     `json:"apiServerKey,omitempty" yaml:"apiServerKey,omitempty"`
 	ServiceAccountPublicKey string     `json:"serviceAccountPublicKey,omitempty" yaml:"serviceAccountPublicKey,omitempty"`
-	Address                 string     `json:"address,omitempty" yaml:"address,omitempty"`
+	BindAddress             string     `json:"bindAddress,omitempty" yaml:"bindAddress,omitempty"`
+	AdvertiseAddress        string     `json:"advertiseAddress,omitempty" yaml:"advertiseAddress,omitempty"`
 	EtcdServers             []string   `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
 	ServiceCIDR             string     `json:"serviceCIDR,omitempty" yaml:"serviceCIDR,omitempty"`
 }
@@ -30,7 +31,8 @@ type kubeAPIServer struct {
 	apiServerCertificate    string
 	apiServerKey            string
 	serviceAccountPublicKey string
-	address                 string
+	bindAddress             string
+	advertiseAddress        string
 	etcdServers             []string
 	serviceCIDR             string
 }
@@ -72,7 +74,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 			},
 			Ports: []types.PortMap{
 				types.PortMap{
-					IP:       k.address,
+					IP:       k.bindAddress,
 					Protocol: "tcp",
 					// TODO make port configurable
 					Port: 8443,
@@ -97,7 +99,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				// Required to validate service account tokens created by controller manager
 				"--service-account-key-file=/etc/kubernetes/pki/service-account.crt",
 				// IP address which will be added to the kubernetes.default service endpoint
-				fmt.Sprintf("--advertise-address=%s", k.address),
+				fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
 				// For static api-server use non-standard port, so haproxy can use standard one
 				"--secure-port=8443",
 				// Be a bit more verbose.
@@ -127,7 +129,8 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		apiServerCertificate:    k.APIServerCertificate,
 		apiServerKey:            k.APIServerKey,
 		serviceAccountPublicKey: k.ServiceAccountPublicKey,
-		address:                 k.Address,
+		bindAddress:             k.BindAddress,
+		advertiseAddress:        k.AdvertiseAddress,
 		etcdServers:             k.EtcdServers,
 		serviceCIDR:             k.ServiceCIDR,
 	}
@@ -154,8 +157,11 @@ func (k *KubeAPIServer) Validate() error {
 	if k.ServiceAccountPublicKey == "" {
 		return fmt.Errorf("ServiceAccountPublicKey is empty")
 	}
-	if k.Address == "" {
-		return fmt.Errorf("Address is empty")
+	if k.BindAddress == "" {
+		return fmt.Errorf("BindAddress is empty")
+	}
+	if k.AdvertiseAddress == "" {
+		return fmt.Errorf("AdvertiseAddress is empty")
 	}
 	if len(k.EtcdServers) == 0 {
 		return fmt.Errorf("At least one etcd server must be defined")

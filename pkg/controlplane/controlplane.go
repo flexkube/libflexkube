@@ -193,8 +193,12 @@ func (c *Controlplane) buildKubeAPIServer() {
 	if len(c.KubeAPIServer.EtcdServers) == 0 && len(c.EtcdServers) >= 0 {
 		c.KubeAPIServer.EtcdServers = c.EtcdServers
 	}
-	if c.KubeAPIServer.Address == "" && c.APIServerAddress != "" {
-		c.KubeAPIServer.Address = c.APIServerAddress
+	if c.KubeAPIServer.BindAddress == "" && c.APIServerAddress != "" {
+		c.KubeAPIServer.BindAddress = c.APIServerAddress
+	}
+	if c.KubeAPIServer.AdvertiseAddress == "" && c.APIServerAddress != "" {
+		c.KubeAPIServer.AdvertiseAddress = c.APIServerAddress
+	}
 	}
 
 	// TODO find better way to handle defaults!!!
