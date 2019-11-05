@@ -33,7 +33,6 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredC
 	servers := []string{}
 	for i, s := range a.servers {
 		servers = append(servers, fmt.Sprintf("server %d %s:8443 check", i, s))
-		servers = append(servers, fmt.Sprintf("server %d-k8s %s:30443 check", i, s))
 	}
 
 	configFiles := make(map[string]string)
