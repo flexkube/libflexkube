@@ -24,6 +24,7 @@ type Controlplane struct {
 	APIServerCertificate     string         `json:"apiServerCertificate,omitempty" yaml:"apiServerCertificate,omitempty"`
 	APIServerKey             string         `json:"apiServerKey,omitempty" yaml:"apiServerKey,omitempty"`
 	APIServerAddress         string         `json:"apiServerAddress,omitempty" yaml:"apiServerAddress,omitempty"`
+	APIServerPort            int            `json:"apiServerPort,omitempty" yaml:"apiServerPort,omitempty"`
 	EtcdServers              []string       `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
 	AdminCertificate         string         `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
 	AdminKey                 string         `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
@@ -48,6 +49,7 @@ type controlplane struct {
 	apiServerCertificate     string
 	apiServerKey             string
 	apiServerAddress         string
+	apiServerPort            int
 	etcdServers              []string
 	adminCertificate         string
 	adminKey                 string
@@ -199,6 +201,8 @@ func (c *Controlplane) buildKubeAPIServer() {
 	if c.KubeAPIServer.AdvertiseAddress == "" && c.APIServerAddress != "" {
 		c.KubeAPIServer.AdvertiseAddress = c.APIServerAddress
 	}
+	if c.KubeAPIServer.SecurePort == 0 && c.APIServerPort != 0 {
+		c.KubeAPIServer.SecurePort = c.APIServerPort
 	}
 
 	// TODO find better way to handle defaults!!!
@@ -253,6 +257,7 @@ func (c *Controlplane) New() (*controlplane, error) {
 		apiServerCertificate:     c.APIServerCertificate,
 		apiServerKey:             c.APIServerKey,
 		apiServerAddress:         c.APIServerAddress,
+		apiServerPort:            c.APIServerPort,
 		etcdServers:              c.EtcdServers,
 		adminCertificate:         c.AdminCertificate,
 		adminKey:                 c.AdminKey,

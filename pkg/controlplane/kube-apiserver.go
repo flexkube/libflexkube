@@ -22,6 +22,7 @@ type KubeAPIServer struct {
 	AdvertiseAddress        string     `json:"advertiseAddress,omitempty" yaml:"advertiseAddress,omitempty"`
 	EtcdServers             []string   `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
 	ServiceCIDR             string     `json:"serviceCIDR,omitempty" yaml:"serviceCIDR,omitempty"`
+	SecurePort              int        `json:"securePort,omitempty" yaml:"securePort,omitempty"`
 }
 
 type kubeAPIServer struct {
@@ -35,6 +36,7 @@ type kubeAPIServer struct {
 	advertiseAddress        string
 	etcdServers             []string
 	serviceCIDR             string
+	securePort              int
 }
 
 func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
@@ -76,8 +78,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				types.PortMap{
 					IP:       k.bindAddress,
 					Protocol: "tcp",
-					// TODO make port configurable
-					Port: 8443,
+					Port:     k.securePort,
 				},
 			},
 			Args: []string{
@@ -101,7 +102,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				// IP address which will be added to the kubernetes.default service endpoint
 				fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
 				// For static api-server use non-standard port, so haproxy can use standard one
-				"--secure-port=8443",
+				fmt.Sprintf("--secure-port=%d", k.securePort),
 				// Be a bit more verbose.
 				"--v=2",
 				// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
@@ -133,6 +134,7 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		advertiseAddress:        k.AdvertiseAddress,
 		etcdServers:             k.EtcdServers,
 		serviceCIDR:             k.ServiceCIDR,
+		securePort:              k.SecurePort,
 	}
 
 	// The only optional parameter
@@ -168,6 +170,9 @@ func (k *KubeAPIServer) Validate() error {
 	}
 	if k.ServiceCIDR == "" {
 		return fmt.Errorf("serviceCIDR is empty")
+	}
+	if k.SecurePort == 0 {
+		return fmt.Errorf("SecurePort must be defined")
 	}
 
 	return nil
