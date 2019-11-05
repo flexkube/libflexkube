@@ -22,7 +22,7 @@ type Release struct {
 	// Namespace is a namespace, where helm release will be created and all it's resources
 	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
 
-	// Name is a name of the release used to indentify it
+	// Name is a name of the release used to identify it
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 
 	// Chart is a location of the chart. It may be local path or remote chart in user repository
@@ -55,7 +55,7 @@ func (r *Release) New() (*release, error) {
 	actionConfig := &action.Configuration{}
 	settings := cli.New()
 
-	// Safe to ignore errors, becuase Validate will return early if data is not valid
+	// Safe to ignore errors, because Validate will return early if data is not valid
 	g, kc, cs, _ := newClients(r.Kubeconfig)
 
 	actionConfig.RESTClientGetter = g

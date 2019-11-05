@@ -135,6 +135,6 @@ And features, which are not yet implemented:
 
 ## Contributing
 
-All contributions to this project are welcome. If it does not satify your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
+All contributions to this project are welcome. If it does not satisfy your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
 
-If you just want to help the project grow and mature, there are many TODOs spred across the code, which should be addresses sooner or later.
+If you just want to help the project grow and mature, there are many TODOs spread across the code, which should be addresses sooner or later.

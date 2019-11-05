@@ -18,7 +18,7 @@ func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Cl
 	// Inlining helm.sh/helm/v3/pkg/kube.New() to be able to override the config
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		// According to helm, this error should never happen
-		return nil, nil, nil, fmt.Errorf("unknown error occured: %w", err)
+		return nil, nil, nil, fmt.Errorf("unknown error occurred: %w", err)
 	}
 
 	g, err := client.NewGetter([]byte(kubeconfig))
