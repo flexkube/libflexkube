@@ -156,6 +156,7 @@ Currently, there are several things, which are either missing or broken. Here is
 - network plug-ins are not configurable (currently `kubenet` is hardcoded)
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
 - adding/removing etcd members
+- surviving reboot not tested
 
 And features, which are not yet implemented:
 - TLS encryption between etcd and kubernetes API server
@@ -168,6 +169,9 @@ And features, which are not yet implemented:
 - paralllel deployments across hosts
 - showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
+- automatic shutdown/start of bootstrap control plane
+- taints and tolerations for control plane
+- role labels for kubelets
 
 ## Contributing
 
