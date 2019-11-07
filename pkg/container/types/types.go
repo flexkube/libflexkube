@@ -23,8 +23,8 @@ type ContainerConfig struct {
 type ContainerStatus struct {
 	Image  string `json:"image" yaml:"image"`
 	ID     string `json:"id" yaml:"id"`
-	Name   string `json:"name", yaml:"name"`
-	Status string `json:"status", yaml:"status"`
+	Name   string `json:"name" yaml:"name"`
+	Status string `json:"status" yaml:"status"`
 }
 
 // PortMap is basically a github.com/docker/go-connections/nat.PortMap
