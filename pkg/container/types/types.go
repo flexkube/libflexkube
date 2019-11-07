@@ -14,7 +14,7 @@ type ContainerConfig struct {
 	Privileged  bool      `json:"privileged,omitempty" yaml:"privileged,omitempty"`
 	NetworkMode string    `json:"networkMode,omitempty" yaml:"networkMode,omitempty"`
 	PidMode     string    `json:"pidMode,omitempty" yaml:"pidMode,omitempty"`
-	IpcMode     string    `json:"ipcMode,omitempty" yaml:ipcMode,omitempty"`
+	IpcMode     string    `json:"ipcMode,omitempty" yaml:"ipcMode,omitempty"`
 }
 
 // ContainerStatus stores status information received from the runtime
