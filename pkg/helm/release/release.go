@@ -1,4 +1,4 @@
-package helm
+package release
 
 import (
 	"fmt"
@@ -258,4 +258,19 @@ func (r *Release) parseValues() (map[string]interface{}, error) {
 	}
 
 	return values, nil
+}
+
+func FromYaml(data []byte) (*release, error) {
+	r := Release{}
+
+	if err := yaml.Unmarshal(data, &r); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal release: %w", err)
+	}
+
+	release, err := r.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create release: %w", err)
+	}
+
+	return release, nil
 }

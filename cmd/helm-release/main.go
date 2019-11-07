@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"sigs.k8s.io/yaml"
-
-	"github.com/invidian/libflexkube/pkg/helm"
+	"github.com/invidian/libflexkube/pkg/helm/release"
 )
 
 func main() {
@@ -15,17 +13,10 @@ func main() {
 		panic(err)
 	}
 
-	r := helm.Release{}
-
-	if err := yaml.Unmarshal(config, &r); err != nil {
+	release, err := release.FromYaml(config)
+	if err != nil {
 		panic(err)
 	}
-
-	if err := r.Validate(); err != nil {
-		panic(err)
-	}
-
-	release, _ := r.New()
 
 	if err := release.ValidateChart(); err != nil {
 		panic(err)

@@ -2,7 +2,7 @@ package flexkube
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/invidian/libflexkube/pkg/helm"
+	"github.com/invidian/libflexkube/pkg/helm/release"
 )
 
 func resourceHelmRelease() *schema.Resource {
@@ -37,7 +37,7 @@ func resourceHelmRelease() *schema.Resource {
 }
 
 func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
-	r := helm.Release{
+	r := release.Release{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
@@ -62,7 +62,7 @@ func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
-	r := helm.Release{
+	r := release.Release{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
@@ -92,7 +92,7 @@ func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseDelete(d *schema.ResourceData, m interface{}) error {
-	r := helm.Release{
+	r := release.Release{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
