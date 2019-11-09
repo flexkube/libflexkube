@@ -1,0 +1,30 @@
+kubernetesCACertificate: |
+  <insert PEM cert here>
+kubernetesCAKey: |
+  <insert PEM cert here>
+apiServerCertificate: |
+  <insert PEM cert here>
+apiServerKey: |
+  <insert PEM cert here>
+serviceAccountPublicKey: |
+  <insert PEM cert here>
+serviceAccountPrivateKey: |
+  <insert PEM cert here>
+adminCertificate: |
+  <insert PEM cert here>
+adminKey: |
+  <insert PEM cert here>
+rootCACertificate: |
+  <insert PEM cert here>
+kubeAPIServer:
+    serviceCIDR: 11.0.0.0/24
+    bindAddress: 0.0.0.0
+kubeControllerManager:
+    rootCACertificate: |
+      <insert PEM cert here>
+apiServerAddress: 127.0.0.1
+apiServerPort: 6443
+etcdServers:
+- http://127.0.0.1:2379
+serviceCIDR: 11.0.0.0/24
+shutdown: true
