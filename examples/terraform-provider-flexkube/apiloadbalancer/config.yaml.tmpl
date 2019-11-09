@@ -1,0 +1,10 @@
+apiLoadBalancers:
+%{ for address in metrics_bind_addresses ~}
+- metricsBindAddress: ${address}
+  host:
+    direct: {}
+%{ endfor ~}
+servers:
+%{ for server in servers ~}
+- ${server}
+%{ endfor ~}
