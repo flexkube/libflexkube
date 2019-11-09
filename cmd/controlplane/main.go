@@ -34,20 +34,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Creating etcd cluster object")
+	fmt.Println("Creating static Kubernetes Control Plane containers")
 	c, err := controlplane.FromYaml([]byte(string(s) + string(config)))
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Checking current state of the cluster")
+	fmt.Println("Checking current state of the containers")
 	if err := c.CheckCurrentState(); err != nil {
 		panic(err)
 	}
-	fmt.Println("Deploying cluster updates")
+	fmt.Println("Deploying container updates")
 	if err := c.Deploy(); err != nil {
 		panic(err)
 	}
-	fmt.Println("Saving new cluster state to state.yaml file")
+	fmt.Println("Saving new containers state to state.yaml file")
 	state, err := c.StateToYaml()
 	if err != nil {
 		panic(err)
