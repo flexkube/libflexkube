@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubectl/pkg/cmd/util"
 
-	"github.com/invidian/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 // TODO maybe we should return struct here?

@@ -3,7 +3,7 @@ package flexkube
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/invidian/libflexkube/pkg/etcd"
+	"github.com/flexkube/libflexkube/pkg/etcd"
 )
 
 func resourceEtcdCluster() *schema.Resource {

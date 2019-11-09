@@ -5,9 +5,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/invidian/libflexkube/pkg/container/runtime"
-	"github.com/invidian/libflexkube/pkg/container/runtime/docker"
-	"github.com/invidian/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
 // Container represents public, serializable version of the container object.

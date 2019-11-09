@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/invidian/libflexkube/pkg/apiloadbalancer"
+	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 )
 
 func readYamlFile(file string) ([]byte, error) {

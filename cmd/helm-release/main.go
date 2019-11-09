@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/invidian/libflexkube/pkg/helm/release"
+	"github.com/flexkube/libflexkube/pkg/helm/release"
 )
 
 func main() {

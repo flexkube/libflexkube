@@ -16,9 +16,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/invidian/libflexkube/pkg/container/runtime"
-	"github.com/invidian/libflexkube/pkg/container/types"
-	"github.com/invidian/libflexkube/pkg/defaults"
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
+	"github.com/flexkube/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
 // Docker struct represents Docker container runtime configuration

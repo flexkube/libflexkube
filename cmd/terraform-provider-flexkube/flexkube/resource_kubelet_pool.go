@@ -3,7 +3,7 @@ package flexkube
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/invidian/libflexkube/pkg/kubelet"
+	"github.com/flexkube/libflexkube/pkg/kubelet"
 )
 
 func resourceKubeletPool() *schema.Resource {

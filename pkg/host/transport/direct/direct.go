@@ -3,7 +3,7 @@ package direct
 import (
 	"fmt"
 
-	"github.com/invidian/libflexkube/pkg/host/transport"
+	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
 type DirectConfig struct{}

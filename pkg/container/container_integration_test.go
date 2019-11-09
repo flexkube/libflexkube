@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/invidian/libflexkube/pkg/container/types"
-	"github.com/invidian/libflexkube/pkg/defaults"
+	"github.com/flexkube/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
 // Create()

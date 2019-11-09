@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/invidian/libflexkube/pkg/kubelet"
+	"github.com/flexkube/libflexkube/pkg/kubelet"
 )
 
 func readYamlFile(file string) ([]byte, error) {

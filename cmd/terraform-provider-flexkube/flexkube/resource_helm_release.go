@@ -2,7 +2,7 @@ package flexkube
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/invidian/libflexkube/pkg/helm/release"
+	"github.com/flexkube/libflexkube/pkg/helm/release"
 )
 
 func resourceHelmRelease() *schema.Resource {
