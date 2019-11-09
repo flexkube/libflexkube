@@ -1,0 +1,13 @@
+peerCACertificate: |
+    ${indent(4, trimspace(peer_ca))}
+members:
+%{ for index, ip in peer_ips ~}
+    ${peer_names[index]}:
+        peerCertificate: |
+            ${indent(12, trimspace(peer_certs[index]))}
+        peerKey: |
+            ${indent(12, trimspace(peer_keys[index]))}
+        host:
+            direct: {}
+        peerAddress: ${peer_ips[index]}
+%{ endfor ~}
