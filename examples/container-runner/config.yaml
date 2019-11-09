@@ -1,0 +1,10 @@
+desiredState:
+  foo:
+    host:
+      direct: {}
+    container:
+      runtime:
+        docker: {}
+      config:
+        name: baz
+        image: nginx
