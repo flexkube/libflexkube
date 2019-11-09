@@ -28,7 +28,7 @@ update:
 	$(GOMOD) tidy
 
 codespell:
-	codespell  -S .git,state.yaml,go.sum
+	codespell  -S .git,state.yaml,go.sum,terraform.tfstate
 
 codespell-pr:
 	git diff master..HEAD | grep -v ^- | codespell -
