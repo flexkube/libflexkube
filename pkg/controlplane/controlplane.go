@@ -35,6 +35,8 @@ type Controlplane struct {
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty" yaml:"kubeControllerManager,omitempty"`
 	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty" yaml:"kubeScheduler,omitempty"`
 
+	Shutdown bool `json:"shutdown,omitempty" yaml:"shutdown,omitempty"`
+
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
 }
@@ -55,6 +57,7 @@ type controlplane struct {
 	adminCertificate         string
 	adminKey                 string
 	rootCACertificate        string
+	shutdown                 bool
 
 	containers container.Containers
 }
@@ -248,6 +251,16 @@ func (c *Controlplane) New() (*controlplane, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
+	// If shutdown is requested, only shut down containers.
+	if c.Shutdown {
+		return &controlplane{
+			containers: container.Containers{
+				PreviousState: c.State,
+				DesiredState:  make(container.ContainersState),
+			},
+		}, nil
+	}
+
 	controlplane := &controlplane{
 		image:                    c.Image,
 		ssh:                      c.SSH,
@@ -263,6 +276,7 @@ func (c *Controlplane) New() (*controlplane, error) {
 		adminCertificate:         c.AdminCertificate,
 		adminKey:                 c.AdminKey,
 		rootCACertificate:        c.RootCACertificate,
+		shutdown:                 c.Shutdown,
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
