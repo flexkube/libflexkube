@@ -28,11 +28,11 @@ type Controlplane struct {
 	EtcdServers              []string       `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
 	AdminCertificate         string         `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
 	AdminKey                 string         `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
-	RootCACertificate        string         `json:"rootCACertificate,omitempty" yaml"rootCACertificate,omitempty"`
+	RootCACertificate        string         `json:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
 
 	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty" yaml:"kubeAPIServer,omitempty"`
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty" yaml:"kubeControllerManager,omitempty"`
-	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty" yaml"kubeScheduler,omitempty"`
+	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty" yaml:"kubeScheduler,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
