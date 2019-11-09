@@ -1,0 +1,8 @@
+namespace: kube-system
+chart: stable/coredns
+name: coredns
+values: |
+  service:
+    clusterIP: 11.0.0.10
+kubeconfig: |
+  <content of your kubeconfig file>
