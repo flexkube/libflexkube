@@ -1,0 +1,11 @@
+kubelets:
+- address: 127.0.0.1
+  podCIDR: 10.42.0.0/24
+  bootstrapKubeconfig: |
+    <bootstrap kubeconfig content>
+  host:
+    direct: {}
+kubernetesCACertificate: |
+  <kubernetes CA certificate in PEM format>
+clusterDNSIPs:
+- 11.0.0.10
