@@ -76,6 +76,46 @@ Current implementation is very minimal, as each resource simply takes `config.ya
 file content in `state` computed parameter, which is stored in the Terraform state. However, it already allows fully automated deployment of
 entire Kubernetes cluster.
 
+## Example usage
+
+In [examples](examples) directory, you can find example configuration files for each CLI tool. In [examples/terraform-provider-flexkube](examples/terraform-provider-flexkube) you can find Terraform snippets, which automates creating valid configuration file and creating the resource itself.
+
+All examples are currently configured to create containers on the local file-system. Please note, that creating containers will create configuration files on the root file-system, so it may override some of your files! Testing in the isolated environment is recommended. For example creating etcd member, will override files mentioned [here](pkg/etcd/member.go#L42).
+
+If you want to deploy to the remote host over SSH, you can change following configuration fragment:
+
+```
+host:
+  direct: {}
+```
+
+to SSH configuration:
+
+```
+host:
+  ssh:
+    address: "<remote host>"
+    port: 2222
+    user: "core"
+    privateKey: |
+      <SSH private key to use>
+```
+
+If you deploy to multiple hosts over SSH, you can also define default SSH configuration, by placing `ssh` block on the top level of the configuration. For example, if you always want to use port 2222:
+```
+ssh:
+  port: 2222
+```
+
+All those defaults can be overriden per instance of your container:
+```
+kubelets:
+- host:
+    ssh:
+      address: "<remote host>"
+      port: 3333
+```
+
 ## Supported container runtimes
 
 Currently only Docker is supported as a container runtime. Support for more container runtimes should be added in the future.
