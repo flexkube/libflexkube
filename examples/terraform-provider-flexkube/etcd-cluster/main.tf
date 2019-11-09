@@ -1,13 +1,13 @@
 provider "flexkube" {}
 
 module "root_pki" {
-  source = "git::https://github.com/invidian/terraform-root-pki.git"
+  source = "git::https://github.com/flexkube/terraform-root-pki.git"
 
   organization = "example"
 }
 
 module "etcd_pki" {
-  source = "git::https://github.com/invidian/terraform-etcd-pki.git"
+  source = "git::https://github.com/flexkube/terraform-etcd-pki.git"
 
   root_ca_cert      = module.root_pki.root_ca_cert
   root_ca_key       = module.root_pki.root_ca_key

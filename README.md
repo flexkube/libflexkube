@@ -137,9 +137,9 @@ Each transport protocol must implement [transport](pkg/host/transport/transport.
 All deployments require X.509 certificates to secure the communication between components with TLS.
 
 Following Terraform modules are the recommended way to manage those certificates:
-- [terraform-root-pki](https://github.com/invidian/terraform-root-pki) - generates root CA certificate, which should be used to sign intermediate CA certificates (etcd CA, Kubernetes CA etc).
-- [terraform-etcd-pki](https://github.com/invidian/terraform-etcd-pki) - generates etcd CA certificate, peer certificates and client certificates
-- [terraform-kubernetes-pki](https://github.com/invidian/terraform-kubernetes-pki) - generates Kubernetes CA and all other required certificates for functional Kubernetes cluster
+- [terraform-root-pki](https://github.com/flexkube/terraform-root-pki) - generates root CA certificate, which should be used to sign intermediate CA certificates (etcd CA, Kubernetes CA etc).
+- [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki) - generates etcd CA certificate, peer certificates and client certificates
+- [terraform-kubernetes-pki](https://github.com/flexkube/terraform-kubernetes-pki) - generates Kubernetes CA and all other required certificates for functional Kubernetes cluster
 
 In the future go package might be added to manage them, to avoid having Terraform as a dependency.
 
@@ -170,7 +170,7 @@ All those 3 containers can be created using [cmd/controlplane](cmd/controlplane)
 
 Once bootstrap (static) control plane is running and functional, self-hosted version of it should be installed on top of that, to ensure better survivability and graceful updates.
 
-Recommended way of doing that is using [kubernetes-helm-chart](https://github.com/invidian/kubernetes-helm-chart).
+Recommended way of doing that is using [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
 
 The helm chart can be installed using one of the following methods:
 - using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
