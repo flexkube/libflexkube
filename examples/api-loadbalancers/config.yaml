@@ -1,0 +1,6 @@
+apiLoadBalancers:
+- metricsBindAddress: 127.0.0.1
+  host:
+    direct: {}
+servers:
+- 127.0.0.1
