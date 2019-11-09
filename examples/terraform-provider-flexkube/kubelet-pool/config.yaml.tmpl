@@ -1,0 +1,30 @@
+kubelets:
+%{ for index, address in kubelet_addresses ~}
+- address: ${address}
+  podCIDR: ${kubelet_pod_cidrs[index]}
+  bootstrapKubeconfig: |
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - cluster:
+          certificate-authority: /etc/kubernetes/pki/ca.crt
+          server: https://localhost:6443
+        name: bootstrap
+      contexts:
+      - context:
+          cluster: bootstrap
+          user: kubelet-bootstrap
+        name: bootstrap
+      current-context: bootstrap
+      preferences: {}
+      users:
+      - name: kubelet-bootstrap
+        user:
+          token: 07401b.f395accd246ae52d
+  host:
+      direct: {}
+%{ endfor ~}
+kubernetesCACertificate: |
+    ${indent(4, trimspace(kubernetes_ca_certificate))}
+clusterDNSIPs:
+- 11.0.0.10
