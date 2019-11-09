@@ -2,3 +2,5 @@ coverage.txt
 state.yaml
 config.yaml
 !examples/**/config.yaml
+terraform.tfstate*
+.terraform
