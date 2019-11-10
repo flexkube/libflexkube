@@ -116,6 +116,16 @@ kubelets:
       port: 3333
 ```
 
+To quickly try out each `config.yaml` file, you can use following command:
+```
+go run github.com/flexkube/libflexkube/cmd/<name of the tool>
+```
+
+For example, if you want to create simple container, run following command in [examples/container-runner](examples/container-runner) directory:
+```
+go run github.com/flexkube/libflexkube/cmd/container-runner
+```
+
 ## Supported container runtimes
 
 Currently only Docker is supported as a container runtime. Support for more container runtimes should be added in the future.
