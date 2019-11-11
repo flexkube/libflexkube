@@ -82,6 +82,18 @@ In [examples](examples) directory, you can find example configuration files for 
 
 All examples are currently configured to create containers on the local file-system. Please note, that creating containers will create configuration files on the root file-system, so it may override some of your files! Testing in the isolated environment is recommended. For example creating etcd member, will override files mentioned [here](pkg/etcd/member.go#L42).
 
+To quickly try out each `config.yaml` file, you can use following command:
+```
+go run github.com/flexkube/libflexkube/cmd/<name of the tool>
+```
+
+For example, if you want to create simple container, run following command in [examples/container-runner](examples/container-runner) directory:
+```
+go run github.com/flexkube/libflexkube/cmd/container-runner
+```
+
+### Deploying over SSH
+
 If you want to deploy to the remote host over SSH, you can change following configuration fragment:
 
 ```
@@ -116,15 +128,13 @@ kubelets:
       port: 3333
 ```
 
-To quickly try out each `config.yaml` file, you can use following command:
+You can also authenticate with SSH using password:
 ```
-go run github.com/flexkube/libflexkube/cmd/<name of the tool>
+ssh:
+  password: "foo"
 ```
 
-For example, if you want to create simple container, run following command in [examples/container-runner](examples/container-runner) directory:
-```
-go run github.com/flexkube/libflexkube/cmd/container-runner
-```
+SSH agent authentication is currently NOT supported.
 
 ## Supported container runtimes
 
