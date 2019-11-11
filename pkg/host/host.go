@@ -16,7 +16,7 @@ type Host struct {
 }
 
 type host struct {
-	transportConfig transport.TransportConfig
+	transportConfig transport.Config
 }
 
 type hostConnected struct {
@@ -28,7 +28,7 @@ func New(h *Host) (*host, error) {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
 	}
 	// TODO that seems ugly, is there a better way to generalize it?
-	var t transport.TransportConfig
+	var t transport.Config
 	if h.DirectConfig != nil {
 		t = h.DirectConfig
 	}
