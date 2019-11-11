@@ -119,7 +119,7 @@ ssh:
   port: 2222
 ```
 
-All those defaults can be overriden per instance of your container:
+All those defaults can be overridden per instance of your container:
 ```
 kubelets:
 - host:
