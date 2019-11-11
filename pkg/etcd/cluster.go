@@ -75,7 +75,7 @@ func (c *Cluster) New() (*cluster, error) {
 		// TODO find better way to handle defaults!!!
 		if m.Host == nil || (m.Host.DirectConfig == nil && m.Host.SSHConfig == nil) {
 			m.Host = &host.Host{
-				DirectConfig: &direct.DirectConfig{},
+				DirectConfig: &direct.Config{},
 			}
 		}
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
@@ -130,7 +130,7 @@ func (c *Cluster) Validate() error {
 		}
 		if m.Host == nil || m.Host.DirectConfig == nil || m.Host.SSHConfig == nil {
 			m.Host = &host.Host{
-				DirectConfig: &direct.DirectConfig{},
+				DirectConfig: &direct.Config{},
 			}
 		}
 		if err := m.Validate(); err != nil {

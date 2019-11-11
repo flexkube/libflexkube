@@ -11,8 +11,8 @@ import (
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
 type Host struct {
-	DirectConfig *direct.DirectConfig `json:"direct,omitempty" yaml:"direct,omitempty"`
-	SSHConfig    *ssh.SSHConfig       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	DirectConfig *direct.Config `json:"direct,omitempty" yaml:"direct,omitempty"`
+	SSHConfig    *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
 type host struct {

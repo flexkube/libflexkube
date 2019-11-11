@@ -82,7 +82,7 @@ func (c *Controlplane) buildKubeScheduler() {
 	// TODO find better way to handle defaults!!!
 	if (c.KubeScheduler.Host == nil || (c.KubeScheduler.Host.DirectConfig == nil && c.KubeScheduler.Host.SSHConfig == nil)) && c.SSH == nil {
 		c.KubeScheduler.Host = &host.Host{
-			DirectConfig: &direct.DirectConfig{},
+			DirectConfig: &direct.Config{},
 		}
 	}
 	if c.KubeScheduler.Host == nil {
@@ -146,7 +146,7 @@ func (c *Controlplane) buildKubeControllerManager() {
 	// TODO find better way to handle defaults!!!
 	if (c.KubeControllerManager.Host == nil || (c.KubeControllerManager.Host.DirectConfig == nil && c.KubeControllerManager.Host.SSHConfig == nil)) && c.SSH == nil {
 		c.KubeControllerManager.Host = &host.Host{
-			DirectConfig: &direct.DirectConfig{},
+			DirectConfig: &direct.Config{},
 		}
 	}
 	if c.KubeControllerManager.Host == nil {
@@ -212,7 +212,7 @@ func (c *Controlplane) buildKubeAPIServer() {
 	// TODO find better way to handle defaults!!!
 	if (c.KubeAPIServer.Host == nil || (c.KubeAPIServer.Host.DirectConfig == nil && c.KubeAPIServer.Host.SSHConfig == nil)) && c.SSH == nil {
 		c.KubeAPIServer.Host = &host.Host{
-			DirectConfig: &direct.DirectConfig{},
+			DirectConfig: &direct.Config{},
 		}
 	}
 	if c.KubeAPIServer.Host == nil {

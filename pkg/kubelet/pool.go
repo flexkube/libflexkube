@@ -63,7 +63,7 @@ func (p *Pool) New() (*pool, error) {
 		// TODO find better way to handle defaults!!!
 		if k.Host == nil || (k.Host.DirectConfig == nil && k.Host.SSHConfig == nil) {
 			k.Host = &host.Host{
-				DirectConfig: &direct.DirectConfig{},
+				DirectConfig: &direct.Config{},
 			}
 		}
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.PrivateKey == "" && p.SSH != nil && p.SSH.PrivateKey != "" {
