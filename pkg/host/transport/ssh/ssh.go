@@ -13,6 +13,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
+// Config represents SSH transport configuration
 type Config struct {
 	Address           string `json:"address" yaml:"address"`
 	Port              int    `json:"port" yaml:"port"`
@@ -22,6 +23,7 @@ type Config struct {
 	PrivateKey        string `json:"privateKey,omitempty" yaml:"privateKey,omitempty"`
 }
 
+// ssh is an implementation of Transport interface over SSH protocol
 type ssh struct {
 	address           string
 	user              string
@@ -29,7 +31,7 @@ type ssh struct {
 	auth              []gossh.AuthMethod
 }
 
-// New may in the future validate ssh configuration.
+// New creates new instance of ssh struct
 func (d *Config) New() (transport.Transport, error) {
 	if err := d.Validate(); err != nil {
 		return nil, fmt.Errorf("ssh host validation failed: %w", err)
@@ -56,6 +58,7 @@ func (d *Config) New() (transport.Transport, error) {
 	return s, nil
 }
 
+// Validate validates given configuration and returns on first encountered error
 func (d *Config) Validate() error {
 	if d.Address == "" {
 		return fmt.Errorf("address must be set")
@@ -87,6 +90,8 @@ func (d *Config) Validate() error {
 	return nil
 }
 
+// ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
+// it to the local socket.
 func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	sshConfig := &gossh.ClientConfig{
 		Auth:    d.auth,
@@ -163,6 +168,8 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	return fmt.Sprintf("unix://%s", localAddr), nil
 }
 
+// handleClient is responsible for copying incoming and outgoing data going
+// through the forwarded connection
 func handleClient(client net.Conn, remote net.Conn) {
 	defer client.Close()
 	chDone := make(chan bool)
