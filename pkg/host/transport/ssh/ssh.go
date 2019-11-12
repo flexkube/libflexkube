@@ -16,7 +16,7 @@ import (
 )
 
 type SSHConfig struct {
-	Host              string `json:"address" yaml:"address"`
+	Address           string `json:"address" yaml:"address"`
 	Port              int    `json:"port", yaml:"port"`
 	User              string `json:"user" yaml:"user"`
 	Password          string `json:"password,omitempty" yaml:"password,omitempty"`
@@ -41,7 +41,7 @@ func (d *SSHConfig) New() (transport.Transport, error) {
 	ct, _ := time.ParseDuration(d.ConnectionTimeout)
 
 	s := &ssh{
-		address:           fmt.Sprintf("%s:%d", d.Host, d.Port),
+		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
 		user:              d.User,
 		connectionTimeout: ct,
 	}
@@ -58,7 +58,7 @@ func (d *SSHConfig) New() (transport.Transport, error) {
 }
 
 func (d *SSHConfig) Validate() error {
-	if d.Host == "" {
+	if d.Address == "" {
 		return fmt.Errorf("address must be set")
 	}
 	if d.User == "" {
