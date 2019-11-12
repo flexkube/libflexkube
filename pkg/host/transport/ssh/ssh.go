@@ -28,7 +28,7 @@ type ssh struct {
 	address           string
 	user              string
 	connectionTimeout time.Duration
-	auth              gossh.AuthMethod
+	auth              []gossh.AuthMethod
 }
 
 // New may in the future validate ssh configuration.
@@ -44,14 +44,15 @@ func (d *Config) New() (transport.Transport, error) {
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
 		user:              d.User,
 		connectionTimeout: ct,
+		auth:              []gossh.AuthMethod{},
 	}
 
 	if d.Password != "" {
-		s.auth = gossh.Password(d.Password)
+		s.auth = append(s.auth, gossh.Password(d.Password))
 	}
 	if d.PrivateKey != "" {
 		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey))
-		s.auth = gossh.PublicKeys(signer)
+		s.auth = append(s.auth, gossh.PublicKeys(signer))
 	}
 
 	return s, nil
@@ -66,9 +67,6 @@ func (d *Config) Validate() error {
 	}
 	if d.Password == "" && d.PrivateKey == "" {
 		return fmt.Errorf("either password or private key must be set for authentication")
-	}
-	if d.Password != "" && d.PrivateKey != "" {
-		return fmt.Errorf("password and private key can't be specified together")
 	}
 	if d.ConnectionTimeout == "" {
 		return fmt.Errorf("connection timeout must be set")
@@ -93,7 +91,7 @@ func (d *Config) Validate() error {
 
 func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	sshConfig := &gossh.ClientConfig{
-		Auth:    []gossh.AuthMethod{d.auth},
+		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
 		User:    d.user,
 		// TODO add possibility to specify host keys, which should be accepted
