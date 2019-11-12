@@ -3,13 +3,11 @@ package ssh
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/url"
-	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/flexkube/libflexkube/pkg/host/transport"
@@ -127,22 +125,24 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
 	}
 
-	dir, err := ioutil.TempDir("", "flexkube")
+	// Generate new UUID for every connection, to make sure we don't get "address already in use" error
+	// TODO rather than connecting again every time ForwardUnixSocket is called
+	// we should cache and reuse the connections
+	id, err := uuid.NewRandom()
 	if err != nil {
-		return "", fmt.Errorf("unable to create temp directory for socket forwarding: %w", err)
+		return "", fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
 	}
 
-	localAddr := filepath.Join(dir, fmt.Sprintf("%s.sock", d.address))
-	localSock, err := net.Listen("unix", localAddr)
+	localAddr := fmt.Sprintf("@%s-%s", d.address, id)
+	localSock, err := net.ListenUnix("unix", &net.UnixAddr{localAddr, "unix"})
 	if err != nil {
-		return "", fmt.Errorf("unable to listen on address %s", localAddr)
+		return "", fmt.Errorf("unable to listen on address '%s':%w", localAddr, err)
 	}
 
 	// For every listener spawn the following routine
-	go func(l net.Listener, remote string, dir string) {
+	go func(l net.Listener, remote string) {
 		defer localSock.Close()
-		// TODO this does not work and pollutes /tmp dir at the moment!
-		defer os.RemoveAll(dir)
+
 		for {
 			c, err := l.Accept()
 			if err != nil {
@@ -158,7 +158,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 
 			go handleClient(c, remoteSock)
 		}
-	}(localSock, url.Path, dir)
+	}(localSock, url.Path)
 
 	return fmt.Sprintf("unix://%s", localAddr), nil
 }
