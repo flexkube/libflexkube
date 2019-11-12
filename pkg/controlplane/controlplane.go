@@ -16,20 +16,20 @@ type Controlplane struct {
 	// User-configurable fields
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
-	Image                    string         `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH                      *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	KubernetesCACertificate  string         `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	KubernetesCAKey          string         `json:"kubernetesCAKey,omitempty" yaml:"kubernetesCAKey,omitempty"`
-	ServiceAccountPublicKey  string         `json:"serviceAccountPublicKey,omitempty" yaml:"serviceAccountPublicKey,omitempty"`
-	ServiceAccountPrivateKey string         `json:"serviceAccountPrivateKey,omitempty" yaml:"serviceAccountPrivateKey,omitempty"`
-	APIServerCertificate     string         `json:"apiServerCertificate,omitempty" yaml:"apiServerCertificate,omitempty"`
-	APIServerKey             string         `json:"apiServerKey,omitempty" yaml:"apiServerKey,omitempty"`
-	APIServerAddress         string         `json:"apiServerAddress,omitempty" yaml:"apiServerAddress,omitempty"`
-	APIServerPort            int            `json:"apiServerPort,omitempty" yaml:"apiServerPort,omitempty"`
-	EtcdServers              []string       `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
-	AdminCertificate         string         `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
-	AdminKey                 string         `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
-	RootCACertificate        string         `json:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
+	Image                    string      `json:"image,omitempty" yaml:"image,omitempty"`
+	SSH                      *ssh.Config `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	KubernetesCACertificate  string      `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
+	KubernetesCAKey          string      `json:"kubernetesCAKey,omitempty" yaml:"kubernetesCAKey,omitempty"`
+	ServiceAccountPublicKey  string      `json:"serviceAccountPublicKey,omitempty" yaml:"serviceAccountPublicKey,omitempty"`
+	ServiceAccountPrivateKey string      `json:"serviceAccountPrivateKey,omitempty" yaml:"serviceAccountPrivateKey,omitempty"`
+	APIServerCertificate     string      `json:"apiServerCertificate,omitempty" yaml:"apiServerCertificate,omitempty"`
+	APIServerKey             string      `json:"apiServerKey,omitempty" yaml:"apiServerKey,omitempty"`
+	APIServerAddress         string      `json:"apiServerAddress,omitempty" yaml:"apiServerAddress,omitempty"`
+	APIServerPort            int         `json:"apiServerPort,omitempty" yaml:"apiServerPort,omitempty"`
+	EtcdServers              []string    `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
+	AdminCertificate         string      `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
+	AdminKey                 string      `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
+	RootCACertificate        string      `json:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
 
 	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty" yaml:"kubeAPIServer,omitempty"`
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty" yaml:"kubeControllerManager,omitempty"`
@@ -44,7 +44,7 @@ type Controlplane struct {
 // controlplane is executable version of Controlplane, with validated fields and calculated containers
 type controlplane struct {
 	image                    string
-	ssh                      *ssh.SSHConfig
+	ssh                      *ssh.Config
 	kubernetesCACertificate  string
 	kubernetesCAKey          string
 	serviceAccountPublicKey  string

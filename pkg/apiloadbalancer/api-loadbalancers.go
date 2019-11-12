@@ -14,7 +14,7 @@ import (
 
 type APILoadBalancers struct {
 	Image            string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH              *ssh.SSHConfig    `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	SSH              *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 	Servers          []string          `json:"servers,omitempty" yaml:"servers,omitempty"`
 	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty" yaml:"apiLoadBalancers,omitempty"`
 
@@ -24,7 +24,7 @@ type APILoadBalancers struct {
 
 type apiLoadBalancers struct {
 	image      string
-	ssh        *ssh.SSHConfig
+	ssh        *ssh.Config
 	containers container.Containers
 }
 

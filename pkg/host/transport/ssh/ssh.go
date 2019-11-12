@@ -15,7 +15,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
-type SSHConfig struct {
+type Config struct {
 	Address           string `json:"address" yaml:"address"`
 	Port              int    `json:"port", yaml:"port"`
 	User              string `json:"user" yaml:"user"`
@@ -32,7 +32,7 @@ type ssh struct {
 }
 
 // New may in the future validate ssh configuration.
-func (d *SSHConfig) New() (transport.Transport, error) {
+func (d *Config) New() (transport.Transport, error) {
 	if err := d.Validate(); err != nil {
 		return nil, fmt.Errorf("ssh host validation failed: %w", err)
 	}
@@ -57,7 +57,7 @@ func (d *SSHConfig) New() (transport.Transport, error) {
 	return s, nil
 }
 
-func (d *SSHConfig) Validate() error {
+func (d *Config) Validate() error {
 	if d.Address == "" {
 		return fmt.Errorf("address must be set")
 	}

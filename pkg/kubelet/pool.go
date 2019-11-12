@@ -15,12 +15,12 @@ import (
 // Pool represents group of kubelet instances and their configuration
 type Pool struct {
 	// User-configurable fields
-	Image                   string         `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH                     *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	BootstrapKubeconfig     string         `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
-	Kubelets                []Kubelet      `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
-	KubernetesCACertificate string         `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string       `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
+	Image                   string      `json:"image,omitempty" yaml:"image,omitempty"`
+	SSH                     *ssh.Config `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	BootstrapKubeconfig     string      `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
+	Kubelets                []Kubelet   `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
+	KubernetesCACertificate string      `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs           []string    `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
@@ -28,7 +28,7 @@ type Pool struct {
 
 type pool struct {
 	image      string
-	ssh        *ssh.SSHConfig
+	ssh        *ssh.Config
 	containers container.Containers
 }
 

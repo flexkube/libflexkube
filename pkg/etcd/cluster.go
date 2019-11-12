@@ -16,7 +16,7 @@ import (
 type Cluster struct {
 	// User-configurable fields
 	Image             string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH               *ssh.SSHConfig    `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	SSH               *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 	PeerCACertificate string            `json:"peerCACertificate,omitempty" yaml:"peerCACertificate,omitempty"`
 	Members           map[string]Member `json:"members,omitempty" yaml:"members,omitempty"`
 
@@ -27,7 +27,7 @@ type Cluster struct {
 // cluster is executable version of Cluster, with validated fields and calculated containers
 type cluster struct {
 	image             string
-	ssh               *ssh.SSHConfig
+	ssh               *ssh.Config
 	peerCACertificate string
 	containers        container.Containers
 }

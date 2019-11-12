@@ -12,7 +12,7 @@ import (
 // communication with remote daemons.
 type Host struct {
 	DirectConfig *direct.Config `json:"direct,omitempty" yaml:"direct,omitempty"`
-	SSHConfig    *ssh.SSHConfig `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	SSHConfig    *ssh.Config    `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
 type host struct {
