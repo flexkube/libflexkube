@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	Address           string `json:"address" yaml:"address"`
-	Port              int    `json:"port", yaml:"port"`
+	Port              int    `json:"port" yaml:"port"`
 	User              string `json:"user" yaml:"user"`
 	Password          string `json:"password,omitempty" yaml:"password,omitempty"`
 	ConnectionTimeout string `json:"connectionTimeout" yaml:"connectionTimeout"`
