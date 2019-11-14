@@ -23,6 +23,8 @@ type Container struct {
 	Runtime RuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
 }
 
+// RuntimeConfig is a collection of various runtime configurations which can be defined
+// by user.
 type RuntimeConfig struct {
 	Docker *docker.Config `json:"docker,omitempty" yaml:"docker,omitempty"`
 }
@@ -102,10 +104,14 @@ func (c *container) selectRuntime() error {
 	return nil
 }
 
+// GetRuntimeAddress returns connection address for configured runtime. This can be used,
+// for example when connection needs to be proxied.
 func (c *container) GetRuntimeAddress() string {
 	return c.runtimeConfig.GetAddress()
 }
 
+// SetRuntimeAddress sets connection address for configured runtime. This can be used,
+// for example when connection needs to be proxied.
 func (c *container) SetRuntimeAddress(a string) {
 	c.runtimeConfig.SetAddress(a)
 }
@@ -285,6 +291,7 @@ func (container *Container) Delete() error {
 	return nil
 }
 
+// Read takes file path as an argument and reads this file from the container
 func (container *Container) Read(srcPath string) (io.ReadCloser, error) {
 	c, err := New(container)
 	if err != nil {
@@ -297,6 +304,7 @@ func (container *Container) Read(srcPath string) (io.ReadCloser, error) {
 	return ci.Read(srcPath)
 }
 
+// Copy creates a file in desired path in the container
 func (container *Container) Copy(dstPath string, content io.Reader) error {
 	c, err := New(container)
 	if err != nil {
@@ -309,6 +317,8 @@ func (container *Container) Copy(dstPath string, content io.Reader) error {
 	return ci.Copy(dstPath, content)
 }
 
+// Stat checks if file exists in the container. If file exists, it returns file's mode.
+// If file does not exist, nil is returned.
 func (container *Container) Stat(path string) (*os.FileMode, error) {
 	c, err := New(container)
 	if err != nil {
