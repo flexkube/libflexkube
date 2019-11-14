@@ -23,10 +23,6 @@ func readYamlFile(file string) ([]byte, error) {
 	return c, nil
 }
 
-func saveStateFile(data []byte) error {
-	return ioutil.WriteFile("state.yaml", data, 0644)
-}
-
 func main() {
 	s, err := readYamlFile("state.yaml")
 	if err != nil {
@@ -40,16 +36,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Checking current state...\n")
+	fmt.Printf("Checking current state...\n\n")
 	if err := c.CheckCurrentState(); err != nil {
 		panic(err)
 	}
-	fmt.Println("Applying changes...\n")
+	fmt.Printf("Applying changes...\n\n")
 	if err := c.Execute(); err != nil {
 		panic(err)
 	}
-	fmt.Println("")
-	fmt.Println("Dumping current state to file...\n")
+	fmt.Printf("\nDumping current state to file...\n")
 	state, err := c.CurrentStateToYaml()
 	if err != nil {
 		panic(err)
