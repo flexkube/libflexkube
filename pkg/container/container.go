@@ -91,6 +91,16 @@ func (c *Container) Validate() error {
 	return nil
 }
 
+// ToInstance returns containerInstance directly from Container
+func (c *Container) ToInstance() (*containerInstance, error) {
+	container, err := New(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return container.FromStatus()
+}
+
 // selectRuntime returns container runtime configured for container
 //
 // It returns error if container runtime configuration is invalid
@@ -157,6 +167,20 @@ func (container *containerInstance) Status() (*types.ContainerStatus, error) {
 		return nil, fmt.Errorf("getting status for container '%s' failed: %w", container.config.Name, err)
 	}
 	return status, nil
+}
+
+// UpdateStatus updates status of exported Container struct. This function is primarly used
+// to reduce the boilerplate in helper functions, which allow to perform operations directly on
+// Container struct.
+func (c *containerInstance) updateStatus(container *Container) error {
+	s, err := c.Status()
+	if err != nil {
+		return err
+	}
+
+	container.Status = s
+
+	return nil
 }
 
 // Read reads given path from the container and returns reader with TAR format with file content
