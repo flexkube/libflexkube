@@ -26,15 +26,18 @@ type Config struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
 }
 
+// docker struct is a struct, which can be used to manage Docker containers
 type docker struct {
 	ctx context.Context
 	cli *client.Client
 }
 
+// SetAddress sets runtime config address where it should connect
 func (c *Config) SetAddress(s string) {
 	c.Host = s
 }
 
+// GetAddress returns configured container runtime address
 func (c *Config) GetAddress() string {
 	if c != nil && c.Host != "" {
 		return c.Host
