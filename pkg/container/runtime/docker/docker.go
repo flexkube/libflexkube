@@ -21,8 +21,8 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
-// Docker struct represents Docker container runtime configuration
-type ClientConfig struct {
+// Config struct represents Docker container runtime configuration
+type Config struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
 }
 
@@ -31,11 +31,11 @@ type docker struct {
 	cli *client.Client
 }
 
-func (c *ClientConfig) SetAddress(s string) {
+func (c *Config) SetAddress(s string) {
 	c.Host = s
 }
 
-func (c *ClientConfig) GetAddress() string {
+func (c *Config) GetAddress() string {
 	if c != nil && c.Host != "" {
 		return c.Host
 	}
@@ -44,7 +44,7 @@ func (c *ClientConfig) GetAddress() string {
 
 // New validates Docker runtime configuration and returns configured
 // runtime client.
-func (c *ClientConfig) New() (runtime.Runtime, error) {
+func (c *Config) New() (runtime.Runtime, error) {
 	opts := []client.Opt{
 		client.WithVersion(defaults.DockerAPIVersion),
 	}

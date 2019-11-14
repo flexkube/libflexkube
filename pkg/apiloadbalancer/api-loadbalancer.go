@@ -65,7 +65,7 @@ frontend stats
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
-			Docker: &docker.ClientConfig{},
+			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
 			// TODO make it configurable? And don't force user to use HAProxy

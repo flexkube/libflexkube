@@ -24,7 +24,7 @@ type Container struct {
 }
 
 type RuntimeConfig struct {
-	Docker *docker.ClientConfig `json:"docker,omitempty" yaml:"docker,omitempty"`
+	Docker *docker.Config `json:"docker,omitempty" yaml:"docker,omitempty"`
 }
 
 // container represents validated version of Container object, which contains all requires

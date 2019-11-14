@@ -6,7 +6,7 @@ import "testing"
 func TestNewClient(t *testing.T) {
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
-	c := &ClientConfig{}
+	c := &Config{}
 	_, err := c.New()
 	if err != nil {
 		t.Errorf("Creating new docker client should work, got: %s", err)
@@ -14,7 +14,7 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewClientWithHost(t *testing.T) {
-	config := &ClientConfig{
+	config := &Config{
 		Host: "unix:///foo.sock",
 	}
 	c, err := config.New()
