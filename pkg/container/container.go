@@ -161,10 +161,10 @@ func (c *container) FromStatus() (*containerInstance, error) {
 }
 
 // ReadState reads state of the container from container runtime and returns it to the user
-func (container *containerInstance) Status() (*types.ContainerStatus, error) {
-	status, err := container.runtime.Status(container.status.ID)
+func (c *containerInstance) Status() (*types.ContainerStatus, error) {
+	status, err := c.runtime.Status(c.status.ID)
 	if err != nil {
-		return nil, fmt.Errorf("getting status for container '%s' failed: %w", container.config.Name, err)
+		return nil, fmt.Errorf("getting status for container '%s' failed: %w", c.config.Name, err)
 	}
 	return status, nil
 }
@@ -204,18 +204,18 @@ func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
 }
 
 // Start starts the container container
-func (container *containerInstance) Start() error {
-	return container.runtime.Start(container.status.ID)
+func (c *containerInstance) Start() error {
+	return c.runtime.Start(c.status.ID)
 }
 
 // Stop stops the container container
-func (container *containerInstance) Stop() error {
-	return container.runtime.Stop(container.status.ID)
+func (c *containerInstance) Stop() error {
+	return c.runtime.Stop(c.status.ID)
 }
 
 // Delete removes container container
-func (container *containerInstance) Delete() error {
-	return container.runtime.Delete(container.status.ID)
+func (c *containerInstance) Delete() error {
+	return c.runtime.Delete(c.status.ID)
 }
 
 // UpdateStatus reads container existing status and updates it by communicating with container daemon
