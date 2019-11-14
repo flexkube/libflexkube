@@ -38,7 +38,7 @@ type member struct {
 
 func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
-	if m.peerCACertificate != "" && m.peerCertificate != "" && m.peerCertificate != "" {
+	if m.peerCACertificate != "" && m.peerCertificate != "" && m.peerKey != "" {
 		configFiles["/etc/kubernetes/pki/etcd/ca.crt"] = m.peerCACertificate
 		configFiles["/etc/kubernetes/pki/etcd/peer.crt"] = m.peerCertificate
 		configFiles["/etc/kubernetes/pki/etcd/peer.key"] = m.peerKey
