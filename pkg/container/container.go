@@ -220,137 +220,98 @@ func (container *containerInstance) Delete() error {
 
 // UpdateStatus reads container existing status and updates it by communicating with container daemon
 // This is a helper function, which simplifies calling containerInstance.Status() from Container.
-// TODO look how to remove the boilerplate
-func (container *Container) UpdateStatus() error {
-	c, err := New(container)
+func (c *Container) UpdateStatus() error {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return err
-	}
-	s, err := ci.Status()
-	if err != nil {
-		return err
-	}
-	container.Status = s
-	return nil
+
+	return ci.updateStatus(c)
 }
 
 // Start starts existing Container and updates it's status
-func (container *Container) Start() error {
-	c, err := New(container)
-	if err != nil {
-		return err
-	}
-	ci, err := c.FromStatus()
+func (c *Container) Start() error {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
 	if err := ci.Start(); err != nil {
 		return err
 	}
-	s, err := ci.Status()
-	if err != nil {
-		return err
-	}
-	container.Status = s
-	return nil
+
+	return ci.updateStatus(c)
 }
 
 // Stop stops existing Container and updates it's status
-func (container *Container) Stop() error {
-	c, err := New(container)
+func (c *Container) Stop() error {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return err
-	}
+
 	if err := ci.Stop(); err != nil {
 		return err
 	}
-	s, err := ci.Status()
-	if err != nil {
-		return err
-	}
-	container.Status = s
-	return nil
+
+	return ci.updateStatus(c)
 }
 
 // Create creates container and gets it's status
-func (container *Container) Create() error {
-	c, err := New(container)
+func (c *Container) Create() error {
+	nc, err := New(c)
 	if err != nil {
 		return err
 	}
-	ci, err := c.Create()
+	ci, err := nc.Create()
 	if err != nil {
 		return err
 	}
-	s, err := ci.Status()
-	if err != nil {
-		return err
-	}
-	container.Status = s
-	return nil
+
+	return ci.updateStatus(c)
 }
 
 // Delete removes container and removes it's status
-func (container *Container) Delete() error {
-	c, err := New(container)
+func (c *Container) Delete() error {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return err
-	}
+
 	if err := ci.Delete(); err != nil {
 		return err
 	}
-	container.Status = nil
+
+	c.Status = nil
 	return nil
 }
 
 // Read takes file path as an argument and reads this file from the container
-func (container *Container) Read(srcPath string) (io.ReadCloser, error) {
-	c, err := New(container)
+func (c *Container) Read(srcPath string) (io.ReadCloser, error) {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return nil, err
-	}
+
 	return ci.Read(srcPath)
 }
 
 // Copy creates a file in desired path in the container
-func (container *Container) Copy(dstPath string, content io.Reader) error {
-	c, err := New(container)
+func (c *Container) Copy(dstPath string, content io.Reader) error {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return err
-	}
+
 	return ci.Copy(dstPath, content)
 }
 
 // Stat checks if file exists in the container. If file exists, it returns file's mode.
 // If file does not exist, nil is returned.
-func (container *Container) Stat(path string) (*os.FileMode, error) {
-	c, err := New(container)
+func (c *Container) Stat(path string) (*os.FileMode, error) {
+	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err
 	}
-	ci, err := c.FromStatus()
-	if err != nil {
-		return nil, err
-	}
+
 	return ci.Stat(path)
 }
