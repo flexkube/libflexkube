@@ -3,6 +3,7 @@ package container
 import (
 	"testing"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
@@ -15,6 +16,9 @@ func TestNewEmptyConfiguration(t *testing.T) {
 
 func TestNewGoodConfiguration(t *testing.T) {
 	c := &Container{
+		Runtime: RuntimeConfig{
+			Docker: &docker.Config{},
+		},
 		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
@@ -37,6 +41,9 @@ func TestValidateNoName(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	c := &Container{
+		Runtime: RuntimeConfig{
+			Docker: &docker.Config{},
+		},
 		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
@@ -73,7 +80,9 @@ func TestValidateRequireImage(t *testing.T) {
 // selectRuntime()
 func TestSelectDockerRuntime(t *testing.T) {
 	c := &container{
-		base{},
+		base{
+			runtimeConfig: &docker.Config{},
+		},
 		&types.ContainerStatus{},
 	}
 	if err := c.selectRuntime(); err != nil {
