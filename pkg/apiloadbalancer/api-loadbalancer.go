@@ -96,8 +96,6 @@ frontend stats
 		ConfigFiles: configFiles,
 		Container:   c,
 	}
-
-	return nil
 }
 
 func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {

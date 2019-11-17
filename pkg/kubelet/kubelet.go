@@ -20,7 +20,7 @@ type Kubelet struct {
 	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
 	KubernetesCACertificate string   `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string `json:"clusterDNSIPs,omityempty" yaml:"clusterDNSIPs,omitempty"`
+	ClusterDNSIPs           []string `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`

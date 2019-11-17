@@ -20,7 +20,7 @@ type KubeScheduler struct {
 	// which will have a group + create a binding to system:kube-controller-manager clusterRole
 	// as done in self-hosted chart.
 	// TODO since we have access to CA cert and key, we could generate certificate ourselves here
-	AdminCertificate string `json:"adminCertificate,omitempty" yaml"adminCertificate,omitempty"`
+	AdminCertificate string `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
 	AdminKey         string `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
 }
 

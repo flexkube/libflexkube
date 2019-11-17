@@ -138,10 +138,14 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
 	}
 
-	localAddr := fmt.Sprintf("@%s-%s", d.address, id)
-	localSock, err := net.ListenUnix("unix", &net.UnixAddr{localAddr, "unix"})
+	unixAddr := &net.UnixAddr{
+		Name: fmt.Sprintf("@%s-%s", d.address, id),
+		Net:  "unix",
+	}
+
+	localSock, err := net.ListenUnix("unix", unixAddr)
 	if err != nil {
-		return "", fmt.Errorf("unable to listen on address '%s':%w", localAddr, err)
+		return "", fmt.Errorf("unable to listen on address '%s':%w", unixAddr, err)
 	}
 
 	// For every listener spawn the following routine
@@ -165,7 +169,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		}
 	}(localSock, url.Path)
 
-	return fmt.Sprintf("unix://%s", localAddr), nil
+	return fmt.Sprintf("unix://%s", unixAddr.String()), nil
 }
 
 // handleClient is responsible for copying incoming and outgoing data going

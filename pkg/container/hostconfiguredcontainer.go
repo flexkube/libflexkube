@@ -132,7 +132,7 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 	}
 
 	// Loop over defined config files, check if they are on the host and update configFiles
-	for p, _ := range m.configFiles {
+	for p := range m.configFiles {
 		fp := path.Join(ConfigMountpoint, p)
 		// TODO kubelet support batch copying. Read interface should probably do that too and then
 		// docker interface (which doesn't support batching) should simply imitate it.
@@ -160,7 +160,10 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 				}
 				if header.Typeflag == tar.TypeReg {
 					buf := new(bytes.Buffer)
-					buf.ReadFrom(tr)
+					_, err := buf.ReadFrom(tr)
+					if err != nil {
+						return err
+					}
 					m.configFiles[p] = buf.String()
 				}
 			}

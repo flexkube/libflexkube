@@ -91,7 +91,7 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for configuration files updates")
-	for i, _ := range c.desiredState {
+	for i := range c.desiredState {
 		// Loop over desired config files, check if they exist
 		for p, content := range c.desiredState[i].configFiles {
 			var currentContent string
@@ -119,7 +119,7 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for stopped containers")
 	// Start stopped containers
-	for i, _ := range c.currentState {
+	for i := range c.currentState {
 		if c.currentState[i].container.Status != nil && c.currentState[i].container.Status.Status != "running" {
 			fmt.Printf("Starting stopped container '%s'\n", i)
 			if err := c.currentState[i].Start(); err != nil {
@@ -130,7 +130,7 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for missing containers to re-create")
 	// Schedule missing containers for recreation
-	for i, _ := range c.currentState {
+	for i := range c.currentState {
 		// Container is gone, we need to re-create it
 		// TODO also remove from the containers
 		if c.currentState[i].container.Status == nil {
@@ -140,7 +140,7 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for new containers to create")
 	// Iterate over desired state to find which containers should be created
-	for i, _ := range c.desiredState {
+	for i := range c.desiredState {
 		// TODO Move this logic to function
 		// Simple logic can stay inline, complex logic should go to function?
 		if _, exists := c.currentState[i]; !exists {
@@ -156,7 +156,7 @@ func (c *containers) Execute() error {
 	fmt.Println("Checking for host configuration updates")
 	// Update containers on hosts
 	// This can move containers between hosts, but NOT the data
-	for i, _ := range c.currentState {
+	for i := range c.currentState {
 		// Don't update nodes scheduled for removal
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
@@ -181,7 +181,7 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for configuration updates on containers")
 	// Update containers configurations
-	for i, _ := range c.currentState {
+	for i := range c.currentState {
 		// Don't update containers scheduled for removal
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping configuration check for container '%s', as it will be removed\n", i)
@@ -207,7 +207,7 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for old containers to remove")
 	// Remove old containers
-	for i, _ := range c.currentState {
+	for i := range c.currentState {
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Removing old container '%s'\n", i)
 			if err := c.currentState.RemoveContainer(i); err != nil {
