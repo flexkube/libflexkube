@@ -10,7 +10,7 @@ func TestNew(t *testing.T) {
 
 	di, err := d.New()
 	if err != nil {
-		t.Fatalf("should return new object without errors, got: %w", err)
+		t.Fatalf("should return new object without errors, got: %v", err)
 	}
 
 	if !reflect.DeepEqual(di, &direct{}) {

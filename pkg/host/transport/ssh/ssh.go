@@ -166,13 +166,13 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				fmt.Printf("failed to accept connection: %w\n", err)
+				fmt.Printf("failed to accept connection: %v\n", err)
 				// handle error (and then for example indicate acceptor is down)
 				return
 			}
 			remoteSock, err := connection.Dial("unix", remote)
 			if err != nil {
-				fmt.Printf("failed to open remote connection: %w\n", err)
+				fmt.Printf("failed to open remote connection: %v\n", err)
 				return
 			}
 
