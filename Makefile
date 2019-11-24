@@ -20,7 +20,7 @@ test-integration:
 	$(GOTEST) -tags=integration ./...
 
 lint:
-	golangci-lint run
+	golangci-lint run --enable-all --disable=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
 	# Since golint is very opinionated about certain things, for example exported functions returning
 	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
 	#
