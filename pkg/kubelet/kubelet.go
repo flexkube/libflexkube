@@ -199,6 +199,14 @@ clusterDNS:
 					Source: "/lib/modules/",
 					Target: "/lib/modules",
 				},
+				{
+					// For reading host cgroups, to get stats for docker.service cgroup etc.
+					// Without this, following error message occurs:
+					// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
+					// It seems you can't go any deeper with this mount, otherwise it's not working.
+					Source: "/sys/fs/cgroup/",
+					Target: "/sys/fs/cgroup",
+				},
 			},
 			Args: []string{
 				// Tell kubelet to use config file
