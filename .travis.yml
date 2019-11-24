@@ -22,7 +22,7 @@ before_script:
 
 script:
   - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-  - golangci-lint run
+  - $HOME/bin/golangci-lint run
   - golint -set_exit_status $(go list ./...)
 
 after_success:
