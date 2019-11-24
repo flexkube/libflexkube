@@ -109,7 +109,7 @@ healthzPort: 0
 clusterDNS:
 `, k.podCIDR, k.address)
 	// TODO ugly!
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
