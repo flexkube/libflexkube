@@ -21,9 +21,7 @@ before_script:
   - go get -u golang.org/x/lint/golint
 
 script:
-  - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-  - $HOME/bin/golangci-lint run
-  - golint -set_exit_status $(go list ./...)
+  - make
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
