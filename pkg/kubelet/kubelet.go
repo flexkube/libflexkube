@@ -136,14 +136,14 @@ clusterDNS:
 			// Required for adding containers into correct network namespaces
 			PidMode: "host",
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					// Kubelet is using this file to determine what OS it runs on and then reports that to API server
 					// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
 					// based on Debian Docker images.
 					Source: "/etc/os-release",
 					Target: "/etc/os-release",
 				},
-				types.Mount{
+				{
 					// Kubelet will create kubeconfig file for itself from, so it needs to be able to write
 					// to /etc/kubernetes, as we want to use default paths when possible in the container.
 					// However, on the host, /etc/kubernetes may contain some other files, which shouldn't be
@@ -154,7 +154,7 @@ clusterDNS:
 					Source: "/etc/kubernetes/kubelet/",
 					Target: "/etc/kubernetes/",
 				},
-				types.Mount{
+				{
 					// Pass docker socket to kubelet container, so it can use it as a container runtime.
 					// TODO make it configurable
 					// TODO check what happens when Docker daemon gets restarted. Will kubelet be restarted
@@ -162,25 +162,25 @@ clusterDNS:
 					Source: "/run/docker.sock",
 					Target: "/var/run/docker.sock",
 				},
-				types.Mount{
+				{
 					// For testing kubenet
 					// TODO do we need it?
 					Source: "/etc/cni/net.d/",
 					Target: "/etc/cni/net.d",
 				},
-				types.Mount{
+				{
 					// TODO do we need it?
 					Source: "/opt/cni/bin/",
 					Target: "/opt/cni/bin",
 				},
-				types.Mount{
+				{
 					// Required by kubelet when creating Docker containers. rslave borrowed from Rancher.
 					// TODO add better explanation
 					Source:      "/var/lib/docker/",
 					Target:      "/var/lib/docker",
 					Propagation: "rslave",
 				},
-				types.Mount{
+				{
 					// Required for kubelet when running Docker containers. Since kubelet mounts stuff there several times
 					// mounts should be propagated, hence the "shared". "shared" borrowed from Rancher.
 					// TODO add better explanation
@@ -188,13 +188,13 @@ clusterDNS:
 					Target:      "/var/lib/kubelet",
 					Propagation: "shared",
 				},
-				types.Mount{
+				{
 					// To persist CNI configuration managed by kubelet. Might be only required with 'kubenet' network plugin.
 					// TODO check if this is needed. Maybe explain what is stored there.
 					Source: "/var/lib/cni/",
 					Target: "/var/lib/cni",
 				},
-				types.Mount{
+				{
 					// For loading kernel modules for kubenet plugin
 					Source: "/lib/modules/",
 					Target: "/lib/modules",

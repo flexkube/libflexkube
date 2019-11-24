@@ -96,7 +96,7 @@ func (m *hostConfiguredContainer) createConfigurationContainer() (string, *Conta
 			Name:  fmt.Sprintf("%s-config", m.container.Config.Name),
 			Image: m.container.Config.Image,
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					Source: "/",
 					Target: ConfigMountpoint,
 				},

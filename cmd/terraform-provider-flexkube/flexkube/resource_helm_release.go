@@ -1,8 +1,8 @@
 package flexkube
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/flexkube/libflexkube/pkg/helm/release"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceHelmRelease() *schema.Resource {
@@ -12,23 +12,23 @@ func resourceHelmRelease() *schema.Resource {
 		Delete: resourceHelmReleaseDelete,
 		Update: resourceHelmReleaseCreate,
 		Schema: map[string]*schema.Schema{
-			"kubeconfig": &schema.Schema{
+			"kubeconfig": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"namespace": &schema.Schema{
+			"namespace": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"chart": &schema.Schema{
+			"chart": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"values": &schema.Schema{
+			"values": {
 				Type:     schema.TypeString,
 				Required: true,
 			},

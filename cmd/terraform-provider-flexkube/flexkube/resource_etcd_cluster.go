@@ -13,11 +13,11 @@ func resourceEtcdCluster() *schema.Resource {
 		Delete: resourceEtcdClusterDelete,
 		Update: resourceEtcdClusterCreate,
 		Schema: map[string]*schema.Schema{
-			"config": &schema.Schema{
+			"config": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"state": &schema.Schema{
+			"state": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

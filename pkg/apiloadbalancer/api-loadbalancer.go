@@ -79,18 +79,18 @@ frontend stats
 			Name:  "api-loadbalancer-haproxy",
 			Image: a.image,
 			Ports: []types.PortMap{
-				types.PortMap{
+				{
 					Protocol: "tcp",
 					Port:     6443,
 				},
-				types.PortMap{
+				{
 					Protocol: "tcp",
 					Port:     a.metricsBindPort,
 					IP:       a.metricsBindAddress,
 				},
 			},
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					Source: "/etc/haproxy/haproxy.cfg",
 					Target: "/usr/local/etc/haproxy/haproxy.cfg",
 				},

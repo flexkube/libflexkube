@@ -51,7 +51,7 @@ func (k *kubeScheduler) ToHostConfiguredContainer() *container.HostConfiguredCon
 			Image:      k.image,
 			Entrypoint: []string{"/hyperkube"},
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/kube-scheduler/kubeconfig",
 					Target: "/etc/kubernetes/kubeconfig",
 				},

@@ -13,11 +13,11 @@ func resourceKubeletPool() *schema.Resource {
 		Delete: resourceKubeletPoolDelete,
 		Update: resourceKubeletPoolCreate,
 		Schema: map[string]*schema.Schema{
-			"config": &schema.Schema{
+			"config": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"state": &schema.Schema{
+			"state": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

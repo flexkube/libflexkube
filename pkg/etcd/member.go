@@ -55,13 +55,13 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 			Image:      m.image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					// TODO between /var/lib/etcd and data dir we should probably put cluster name, to group them
 					// TODO make data dir configurable
 					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.name),
 					Target: fmt.Sprintf("/%s.etcd", m.name),
 				},
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/pki/etcd/",
 					Target: "/etc/kubernetes/pki/etcd",
 				},

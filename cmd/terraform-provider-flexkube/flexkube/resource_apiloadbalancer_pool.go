@@ -13,11 +13,11 @@ func resourceAPILoadBalancerPool() *schema.Resource {
 		Delete: resourceAPILoadBalancerPoolDelete,
 		Update: resourceAPILoadBalancerPoolCreate,
 		Schema: map[string]*schema.Schema{
-			"config": &schema.Schema{
+			"config": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"state": &schema.Schema{
+			"state": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

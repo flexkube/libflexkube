@@ -60,25 +60,25 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 			Image:      k.image,
 			Entrypoint: []string{"/hyperkube"},
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/pki/ca.crt",
 					Target: "/etc/kubernetes/pki/ca.crt",
 				},
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/pki/apiserver.crt",
 					Target: "/etc/kubernetes/pki/apiserver.crt",
 				},
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/pki/apiserver.key",
 					Target: "/etc/kubernetes/pki/apiserver.key",
 				},
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/pki/service-account.crt",
 					Target: "/etc/kubernetes/pki/service-account.crt",
 				},
 			},
 			Ports: []types.PortMap{
-				types.PortMap{
+				{
 					IP:       k.bindAddress,
 					Protocol: "tcp",
 					Port:     k.securePort,

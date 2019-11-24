@@ -64,11 +64,11 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 			Image:      k.image,
 			Entrypoint: []string{"/hyperkube"},
 			Mounts: []types.Mount{
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/kube-controller-manager/kubeconfig",
 					Target: "/etc/kubernetes/kubeconfig",
 				},
-				types.Mount{
+				{
 					Source: "/etc/kubernetes/kube-controller-manager/pki",
 					Target: "/etc/kubernetes/pki",
 				},
