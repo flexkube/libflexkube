@@ -126,6 +126,7 @@ func generateRSAPrivateKey() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("generating key failed: %w", err)
 	}
+
 	privDER := x509.MarshalPKCS1PrivateKey(privateKey)
 	privBlock := pem.Block{
 		Type:    "RSA PRIVATE KEY",

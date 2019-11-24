@@ -50,6 +50,7 @@ func (d *Config) New() (transport.Transport, error) {
 	if d.Password != "" {
 		s.auth = append(s.auth, gossh.Password(d.Password))
 	}
+
 	if d.PrivateKey != "" {
 		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey))
 		s.auth = append(s.auth, gossh.PublicKeys(signer))
@@ -63,15 +64,19 @@ func (d *Config) Validate() error {
 	if d.Address == "" {
 		return fmt.Errorf("address must be set")
 	}
+
 	if d.User == "" {
 		return fmt.Errorf("user must be set")
 	}
+
 	if d.Password == "" && d.PrivateKey == "" {
 		return fmt.Errorf("either password or private key must be set for authentication")
 	}
+
 	if d.ConnectionTimeout == "" {
 		return fmt.Errorf("connection timeout must be set")
 	}
+
 	if d.Port == 0 {
 		return fmt.Errorf("port must be set")
 	}
@@ -106,8 +111,11 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	// and let user take care of it.
 	retryTimeout, _ := time.ParseDuration("60s")
 	retryInterval, _ := time.ParseDuration("1s")
+
 	var connection *gossh.Client
+
 	var err error
+
 	start := time.Now()
 
 	// Try until we timeout
@@ -116,8 +124,10 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		if err == nil {
 			break
 		}
+
 		time.Sleep(retryInterval)
 	}
+
 	if err != nil {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
@@ -126,6 +136,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
 	}
+
 	if url.Scheme != "unix" {
 		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
 	}
@@ -174,8 +185,9 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 
 // handleClient is responsible for copying incoming and outgoing data going
 // through the forwarded connection
-func handleClient(client net.Conn, remote net.Conn) {
+func handleClient(client net.Conn, remote io.ReadWriter) {
 	defer client.Close()
+
 	chDone := make(chan bool)
 
 	// Start remote -> local data transfer
