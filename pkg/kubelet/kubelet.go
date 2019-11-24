@@ -105,6 +105,9 @@ address: %s
 # Disable healht port for now, since we don't use it
 # TODO check how to use it and re-enable it
 healthzPort: 0
+# Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
+# short-names resolution like mysvc.myns.svc does not work.
+clusterDomain: cluster.local
 # Configure cluster DNS IP addresses
 clusterDNS:
 `, k.podCIDR, k.address)
