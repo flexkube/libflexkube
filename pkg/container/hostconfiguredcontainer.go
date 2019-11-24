@@ -288,6 +288,11 @@ func (m *hostConfiguredContainer) Create() error {
 
 // Status updates container status
 func (m *hostConfiguredContainer) Status() error {
+	// If container does not exist, skip checking the status of it, as it won't work
+	if m.container.Status == nil {
+		return nil
+	}
+
 	// TODO maybe we can cache forwarding somehow?
 	a := m.container.Runtime.Docker.GetAddress()
 
