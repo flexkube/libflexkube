@@ -1,5 +1,7 @@
-// TODO figure out better name for this package, maybe something more generic?
 package apiloadbalancer
+
+// TODO figure out better name for this package, maybe something more generic?
+// ^ This comment is below the package keyword, to prevent golint from complaining
 
 import (
 	"fmt"
@@ -12,6 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// APILoadBalancer is a user-configurable representation of single instance of API load balancer
 type APILoadBalancer struct {
 	Image              string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host               *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
@@ -20,6 +23,7 @@ type APILoadBalancer struct {
 	Servers            []string   `json:"servers,omitempty" yaml:"servers,omitempty"`
 }
 
+// apiLoadBalancer is validated and executable version of APILoadBalancer
 type apiLoadBalancer struct {
 	image              string
 	host               *host.Host
@@ -28,6 +32,9 @@ type apiLoadBalancer struct {
 	metricsBindPort    int
 }
 
+// ToHostConfiguredContainer takes configuration stored in the struct and converts it to HostConfiguredContainer
+// which can be then added to Containers struct and executed
+//
 // TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
 func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	servers := []string{}
@@ -98,6 +105,10 @@ frontend stats
 	}
 }
 
+// New validates APILoadBalancer configuration and fills it with default options
+// If configuration is wrong, error is returned.
+//
+// TODO I think we shouldn't fill the default values here. Maybe do it one level up?
 func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate API Load balancer configuration: %w", err)
@@ -122,6 +133,8 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 	return na, nil
 }
 
+// Validate contains all validation rules for APILoadBalancer struct.
+// This method can be used by the user to catch configuration errors early.
 func (a *APILoadBalancer) Validate() error {
 	if a.Host == nil {
 		return fmt.Errorf("Host must be set")

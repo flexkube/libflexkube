@@ -44,6 +44,7 @@ func (c *Containers) New() (*containers, error) {
 	}, nil
 }
 
+// Validate validates Containers struct and all structs used underneath
 func (c *Containers) Validate() error {
 	if c.PreviousState == nil && c.DesiredState == nil {
 		return fmt.Errorf("either current state or desired state must be defined")

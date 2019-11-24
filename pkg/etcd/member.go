@@ -36,6 +36,7 @@ type member struct {
 	peerCertAllowedCN string
 }
 
+// ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
 func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	if m.peerCACertificate != "" && m.peerCertificate != "" && m.peerKey != "" {
@@ -99,14 +100,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 	}
 }
 
-func (m *member) ToExistingClusterMember() *container.HostConfiguredContainer {
-	return nil
-}
-
-func (m *member) ToNewClusterMember() *container.HostConfiguredContainer {
-	return nil
-}
-
+// New valides Member configuration and returns it's usable version
 func (m *Member) New() (*member, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
@@ -131,6 +125,7 @@ func (m *Member) New() (*member, error) {
 	return nm, nil
 }
 
+// Validate validates etcd member configuration
 // TODO add validation of certificates if specified
 func (m *Member) Validate() error {
 	// TODO require peer address for now. Later we could figure out

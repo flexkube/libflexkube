@@ -11,6 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
 	Image                   string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                    *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
@@ -25,6 +26,7 @@ type KubeAPIServer struct {
 	SecurePort              int        `json:"securePort,omitempty" yaml:"securePort,omitempty"`
 }
 
+// kubeAPIServer is a validated version of KubeAPIServer
 type kubeAPIServer struct {
 	image                   string
 	host                    host.Host
@@ -39,6 +41,7 @@ type kubeAPIServer struct {
 	securePort              int
 }
 
+// ToHostConfiguredContainer takes configured values and converts them to generic container configuration
 func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
@@ -118,6 +121,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 	}
 }
 
+// New validates KubeAPIServer configuration and populates default for some fields, if they are empty
 func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
@@ -145,6 +149,8 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 	return nk, nil
 }
 
+// Validate validates KubeAPIServer struct
+//
 // TODO add validation of certificates if specified
 func (k *KubeAPIServer) Validate() error {
 	if k.KubernetesCACertificate == "" {

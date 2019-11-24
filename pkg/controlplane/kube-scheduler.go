@@ -11,6 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// KubeScheduler represents kube-scheduler configuration data
 type KubeScheduler struct {
 	Image                   string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                    *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
@@ -24,6 +25,7 @@ type KubeScheduler struct {
 	AdminKey         string `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
 }
 
+// kubeScheduler is validated and usable version of KubeScheduler
 type kubeScheduler struct {
 	image                   string
 	host                    host.Host
@@ -33,6 +35,7 @@ type kubeScheduler struct {
 	adminKey                string
 }
 
+// ToHostConfiguredContainer converts kubeScheduler into generic container struct
 func (k *kubeScheduler) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
@@ -67,6 +70,7 @@ func (k *kubeScheduler) ToHostConfiguredContainer() *container.HostConfiguredCon
 	}
 }
 
+// New validates KubeScheduler struct and returns it's usable version
 func (k *KubeScheduler) New() (*kubeScheduler, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Scheduler configuration: %w", err)
@@ -89,6 +93,8 @@ func (k *KubeScheduler) New() (*kubeScheduler, error) {
 	return nk, nil
 }
 
+// Validate valides kube-scheduler configuration
+//
 // TODO add validation of certificates if specified
 func (k *KubeScheduler) Validate() error {
 	if k.KubernetesCACertificate == "" {
@@ -107,6 +113,9 @@ func (k *KubeScheduler) Validate() error {
 	return nil
 }
 
+// toKubeconfig takes given configuration and returns kubeconfig file content for
+// kube-scheduler in YAML format
+//
 // TODO this is quite generic, refactor it
 func (k *kubeScheduler) toKubeconfig() string {
 	return fmt.Sprintf(`apiVersion: v1

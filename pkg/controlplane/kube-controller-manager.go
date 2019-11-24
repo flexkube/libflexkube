@@ -11,6 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// KubeControllerManager represents kube-controller-manager container configuration
 type KubeControllerManager struct {
 	Image                    string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host                     *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
@@ -27,6 +28,7 @@ type KubeControllerManager struct {
 	RootCACertificate string `josn:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
 }
 
+// kubeControllerManager is a validated version of KubeControllerManager
 type kubeControllerManager struct {
 	image                    string
 	host                     host.Host
@@ -39,6 +41,8 @@ type kubeControllerManager struct {
 	rootCACertificate        string
 }
 
+// ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer
+//
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
 func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfiguredContainer {
@@ -94,6 +98,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 	}
 }
 
+// New validates KubeControllerManager and returns usable kubeControllerManager
 func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
@@ -119,6 +124,8 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 	return nk, nil
 }
 
+// Validate validates KubeControllerManager configuration
+//
 // TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
 	if k.KubernetesCACertificate == "" {
@@ -146,6 +153,7 @@ func (k *KubeControllerManager) Validate() error {
 	return nil
 }
 
+// toKubeconfig converts given configuration to kubeconfig format as YAML text
 func (k *kubeControllerManager) toKubeconfig() string {
 	return fmt.Sprintf(`apiVersion: v1
 kind: Config

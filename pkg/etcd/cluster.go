@@ -32,6 +32,7 @@ type cluster struct {
 	containers        container.Containers
 }
 
+// New validates etcd cluster configuration and fills members with default and computed values
 func (c *Cluster) New() (*cluster, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
@@ -117,6 +118,7 @@ func (c *Cluster) New() (*cluster, error) {
 	return cluster, nil
 }
 
+// Validate validates Cluster configuration
 func (c *Cluster) Validate() error {
 	if len(c.Members) < 0 && c.State == nil {
 		return fmt.Errorf("either members or previous state needs to be defined")
@@ -159,6 +161,7 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(Cluster{State: c.containers.PreviousState})
 }
 
+// CheckCurrentState refreshes current state of the cluster
 func (c *cluster) CheckCurrentState() error {
 	containers, err := c.containers.New()
 	if err != nil {
@@ -171,6 +174,7 @@ func (c *cluster) CheckCurrentState() error {
 	return nil
 }
 
+// Deploy refreshes current state of the cluster and deploys detected changes
 func (c *cluster) Deploy() error {
 	containers, err := c.containers.New()
 	if err != nil {

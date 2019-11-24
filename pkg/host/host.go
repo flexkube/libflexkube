@@ -23,6 +23,7 @@ type hostConnected struct {
 	transport transport.Transport
 }
 
+// New validates Host configuration and sets configured transport method
 func New(h *Host) (*host, error) {
 	if err := h.Validate(); err != nil {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
@@ -68,6 +69,7 @@ func (h *host) Connect() (*hostConnected, error) {
 	}, nil
 }
 
+// ForwardUnixSocket forwards given unix socket path using configured transport method
 func (h *hostConnected) ForwardUnixSocket(path string) (string, error) {
 	return h.transport.ForwardUnixSocket(path)
 }

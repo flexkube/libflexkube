@@ -12,6 +12,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// ConfigMountpoint is where host file-system is mounted in the -config container.
 const ConfigMountpoint = "/mnt/host"
 
 // HostConfiguredContainer represents single container, running on remote host with it's configuration files
@@ -56,6 +57,7 @@ func (m *HostConfiguredContainer) Validate() error {
 // connectAndForward instantiates new host object, connects to it and then
 // forwards connection to container runtime and reconfigures container runtime
 // to connect to forwarded endpoint.
+//
 // TODO maybe we make this take a function to remove boilerplate from helper functions?
 func (m *hostConfiguredContainer) connectAndForward() error {
 	h, err := host.New(&m.host)
@@ -234,7 +236,7 @@ func (m *hostConfiguredContainer) Create() error {
 			return fmt.Errorf("failed reading file %s: %w", m.Source, err)
 		}
 		if rc != nil && *rc == os.ModeDir {
-			return fmt.Errorf("mountpoint %s exists as file!", m.Source)
+			return fmt.Errorf("mountpoint %s exists as file", m.Source)
 		}
 		// TODO perhaps path handling should be improved here
 		if rc == nil && m.Source[len(m.Source)-1:] == "/" {

@@ -46,6 +46,7 @@ type release struct {
 	chart        string
 }
 
+// New validates release configuration and builts installable version of it
 func (r *Release) New() (*release, error) {
 	if err := r.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate helm release: %w", err)
@@ -78,6 +79,7 @@ func (r *Release) New() (*release, error) {
 	return release, nil
 }
 
+// Validate validates Release configuration
 func (r *Release) Validate() error {
 	// Check if all required values are filled in
 	if r.Kubeconfig == "" {
@@ -182,6 +184,7 @@ func (r *release) Exists() (bool, error) {
 	return true, nil
 }
 
+// Uninstall removes the release from the cluster. This function is idempotent.
 func (r *release) Uninstall() error {
 	// Check if release exists
 	e, err := r.Exists()
@@ -260,6 +263,7 @@ func (r *Release) parseValues() (map[string]interface{}, error) {
 	return values, nil
 }
 
+// FromYaml allows to quickly create new release object from serialized representation.
 func FromYaml(data []byte) (*release, error) {
 	r := Release{}
 

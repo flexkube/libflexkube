@@ -26,12 +26,14 @@ type Pool struct {
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
 }
 
+// pool is a validated version of Pool
 type pool struct {
 	image      string
 	ssh        *ssh.Config
 	containers container.Containers
 }
 
+// New validates kubelet pool configuration and fills all members with configured values
 func (p *Pool) New() (*pool, error) {
 	if err := p.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate pool configuration: %w", err)
@@ -101,7 +103,9 @@ func (p *Pool) New() (*pool, error) {
 	return pool, nil
 }
 
-// TODO add validation
+// Validate validates Pool configuration
+//
+// TODO add actual validation
 func (p *Pool) Validate() error {
 	return nil
 }
@@ -124,6 +128,7 @@ func (p *pool) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(Pool{State: p.containers.PreviousState})
 }
 
+// CheckCurrentState refreshes state of configured instances
 func (p *pool) CheckCurrentState() error {
 	containers, err := p.containers.New()
 	if err != nil {
@@ -136,6 +141,7 @@ func (p *pool) CheckCurrentState() error {
 	return nil
 }
 
+// Deploy checks current status of the pool and deploy configuration changes
 func (p *pool) Deploy() error {
 	containers, err := p.containers.New()
 	if err != nil {

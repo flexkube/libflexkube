@@ -169,7 +169,7 @@ func (c *containerInstance) Status() (*types.ContainerStatus, error) {
 	return status, nil
 }
 
-// UpdateStatus updates status of exported Container struct. This function is primarly used
+// UpdateStatus updates status of exported Container struct. This function is primairly used
 // to reduce the boilerplate in helper functions, which allow to perform operations directly on
 // Container struct.
 func (c *containerInstance) updateStatus(container *Container) error {

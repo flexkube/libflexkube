@@ -11,7 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
-// Instance represents single kubelet instance
+// Kubelet represents single kubelet instance
 type Kubelet struct {
 	Address             string     `json:"address,omitempty" yaml:"address,omitempty"`
 	Image               string     `json:"image,omitempty" yaml:"image,omitempty"`
@@ -37,6 +37,7 @@ type kubelet struct {
 	podCIDR                 string
 }
 
+// New validates Kubelet configuration and returns it's usable version
 func (k *Kubelet) New() (*kubelet, error) {
 	// TODO when creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
@@ -60,8 +61,10 @@ func (k *Kubelet) New() (*kubelet, error) {
 	return nk, nil
 }
 
+// Validate validates kubelet configuration
+//
+// TODO better validation should be done here
 func (k *Kubelet) Validate() error {
-	// TODO better validation should be done here
 	if k.BootstrapKubeconfig == "" {
 		return fmt.Errorf("bootstrapKubeconfig can't be empty")
 	}
@@ -69,6 +72,7 @@ func (k *Kubelet) Validate() error {
 	return nil
 }
 
+// ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer
 func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 

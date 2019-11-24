@@ -62,6 +62,7 @@ type controlplane struct {
 	containers container.Containers
 }
 
+// buildKubeScheduler fills KubeSheduler struct with all default values
 func (c *Controlplane) buildKubeScheduler() {
 	if c.KubeScheduler.Image == "" && c.Image != "" {
 		c.KubeScheduler.Image = c.Image
@@ -116,6 +117,7 @@ func (c *Controlplane) buildKubeScheduler() {
 	}
 }
 
+// buildKubeControllerManager fills KubeControllerManager with all default values
 func (c *Controlplane) buildKubeControllerManager() {
 	if c.KubeControllerManager.Image == "" && c.Image != "" {
 		c.KubeControllerManager.Image = c.Image
@@ -180,6 +182,7 @@ func (c *Controlplane) buildKubeControllerManager() {
 	}
 }
 
+// buildKubeAPIServer fills KubeAPIServer with all default values
 func (c *Controlplane) buildKubeAPIServer() {
 	if c.KubeAPIServer.Image == "" && c.Image != "" {
 		c.KubeAPIServer.Image = c.Image
@@ -246,6 +249,8 @@ func (c *Controlplane) buildKubeAPIServer() {
 	}
 }
 
+// New validates Controlplane configuration and fills populates all values provided by the users
+// to the structs underneath
 func (c *Controlplane) New() (*controlplane, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
@@ -307,6 +312,7 @@ func (c *Controlplane) New() (*controlplane, error) {
 	return controlplane, nil
 }
 
+// Validate validates Controlplane configuration
 func (c *Controlplane) Validate() error {
 	if c.AdminCertificate == "" {
 		return fmt.Errorf("AdminCertificate is empty")
@@ -346,6 +352,7 @@ func (c *controlplane) CheckCurrentState() error {
 	return nil
 }
 
+// Deploy checks the status of the control plane and deploys configuration updates.
 func (c *controlplane) Deploy() error {
 	containers, err := c.containers.New()
 	if err != nil {

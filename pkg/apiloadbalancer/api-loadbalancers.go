@@ -1,4 +1,3 @@
-// TODO figure out better name for this package, maybe something more generic?
 package apiloadbalancer
 
 import (
@@ -12,6 +11,8 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
+// APILoadBalancers represents group of APILoadBalancer instances. It allows to set default values for
+// all configured instances.
 type APILoadBalancers struct {
 	Image            string            `json:"image,omitempty" yaml:"image,omitempty"`
 	SSH              *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
@@ -22,12 +23,17 @@ type APILoadBalancers struct {
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
 }
 
+// apiLoadBalancers is validated and executable version of APILoadBalancers
 type apiLoadBalancers struct {
 	image      string
 	ssh        *ssh.Config
 	containers container.Containers
 }
 
+// New validates APILoadBalancers struct and fills all required fields in members with default values
+// provided by the user.
+//
+// TODO move filling the defaults to separated function, so it can be re-used in Validate.
 func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate API Load balancers configuration: %w", err)
@@ -96,7 +102,9 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 	return apiLoadBalancers, nil
 }
 
-// TODO add validation
+// Validate validates APILoadBalancers struct
+//
+// TODO Add actual validation rules
 func (a *APILoadBalancers) Validate() error {
 	return nil
 }
@@ -131,6 +139,8 @@ func (a *apiLoadBalancers) CheckCurrentState() error {
 	return nil
 }
 
+// Deploy checks current status of deployed group of instances and updates them if there is some
+// configuration drift.
 func (a *apiLoadBalancers) Deploy() error {
 	containers, err := a.containers.New()
 	if err != nil {
