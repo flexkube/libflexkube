@@ -126,6 +126,7 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 	if na.image == "" {
 		na.image = defaults.HAProxyImage
 	}
+
 	if na.metricsBindPort == 0 {
 		na.metricsBindPort = 8080
 	}
@@ -137,13 +138,15 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 // This method can be used by the user to catch configuration errors early.
 func (a *APILoadBalancer) Validate() error {
 	if a.Host == nil {
-		return fmt.Errorf("Host must be set")
+		return fmt.Errorf("field Host must be set")
 	}
-	if len(a.Servers) <= 0 {
-		return fmt.Errorf("At least one server must be set")
+
+	if len(a.Servers) == 0 {
+		return fmt.Errorf("at least one server must be set")
 	}
+
 	if a.MetricsBindAddress == "" {
-		return fmt.Errorf("MetricsBindAddress must be set")
+		return fmt.Errorf("field MetricsBindAddress must be set")
 	}
 
 	return nil

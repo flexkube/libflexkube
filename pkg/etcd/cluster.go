@@ -63,12 +63,15 @@ func (c *Cluster) New() (*cluster, error) {
 		if m.Name == "" {
 			m.Name = fmt.Sprintf("etcd-%s", n)
 		}
+
 		if m.Image == "" && c.Image != "" {
 			m.Image = c.Image
 		}
+
 		if m.InitialCluster == "" {
 			m.InitialCluster = initialCluster
 		}
+
 		if m.PeerCertAllowedCN == "" {
 			m.PeerCertAllowedCN = peerCertAllowedCN
 		}
@@ -79,6 +82,7 @@ func (c *Cluster) New() (*cluster, error) {
 				DirectConfig: &direct.Config{},
 			}
 		}
+
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
 			m.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
 		}
@@ -86,6 +90,7 @@ func (c *Cluster) New() (*cluster, error) {
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
 			m.Host.SSHConfig.User = c.SSH.User
 		}
+
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.User == "" {
 			m.Host.SSHConfig.User = "root"
 		}
@@ -93,6 +98,7 @@ func (c *Cluster) New() (*cluster, error) {
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
 			m.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
 		}
+
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.ConnectionTimeout == "" {
 			m.Host.SSHConfig.ConnectionTimeout = "30s"
 		}
@@ -100,6 +106,7 @@ func (c *Cluster) New() (*cluster, error) {
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
 			m.Host.SSHConfig.Port = c.SSH.Port
 		}
+
 		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.Port == 0 {
 			m.Host.SSHConfig.Port = 22
 		}
@@ -112,6 +119,7 @@ func (c *Cluster) New() (*cluster, error) {
 		if err != nil {
 			return nil, fmt.Errorf("that was unexpected: %w", err)
 		}
+
 		cluster.containers.DesiredState[n] = member.ToHostConfiguredContainer()
 	}
 
@@ -120,7 +128,7 @@ func (c *Cluster) New() (*cluster, error) {
 
 // Validate validates Cluster configuration
 func (c *Cluster) Validate() error {
-	if len(c.Members) < 0 && c.State == nil {
+	if len(c.Members) == 0 && c.State == nil {
 		return fmt.Errorf("either members or previous state needs to be defined")
 	}
 
@@ -130,11 +138,13 @@ func (c *Cluster) Validate() error {
 		if m.Name == "" {
 			m.Name = n
 		}
+
 		if m.Host == nil || m.Host.DirectConfig == nil || m.Host.SSHConfig == nil {
 			m.Host = &host.Host{
 				DirectConfig: &direct.Config{},
 			}
 		}
+
 		if err := m.Validate(); err != nil {
 			return fmt.Errorf("failed to validate member '%s': %w", n, err)
 		}
@@ -149,10 +159,12 @@ func FromYaml(c []byte) (*cluster, error) {
 	if err := yaml.Unmarshal(c, &cluster); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
+
 	cl, err := cluster.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cluster object: %w", err)
 	}
+
 	return cl, nil
 }
 
@@ -167,10 +179,13 @@ func (c *cluster) CheckCurrentState() error {
 	if err != nil {
 		return err
 	}
+
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	c.containers = *containers.ToExported()
+
 	return nil
 }
 
@@ -180,6 +195,7 @@ func (c *cluster) Deploy() error {
 	if err != nil {
 		return err
 	}
+
 	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
 	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
 	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
@@ -192,9 +208,12 @@ func (c *cluster) Deploy() error {
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := containers.Execute(); err != nil {
 		return err
 	}
+
 	c.containers = *containers.ToExported()
+
 	return nil
 }

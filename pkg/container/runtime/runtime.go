@@ -22,7 +22,7 @@ type Runtime interface {
 	Stop(ID string) error
 	// Copy allows to copy TAR archive into the container
 	//
-	// Docker currently does not allow to copy muliple files over https://github.com/moby/moby/issues/7710
+	// Docker currently does not allow to copy multiple files over https://github.com/moby/moby/issues/7710
 	// It seems kubelet does https://github.com/kubernetes/kubernetes/pull/72641/files
 	// TODO consider batching copying and reading
 	Copy(ID string, dstPath string, content io.Reader) error

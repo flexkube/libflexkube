@@ -100,12 +100,15 @@ func (k *KubeScheduler) Validate() error {
 	if k.KubernetesCACertificate == "" {
 		return fmt.Errorf("KubernetesCACertificate is empty")
 	}
+
 	if k.APIServer == "" {
 		return fmt.Errorf("APIServer is empty")
 	}
+
 	if k.AdminCertificate == "" {
 		return fmt.Errorf("AdminCertificate is empty")
 	}
+
 	if k.AdminKey == "" {
 		return fmt.Errorf("AdminKey is empty")
 	}

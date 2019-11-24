@@ -48,9 +48,11 @@ func (m *HostConfiguredContainer) Validate() error {
 	if err := m.Container.Validate(); err != nil {
 		return fmt.Errorf("failed to valide container configuration: %w", err)
 	}
+
 	if err := m.Host.Validate(); err != nil {
 		return fmt.Errorf("failed to validate host configuration: %w", err)
 	}
+
 	return nil
 }
 
@@ -64,17 +66,22 @@ func (m *hostConfiguredContainer) connectAndForward() error {
 	if err != nil {
 		return err
 	}
+
 	hc, err := h.Connect()
 	if err != nil {
 		return err
 	}
+
 	// TODO don't use docker directly
 	a := m.container.Runtime.Docker.GetAddress()
+
 	s, err := hc.ForwardUnixSocket(a)
 	if err != nil {
 		return err
 	}
+
 	m.container.Runtime.Docker.SetAddress(s)
+
 	return nil
 }
 
@@ -87,6 +94,7 @@ func (m *hostConfiguredContainer) connectAndForward() error {
 func (m *hostConfiguredContainer) createConfigurationContainer() (string, *Container, error) {
 	// Store originally configured address so we can restore it later
 	a := m.container.Runtime.Docker.GetAddress()
+
 	if err := m.connectAndForward(); err != nil {
 		return "", nil, fmt.Errorf("forwarding host failed: %w", err)
 	}
@@ -152,20 +160,23 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 		// If file exists, we read it and update content in the config map.
 		if rc != nil {
 			tr := tar.NewReader(rc)
+
 			for {
 				header, err := tr.Next()
 				if err == io.EOF {
 					break
 				}
+
 				if err != nil {
 					return err
 				}
+
 				if header.Typeflag == tar.TypeReg {
 					buf := new(bytes.Buffer)
-					_, err := buf.ReadFrom(tr)
-					if err != nil {
+					if _, err := buf.ReadFrom(tr); err != nil {
 						return err
 					}
+
 					m.configFiles[p] = buf.String()
 				}
 			}
@@ -204,15 +215,19 @@ func (m *hostConfiguredContainer) Configure(p string) error {
 		Mode: 0600,
 		Size: int64(len(content)),
 	}
+
 	if err := tw.WriteHeader(h); err != nil {
 		return err
 	}
+
 	if _, err := tw.Write([]byte(content)); err != nil {
 		return err
 	}
+
 	if err := tw.Close(); err != nil {
 		return err
 	}
+
 	if err := c.Copy(ConfigMountpoint, buff); err != nil {
 		return err
 	}
@@ -231,13 +246,16 @@ func (m *hostConfiguredContainer) Create() error {
 	// Loop over mount points
 	for _, m := range m.container.Config.Mounts {
 		fp := path.Join(ConfigMountpoint, m.Source)
+
 		rc, err := c.Stat(fp)
 		if err != nil {
 			return fmt.Errorf("failed reading file %s: %w", m.Source, err)
 		}
+
 		if rc != nil && *rc == os.ModeDir {
 			return fmt.Errorf("mountpoint %s exists as file", m.Source)
 		}
+
 		// TODO perhaps path handling should be improved here
 		if rc == nil && m.Source[len(m.Source)-1:] == "/" {
 			buff := new(bytes.Buffer)
@@ -246,12 +264,15 @@ func (m *hostConfiguredContainer) Create() error {
 				Name: fmt.Sprintf("%s/", m.Source),
 				Mode: 0755,
 			}
+
 			if err := tw.WriteHeader(h); err != nil {
 				return err
 			}
+
 			if err := tw.Close(); err != nil {
 				return err
 			}
+
 			if err := c.Copy(ConfigMountpoint, buff); err != nil {
 				return err
 			}
@@ -261,6 +282,7 @@ func (m *hostConfiguredContainer) Create() error {
 	if err := m.container.Create(); err != nil {
 		return fmt.Errorf("creating failed: %w", err)
 	}
+
 	return m.removeConfigurationContainer(a, c)
 }
 
@@ -268,13 +290,17 @@ func (m *hostConfiguredContainer) Create() error {
 func (m *hostConfiguredContainer) Status() error {
 	// TODO maybe we can cache forwarding somehow?
 	a := m.container.Runtime.Docker.GetAddress()
+
 	if err := m.connectAndForward(); err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
+
 	if err := m.container.UpdateStatus(); err != nil {
 		return fmt.Errorf("updating status failed: %w", err)
 	}
+
 	m.container.Runtime.Docker.SetAddress(a)
+
 	return nil
 }
 
@@ -283,38 +309,50 @@ func (m *hostConfiguredContainer) Status() error {
 // which takes function as an argument to clean it up?
 func (m *hostConfiguredContainer) Start() error {
 	a := m.container.Runtime.Docker.GetAddress()
+
 	if err := m.connectAndForward(); err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
+
 	if err := m.container.Start(); err != nil {
 		return fmt.Errorf("starting failed: %w", err)
 	}
+
 	m.container.Runtime.Docker.SetAddress(a)
+
 	return nil
 }
 
 // Stop stops created container
 func (m *hostConfiguredContainer) Stop() error {
 	a := m.container.Runtime.Docker.GetAddress()
+
 	if err := m.connectAndForward(); err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
+
 	if err := m.container.Stop(); err != nil {
 		return fmt.Errorf("stopping failed: %w", err)
 	}
+
 	m.container.Runtime.Docker.SetAddress(a)
+
 	return nil
 }
 
 // Delete removes node's data and removes the container
 func (m *hostConfiguredContainer) Delete() error {
 	a := m.container.Runtime.Docker.GetAddress()
+
 	if err := m.connectAndForward(); err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
+
 	if err := m.container.Delete(); err != nil {
 		return fmt.Errorf("creating failed: %w", err)
 	}
+
 	m.container.Runtime.Docker.SetAddress(a)
+
 	return nil
 }

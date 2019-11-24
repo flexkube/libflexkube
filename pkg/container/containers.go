@@ -76,6 +76,7 @@ func (c *containers) CheckCurrentState() error {
 		// TODO we could keep previous state to inform user, that some external changes happened since last run
 		c.currentState = c.previousState
 	}
+
 	return c.currentState.CheckState()
 }
 
@@ -92,6 +93,7 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for configuration files updates")
+
 	for i := range c.desiredState {
 		// Loop over desired config files, check if they exist
 		for p, content := range c.desiredState[i].configFiles {
@@ -107,6 +109,7 @@ func (c *containers) Execute() error {
 			fmt.Printf("Detected configuration drift for file '%s'\n", p)
 			fmt.Printf("  current: \n%+v\n", currentContent)
 			fmt.Printf("  desired: \n%+v\n", content)
+
 			if err := c.desiredState[i].Configure(p); err != nil {
 				return err
 			}
@@ -115,6 +118,7 @@ func (c *containers) Execute() error {
 		if _, exists := c.currentState[i]; !exists {
 			c.currentState[i] = c.desiredState[i]
 		}
+
 		c.currentState[i].configFiles = c.desiredState[i].configFiles
 	}
 
@@ -123,6 +127,7 @@ func (c *containers) Execute() error {
 	for i := range c.currentState {
 		if c.currentState[i].container.Status != nil && c.currentState[i].container.Status.Status != "running" {
 			fmt.Printf("Starting stopped container '%s'\n", i)
+
 			if err := c.currentState[i].Start(); err != nil {
 				return fmt.Errorf("failed starting container: %w", err)
 			}
@@ -146,6 +151,7 @@ func (c *containers) Execute() error {
 		// Simple logic can stay inline, complex logic should go to function?
 		if _, exists := c.currentState[i]; !exists {
 			fmt.Printf("Creating new container '%s'\n", i)
+
 			if err := c.desiredState.CreateAndStart(i); err != nil {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
@@ -172,9 +178,11 @@ func (c *containers) Execute() error {
 			if err := c.currentState.RemoveContainer(i); err != nil {
 				return fmt.Errorf("failed removing old container: %w", err)
 			}
+
 			if err := c.desiredState.CreateAndStart(i); err != nil {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
+
 			// After new container is created, add it to current state, so it can be returned to the user
 			c.currentState[i].host = c.desiredState[i].host
 		}
@@ -198,9 +206,11 @@ func (c *containers) Execute() error {
 			if err := c.currentState.RemoveContainer(i); err != nil {
 				return fmt.Errorf("failed removing old container: %w", err)
 			}
+
 			if err := c.desiredState.CreateAndStart(i); err != nil {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
+
 			// After new container is created, add it to current state, so it can be returned to the user
 			c.currentState[i] = c.desiredState[i]
 		}
@@ -211,6 +221,7 @@ func (c *containers) Execute() error {
 	for i := range c.currentState {
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Removing old container '%s'\n", i)
+
 			if err := c.currentState.RemoveContainer(i); err != nil {
 				return fmt.Errorf("failed removing old container: %w", err)
 			}
@@ -226,10 +237,12 @@ func FromYaml(c []byte) (*containers, error) {
 	if err := yaml.Unmarshal(c, &containers); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
+
 	cl, err := containers.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containers object: %w", err)
 	}
+
 	return cl, nil
 }
 
@@ -275,6 +288,7 @@ func (c *containers) ToExported() *Containers {
 	ccs := c.CurrentStateToExported()
 	ds := c.DesiredStateToExported()
 	ccs.DesiredState = ds.DesiredState
+
 	return ccs
 }
 

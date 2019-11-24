@@ -11,6 +11,12 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
+// DefaultSSHConnectionTimeout is how long we wait by default for successful SSH connection connection
+const DefaultSSHConnectionTimeout = "30s"
+
+// DefaultSSHUser is default user we use for SSH connection
+const DefaultSSHUser = "root"
+
 // Controlplane represents etcd controlplane configuration and state from the user
 type Controlplane struct {
 	// User-configurable fields
@@ -67,15 +73,19 @@ func (c *Controlplane) buildKubeScheduler() {
 	if c.KubeScheduler.Image == "" && c.Image != "" {
 		c.KubeScheduler.Image = c.Image
 	}
+
 	if c.KubeScheduler.KubernetesCACertificate == "" && c.KubernetesCACertificate != "" {
 		c.KubeScheduler.KubernetesCACertificate = c.KubernetesCACertificate
 	}
+
 	if c.KubeScheduler.APIServer == "" && c.APIServerAddress != "" {
 		c.KubeScheduler.APIServer = c.APIServerAddress
 	}
+
 	if c.KubeScheduler.AdminCertificate == "" && c.AdminCertificate != "" {
 		c.KubeScheduler.AdminCertificate = c.AdminCertificate
 	}
+
 	if c.KubeScheduler.AdminKey == "" && c.AdminKey != "" {
 		c.KubeScheduler.AdminKey = c.AdminKey
 	}
@@ -86,11 +96,13 @@ func (c *Controlplane) buildKubeScheduler() {
 			DirectConfig: &direct.Config{},
 		}
 	}
+
 	if c.KubeScheduler.Host == nil {
 		c.KubeScheduler.Host = &host.Host{
 			SSHConfig: c.SSH,
 		}
 	}
+
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
 		c.KubeScheduler.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
 	}
@@ -98,20 +110,23 @@ func (c *Controlplane) buildKubeScheduler() {
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
 		c.KubeScheduler.Host.SSHConfig.User = c.SSH.User
 	}
+
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.User == "" {
-		c.KubeScheduler.Host.SSHConfig.User = "root"
+		c.KubeScheduler.Host.SSHConfig.User = DefaultSSHUser
 	}
 
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
 		c.KubeScheduler.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
 	}
+
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeScheduler.Host.SSHConfig.ConnectionTimeout = "30s"
+		c.KubeScheduler.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
 	}
 
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
 		c.KubeScheduler.Host.SSHConfig.Port = c.SSH.Port
 	}
+
 	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.Port == 0 {
 		c.KubeScheduler.Host.SSHConfig.Port = 22
 	}
@@ -122,18 +137,23 @@ func (c *Controlplane) buildKubeControllerManager() {
 	if c.KubeControllerManager.Image == "" && c.Image != "" {
 		c.KubeControllerManager.Image = c.Image
 	}
+
 	if c.KubeControllerManager.KubernetesCACertificate == "" && c.KubernetesCACertificate != "" {
 		c.KubeControllerManager.KubernetesCACertificate = c.KubernetesCACertificate
 	}
+
 	if c.KubeControllerManager.KubernetesCAKey == "" && c.KubernetesCAKey != "" {
 		c.KubeControllerManager.KubernetesCAKey = c.KubernetesCAKey
 	}
+
 	if c.KubeControllerManager.ServiceAccountPrivateKey == "" && c.ServiceAccountPrivateKey != "" {
 		c.KubeControllerManager.ServiceAccountPrivateKey = c.ServiceAccountPrivateKey
 	}
+
 	if c.KubeControllerManager.AdminCertificate == "" && c.AdminCertificate != "" {
 		c.KubeControllerManager.AdminCertificate = c.AdminCertificate
 	}
+
 	if c.KubeControllerManager.AdminKey == "" && c.AdminKey != "" {
 		c.KubeControllerManager.AdminKey = c.AdminKey
 	}
@@ -141,6 +161,7 @@ func (c *Controlplane) buildKubeControllerManager() {
 	if c.KubeControllerManager.APIServer == "" && c.APIServerAddress != "" {
 		c.KubeControllerManager.APIServer = c.APIServerAddress
 	}
+
 	if c.KubeControllerManager.RootCACertificate == "" && c.RootCACertificate != "" {
 		c.KubeControllerManager.RootCACertificate = c.RootCACertificate
 	}
@@ -151,11 +172,13 @@ func (c *Controlplane) buildKubeControllerManager() {
 			DirectConfig: &direct.Config{},
 		}
 	}
+
 	if c.KubeControllerManager.Host == nil {
 		c.KubeControllerManager.Host = &host.Host{
 			SSHConfig: c.SSH,
 		}
 	}
+
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
 		c.KubeControllerManager.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
 	}
@@ -163,20 +186,23 @@ func (c *Controlplane) buildKubeControllerManager() {
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
 		c.KubeControllerManager.Host.SSHConfig.User = c.SSH.User
 	}
+
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.User == "" {
-		c.KubeControllerManager.Host.SSHConfig.User = "root"
+		c.KubeControllerManager.Host.SSHConfig.User = DefaultSSHUser
 	}
 
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
 		c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
 	}
+
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout = "30s"
+		c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
 	}
 
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
 		c.KubeControllerManager.Host.SSHConfig.Port = c.SSH.Port
 	}
+
 	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.Port == 0 {
 		c.KubeControllerManager.Host.SSHConfig.Port = 22
 	}
@@ -187,27 +213,35 @@ func (c *Controlplane) buildKubeAPIServer() {
 	if c.KubeAPIServer.Image == "" && c.Image != "" {
 		c.KubeAPIServer.Image = c.Image
 	}
+
 	if c.KubeAPIServer.KubernetesCACertificate == "" && c.KubernetesCACertificate != "" {
 		c.KubeAPIServer.KubernetesCACertificate = c.KubernetesCACertificate
 	}
+
 	if c.KubeAPIServer.APIServerCertificate == "" && c.APIServerCertificate != "" {
 		c.KubeAPIServer.APIServerCertificate = c.APIServerCertificate
 	}
+
 	if c.KubeAPIServer.APIServerKey == "" && c.APIServerKey != "" {
 		c.KubeAPIServer.APIServerKey = c.APIServerKey
 	}
+
 	if c.KubeAPIServer.ServiceAccountPublicKey == "" && c.ServiceAccountPublicKey != "" {
 		c.KubeAPIServer.ServiceAccountPublicKey = c.ServiceAccountPublicKey
 	}
-	if len(c.KubeAPIServer.EtcdServers) == 0 && len(c.EtcdServers) >= 0 {
+
+	if len(c.KubeAPIServer.EtcdServers) == 0 && len(c.EtcdServers) == 0 {
 		c.KubeAPIServer.EtcdServers = c.EtcdServers
 	}
+
 	if c.KubeAPIServer.BindAddress == "" && c.APIServerAddress != "" {
 		c.KubeAPIServer.BindAddress = c.APIServerAddress
 	}
+
 	if c.KubeAPIServer.AdvertiseAddress == "" && c.APIServerAddress != "" {
 		c.KubeAPIServer.AdvertiseAddress = c.APIServerAddress
 	}
+
 	if c.KubeAPIServer.SecurePort == 0 && c.APIServerPort != 0 {
 		c.KubeAPIServer.SecurePort = c.APIServerPort
 	}
@@ -218,11 +252,13 @@ func (c *Controlplane) buildKubeAPIServer() {
 			DirectConfig: &direct.Config{},
 		}
 	}
+
 	if c.KubeAPIServer.Host == nil {
 		c.KubeAPIServer.Host = &host.Host{
 			SSHConfig: c.SSH,
 		}
 	}
+
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
 		c.KubeAPIServer.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
 	}
@@ -230,20 +266,23 @@ func (c *Controlplane) buildKubeAPIServer() {
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
 		c.KubeAPIServer.Host.SSHConfig.User = c.SSH.User
 	}
+
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.User == "" {
-		c.KubeAPIServer.Host.SSHConfig.User = "root"
+		c.KubeAPIServer.Host.SSHConfig.User = DefaultSSHUser
 	}
 
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
 		c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
 	}
+
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout = "30s"
+		c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
 	}
 
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
 		c.KubeAPIServer.Host.SSHConfig.Port = c.SSH.Port
 	}
+
 	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.Port == 0 {
 		c.KubeAPIServer.Host.SSHConfig.Port = 22
 	}
@@ -289,24 +328,30 @@ func (c *Controlplane) New() (*controlplane, error) {
 	}
 
 	c.buildKubeAPIServer()
+
 	kas, err := c.KubeAPIServer.New()
 	if err != nil {
 		return nil, fmt.Errorf("that was unexpected: %w", err)
 	}
+
 	controlplane.containers.DesiredState["kube-apiserver"] = kas.ToHostConfiguredContainer()
 
 	c.buildKubeControllerManager()
+
 	kcm, err := c.KubeControllerManager.New()
 	if err != nil {
 		return nil, fmt.Errorf("that was unexpected: %w", err)
 	}
+
 	controlplane.containers.DesiredState["kube-controller-manager"] = kcm.ToHostConfiguredContainer()
 
 	c.buildKubeScheduler()
+
 	ks, err := c.KubeScheduler.New()
 	if err != nil {
 		return nil, fmt.Errorf("that was unexpected: %w", err)
 	}
+
 	controlplane.containers.DesiredState["kube-scheduler"] = ks.ToHostConfiguredContainer()
 
 	return controlplane, nil
@@ -328,10 +373,12 @@ func FromYaml(c []byte) (*controlplane, error) {
 	if err := yaml.Unmarshal(c, &controlplane); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
+
 	cl, err := controlplane.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controlplane object: %w", err)
 	}
+
 	return cl, nil
 }
 
@@ -345,10 +392,13 @@ func (c *controlplane) CheckCurrentState() error {
 	if err != nil {
 		return err
 	}
+
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	c.containers = *containers.ToExported()
+
 	return nil
 }
 
@@ -358,6 +408,7 @@ func (c *controlplane) Deploy() error {
 	if err != nil {
 		return err
 	}
+
 	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
 	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
 	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
@@ -370,9 +421,12 @@ func (c *controlplane) Deploy() error {
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := containers.Execute(); err != nil {
 		return err
 	}
+
 	c.containers = *containers.ToExported()
+
 	return nil
 }

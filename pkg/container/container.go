@@ -72,6 +72,7 @@ func New(c *Container) (*container, error) {
 	if err := nc.selectRuntime(); err != nil {
 		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
 	}
+
 	return nc, nil
 }
 
@@ -80,9 +81,11 @@ func (c *Container) Validate() error {
 	if c.Config.Name == "" {
 		return fmt.Errorf("name must be set")
 	}
+
 	if c.Config.Image == "" {
 		return fmt.Errorf("image must be set")
 	}
+
 	if c.Runtime.Docker == nil {
 		return fmt.Errorf("docker runtime must be set")
 	}
@@ -110,7 +113,9 @@ func (c *container) selectRuntime() error {
 	if err != nil {
 		return fmt.Errorf("selecting container runtime failed: %w", err)
 	}
+
 	c.runtime = r
+
 	return nil
 }
 
@@ -150,6 +155,7 @@ func (c *container) FromStatus() (*containerInstance, error) {
 	if c.status == nil {
 		return nil, fmt.Errorf("can't create container instance from empty status")
 	}
+
 	if c.status != nil && c.status.ID == "" {
 		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
 	}
@@ -166,10 +172,11 @@ func (c *containerInstance) Status() (*types.ContainerStatus, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getting status for container '%s' failed: %w", c.config.Name, err)
 	}
+
 	return status, nil
 }
 
-// UpdateStatus updates status of exported Container struct. This function is primairly used
+// UpdateStatus updates status of exported Container struct. This function is primarily used
 // to reduce the boilerplate in helper functions, which allow to perform operations directly on
 // Container struct.
 func (c *containerInstance) updateStatus(container *Container) error {
@@ -200,6 +207,7 @@ func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return s, err
 }
 
@@ -235,6 +243,7 @@ func (c *Container) Start() error {
 	if err != nil {
 		return err
 	}
+
 	if err := ci.Start(); err != nil {
 		return err
 	}
@@ -262,6 +271,7 @@ func (c *Container) Create() error {
 	if err != nil {
 		return err
 	}
+
 	ci, err := nc.Create()
 	if err != nil {
 		return err
@@ -282,6 +292,7 @@ func (c *Container) Delete() error {
 	}
 
 	c.Status = nil
+
 	return nil
 }
 

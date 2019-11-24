@@ -52,13 +52,16 @@ func (p *Pool) New() (*pool, error) {
 		if k.Image == "" && p.Image != "" {
 			k.Image = p.Image
 		}
+
 		if k.BootstrapKubeconfig == "" && p.BootstrapKubeconfig != "" {
 			k.BootstrapKubeconfig = p.BootstrapKubeconfig
 		}
+
 		if k.KubernetesCACertificate == "" && p.KubernetesCACertificate != "" {
 			k.KubernetesCACertificate = p.KubernetesCACertificate
 		}
-		if len(k.ClusterDNSIPs) <= 0 && len(p.ClusterDNSIPs) > 0 {
+
+		if len(k.ClusterDNSIPs) == 0 && len(p.ClusterDNSIPs) > 0 {
 			k.ClusterDNSIPs = p.ClusterDNSIPs
 		}
 
@@ -68,6 +71,7 @@ func (p *Pool) New() (*pool, error) {
 				DirectConfig: &direct.Config{},
 			}
 		}
+
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.PrivateKey == "" && p.SSH != nil && p.SSH.PrivateKey != "" {
 			k.Host.SSHConfig.PrivateKey = p.SSH.PrivateKey
 		}
@@ -75,6 +79,7 @@ func (p *Pool) New() (*pool, error) {
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.User == "" && p.SSH != nil && p.SSH.User != "" {
 			k.Host.SSHConfig.User = p.SSH.User
 		}
+
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.User == "" {
 			k.Host.SSHConfig.User = "root"
 		}
@@ -82,6 +87,7 @@ func (p *Pool) New() (*pool, error) {
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.ConnectionTimeout == "" && p.SSH != nil && p.SSH.ConnectionTimeout != "" {
 			k.Host.SSHConfig.ConnectionTimeout = p.SSH.ConnectionTimeout
 		}
+
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.ConnectionTimeout == "" {
 			k.Host.SSHConfig.ConnectionTimeout = "30s"
 		}
@@ -89,6 +95,7 @@ func (p *Pool) New() (*pool, error) {
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.Port == 0 && p.SSH != nil && p.SSH.Port != 0 {
 			k.Host.SSHConfig.Port = p.SSH.Port
 		}
+
 		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.Port == 0 {
 			k.Host.SSHConfig.Port = 22
 		}
@@ -97,6 +104,7 @@ func (p *Pool) New() (*pool, error) {
 		if err != nil {
 			return nil, fmt.Errorf("that was unexpected: %w", err)
 		}
+
 		pool.containers.DesiredState[strconv.Itoa(i)] = kubelet.ToHostConfiguredContainer()
 	}
 
@@ -116,10 +124,12 @@ func FromYaml(c []byte) (*pool, error) {
 	if err := yaml.Unmarshal(c, &pool); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
+
 	p, err := pool.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cluster object: %w", err)
 	}
+
 	return p, nil
 }
 
@@ -134,10 +144,13 @@ func (p *pool) CheckCurrentState() error {
 	if err != nil {
 		return err
 	}
+
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	p.containers = *containers.ToExported()
+
 	return nil
 }
 
@@ -159,9 +172,12 @@ func (p *pool) Deploy() error {
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := containers.Execute(); err != nil {
 		return err
 	}
+
 	p.containers = *containers.ToExported()
+
 	return nil
 }

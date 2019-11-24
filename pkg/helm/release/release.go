@@ -85,12 +85,15 @@ func (r *Release) Validate() error {
 	if r.Kubeconfig == "" {
 		return fmt.Errorf("kubeconfig is empty")
 	}
+
 	if r.Namespace == "" {
 		return fmt.Errorf("namespace is empty")
 	}
+
 	if r.Name == "" {
 		return fmt.Errorf("name is empty")
 	}
+
 	if r.Chart == "" {
 		return fmt.Errorf("chart is empty")
 	}
@@ -173,10 +176,12 @@ func (r *release) InstallOrUpgrade() error {
 func (r *release) Exists() (bool, error) {
 	histClient := action.NewHistory(r.actionConfig)
 	histClient.Max = 1
+
 	_, err := histClient.Run(r.name)
 	if err == driver.ErrReleaseNotFound {
 		return false, nil
 	}
+
 	if err != nil {
 		return false, err
 	}

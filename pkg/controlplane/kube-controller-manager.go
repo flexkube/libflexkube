@@ -131,21 +131,27 @@ func (k *KubeControllerManager) Validate() error {
 	if k.KubernetesCACertificate == "" {
 		return fmt.Errorf("KubernetesCACertificate is empty")
 	}
+
 	if k.KubernetesCAKey == "" {
 		return fmt.Errorf("KubernetesCAKey is empty")
 	}
+
 	if k.ServiceAccountPrivateKey == "" {
 		return fmt.Errorf("ServiceAccountPrivateKey is empty")
 	}
+
 	if k.APIServer == "" {
 		return fmt.Errorf("APIServer is empty")
 	}
+
 	if k.AdminCertificate == "" {
 		return fmt.Errorf("AdminCertificate is empty")
 	}
+
 	if k.AdminKey == "" {
 		return fmt.Errorf("AdminKey is empty")
 	}
+
 	if k.RootCACertificate == "" {
 		return fmt.Errorf("rootCACertificate is empty")
 	}

@@ -16,10 +16,12 @@ func TestNewClientWithHost(t *testing.T) {
 	config := &Config{
 		Host: "unix:///foo.sock",
 	}
+
 	c, err := config.New()
 	if err != nil {
 		t.Fatalf("Creating new docker client should work, got: %s", err)
 	}
+
 	if dh := (c.(*docker)).cli.DaemonHost(); dh != config.Host {
 		t.Fatalf("Client with host set should have '%s' as host, got: '%s'", config.Host, dh)
 	}

@@ -30,19 +30,24 @@ func resourceKubeletPoolCreate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if err := c.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := c.Deploy(); err != nil {
 		return err
 	}
+
 	state, err := c.StateToYaml()
 	if err != nil {
 		return err
 	}
+
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
+
 	return resourceKubeletPoolRead(d, m)
 }
 
@@ -51,23 +56,28 @@ func resourceKubeletPoolRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if err := c.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	state, err := c.StateToYaml()
 	if err != nil {
 		return err
 	}
+
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
 
 	result := sha256sum(state)
 	d.SetId(result)
+
 	return nil
 }
 
 func resourceKubeletPoolDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
+
 	return nil
 }

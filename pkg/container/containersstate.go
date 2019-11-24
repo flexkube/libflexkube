@@ -23,6 +23,7 @@ func (s ContainersState) New() (containersState, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		state[name] = m
 	}
 
@@ -36,6 +37,7 @@ func (s containersState) CheckState() error {
 		if err := hcc.Status(); err != nil {
 			return err
 		}
+
 		if err := hcc.ConfigurationStatus(); err != nil {
 			return err
 		}
@@ -49,13 +51,17 @@ func (s containersState) RemoveContainer(containerName string) error {
 	if _, exists := s[containerName]; !exists {
 		return fmt.Errorf("can't remove non-existing container")
 	}
+
 	if err := s[containerName].Stop(); err != nil {
 		return fmt.Errorf("failed stopping container: %w", err)
 	}
+
 	if err := s[containerName].Delete(); err != nil {
 		return fmt.Errorf("failed removing container: %w", err)
 	}
+
 	delete(s, containerName)
+
 	return nil
 }
 
@@ -63,11 +69,14 @@ func (s containersState) CreateAndStart(containerName string) error {
 	if _, exists := s[containerName]; !exists {
 		return fmt.Errorf("can't create non-existing container")
 	}
+
 	if err := s[containerName].Create(); err != nil {
 		return fmt.Errorf("failed creating new container: %w", err)
 	}
+
 	if err := s[containerName].Start(); err != nil {
 		return fmt.Errorf("failed starting container: %w", err)
 	}
+
 	return nil
 }

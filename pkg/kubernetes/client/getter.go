@@ -23,6 +23,7 @@ func (c *Getter) ToRESTMapper() (meta.RESTMapper, error) {
 
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(d)
 	expander := restmapper.NewShortcutExpander(mapper, d)
+
 	return expander, nil
 }
 

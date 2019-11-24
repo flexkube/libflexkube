@@ -14,7 +14,6 @@ import (
 
 // TODO maybe we should return struct here?
 func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Clientset, error) {
-
 	// Inlining helm.sh/helm/v3/pkg/kube.New() to be able to override the config
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		// According to helm, this error should never happen
@@ -33,7 +32,7 @@ func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Cl
 
 	kc, err := c.Factory.KubernetesClientSet()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to create kubernetes client: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
 	return g, c, kc, nil

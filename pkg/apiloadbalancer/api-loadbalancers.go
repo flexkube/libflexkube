@@ -52,7 +52,8 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 		if lb.Image == "" && a.Image != "" {
 			lb.Image = a.Image
 		}
-		if len(lb.Servers) <= 0 && len(a.Servers) > 0 {
+
+		if len(lb.Servers) == 0 && len(a.Servers) > 0 {
 			lb.Servers = a.Servers
 		}
 
@@ -67,6 +68,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 				SSHConfig: a.SSH,
 			}
 		}
+
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.PrivateKey == "" && a.SSH != nil && a.SSH.PrivateKey != "" {
 			lb.Host.SSHConfig.PrivateKey = a.SSH.PrivateKey
 		}
@@ -74,6 +76,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.User == "" && a.SSH != nil && a.SSH.User != "" {
 			lb.Host.SSHConfig.User = a.SSH.User
 		}
+
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.User == "" {
 			lb.Host.SSHConfig.User = "root"
 		}
@@ -81,6 +84,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.ConnectionTimeout == "" && a.SSH != nil && a.SSH.ConnectionTimeout != "" {
 			lb.Host.SSHConfig.ConnectionTimeout = a.SSH.ConnectionTimeout
 		}
+
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.ConnectionTimeout == "" {
 			lb.Host.SSHConfig.ConnectionTimeout = "30s"
 		}
@@ -88,6 +92,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.Port == 0 && a.SSH != nil && a.SSH.Port != 0 {
 			lb.Host.SSHConfig.Port = a.SSH.Port
 		}
+
 		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.Port == 0 {
 			lb.Host.SSHConfig.Port = 22
 		}
@@ -96,6 +101,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 		if err != nil {
 			return nil, fmt.Errorf("that was unexpected: %w", err)
 		}
+
 		apiLoadBalancers.containers.DesiredState[strconv.Itoa(i)] = lbx.ToHostConfiguredContainer()
 	}
 
@@ -115,10 +121,12 @@ func FromYaml(c []byte) (*apiLoadBalancers, error) {
 	if err := yaml.Unmarshal(c, &apiLoadBalancers); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
 	}
+
 	p, err := apiLoadBalancers.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cluster object: %w", err)
 	}
+
 	return p, nil
 }
 
@@ -132,10 +140,13 @@ func (a *apiLoadBalancers) CheckCurrentState() error {
 	if err != nil {
 		return err
 	}
+
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	a.containers = *containers.ToExported()
+
 	return nil
 }
 
@@ -146,6 +157,7 @@ func (a *apiLoadBalancers) Deploy() error {
 	if err != nil {
 		return err
 	}
+
 	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
 	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
 	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
@@ -158,9 +170,12 @@ func (a *apiLoadBalancers) Deploy() error {
 	if err := containers.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := containers.Execute(); err != nil {
 		return err
 	}
+
 	a.containers = *containers.ToExported()
+
 	return nil
 }

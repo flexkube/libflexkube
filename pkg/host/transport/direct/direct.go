@@ -19,6 +19,7 @@ func (c *Config) New() (transport.Transport, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("direct host validation failed: %w", err)
 	}
+
 	return &direct{}, nil
 }
 

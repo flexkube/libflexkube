@@ -30,19 +30,24 @@ func resourceAPILoadBalancerPoolCreate(d *schema.ResourceData, m interface{}) er
 	if err != nil {
 		return err
 	}
+
 	if err := c.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	if err := c.Deploy(); err != nil {
 		return err
 	}
+
 	state, err := c.StateToYaml()
 	if err != nil {
 		return err
 	}
+
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
+
 	return resourceAPILoadBalancerPoolRead(d, m)
 }
 
@@ -51,23 +56,28 @@ func resourceAPILoadBalancerPoolRead(d *schema.ResourceData, m interface{}) erro
 	if err != nil {
 		return err
 	}
+
 	if err := c.CheckCurrentState(); err != nil {
 		return err
 	}
+
 	state, err := c.StateToYaml()
 	if err != nil {
 		return err
 	}
+
 	if err := d.Set("state", string(state)); err != nil {
 		return err
 	}
 
 	result := sha256sum(state)
 	d.SetId(result)
+
 	return nil
 }
 
 func resourceAPILoadBalancerPoolDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
+
 	return nil
 }

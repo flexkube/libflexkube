@@ -7,6 +7,7 @@ import (
 
 func TestNew(t *testing.T) {
 	d := &Config{}
+
 	di, err := d.New()
 	if err != nil {
 		t.Fatalf("should return new object without errors, got: %w", err)
@@ -20,6 +21,7 @@ func TestNew(t *testing.T) {
 func TestForwardUnixSocket(t *testing.T) {
 	d := &direct{}
 	p := "/foo"
+
 	if fp, _ := d.ForwardUnixSocket(p); fp != p {
 		t.Fatalf("expected '%s', got '%s'", p, fp)
 	}

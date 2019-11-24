@@ -88,6 +88,7 @@ func TestSelectDockerRuntime(t *testing.T) {
 	if err := c.selectRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
 	}
+
 	if c.runtime == nil {
 		t.Errorf("Selecting container runtime should set container runtime field")
 	}

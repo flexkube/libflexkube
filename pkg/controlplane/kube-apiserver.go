@@ -86,7 +86,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 			},
 			Args: []string{
 				"kube-apiserver",
-				fmt.Sprintf("--etcd-servers=%s", strings.Join(k.etcdServers[:], ",")),
+				fmt.Sprintf("--etcd-servers=%s", strings.Join(k.etcdServers, ",")),
 				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
 				"--tls-cert-file=/etc/kubernetes/pki/apiserver.crt",
 				"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
@@ -154,31 +154,39 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 // TODO add validation of certificates if specified
 func (k *KubeAPIServer) Validate() error {
 	if k.KubernetesCACertificate == "" {
-		return fmt.Errorf("KubernetesCACertificate is empty")
+		return fmt.Errorf("field KubernetesCACertificate is empty")
 	}
+
 	if k.APIServerCertificate == "" {
-		return fmt.Errorf("ApiServerCertificate is empty")
+		return fmt.Errorf("field ApiServerCertificate is empty")
 	}
+
 	if k.APIServerKey == "" {
-		return fmt.Errorf("ApiServerKey is empty")
+		return fmt.Errorf("field ApiServerKey is empty")
 	}
+
 	if k.ServiceAccountPublicKey == "" {
-		return fmt.Errorf("ServiceAccountPublicKey is empty")
+		return fmt.Errorf("field ServiceAccountPublicKey is empty")
 	}
+
 	if k.BindAddress == "" {
-		return fmt.Errorf("BindAddress is empty")
+		return fmt.Errorf("field BindAddress is empty")
 	}
+
 	if k.AdvertiseAddress == "" {
-		return fmt.Errorf("AdvertiseAddress is empty")
+		return fmt.Errorf("field AdvertiseAddress is empty")
 	}
+
 	if len(k.EtcdServers) == 0 {
-		return fmt.Errorf("At least one etcd server must be defined")
+		return fmt.Errorf("at least one etcd server must be defined")
 	}
+
 	if k.ServiceCIDR == "" {
-		return fmt.Errorf("serviceCIDR is empty")
+		return fmt.Errorf("field ServiceCIDR is empty")
 	}
+
 	if k.SecurePort == 0 {
-		return fmt.Errorf("SecurePort must be defined")
+		return fmt.Errorf("field securePort must be defined")
 	}
 
 	return nil
