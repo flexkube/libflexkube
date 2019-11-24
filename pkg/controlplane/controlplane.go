@@ -230,7 +230,7 @@ func (c *Controlplane) buildKubeAPIServer() {
 		c.KubeAPIServer.ServiceAccountPublicKey = c.ServiceAccountPublicKey
 	}
 
-	if len(c.KubeAPIServer.EtcdServers) == 0 && len(c.EtcdServers) == 0 {
+	if len(c.KubeAPIServer.EtcdServers) == 0 && len(c.EtcdServers) > 0 {
 		c.KubeAPIServer.EtcdServers = c.EtcdServers
 	}
 
