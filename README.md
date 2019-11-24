@@ -1,5 +1,7 @@
 # libflexkube: Go library for deploying kubernetes
 
+[![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube)
+
 ## Status of the project
 
 At the time of writing, this project is in active development state and it is not suitable for production use. Breaking changes
