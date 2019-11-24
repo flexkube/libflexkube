@@ -30,7 +30,7 @@ func resourceHelmRelease() *schema.Resource {
 			},
 			"values": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 		},
 	}
