@@ -52,7 +52,7 @@ type base struct {
 	config types.ContainerConfig
 	// Container runtime which will be used to manage the container
 	runtime       runtime.Runtime
-	runtimeConfig runtime.RuntimeConfig
+	runtimeConfig runtime.Config
 }
 
 // New creates new instance of container from Container and validates it's configuration

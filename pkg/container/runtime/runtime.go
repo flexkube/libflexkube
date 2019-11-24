@@ -35,9 +35,9 @@ type Runtime interface {
 	Stat(ID string, path string) (*os.FileMode, error)
 }
 
-// RuntimeConfig defines interface for runtime configuration. Since some feature are generic to runtime,
+// Config defines interface for runtime configuration. Since some feature are generic to runtime,
 // this interface make sure that other parts of the system are compatible with it.
-type RuntimeConfig interface {
+type Config interface {
 	GetAddress() string
 	SetAddress(string)
 	New() (Runtime, error)
