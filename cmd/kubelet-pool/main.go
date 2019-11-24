@@ -41,26 +41,26 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Creating etcd cluster object")
+	fmt.Println("Creating kubelet pool object")
 
 	c, err := kubelet.FromYaml([]byte(string(s) + string(config)))
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Checking current state of the cluster")
+	fmt.Println("Checking current state of the pool")
 
 	if err := c.CheckCurrentState(); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Deploying cluster updates")
+	fmt.Println("Deploying pool updates")
 
 	if err := c.Deploy(); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Saving new cluster state to state.yaml file")
+	fmt.Println("Saving new pool state to state.yaml file")
 
 	state, err := c.StateToYaml()
 	if err != nil {
