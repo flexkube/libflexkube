@@ -38,3 +38,7 @@ codespell:
 codespell-pr:
 	git diff master..HEAD | grep -v ^- | codespell -
 	git log master..HEAD | codespell -
+
+format:
+	gofmt -s -l -w $$(find . -name '*.go' | grep -v '^./vendor')
+	goimports -l -w $$(find . -name '*.go' | grep -v '^./vendor')
