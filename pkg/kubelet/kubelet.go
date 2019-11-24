@@ -89,6 +89,8 @@ func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer
 kind: KubeletConfiguration
 # Enables TLS certificate rotation, which is good from security point of view.
 rotateCertificates: true
+# Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates
+serverTLSBootstrap: true
 # To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
 # This disables QoS based cgroup hierarchy, which is important from resource management perspective.
 cgroupsPerQOS: false
