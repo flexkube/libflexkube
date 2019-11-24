@@ -21,7 +21,12 @@ test-integration:
 
 lint:
 	golangci-lint run
-	golint -set_exit_status $$(go list ./...)
+	# Since golint is very opinionated about certain things, for example exported functions returning
+	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
+	#
+	# TODO Maybe cache golint result somewhere, do we don't have to run it twice?
+	golint $$(go list ./...) | grep -v -E 'returns unexported type.*, which can be annoying to use' || true
+	test $$(golint $$(go list ./...) | grep -v -E "returns unexported type.*, which can be annoying to use" | wc -l) -eq 0
 
 update:
 	$(GOGET) -u
