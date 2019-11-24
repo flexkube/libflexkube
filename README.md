@@ -211,7 +211,7 @@ This can be done using [cmd/kubelet-pool](cmd/kubelet-pool), which deploys kubel
 
 The configuration reference can be found in [pkg/kubelet/pool.go#L18](pkg/kubelet/pool.go#L18).
 
-NOTE: kubelets have `serverTLSBootstrap: true` option enabled, so their serving certificates (for HTTPS communication from kube-apiserver) will be requested from the cluster. Currently, such certificates are not automatically approved, so it is recommended to use [kubelet-rubber-stamp](https://github.com/kontena/kubelet-rubber-stamp) to automate that. It can be deployed using [kubelet-rubber-stamp](https://github.com/invidian/kubelet-rubber-stamp-helm-chart) helm chart.
+NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serving certificates (for HTTPS communication coming from from kube-apiserver) will be requested from the cluster. Currently, such certificates are not automatically approved, so it is recommended to use [kubelet-rubber-stamp](https://github.com/kontena/kubelet-rubber-stamp) to automate approval process. It can be deployed using [kubelet-rubber-stamp](https://github.com/flexkube/kubelet-rubber-stamp-helm-chart) helm chart.
 
 ## Current known issues and limitations
 
