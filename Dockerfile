@@ -6,17 +6,20 @@ ENV GO111MODULE=on
 # Install dependencies
 RUN apk add curl git build-base
 
-# Install linter
-RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $HOME/bin v1.21.0
+# Copy Makefile first to install CI binaries etc.
+ADD ./Makefile /usr/src/libflexkube/
+
+WORKDIR /usr/src/libflexkube
+
+RUN make install-ci BIN_PATH=/usr/local/bin
 
 # Copy go mod files first and install dependencies to cache this layer
-ADD ./go.mod /usr/src/libflexkube/
-WORKDIR /usr/src/libflexkube
-RUN go get
+ADD ./go.mod ./go.sum /usr/src/libflexkube/
+
+RUN make download
 
 # Add source code
 ADD . /usr/src/libflexkube
 
-# Test and lint
-RUN go test -v ./... && \
-    $HOME/bin/golangci-lint run
+# Build, test and lint
+RUN make

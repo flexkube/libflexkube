@@ -1,24 +1,45 @@
 # Go parameters
-GOCMD=go
+GOCMD=env GO111MODULE=on go
 GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe -v
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GOBUILD=$(GOCMD) build -v -buildmode=exe
 
+CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
+GOLANGCI_LINT_VERSION=v1.21.0
+BIN_PATH=$$HOME/bin
+
+.PHONY: all
 all: test lint build
 
+.PHONY: all-cover
+all-cover: build test-cover lint
+
+.PHONY: build
 build:
 	$(GOBUILD) ./cmd/...
 
+.PHONY: test
 test:
 	$(GOTEST) ./...
 
+.PHONY: download
+download:
+	$(GOMOD) download
+
+.PHONY: test-race
 test-race:
 	$(GOTEST) -race ./...
 
+.PHONY: test-integrations
 test-integration:
 	$(GOTEST) -tags=integration ./...
 
+.PHONY: test-cover
+test-cover:
+	$(GOTEST) -coverprofile=$(PROFILEFILE) ./...
+
+.PHONY: lint
 lint:
 	golangci-lint run --enable-all --disable=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
 	# Since golint is very opinionated about certain things, for example exported functions returning
@@ -28,17 +49,52 @@ lint:
 	golint $$(go list ./...) | grep -v -E 'returns unexported type.*, which can be annoying to use' || true
 	test $$(golint $$(go list ./...) | grep -v -E "returns unexported type.*, which can be annoying to use" | wc -l) -eq 0
 
+.PHONY: update
 update:
 	$(GOGET) -u
 	$(GOMOD) tidy
 
+.PHONY: codespell
 codespell:
-	codespell  -S .git,state.yaml,go.sum,terraform.tfstate
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate
 
+.PHONY: codespell-pr
 codespell-pr:
 	git diff master..HEAD | grep -v ^- | codespell -
 	git log master..HEAD | codespell -
 
+.PHONY: format
 format:
-	gofmt -s -l -w $$(find . -name '*.go' | grep -v '^./vendor')
 	goimports -l -w $$(find . -name '*.go' | grep -v '^./vendor')
+
+.PHONY: codecov
+codecov: PROFILEFILE=coverage.txt
+codecov: test-cover
+codecov:
+	bash <(curl -s https://codecov.io/bash)
+
+.PHONY: codeclimate-prepare
+codeclimate-prepare:
+	cc-test-reporter before-build
+\
+.PHONY: codeclimate
+codeclimate: PROFILEFILE=c.out
+codeclimate: codeclimate-prepare test-cover
+codeclimate:
+	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build --exit-code $(EXIT_CODE)
+
+.PHONY: install-golangci-lint
+install-golangci-lint:
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
+
+.PHONY: install-golint
+install-golint:
+	$(GOGET) -u golang.org/x/lint/golint
+
+.PHONY: install-cc-test-reporter
+install-cc-test-reporter:
+	curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > $(BIN_PATH)/cc-test-reporter
+	chmod +x $(BIN_PATH)/cc-test-reporter
+
+.PHONY: install-ci
+install-ci: install-golangci-lint install-golint install-cc-test-reporter
