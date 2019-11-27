@@ -1,4 +1,5 @@
 coverage.txt
+c.out
 state.yaml
 config.yaml
 !examples/**/config.yaml
