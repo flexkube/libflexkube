@@ -1,9 +1,13 @@
+# Build parameters
+CGO_ENABLED=0
+LD_FLAGS="-extldflags '-static'"
+
 # Go parameters
 GOCMD=env GO111MODULE=on go
 GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe -v
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
-GOBUILD=$(GOCMD) build -v -buildmode=exe
+GOBUILD=CGO_ENABLED=$(CGO_ENABLED) $(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
 GOLANGCI_LINT_VERSION=v1.21.0
