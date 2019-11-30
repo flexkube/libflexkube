@@ -19,6 +19,15 @@ all-cover: build test-cover lint
 build:
 	$(GOBUILD) ./cmd/...
 
+.PHONY: build-bin
+build-bin:
+	mkdir -p ./bin
+	cd bin && for i in $$(ls ../cmd); do $(GOBUILD) ../cmd/$$i; done
+
+.PHONY: clean
+clean:
+	rm -r ./bin c.out coverage.txt 2>/dev/null || true
+
 .PHONY: test
 test:
 	$(GOTEST) ./...
