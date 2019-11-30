@@ -22,4 +22,4 @@ RUN make download
 ADD . /usr/src/libflexkube
 
 # Build, test and lint
-RUN make
+RUN make all build-bin
