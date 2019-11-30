@@ -24,6 +24,10 @@ build-bin:
 	mkdir -p ./bin
 	cd bin && for i in $$(ls ../cmd); do $(GOBUILD) ../cmd/$$i; done
 
+.PHONY: build-docker
+build-docker:
+	docker build .
+
 .PHONY: clean
 clean:
 	rm -r ./bin c.out coverage.txt 2>/dev/null || true
