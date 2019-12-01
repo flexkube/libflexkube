@@ -86,6 +86,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Listing docker images should succeed, got: %w", err)
 	}
+
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
 			if tag == image {
@@ -99,6 +100,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	c := &types.ContainerConfig{
 		Image: image,
 	}
+
 	id, err := r.Create(c)
 	if err != nil {
 		t.Fatalf("Creating container should pull image and succeed, got: %s", err)
@@ -136,6 +138,7 @@ func TestContainerCreateWithArgs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Inspecting created container should succeed, got: %w", err)
 	}
+
 	if !reflect.DeepEqual(data.Args, args) {
 		t.Fatalf("Container created with args set should have args set\nExpected: %+v\nGot: %+v\n", args, data.Args)
 	}
@@ -167,6 +170,7 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Inspecting created container should succeed, got: %w", err)
 	}
+
 	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
 		t.Fatalf("Container created with entrypoint set should have entrypoint set\nExpected: %+v\nGot: %+v\n", entrypoint[0], data.Path)
 	}

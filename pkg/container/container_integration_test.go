@@ -24,10 +24,12 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 			Image: "notexisting",
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	if _, err = n.Create(); err == nil {
 		t.Fatalf("Creating node with non-existing image should fail")
 	}
@@ -43,10 +45,12 @@ func TestDockerCreate(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	if _, err := n.Create(); err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
@@ -63,14 +67,17 @@ func TestDockerStatus(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	c, err := n.Create()
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
+
 	if _, err := c.Status(); err != nil {
 		t.Fatalf("Checking node status should succeed, got: %v", err)
 	}
@@ -86,19 +93,24 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	c, err := n.Create()
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
+
 	c.status.ID = "nonexistent"
+
 	status, err := c.Status()
 	if err != nil {
 		t.Fatalf("Checking node status for non existing container should succeed")
 	}
+
 	if status != nil {
 		t.Fatalf("Node status for non existing container should be nil")
 	}
@@ -115,14 +127,17 @@ func TestDockerStart(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	c, err := n.Create()
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
+
 	if err := c.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
@@ -139,17 +154,21 @@ func TestDockerStop(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	c, err := n.Create()
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
+
 	if err := c.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
+
 	if err := c.Stop(); err != nil {
 		t.Fatalf("Stopping container should succeed, got: %v", err)
 	}
@@ -166,14 +185,17 @@ func TestDockerDelete(t *testing.T) {
 			Image: defaults.EtcdImage,
 		},
 	}
+
 	n, err := New(node)
 	if err != nil {
 		t.Fatalf("Initializing node should succeed, got: %v", err)
 	}
+
 	c, err := n.Create()
 	if err != nil {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
+
 	if err := c.Delete(); err != nil {
 		t.Fatalf("Removing container should succeed, got: %v", err)
 	}
@@ -181,6 +203,11 @@ func TestDockerDelete(t *testing.T) {
 
 func randomContainerName() string {
 	token := make([]byte, 32)
-	rand.Read(token)
+
+	_, err := rand.Read(token)
+	if err != nil {
+		panic(err)
+	}
+
 	return fmt.Sprintf("foo-%x", md5.Sum(token))
 }
