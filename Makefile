@@ -50,7 +50,7 @@ download:
 test-race:
 	$(GOTEST) -race $(TEST_TARGET)
 
-.PHONY: test-integrations
+.PHONY: test-integration
 test-integration:
 	$(GOTEST) -tags=integration $(TEST_TARGET)
 
