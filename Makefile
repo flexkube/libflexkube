@@ -121,6 +121,8 @@ install-ci: install-golangci-lint install-golint install-cc-test-reporter
 .PHONY: vagrant-up
 vagrant-up:
 	vagrant up
+	vagrant ssh -c "test -f /home/core/.ssh/id_rsa || (ssh-keygen -b 2048 -t rsa -f /home/core/.ssh/id_rsa -q -N '' && cat /home/core/.ssh/id_rsa.pub >> /home/core/.ssh/authorized_keys)"
+	vagrant ssh -c "test -f /home/core/.password || (openssl rand -base64 14 > /home/core/.password && (yes $$$(cat /home/core/.password) | sudo passwd core))"
 
 .PHONY: vagrant-rsync
 vagrant-rsync:
@@ -132,7 +134,7 @@ vagrant-integration-build:
 
 .PHONY: vagrant-integration-run
 vagrant-integration-run:
-	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube flexkube/libflexkube-integration make test-integration TEST_TARGET=$(TEST_TARGET)"
+	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host flexkube/libflexkube-integration make test-integration TEST_TARGET=$(TEST_TARGET)"
 
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
