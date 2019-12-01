@@ -117,3 +117,22 @@ install-cc-test-reporter:
 
 .PHONY: install-ci
 install-ci: install-golangci-lint install-golint install-cc-test-reporter
+
+.PHONY: vagrant-up
+vagrant-up:
+	vagrant up
+
+.PHONY: vagrant-rsync
+vagrant-rsync:
+	vagrant rsync
+
+.PHONY: vagrant-integration-build
+vagrant-integration-build:
+	vagrant ssh -c "cd libflexkube && docker build -t flexkube/libflexkube-integration integration"
+
+.PHONY: vagrant-integration-run
+vagrant-integration-run:
+	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube flexkube/libflexkube-integration make test-integration TEST_TARGET=$(TEST_TARGET)"
+
+.PHONY: vagrant-integration
+vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
