@@ -128,6 +128,10 @@ vagrant-up:
 vagrant-rsync:
 	vagrant rsync
 
+.PHONY: vagrant-destroy
+vagrant-destroy:
+	vagrant destroy --force
+
 .PHONY: vagrant-integration-build
 vagrant-integration-build:
 	vagrant ssh -c "cd libflexkube && docker build -t flexkube/libflexkube-integration integration"
