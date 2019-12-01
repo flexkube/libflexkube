@@ -13,6 +13,8 @@ CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32b
 GOLANGCI_LINT_VERSION=v1.21.0
 BIN_PATH=$$HOME/bin
 
+TEST_TARGET=./...
+
 .PHONY: all
 all: test lint build
 
@@ -38,7 +40,7 @@ clean:
 
 .PHONY: test
 test:
-	$(GOTEST) ./...
+	$(GOTEST) $(TEST_TARGET)
 
 .PHONY: download
 download:
@@ -46,15 +48,15 @@ download:
 
 .PHONY: test-race
 test-race:
-	$(GOTEST) -race ./...
+	$(GOTEST) -race $(TEST_TARGET)
 
 .PHONY: test-integrations
 test-integration:
-	$(GOTEST) -tags=integration ./...
+	$(GOTEST) -tags=integration $(TEST_TARGET)
 
 .PHONY: test-cover
 test-cover:
-	$(GOTEST) -coverprofile=$(PROFILEFILE) ./...
+	$(GOTEST) -coverprofile=$(PROFILEFILE) $(TEST_TARGET)
 
 .PHONY: lint
 lint:
