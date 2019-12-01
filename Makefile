@@ -122,7 +122,7 @@ install-ci: install-golangci-lint install-golint install-cc-test-reporter
 vagrant-up:
 	vagrant up
 	vagrant ssh -c "test -f /home/core/.ssh/id_rsa || (ssh-keygen -b 2048 -t rsa -f /home/core/.ssh/id_rsa -q -N '' && cat /home/core/.ssh/id_rsa.pub >> /home/core/.ssh/authorized_keys)"
-	vagrant ssh -c "test -f /home/core/.password || (openssl rand -base64 14 > /home/core/.password && (yes $$$(cat /home/core/.password) | sudo passwd core))"
+	vagrant ssh -c 'test -f /home/core/.password || (openssl rand -base64 14 > /home/core/.password && (yes $$(cat /home/core/.password) | sudo passwd core))'
 
 .PHONY: vagrant-rsync
 vagrant-rsync:
