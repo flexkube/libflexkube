@@ -60,7 +60,7 @@ test-cover:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec --max-same-issues=0 --max-issues-per-linter=0
+	golangci-lint run --enable-all --disable=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration
 	# Since golint is very opinionated about certain things, for example exported functions returning
 	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
 	#
