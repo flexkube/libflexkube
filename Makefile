@@ -70,7 +70,7 @@ lint:
 
 .PHONY: update
 update:
-	$(GOGET) -u
+	$(GOGET) -u $(GO_PACKAGES)
 	$(GOMOD) tidy
 
 .PHONY: codespell
