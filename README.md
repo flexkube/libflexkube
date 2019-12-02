@@ -48,9 +48,6 @@ Using this library has minimal target host (where containers will run) requireme
 
 No Public DNS or any other public discovery service is required for getting cluster up and running either.
 
-On executig host, the user-writable `/tmp` directory is required. This is where the forwarded UNIX sockets are stored.
-In the future this requirement might be removed, if we implement using virtual sockets.
-
 ## User tools
 
 ### CLI binaries
