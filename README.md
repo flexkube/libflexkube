@@ -48,6 +48,9 @@ Using this library has minimal target host (where containers will run) requireme
 
 No Public DNS or any other public discovery service is required for getting cluster up and running either.
 
+[Managing certificates](#managing-certificates) section recommends using Terraform for generating TLS certificates for the cluster.
+For that, the Terraform binary is required. It can be downloaded from the [official website](https://www.terraform.io/downloads.html).
+
 ## User tools
 
 ### CLI binaries
