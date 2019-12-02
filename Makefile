@@ -13,7 +13,7 @@ CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32b
 GOLANGCI_LINT_VERSION=v1.21.0
 BIN_PATH=$$HOME/bin
 
-TEST_TARGET=./...
+GO_PACKAGES=./...
 
 .PHONY: all
 all: test lint build
@@ -40,7 +40,7 @@ clean:
 
 .PHONY: test
 test:
-	$(GOTEST) $(TEST_TARGET)
+	$(GOTEST) $(GO_PACKAGES)
 
 .PHONY: download
 download:
@@ -48,15 +48,15 @@ download:
 
 .PHONY: test-race
 test-race:
-	$(GOTEST) -race $(TEST_TARGET)
+	$(GOTEST) -race $(GO_PACKAGES)
 
 .PHONY: test-integration
 test-integration:
-	$(GOTEST) -tags=integration $(TEST_TARGET)
+	$(GOTEST) -tags=integration $(GO_PACKAGES)
 
 .PHONY: test-cover
 test-cover:
-	$(GOTEST) -coverprofile=$(PROFILEFILE) $(TEST_TARGET)
+	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
 .PHONY: lint
 lint:
@@ -138,7 +138,7 @@ vagrant-integration-build:
 
 .PHONY: vagrant-integration-run
 vagrant-integration-run:
-	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host flexkube/libflexkube-integration make test-integration TEST_TARGET=$(TEST_TARGET)"
+	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host flexkube/libflexkube-integration make test-integration GO_PACKAGES=$(GO_PACKAGES)"
 
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
