@@ -84,14 +84,14 @@ func TestContainerCreatePullImage(t *testing.T) {
 
 	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
 	if err != nil {
-		t.Fatalf("Listing docker images should succeed, got: %w", err)
+		t.Fatalf("Listing docker images should succeed, got: %v", err)
 	}
 
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
 			if tag == image {
 				if _, err := d.cli.ImageRemove(d.ctx, i.ID, dockertypes.ImageRemoveOptions{}); err != nil {
-					t.Fatalf("Removing existing docker image should succeed, got: %w", err)
+					t.Fatalf("Removing existing docker image should succeed, got: %v", err)
 				}
 			}
 		}
@@ -129,14 +129,14 @@ func TestContainerCreateWithArgs(t *testing.T) {
 
 	id, err := r.Create(c)
 	if err != nil {
-		t.Fatalf("Creating container with args should succeed, got: %w", err)
+		t.Fatalf("Creating container with args should succeed, got: %v", err)
 	}
 
 	d := (r.(*docker))
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
-		t.Fatalf("Inspecting created container should succeed, got: %w", err)
+		t.Fatalf("Inspecting created container should succeed, got: %v", err)
 	}
 
 	if !reflect.DeepEqual(data.Args, args) {
@@ -161,14 +161,14 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 
 	id, err := r.Create(c)
 	if err != nil {
-		t.Fatalf("Creating container with entrypoint should succeed, got: %w", err)
+		t.Fatalf("Creating container with entrypoint should succeed, got: %v", err)
 	}
 
 	d := (r.(*docker))
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
-		t.Fatalf("Inspecting created container should succeed, got: %w", err)
+		t.Fatalf("Inspecting created container should succeed, got: %v", err)
 	}
 
 	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
