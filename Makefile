@@ -142,5 +142,9 @@ vagrant-integration-build:
 vagrant-integration-run:
 	vagrant ssh -c "$(INTEGRATION_CMD) make test-integration GO_PACKAGES=$(GO_PACKAGES)"
 
+.PHONY: vagrant-integration-shell
+vagrant-integration-shell:
+	vagrant ssh -c "$(INTEGRATION_CMD) bash"
+
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
