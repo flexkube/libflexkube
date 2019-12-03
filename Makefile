@@ -15,6 +15,10 @@ BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
 
+INTEGRATION_IMAGE=flexkube/libflexkube-integration
+
+INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host $(INTEGRATION_IMAGE)
+
 .PHONY: all
 all: test lint build
 
@@ -132,11 +136,11 @@ vagrant-destroy:
 
 .PHONY: vagrant-integration-build
 vagrant-integration-build:
-	vagrant ssh -c "cd libflexkube && docker build -t flexkube/libflexkube-integration integration"
+	vagrant ssh -c "cd libflexkube && docker build -t $(INTEGRATION_IMAGE) integration"
 
 .PHONY: vagrant-integration-run
 vagrant-integration-run:
-	vagrant ssh -c "docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host flexkube/libflexkube-integration make test-integration GO_PACKAGES=$(GO_PACKAGES)"
+	vagrant ssh -c "$(INTEGRATION_CMD) make test-integration GO_PACKAGES=$(GO_PACKAGES)"
 
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
