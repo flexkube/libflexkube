@@ -137,17 +137,9 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
 	}
 
-	// Generate new UUID for every connection, to make sure we don't get "address already in use" error
-	// TODO rather than connecting again every time ForwardUnixSocket is called
-	// we should cache and reuse the connections
-	id, err := uuid.NewRandom()
+	unixAddr, err := randomUnixSocket(d.address)
 	if err != nil {
-		return "", fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
-	}
-
-	unixAddr := &net.UnixAddr{
-		Name: fmt.Sprintf("@%s-%s", d.address, id),
-		Net:  "unix",
+		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
 	}
 
 	localSock, err := net.ListenUnix("unix", unixAddr)
@@ -218,4 +210,20 @@ func extractPath(path string) (string, error) {
 	}
 
 	return url.Path, nil
+}
+
+// randomUnixSocket generates random abstract UNIX socket, including unique UUID,
+// to avoid collisions.
+func randomUnixSocket(address string) (*net.UnixAddr, error) {
+	// TODO rather than connecting again every time ForwardUnixSocket is called
+	// we should cache and reuse the connections
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
+	}
+
+	return &net.UnixAddr{
+		Name: fmt.Sprintf("@%s-%s", address, id),
+		Net:  "unix",
+	}, nil
 }

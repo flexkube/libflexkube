@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -238,5 +239,22 @@ func TestExtractPathMalformed(t *testing.T) {
 func TestExtractPathTCP(t *testing.T) {
 	if _, err := extractPath("tcp://localhost:25"); err == nil {
 		t.Fatalf("extracting path with unsupported scheme should fail")
+	}
+}
+
+func TestRandomUnixSocket(t *testing.T) {
+	address := "localhost:80"
+
+	unixAddr, err := randomUnixSocket(address)
+	if err != nil {
+		t.Fatalf("creating random unix socket shouldn't fail, got: %v", err)
+	}
+
+	if !strings.Contains(unixAddr.String(), address) {
+		t.Fatalf("generated UNIX address should contain original address %s, got: %s", address, unixAddr.String())
+	}
+
+	if unixAddr.Net != "unix" {
+		t.Fatalf("generated UNIX address should be UNIX address, got net %s", unixAddr.Net)
 	}
 }
