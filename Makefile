@@ -66,13 +66,13 @@ test-cover:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration
+	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration $(GO_PACKAGES)
 	# Since golint is very opinionated about certain things, for example exported functions returning
 	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
 	#
 	# TODO Maybe cache golint result somewhere, do we don't have to run it twice?
-	golint $$(go list ./...) | grep -v -E 'returns unexported type.*, which can be annoying to use' || true
-	test $$(golint $$(go list ./...) | grep -v -E "returns unexported type.*, which can be annoying to use" | wc -l) -eq 0
+	golint $$(go list $(GO_PACKAGES)) | grep -v -E 'returns unexported type.*, which can be annoying to use' || true
+	test $$(golint $$(go list $(GO_PACKAGES)) | grep -v -E "returns unexported type.*, which can be annoying to use" | wc -l) -eq 0
 
 .PHONY: update
 update:
