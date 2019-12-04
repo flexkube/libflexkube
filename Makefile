@@ -19,6 +19,8 @@ INTEGRATION_IMAGE=flexkube/libflexkube-integration
 
 INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host $(INTEGRATION_IMAGE)
 
+DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
+
 .PHONY: all
 all: test lint build
 
@@ -64,7 +66,7 @@ test-cover:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration
+	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration
 	# Since golint is very opinionated about certain things, for example exported functions returning
 	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
 	#
