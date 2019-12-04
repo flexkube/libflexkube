@@ -6,7 +6,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net"
+	"reflect"
 	"testing"
+)
+
+const (
+	expectedMessage  = "foo"
+	expectedResponse = "bar"
 )
 
 func TestNew(t *testing.T) {
@@ -135,4 +142,76 @@ func generateRSAPrivateKey() (string, error) {
 	}
 
 	return string(pem.EncodeToMemory(&privBlock)), nil
+}
+
+func TestHandleClientLocalRemote(t *testing.T) {
+	server, client := net.Pipe()
+
+	remoteServer, remoteClient := net.Pipe()
+
+	go handleClient(server, remoteServer)
+
+	fmt.Fprint(client, expectedMessage)
+
+	buf := make([]byte, 1024)
+
+	if _, err := remoteClient.Read(buf); err != nil {
+		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	}
+
+	if reflect.DeepEqual(string(buf), expectedMessage) {
+		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	}
+}
+
+func TestHandleClientRemoteLocal(t *testing.T) {
+	server, client := net.Pipe()
+
+	remoteServer, remoteClient := net.Pipe()
+
+	go handleClient(server, remoteServer)
+
+	fmt.Fprint(remoteClient, expectedMessage)
+
+	buf := make([]byte, 1024)
+
+	if _, err := client.Read(buf); err != nil {
+		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	}
+
+	if reflect.DeepEqual(string(buf), expectedMessage) {
+		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	}
+}
+
+func TestHandleClientBiDirectional(t *testing.T) {
+	server, client := net.Pipe()
+
+	remoteServer, remoteClient := net.Pipe()
+
+	go handleClient(server, remoteServer)
+
+	fmt.Fprint(client, expectedMessage)
+
+	buf := make([]byte, 1024)
+
+	if _, err := remoteClient.Read(buf); err != nil {
+		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	}
+
+	if reflect.DeepEqual(string(buf), expectedMessage) {
+		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	}
+
+	fmt.Fprint(remoteClient, expectedResponse)
+
+	buf = make([]byte, 1024)
+
+	if _, err := client.Read(buf); err != nil {
+		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	}
+
+	if reflect.DeepEqual(string(buf), expectedResponse) {
+		t.Fatalf("bad response. expected '%s', got '%s'", expectedResponse, string(buf))
+	}
 }
