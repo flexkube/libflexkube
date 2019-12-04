@@ -192,8 +192,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 
 	// Start remote -> local data transfer
 	go func() {
-		_, err := io.Copy(client, remote)
-		if err != nil {
+		if _, err := io.Copy(client, remote); err != nil {
 			fmt.Printf("error while copy remote->local: %s\n", err)
 		}
 		chDone <- true
@@ -201,8 +200,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 
 	// Start local -> remote data transfer
 	go func() {
-		_, err := io.Copy(remote, client)
-		if err != nil {
+		if _, err := io.Copy(remote, client); err != nil {
 			fmt.Printf("error while copy local->remote: %s\n", err)
 		}
 		chDone <- true
