@@ -215,3 +215,28 @@ func TestHandleClientBiDirectional(t *testing.T) {
 		t.Fatalf("bad response. expected '%s', got '%s'", expectedResponse, string(buf))
 	}
 }
+
+func TestExtractPath(t *testing.T) {
+	expectedPath := "/tmp/foo.sock"
+
+	p, err := extractPath(fmt.Sprintf("unix://%s", expectedPath))
+	if err != nil {
+		t.Fatalf("extracting valid path should succeed, got: %v", err)
+	}
+
+	if p != expectedPath {
+		t.Fatalf("expected %s, got %s", expectedPath, p)
+	}
+}
+
+func TestExtractPathMalformed(t *testing.T) {
+	if _, err := extractPath("ddd"); err == nil {
+		t.Fatalf("extracting malformed path should fail")
+	}
+}
+
+func TestExtractPathTCP(t *testing.T) {
+	if _, err := extractPath("tcp://localhost:25"); err == nil {
+		t.Fatalf("extracting path with unsupported scheme should fail")
+	}
+}

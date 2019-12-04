@@ -132,13 +132,9 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
 
-	url, err := url.Parse(path)
+	path, err = extractPath(path)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
-	}
-
-	if url.Scheme != "unix" {
-		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
+		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
 	}
 
 	// Generate new UUID for every connection, to make sure we don't get "address already in use" error
@@ -178,7 +174,7 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 
 			go handleClient(c, remoteSock)
 		}
-	}(localSock, url.Path)
+	}(localSock, path)
 
 	return fmt.Sprintf("unix://%s", unixAddr.String()), nil
 }
@@ -207,4 +203,19 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 	}()
 
 	<-chDone
+}
+
+// extractPath parses and verifies, that given URL is unix socket URL
+// and returns it's path without the scheme.
+func extractPath(path string) (string, error) {
+	url, err := url.Parse(path)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
+	}
+
+	if url.Scheme != "unix" {
+		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
+	}
+
+	return url.Path, nil
 }
