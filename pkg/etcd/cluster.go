@@ -83,33 +83,7 @@ func (c *Cluster) New() (*cluster, error) {
 			}
 		}
 
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
-			m.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
-			m.Host.SSHConfig.User = c.SSH.User
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.User == "" {
-			m.Host.SSHConfig.User = "root"
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
-			m.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.ConnectionTimeout == "" {
-			m.Host.SSHConfig.ConnectionTimeout = "30s"
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
-			m.Host.SSHConfig.Port = c.SSH.Port
-		}
-
-		if m.Host != nil && m.Host.SSHConfig != nil && m.Host.SSHConfig.Port == 0 {
-			m.Host.SSHConfig.Port = 22
-		}
+		m.Host.SSHConfig = ssh.BuildConfig(m.Host.SSHConfig, c.SSH)
 
 		if m.PeerCACertificate == "" && c.PeerCACertificate != "" {
 			m.PeerCACertificate = c.PeerCACertificate
