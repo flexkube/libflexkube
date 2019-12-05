@@ -18,9 +18,6 @@ import (
 // share /run with the host).
 const testServerAddr = "/run/test.sock"
 
-// Default Docker Host URL
-const dockerSocket = "unix:///run/docker.sock"
-
 func TestPasswordAuth(t *testing.T) {
 	pass, err := ioutil.ReadFile("/home/core/.password")
 	if err != nil {
@@ -37,27 +34,43 @@ func TestPasswordAuth(t *testing.T) {
 		Password:          strings.TrimSpace(string(pass)),
 	}
 
-	ssh, err := c.New()
+	s, err := c.New()
 	if err != nil {
 		t.Fatalf("creating new SSH object should succeed, got: %v", err)
 	}
 
-	forward(t, ssh, dockerSocket)
+	if _, err := (s.(*ssh)).connect(); err != nil {
+		t.Fatalf("connecting should succeed, got: %v", err)
+	}
+}
+
+func TestPasswordAuthFail(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "core",
+		ConnectionTimeout: "5s",
+		RetryTimeout:      "5s",
+		RetryInterval:     "1s",
+		Port:              22,
+		Password:          "badpassword",
+	}
+
+	s, err := c.New()
+	if err != nil {
+		t.Fatalf("creating new SSH object should succeed, got: %v", err)
+	}
+
+	if _, err := (s.(*ssh)).connect(); err == nil {
+		t.Fatalf("connecting with bad password should fail")
+	}
 }
 
 func TestPrivateKeyAuth(t *testing.T) {
-	ssh := withPrivateKey(t)
+	s := withPrivateKey(t)
 
-	forward(t, ssh, dockerSocket)
-}
-
-func forward(t *testing.T, ssh transport.Transport, path string) string {
-	s, err := ssh.ForwardUnixSocket(path)
-	if err != nil {
-		t.Fatalf("forwarding should succeed, got: %v", err)
+	if _, err := (s.(*ssh)).connect(); err != nil {
+		t.Fatalf("connecting should succeed, got: %v", err)
 	}
-
-	return s
 }
 
 func withPrivateKey(t *testing.T) transport.Transport {
@@ -88,7 +101,11 @@ func TestForwardUnixSocket(t *testing.T) {
 	ssh := withPrivateKey(t)
 	expectedMessage := "foo"
 	expectedResponse := "bar"
-	s := forward(t, ssh, fmt.Sprintf("unix://%s", testServerAddr))
+
+	s, err := ssh.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
+	if err != nil {
+		t.Fatalf("forwarding should succeed, got: %v", err)
+	}
 
 	go runServer(t, expectedMessage, expectedResponse)
 

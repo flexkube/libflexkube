@@ -119,9 +119,7 @@ func (d *Config) Validate() error {
 	return nil
 }
 
-// ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
-// it to the local socket.
-func (d *ssh) ForwardUnixSocket(path string) (string, error) {
+func (d *ssh) connect() (*gossh.Client, error) {
 	sshConfig := &gossh.ClientConfig{
 		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
@@ -138,14 +136,20 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 
 	// Try until we timeout
 	for time.Since(start) < d.retryTimeout {
-		connection, err = gossh.Dial("tcp", d.address, sshConfig)
-		if err == nil {
-			break
+		if connection, err = gossh.Dial("tcp", d.address, sshConfig); err == nil {
+			return connection, nil
 		}
 
 		time.Sleep(d.retryInterval)
 	}
 
+	return nil, err
+}
+
+// ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
+// it to the local socket.
+func (d *ssh) ForwardUnixSocket(path string) (string, error) {
+	connection, err := d.connect()
 	if err != nil {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
