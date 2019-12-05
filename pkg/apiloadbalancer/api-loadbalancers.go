@@ -69,33 +69,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 			}
 		}
 
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.PrivateKey == "" && a.SSH != nil && a.SSH.PrivateKey != "" {
-			lb.Host.SSHConfig.PrivateKey = a.SSH.PrivateKey
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.User == "" && a.SSH != nil && a.SSH.User != "" {
-			lb.Host.SSHConfig.User = a.SSH.User
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.User == "" {
-			lb.Host.SSHConfig.User = "root"
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.ConnectionTimeout == "" && a.SSH != nil && a.SSH.ConnectionTimeout != "" {
-			lb.Host.SSHConfig.ConnectionTimeout = a.SSH.ConnectionTimeout
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.ConnectionTimeout == "" {
-			lb.Host.SSHConfig.ConnectionTimeout = "30s"
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.Port == 0 && a.SSH != nil && a.SSH.Port != 0 {
-			lb.Host.SSHConfig.Port = a.SSH.Port
-		}
-
-		if lb.Host != nil && lb.Host.SSHConfig != nil && lb.Host.SSHConfig.Port == 0 {
-			lb.Host.SSHConfig.Port = 22
-		}
+		lb.Host.SSHConfig = ssh.BuildConfig(lb.Host.SSHConfig, a.SSH)
 
 		lbx, err := lb.New()
 		if err != nil {
