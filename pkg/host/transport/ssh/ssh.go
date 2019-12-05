@@ -132,11 +132,6 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
 
-	path, err = extractPath(path)
-	if err != nil {
-		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
-	}
-
 	unixAddr, err := randomUnixSocket(d.address)
 	if err != nil {
 		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
@@ -147,26 +142,13 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("unable to listen on address '%s':%w", unixAddr, err)
 	}
 
-	// For every listener spawn the following routine
-	go func(l net.Listener, remote string) {
-		defer localSock.Close()
+	path, err = extractPath(path)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
+	}
 
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				fmt.Printf("failed to accept connection: %v\n", err)
-				// handle error (and then for example indicate acceptor is down)
-				return
-			}
-			remoteSock, err := connection.Dial("unix", remote)
-			if err != nil {
-				fmt.Printf("failed to open remote connection: %v\n", err)
-				return
-			}
-
-			go handleClient(c, remoteSock)
-		}
-	}(localSock, path)
+	// Schedule accepting connections and return.
+	go forwardConnection(localSock, connection, path)
 
 	return fmt.Sprintf("unix://%s", unixAddr.String()), nil
 }
@@ -195,6 +177,33 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 	}()
 
 	<-chDone
+}
+
+// forwardConnection accepts local connections, and forwards them to remote address
+//
+// TODO should we do some error handling here?
+func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress string) {
+	defer l.Close()
+
+	for {
+		// Accept connection from the client.
+		c, err := l.Accept()
+		if err != nil {
+			fmt.Printf("failed to accept connection: %v\n", err)
+			// handle error (and then for example indicate acceptor is down)
+			return
+		}
+
+		// Open remote connection.
+		remoteSock, err := connection.Dial("unix", remoteAddress)
+		if err != nil {
+			fmt.Printf("failed to open remote connection: %v\n", err)
+			return
+		}
+
+		// Schedule data transfers.
+		go handleClient(c, remoteSock)
+	}
 }
 
 // extractPath parses and verifies, that given URL is unix socket URL
