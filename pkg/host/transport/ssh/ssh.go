@@ -20,6 +20,8 @@ type Config struct {
 	User              string `json:"user" yaml:"user"`
 	Password          string `json:"password,omitempty" yaml:"password,omitempty"`
 	ConnectionTimeout string `json:"connectionTimeout" yaml:"connectionTimeout"`
+	RetryTimeout      string `json:"retryTimeout" yaml:"retryTimeout"`
+	RetryInterval     string `json:"retryInterval" yaml:"retryInterval"`
 	PrivateKey        string `json:"privateKey,omitempty" yaml:"privateKey,omitempty"`
 }
 
@@ -28,6 +30,8 @@ type ssh struct {
 	address           string
 	user              string
 	connectionTimeout time.Duration
+	retryTimeout      time.Duration
+	retryInterval     time.Duration
 	auth              []gossh.AuthMethod
 }
 
@@ -39,11 +43,15 @@ func (d *Config) New() (transport.Transport, error) {
 
 	// Validate checks parsing, so we can skip error checking here
 	ct, _ := time.ParseDuration(d.ConnectionTimeout)
+	rt, _ := time.ParseDuration(d.RetryTimeout)
+	ri, _ := time.ParseDuration(d.RetryInterval)
 
 	s := &ssh{
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
 		user:              d.User,
 		connectionTimeout: ct,
+		retryTimeout:      rt,
+		retryInterval:     ri,
 		auth:              []gossh.AuthMethod{},
 	}
 
@@ -77,13 +85,29 @@ func (d *Config) Validate() error {
 		return fmt.Errorf("connection timeout must be set")
 	}
 
+	if d.RetryTimeout == "" {
+		return fmt.Errorf("retry timeout must be set")
+	}
+
+	if d.RetryInterval == "" {
+		return fmt.Errorf("retry interval must be set")
+	}
+
 	if d.Port == 0 {
 		return fmt.Errorf("port must be set")
 	}
 
-	// Make sure duration is parse-able
+	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {
 		return fmt.Errorf("unable to parse connection timeout: %w", err)
+	}
+
+	if _, err := time.ParseDuration(d.RetryTimeout); err != nil {
+		return fmt.Errorf("unable to parse retry timeout: %w", err)
+	}
+
+	if _, err := time.ParseDuration(d.RetryInterval); err != nil {
+		return fmt.Errorf("unable to parse retry interval: %w", err)
 	}
 
 	if d.PrivateKey != "" {
@@ -95,9 +119,7 @@ func (d *Config) Validate() error {
 	return nil
 }
 
-// ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
-// it to the local socket.
-func (d *ssh) ForwardUnixSocket(path string) (string, error) {
+func (d *ssh) connect() (*gossh.Client, error) {
 	sshConfig := &gossh.ClientConfig{
 		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
@@ -106,12 +128,6 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
-	// TODO Make those intervals configurable
-	// TODO alternatively, we could move connecting part to separated method
-	// and let user take care of it.
-	retryTimeout, _ := time.ParseDuration("60s")
-	retryInterval, _ := time.ParseDuration("1s")
-
 	var connection *gossh.Client
 
 	var err error
@@ -119,39 +135,28 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	start := time.Now()
 
 	// Try until we timeout
-	for time.Since(start) < retryTimeout {
-		connection, err = gossh.Dial("tcp", d.address, sshConfig)
-		if err == nil {
-			break
+	for time.Since(start) < d.retryTimeout {
+		if connection, err = gossh.Dial("tcp", d.address, sshConfig); err == nil {
+			return connection, nil
 		}
 
-		time.Sleep(retryInterval)
+		time.Sleep(d.retryInterval)
 	}
 
+	return nil, err
+}
+
+// ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
+// it to the local socket.
+func (d *ssh) ForwardUnixSocket(path string) (string, error) {
+	connection, err := d.connect()
 	if err != nil {
 		return "", fmt.Errorf("failed to open SSH connection: %w", err)
 	}
 
-	url, err := url.Parse(path)
+	unixAddr, err := randomUnixSocket(d.address)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
-	}
-
-	if url.Scheme != "unix" {
-		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
-	}
-
-	// Generate new UUID for every connection, to make sure we don't get "address already in use" error
-	// TODO rather than connecting again every time ForwardUnixSocket is called
-	// we should cache and reuse the connections
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return "", fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
-	}
-
-	unixAddr := &net.UnixAddr{
-		Name: fmt.Sprintf("@%s-%s", d.address, id),
-		Net:  "unix",
+		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
 	}
 
 	localSock, err := net.ListenUnix("unix", unixAddr)
@@ -159,26 +164,13 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		return "", fmt.Errorf("unable to listen on address '%s':%w", unixAddr, err)
 	}
 
-	// For every listener spawn the following routine
-	go func(l net.Listener, remote string) {
-		defer localSock.Close()
+	path, err = extractPath(path)
+	if err != nil {
+		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
+	}
 
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				fmt.Printf("failed to accept connection: %v\n", err)
-				// handle error (and then for example indicate acceptor is down)
-				return
-			}
-			remoteSock, err := connection.Dial("unix", remote)
-			if err != nil {
-				fmt.Printf("failed to open remote connection: %v\n", err)
-				return
-			}
-
-			go handleClient(c, remoteSock)
-		}
-	}(localSock, url.Path)
+	// Schedule accepting connections and return.
+	go forwardConnection(localSock, connection, path)
 
 	return fmt.Sprintf("unix://%s", unixAddr.String()), nil
 }
@@ -207,4 +199,62 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 	}()
 
 	<-chDone
+}
+
+// forwardConnection accepts local connections, and forwards them to remote address
+//
+// TODO should we do some error handling here?
+func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress string) {
+	defer l.Close()
+
+	for {
+		// Accept connection from the client.
+		c, err := l.Accept()
+		if err != nil {
+			fmt.Printf("failed to accept connection: %v\n", err)
+			// handle error (and then for example indicate acceptor is down)
+			return
+		}
+
+		// Open remote connection.
+		remoteSock, err := connection.Dial("unix", remoteAddress)
+		if err != nil {
+			fmt.Printf("failed to open remote connection: %v\n", err)
+			return
+		}
+
+		// Schedule data transfers.
+		go handleClient(c, remoteSock)
+	}
+}
+
+// extractPath parses and verifies, that given URL is unix socket URL
+// and returns it's path without the scheme.
+func extractPath(path string) (string, error) {
+	url, err := url.Parse(path)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
+	}
+
+	if url.Scheme != "unix" {
+		return "", fmt.Errorf("forwarding non-unix socket paths is not supported")
+	}
+
+	return url.Path, nil
+}
+
+// randomUnixSocket generates random abstract UNIX socket, including unique UUID,
+// to avoid collisions.
+func randomUnixSocket(address string) (*net.UnixAddr, error) {
+	// TODO rather than connecting again every time ForwardUnixSocket is called
+	// we should cache and reuse the connections
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
+	}
+
+	return &net.UnixAddr{
+		Name: fmt.Sprintf("@%s-%s", address, id),
+		Net:  "unix",
+	}, nil
 }

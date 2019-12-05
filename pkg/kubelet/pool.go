@@ -72,33 +72,7 @@ func (p *Pool) New() (*pool, error) {
 			}
 		}
 
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.PrivateKey == "" && p.SSH != nil && p.SSH.PrivateKey != "" {
-			k.Host.SSHConfig.PrivateKey = p.SSH.PrivateKey
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.User == "" && p.SSH != nil && p.SSH.User != "" {
-			k.Host.SSHConfig.User = p.SSH.User
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.User == "" {
-			k.Host.SSHConfig.User = "root"
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.ConnectionTimeout == "" && p.SSH != nil && p.SSH.ConnectionTimeout != "" {
-			k.Host.SSHConfig.ConnectionTimeout = p.SSH.ConnectionTimeout
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.ConnectionTimeout == "" {
-			k.Host.SSHConfig.ConnectionTimeout = "30s"
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.Port == 0 && p.SSH != nil && p.SSH.Port != 0 {
-			k.Host.SSHConfig.Port = p.SSH.Port
-		}
-
-		if k.Host != nil && k.Host.SSHConfig != nil && k.Host.SSHConfig.Port == 0 {
-			k.Host.SSHConfig.Port = 22
-		}
+		k.Host.SSHConfig = ssh.BuildConfig(k.Host.SSHConfig, p.SSH)
 
 		kubelet, err := k.New()
 		if err != nil {

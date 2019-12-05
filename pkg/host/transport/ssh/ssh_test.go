@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -27,6 +28,8 @@ func TestNew(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 		PrivateKey:        privateKey,
 	}
@@ -47,6 +50,8 @@ func TestValidateRequireAddress(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -59,6 +64,8 @@ func TestValidateRequireUser(t *testing.T) {
 		Address:           "localhost",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -71,6 +78,8 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -80,13 +89,43 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 
 func TestValidateRequireConnectionTimeout(t *testing.T) {
 	c := &Config{
-		Address:  "localhost",
-		User:     "root",
-		Password: "foo",
-		Port:     22,
+		Address:       "localhost",
+		User:          "root",
+		Password:      "foo",
+		RetryTimeout:  "60s",
+		RetryInterval: "1s",
+		Port:          22,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require connection timeout field")
+	}
+}
+
+func TestValidateRequireRetryTimeout(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryInterval:     "1s",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should require retry timeout field")
+	}
+}
+
+func TestValidateRequireRetryInterval(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		Port:              22,
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should require retry interval field")
 	}
 }
 
@@ -96,6 +135,8 @@ func TestValidateRequirePort(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require port field")
@@ -108,10 +149,42 @@ func TestValidateParseConnectionTimeout(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should parse connection timeout")
+	}
+}
+
+func TestValidateParseRetryTimeout(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60",
+		RetryInterval:     "1s",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should parse retry timeout")
+	}
+}
+
+func TestValidateParseRetryInterval(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should parse retry interval")
 	}
 }
 
@@ -120,6 +193,8 @@ func TestValidateParsePrivateKey(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 		PrivateKey:        "foo",
 	}
@@ -213,5 +288,47 @@ func TestHandleClientBiDirectional(t *testing.T) {
 
 	if reflect.DeepEqual(string(buf), expectedResponse) {
 		t.Fatalf("bad response. expected '%s', got '%s'", expectedResponse, string(buf))
+	}
+}
+
+func TestExtractPath(t *testing.T) {
+	expectedPath := "/tmp/foo.sock"
+
+	p, err := extractPath(fmt.Sprintf("unix://%s", expectedPath))
+	if err != nil {
+		t.Fatalf("extracting valid path should succeed, got: %v", err)
+	}
+
+	if p != expectedPath {
+		t.Fatalf("expected %s, got %s", expectedPath, p)
+	}
+}
+
+func TestExtractPathMalformed(t *testing.T) {
+	if _, err := extractPath("ddd"); err == nil {
+		t.Fatalf("extracting malformed path should fail")
+	}
+}
+
+func TestExtractPathTCP(t *testing.T) {
+	if _, err := extractPath("tcp://localhost:25"); err == nil {
+		t.Fatalf("extracting path with unsupported scheme should fail")
+	}
+}
+
+func TestRandomUnixSocket(t *testing.T) {
+	address := "localhost:80"
+
+	unixAddr, err := randomUnixSocket(address)
+	if err != nil {
+		t.Fatalf("creating random unix socket shouldn't fail, got: %v", err)
+	}
+
+	if !strings.Contains(unixAddr.String(), address) {
+		t.Fatalf("generated UNIX address should contain original address %s, got: %s", address, unixAddr.String())
+	}
+
+	if unixAddr.Net != "unix" {
+		t.Fatalf("generated UNIX address should be UNIX address, got net %s", unixAddr.Net)
 	}
 }
