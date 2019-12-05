@@ -20,6 +20,8 @@ type Config struct {
 	User              string `json:"user" yaml:"user"`
 	Password          string `json:"password,omitempty" yaml:"password,omitempty"`
 	ConnectionTimeout string `json:"connectionTimeout" yaml:"connectionTimeout"`
+	RetryTimeout      string `json:"retryTimeout" yaml:"retryTimeout"`
+	RetryInterval     string `json:"retryInterval" yaml:"retryInterval"`
 	PrivateKey        string `json:"privateKey,omitempty" yaml:"privateKey,omitempty"`
 }
 
@@ -28,6 +30,8 @@ type ssh struct {
 	address           string
 	user              string
 	connectionTimeout time.Duration
+	retryTimeout      time.Duration
+	retryInterval     time.Duration
 	auth              []gossh.AuthMethod
 }
 
@@ -39,11 +43,15 @@ func (d *Config) New() (transport.Transport, error) {
 
 	// Validate checks parsing, so we can skip error checking here
 	ct, _ := time.ParseDuration(d.ConnectionTimeout)
+	rt, _ := time.ParseDuration(d.RetryTimeout)
+	ri, _ := time.ParseDuration(d.RetryInterval)
 
 	s := &ssh{
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
 		user:              d.User,
 		connectionTimeout: ct,
+		retryTimeout:      rt,
+		retryInterval:     ri,
 		auth:              []gossh.AuthMethod{},
 	}
 
@@ -77,13 +85,29 @@ func (d *Config) Validate() error {
 		return fmt.Errorf("connection timeout must be set")
 	}
 
+	if d.RetryTimeout == "" {
+		return fmt.Errorf("retry timeout must be set")
+	}
+
+	if d.RetryInterval == "" {
+		return fmt.Errorf("retry interval must be set")
+	}
+
 	if d.Port == 0 {
 		return fmt.Errorf("port must be set")
 	}
 
-	// Make sure duration is parse-able
+	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {
 		return fmt.Errorf("unable to parse connection timeout: %w", err)
+	}
+
+	if _, err := time.ParseDuration(d.RetryTimeout); err != nil {
+		return fmt.Errorf("unable to parse retry timeout: %w", err)
+	}
+
+	if _, err := time.ParseDuration(d.RetryInterval); err != nil {
+		return fmt.Errorf("unable to parse retry interval: %w", err)
 	}
 
 	if d.PrivateKey != "" {
@@ -106,12 +130,6 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
-	// TODO Make those intervals configurable
-	// TODO alternatively, we could move connecting part to separated method
-	// and let user take care of it.
-	retryTimeout, _ := time.ParseDuration("60s")
-	retryInterval, _ := time.ParseDuration("1s")
-
 	var connection *gossh.Client
 
 	var err error
@@ -119,13 +137,13 @@ func (d *ssh) ForwardUnixSocket(path string) (string, error) {
 	start := time.Now()
 
 	// Try until we timeout
-	for time.Since(start) < retryTimeout {
+	for time.Since(start) < d.retryTimeout {
 		connection, err = gossh.Dial("tcp", d.address, sshConfig)
 		if err == nil {
 			break
 		}
 
-		time.Sleep(retryInterval)
+		time.Sleep(d.retryInterval)
 	}
 
 	if err != nil {

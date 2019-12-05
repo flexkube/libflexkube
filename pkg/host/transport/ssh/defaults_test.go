@@ -19,6 +19,8 @@ func TestBuildConfig(t *testing.T) {
 				Port:              Port,
 				User:              User,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 
@@ -33,6 +35,8 @@ func TestBuildConfig(t *testing.T) {
 				Port:              Port,
 				User:              User,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -47,6 +51,8 @@ func TestBuildConfig(t *testing.T) {
 				Port:              Port,
 				User:              User,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -59,6 +65,8 @@ func TestBuildConfig(t *testing.T) {
 				Port:              Port,
 				User:              User,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 
@@ -72,6 +80,8 @@ func TestBuildConfig(t *testing.T) {
 				User:              "foo",
 				Port:              Port,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -85,6 +95,8 @@ func TestBuildConfig(t *testing.T) {
 				User:              "foo",
 				Port:              Port,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -96,6 +108,8 @@ func TestBuildConfig(t *testing.T) {
 				User:              "bar",
 				Port:              Port,
 				ConnectionTimeout: ConnectionTimeout,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 
@@ -109,6 +123,8 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: "foo",
 				Port:              Port,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -122,6 +138,8 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: "foo",
 				Port:              Port,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -133,6 +151,8 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: "bar",
 				Port:              Port,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 
@@ -146,6 +166,8 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: ConnectionTimeout,
 				Port:              33,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -159,6 +181,8 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: ConnectionTimeout,
 				Port:              33,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
 			},
 		},
 		{
@@ -170,6 +194,94 @@ func TestBuildConfig(t *testing.T) {
 				ConnectionTimeout: ConnectionTimeout,
 				Port:              33,
 				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+			},
+		},
+
+		// RetryTimeout
+		{
+			&Config{
+				RetryTimeout: "20s",
+			},
+			nil,
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      "20s",
+				RetryInterval:     RetryInterval,
+			},
+		},
+		{
+			&Config{
+				RetryTimeout: "20s",
+			},
+			&Config{
+				RetryTimeout: "40s",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      "20s",
+				RetryInterval:     RetryInterval,
+			},
+		},
+		{
+			nil,
+			&Config{
+				RetryTimeout: "40s",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      "40s",
+				RetryInterval:     RetryInterval,
+			},
+		},
+
+		// RetryInterval
+		{
+			&Config{
+				RetryInterval: "5s",
+			},
+			nil,
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     "5s",
+			},
+		},
+		{
+			&Config{
+				RetryInterval: "5s",
+			},
+			&Config{
+				RetryInterval: "10s",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     "5s",
+			},
+		},
+		{
+			nil,
+			&Config{
+				RetryInterval: "5s",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     "5s",
 			},
 		},
 	}

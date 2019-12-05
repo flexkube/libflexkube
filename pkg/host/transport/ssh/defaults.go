@@ -11,6 +11,12 @@ const (
 	// ConnectionTimeout is a default time SSH will wait while connecting to unreachable server.
 	ConnectionTimeout = "30s"
 
+	// RetryTimeout is a default time after we give up connecting to reachable server.
+	RetryTimeout = "60s"
+
+	// RetryInterval is a default time how long we wait between SSH connection attempts.
+	RetryInterval = "1s"
+
 	// Port is a default port used for SSH connections.
 	Port = 22
 )
@@ -31,6 +37,10 @@ func BuildConfig(sshConfig *Config, defaults *Config) *Config {
 	sshConfig.User = util.PickString(sshConfig.User, defaults.User, User)
 
 	sshConfig.ConnectionTimeout = util.PickString(sshConfig.ConnectionTimeout, defaults.ConnectionTimeout, ConnectionTimeout)
+
+	sshConfig.RetryTimeout = util.PickString(sshConfig.RetryTimeout, defaults.RetryTimeout, RetryTimeout)
+
+	sshConfig.RetryInterval = util.PickString(sshConfig.RetryInterval, defaults.RetryInterval, RetryInterval)
 
 	sshConfig.Port = util.PickInt(sshConfig.Port, defaults.Port, Port)
 

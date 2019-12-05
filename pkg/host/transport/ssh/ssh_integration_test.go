@@ -31,6 +31,8 @@ func TestPasswordAuth(t *testing.T) {
 		Address:           "localhost",
 		User:              "core",
 		ConnectionTimeout: "5s",
+		RetryTimeout:      "5s",
+		RetryInterval:     "1s",
 		Port:              22,
 		Password:          strings.TrimSpace(string(pass)),
 	}
@@ -68,6 +70,8 @@ func withPrivateKey(t *testing.T) transport.Transport {
 		Address:           "localhost",
 		User:              "core",
 		ConnectionTimeout: "5s",
+		RetryTimeout:      "5s",
+		RetryInterval:     "1s",
 		Port:              22,
 		PrivateKey:        string(key),
 	}

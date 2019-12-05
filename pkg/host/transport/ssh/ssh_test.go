@@ -28,6 +28,8 @@ func TestNew(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 		PrivateKey:        privateKey,
 	}
@@ -48,6 +50,8 @@ func TestValidateRequireAddress(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -60,6 +64,8 @@ func TestValidateRequireUser(t *testing.T) {
 		Address:           "localhost",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -72,6 +78,8 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
@@ -81,13 +89,43 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 
 func TestValidateRequireConnectionTimeout(t *testing.T) {
 	c := &Config{
-		Address:  "localhost",
-		User:     "root",
-		Password: "foo",
-		Port:     22,
+		Address:       "localhost",
+		User:          "root",
+		Password:      "foo",
+		RetryTimeout:  "60s",
+		RetryInterval: "1s",
+		Port:          22,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require connection timeout field")
+	}
+}
+
+func TestValidateRequireRetryTimeout(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryInterval:     "1s",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should require retry timeout field")
+	}
+}
+
+func TestValidateRequireRetryInterval(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		Port:              22,
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should require retry interval field")
 	}
 }
 
@@ -97,6 +135,8 @@ func TestValidateRequirePort(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require port field")
@@ -109,10 +149,42 @@ func TestValidateParseConnectionTimeout(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should parse connection timeout")
+	}
+}
+
+func TestValidateParseRetryTimeout(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60",
+		RetryInterval:     "1s",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should parse retry timeout")
+	}
+}
+
+func TestValidateParseRetryInterval(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1",
+		Port:              22,
+	}
+	if _, err := c.New(); err == nil {
+		t.Fatalf("validating SSH configuration should parse retry interval")
 	}
 }
 
@@ -121,6 +193,8 @@ func TestValidateParsePrivateKey(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
 		Port:              22,
 		PrivateKey:        "foo",
 	}
