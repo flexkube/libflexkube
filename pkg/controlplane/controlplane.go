@@ -11,12 +11,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
-// DefaultSSHConnectionTimeout is how long we wait by default for successful SSH connection connection
-const DefaultSSHConnectionTimeout = "30s"
-
-// DefaultSSHUser is default user we use for SSH connection
-const DefaultSSHUser = "root"
-
 // Controlplane represents etcd controlplane configuration and state from the user
 type Controlplane struct {
 	// User-configurable fields
@@ -103,33 +97,7 @@ func (c *Controlplane) buildKubeScheduler() {
 		}
 	}
 
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
-		c.KubeScheduler.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
-		c.KubeScheduler.Host.SSHConfig.User = c.SSH.User
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.User == "" {
-		c.KubeScheduler.Host.SSHConfig.User = DefaultSSHUser
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
-		c.KubeScheduler.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeScheduler.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
-		c.KubeScheduler.Host.SSHConfig.Port = c.SSH.Port
-	}
-
-	if c.KubeScheduler.Host != nil && c.KubeScheduler.Host.SSHConfig != nil && c.KubeScheduler.Host.SSHConfig.Port == 0 {
-		c.KubeScheduler.Host.SSHConfig.Port = 22
-	}
+	c.KubeScheduler.Host.SSHConfig = ssh.BuildConfig(c.KubeScheduler.Host.SSHConfig, c.SSH)
 }
 
 // buildKubeControllerManager fills KubeControllerManager with all default values
@@ -179,33 +147,7 @@ func (c *Controlplane) buildKubeControllerManager() {
 		}
 	}
 
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
-		c.KubeControllerManager.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
-		c.KubeControllerManager.Host.SSHConfig.User = c.SSH.User
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.User == "" {
-		c.KubeControllerManager.Host.SSHConfig.User = DefaultSSHUser
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
-		c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeControllerManager.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
-		c.KubeControllerManager.Host.SSHConfig.Port = c.SSH.Port
-	}
-
-	if c.KubeControllerManager.Host != nil && c.KubeControllerManager.Host.SSHConfig != nil && c.KubeControllerManager.Host.SSHConfig.Port == 0 {
-		c.KubeControllerManager.Host.SSHConfig.Port = 22
-	}
+	c.KubeControllerManager.Host.SSHConfig = ssh.BuildConfig(c.KubeControllerManager.Host.SSHConfig, c.SSH)
 }
 
 // buildKubeAPIServer fills KubeAPIServer with all default values
@@ -259,33 +201,7 @@ func (c *Controlplane) buildKubeAPIServer() {
 		}
 	}
 
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.PrivateKey == "" && c.SSH != nil && c.SSH.PrivateKey != "" {
-		c.KubeAPIServer.Host.SSHConfig.PrivateKey = c.SSH.PrivateKey
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.User == "" && c.SSH != nil && c.SSH.User != "" {
-		c.KubeAPIServer.Host.SSHConfig.User = c.SSH.User
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.User == "" {
-		c.KubeAPIServer.Host.SSHConfig.User = DefaultSSHUser
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout == "" && c.SSH != nil && c.SSH.ConnectionTimeout != "" {
-		c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout = c.SSH.ConnectionTimeout
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout == "" {
-		c.KubeAPIServer.Host.SSHConfig.ConnectionTimeout = DefaultSSHConnectionTimeout
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.Port == 0 && c.SSH != nil && c.SSH.Port != 0 {
-		c.KubeAPIServer.Host.SSHConfig.Port = c.SSH.Port
-	}
-
-	if c.KubeAPIServer.Host != nil && c.KubeAPIServer.Host.SSHConfig != nil && c.KubeAPIServer.Host.SSHConfig.Port == 0 {
-		c.KubeAPIServer.Host.SSHConfig.Port = 22
-	}
+	c.KubeAPIServer.Host.SSHConfig = ssh.BuildConfig(c.KubeAPIServer.Host.SSHConfig, c.SSH)
 }
 
 // New validates Controlplane configuration and fills populates all values provided by the users
