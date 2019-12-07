@@ -141,7 +141,7 @@ vagrant-destroy:
 
 .PHONY: vagrant-integration-build
 vagrant-integration-build:
-	vagrant ssh -c "cd libflexkube && docker build -t $(INTEGRATION_IMAGE) integration"
+	vagrant ssh -c "docker build -t $(INTEGRATION_IMAGE) libflexkube/integration"
 
 .PHONY: vagrant-integration-run
 vagrant-integration-run:
