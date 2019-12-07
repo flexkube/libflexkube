@@ -19,6 +19,12 @@ INTEGRATION_IMAGE=flexkube/libflexkube-integration
 
 INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host $(INTEGRATION_IMAGE)
 
+E2E_IMAGE=flexkube/libflexkube-e2e
+
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash $(E2E_IMAGE)
+
+BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
+
 BINARY_IMAGE=flexkube/libflexkube
 
 DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
@@ -42,6 +48,9 @@ build-bin:
 build-docker:
 	docker build -t $(BINARY_IMAGE) .
 
+.PHONY: build-e2e
+build-e2e:
+	docker build -t $(E2E_IMAGE) e2e
 
 .PHONY: clean
 clean:
@@ -66,6 +75,17 @@ test-integration:
 .PHONY: test-cover
 test-cover:
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
+
+.PHONY: test-e2e-run
+test-e2e-run:
+	cd e2e && terraform init && terraform apply -auto-approve
+
+.PHONY: test-e2e-destroy
+test-e2e-destroy:
+	cd e2e && terraform destroy -auto-approve
+
+.PHONY: test-e2e
+test-e2e: test-e2e-run test-e2e-destroy
 
 .PHONY: lint
 lint:
@@ -153,3 +173,33 @@ vagrant-integration-shell:
 
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
+
+
+.PHONY: vagrant-build-bin
+vagrant-build-bin: vagrant-integration-build
+	vagrant ssh -c "$(BUILD_CMD) make build-bin"
+
+
+.PHONY: vagrant-e2e-build
+vagrant-e2e-build:
+	vagrant ssh -c "$(BUILD_CMD) make build-e2e"
+
+.PHONY: vagrant-e2e-kubeconfig
+vagrant-e2e-kubeconfig:
+	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/e2e/kubeconfig ./kubeconfig
+
+.PHONY: vagrant-e2e-run
+vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
+	vagrant ssh -c "$(E2E_CMD) -c 'make test-e2e-run'"
+	make vagrant-e2e-kubeconfig
+
+.PHONY: vagrant-e2e-destroy
+vagrant-e2e-destroy:
+	vagrant ssh -c "$(E2E_CMD) -c 'make test-e2e-destroy'"
+
+.PHONY: vagrant-e2e-shell
+vagrant-e2e-shell:
+	vagrant ssh -c "$(E2E_CMD)"
+
+.PHONY: vagrant-e2e
+vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy

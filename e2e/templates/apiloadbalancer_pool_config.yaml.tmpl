@@ -1,0 +1,15 @@
+apiLoadBalancers:
+%{ for index, ssh_address in ssh_addresses ~}
+- metricsBindAddress: ${metrics_bind_addresses[index]}
+  host:
+      ssh:
+          address: ${ssh_address}
+%{ endfor ~}
+servers:
+%{ for server in servers ~}
+- ${server}
+%{ endfor ~}
+ssh:
+    user: "core"
+    privateKey: |
+        ${indent(8, trimspace(ssh_private_key))}

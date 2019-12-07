@@ -1,0 +1,18 @@
+kubelets:
+%{ for index, ssh_address in ssh_addresses ~}
+- address: ${kubelet_addresses[index]}
+  podCIDR: ${kubelet_pod_cidrs[index]}
+  bootstrapKubeconfig: |
+      ${indent(6, trimspace(bootstrap_kubeconfigs[index]))}
+  host:
+      ssh:
+          address: ${ssh_address}
+%{ endfor ~}
+kubernetesCACertificate: |
+    ${indent(4, trimspace(kubernetes_ca_certificate))}
+clusterDNSIPs:
+- 11.0.0.10
+ssh:
+    user: "core"
+    privateKey: |
+        ${indent(8, trimspace(ssh_private_key))}

@@ -1,0 +1,18 @@
+ssh:
+    user: "core"
+    privateKey: |
+        ${indent(8, trimspace(ssh_private_key))}
+peerCACertificate: |
+    ${indent(4, trimspace(peer_ca))}
+members:
+%{ for index, ip in peer_ips ~}
+    ${peer_names[index]}:
+        peerCertificate: |
+            ${indent(12, trimspace(peer_certs[index]))}
+        peerKey: |
+            ${indent(12, trimspace(peer_keys[index]))}
+        host:
+            ssh:
+                address: "${peer_ssh_addresses[index]}"
+        peerAddress: ${peer_ips[index]}
+%{ endfor ~}
