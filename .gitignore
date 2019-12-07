@@ -7,3 +7,4 @@ terraform.tfstate*
 .terraform
 bin
 .vagrant
+kubeconfig
