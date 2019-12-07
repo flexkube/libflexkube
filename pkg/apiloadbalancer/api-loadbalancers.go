@@ -18,6 +18,7 @@ type APILoadBalancers struct {
 	SSH              *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 	Servers          []string          `json:"servers,omitempty" yaml:"servers,omitempty"`
 	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty" yaml:"apiLoadBalancers,omitempty"`
+	BindPort         int               `json:"bindPort,omitempty" yaml:"bindPort,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
@@ -55,6 +56,10 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 
 		if len(lb.Servers) == 0 && len(a.Servers) > 0 {
 			lb.Servers = a.Servers
+		}
+
+		if lb.BindPort == 0 && a.BindPort != 0 {
+			lb.BindPort = a.BindPort
 		}
 
 		// TODO find better way to handle defaults!!!

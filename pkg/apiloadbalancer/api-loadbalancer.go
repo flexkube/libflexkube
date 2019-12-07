@@ -21,6 +21,7 @@ type APILoadBalancer struct {
 	MetricsBindAddress string     `json:"metricsBindAddress,omitempty" yaml:"metricsBindAddress,omitempty"`
 	MetricsBindPort    int        `json:"metricsBindPort,omitempty" yaml:"metricsBindPort,omitempty"`
 	Servers            []string   `json:"servers,omitempty" yaml:"servers,omitempty"`
+	BindPort           int        `json:"bindPort,omitempty" yaml:"bindPort,omitempty"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer
@@ -30,6 +31,7 @@ type apiLoadBalancer struct {
 	servers            []string
 	metricsBindAddress string
 	metricsBindPort    int
+	bindPort           int
 }
 
 // ToHostConfiguredContainer takes configuration stored in the struct and converts it to HostConfiguredContainer
@@ -53,7 +55,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredC
 
 frontend kube-apiserver
 	# TODO make it configurable
-	bind 0.0.0.0:6443
+	bind 0.0.0.0:%d
 	default_backend kube-apiserver
 
 backend kube-apiserver
@@ -67,7 +69,7 @@ frontend stats
 	stats enable
 	stats uri /stats
 	stats refresh 10s
-`, strings.Join(servers, "\n	"), a.metricsBindPort)
+`, a.bindPort, strings.Join(servers, "\n	"), a.metricsBindPort)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -81,7 +83,7 @@ frontend stats
 			Ports: []types.PortMap{
 				{
 					Protocol: "tcp",
-					Port:     6443,
+					Port:     a.bindPort,
 				},
 				{
 					Protocol: "tcp",
@@ -120,6 +122,7 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 		servers:            a.Servers,
 		metricsBindAddress: a.MetricsBindAddress,
 		metricsBindPort:    a.MetricsBindPort,
+		bindPort:           a.BindPort,
 	}
 
 	// Fill empty fields with default values
@@ -129,6 +132,10 @@ func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
 
 	if na.metricsBindPort == 0 {
 		na.metricsBindPort = 8080
+	}
+
+	if na.bindPort == 0 {
+		na.bindPort = 6443
 	}
 
 	return na, nil

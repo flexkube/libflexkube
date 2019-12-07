@@ -17,6 +17,7 @@ func TestDeploy(t *testing.T) {
 	config := `
 servers:
 - 10.0.0.2
+bindPort: 7443
 apiLoadBalancers:
 - metricsBindAddress: 0.0.0.0
   host:
