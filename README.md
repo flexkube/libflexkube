@@ -237,6 +237,70 @@ And features, which are not yet implemented:
 - taints and tolerations for control plane
 - role labels for kubelets
 
+## Testing
+
+### Unit tests
+
+Unit tests can be executed by running the following command:
+```sh
+make test
+```
+
+If you want to only run tests for specific package, you can add `GO_PACKAGES` variable to the `make` command. For example, to run tests only in `pkg/host/transport/ssh/` directory, execute the following command:
+```sh
+make test GO_PACKAGES=./pkg/host/transport/ssh/...
+```
+
+### Integration tests
+
+As this library interacts a lot with other systems, in addition to unit tests, there are also integration tests defined, which has extra environmental requirements, like Docker daemon running or SSH server available.
+To make running such tests easier, there is a `Vagrantfile`, which spawns [Flatcar Container Linux](https://www.flatcar-linux.org/) virtual machine, where all further tests can be executed. Currently the only tested provider
+for Vagrant is VirtualBox.
+
+In order to run integration tests in virtual environment, execute the following command:
+```sh
+make vagrant-integration
+```
+
+This will spawn the virtual machine, copy source code into it, build Docker container required for testing and run the integration tests. This target is idempotent and when run multiple times, it will use cached test results and Docker images, so subsequent runs should be much faster, which allows to modify tests on host machines and re-run them in testing environment.
+
+This target also allows you to override `GO_PACKAGES` to only run specific integration tests.
+
+In the repository, integration tests files has `*_integration_test.go` suffix and they use `integration` Go build tag to be excluded from regular testing. All tests, which has some environment requirements should be specified as integration tests, to keep unit tests minimal and always runnable, for example in the CI environment.
+
+To debug issues with integration tests, following command can be executed to spawn the shell in Docker container running on testing virtual machine:
+```sh
+make vagrant-integration-shell
+```
+
+### E2E tests
+
+In addition to integration tests, this repository has also defined E2E tests, which tests overrall functionality of the library. As integration tests, they are also executed inside the virtual machine.
+
+E2E tests can be executed using following command:
+```sh
+make vagrant-e2e-run
+```
+
+This command will create testing virtual machine, compile Flexkube Terraform provider inside it and then use Terraform to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the project's root directory, which allows further inspection.
+
+If you don't have `kubectl` available on host, following command can be executed to spawn shell in E2E container on virtual machine, which contains additional tools like `kubectl` or `helm` binaries and comes with `kubeconfig` predefined, to ease up testing:
+```sh
+make vagrant-e2e-shell
+```
+
+If you just want to run E2E tests and clean everything up afterwards, run the following command:
+```sh
+make vagrant-e2e
+```
+
+### Cleaning up
+
+After finished testing, following command can be executed to clean up testing virtual machine:
+```sh
+make vagrant-destroy
+```
+
 ## Contributing
 
 All contributions to this project are welcome. If it does not satisfy your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
