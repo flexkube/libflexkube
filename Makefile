@@ -55,6 +55,7 @@ build-e2e:
 .PHONY: clean
 clean:
 	rm -r ./bin c.out coverage.txt kubeconfig 2>/dev/null || true
+	vagrant-destroy || true
 
 .PHONY: test
 test:
