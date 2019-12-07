@@ -1,2 +1,11 @@
 .git
 .terraform
+bin
+e2e
+integration
+examples
+README.md
+LICENSE
+Vagrantfile
+kubeconfig
+CHANGELOG.md
