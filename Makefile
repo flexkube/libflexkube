@@ -22,7 +22,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
 
 .PHONY: all
-all: test lint build
+all: build test lint
 
 .PHONY: all-cover
 all-cover: build test-cover lint
