@@ -45,7 +45,7 @@ build-docker:
 
 .PHONY: clean
 clean:
-	rm -r ./bin c.out coverage.txt 2>/dev/null || true
+	rm -r ./bin c.out coverage.txt kubeconfig 2>/dev/null || true
 
 .PHONY: test
 test:
