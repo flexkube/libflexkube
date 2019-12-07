@@ -29,4 +29,7 @@ Vagrant.configure("2") do |config|
     openssl rand -base64 14 > /home/core/.password
     yes $(cat /home/core/.password) | sudo passwd core
   EOF
+
+  # Forward kube-apiserver port to host
+  config.vm.network "forwarded_port", guest: 6443, host: 6443
 end
