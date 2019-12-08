@@ -1,10 +1,7 @@
 package container
 
 import (
-	"archive/tar"
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path"
 
@@ -141,53 +138,28 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
 
-	// Loop over defined config files, check if they are on the host and update configFiles
+	files := []string{}
+
+	// Build list of the files we should read.
 	for p := range m.configFiles {
-		fp := path.Join(ConfigMountpoint, p)
-		// TODO kubelet support batch copying. Read interface should probably do that too and then
-		// docker interface (which doesn't support batching) should simply imitate it.
-		rc, err := c.Read(fp)
-		if err != nil {
-			return fmt.Errorf("failed reading file %s: %w", p, err)
-		}
-		// If ReadCloser is nil, this means that file does not exist in container
-		// so we should remove the entry from the config map and move to next file.
-		if rc == nil {
-			delete(m.configFiles, p)
-			continue
-		}
+		files = append(files, path.Join(ConfigMountpoint, p))
+	}
 
-		// If file exists, we read it and update content in the config map.
-		if rc != nil {
-			tr := tar.NewReader(rc)
+	f, err := c.Read(files)
+	if err != nil {
+		return fmt.Errorf("failed to read configuration status: %w", err)
+	}
 
-			for {
-				header, err := tr.Next()
-				if err == io.EOF {
-					break
-				}
+	m.configFiles = map[string]string{}
 
-				if err != nil {
-					return err
-				}
-
-				if header.Typeflag == tar.TypeReg {
-					buf := new(bytes.Buffer)
-					if _, err := buf.ReadFrom(tr); err != nil {
-						return err
-					}
-
-					m.configFiles[p] = buf.String()
-				}
-			}
-			rc.Close()
-		}
+	for _, f := range f {
+		m.configFiles[f.Path] = f.Content
 	}
 
 	return m.removeConfigurationContainer(a, c)
 }
 
-// Configure copies specified configuration file on target host
+// Configure copies specified configuration files on target host
 //
 // It uses host definition to connect to container runtime, which is then used
 // to create temporary container used for copying files and also bypassing privileges requirements.
@@ -197,38 +169,28 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 // multiple images, which will save disk space and time. If it happens that this image does not have 'tar' binary,
 // user can override ConfigImage field in the configuration, to specify different image which should be
 // pulled and used for configuration management.
-func (m *hostConfiguredContainer) Configure(p string) error {
+func (m *hostConfiguredContainer) Configure(paths []string) error {
 	a, c, err := m.createConfigurationContainer()
 	if err != nil {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
 
-	content, exists := m.configFiles[p]
-	if !exists {
-		return fmt.Errorf("can't configure file which do not exist: %s", p)
+	files := []*types.File{}
+
+	for _, p := range paths {
+		content, exists := m.configFiles[p]
+		if !exists {
+			return fmt.Errorf("can't configure file which do not exist: %s", p)
+		}
+
+		files = append(files, &types.File{
+			Path:    path.Join(ConfigMountpoint, p),
+			Content: content,
+			Mode:    0600,
+		})
 	}
 
-	buff := new(bytes.Buffer)
-	tw := tar.NewWriter(buff)
-	h := &tar.Header{
-		Name: p,
-		Mode: 0600,
-		Size: int64(len(content)),
-	}
-
-	if err := tw.WriteHeader(h); err != nil {
-		return err
-	}
-
-	if _, err := tw.Write([]byte(content)); err != nil {
-		return err
-	}
-
-	if err := tw.Close(); err != nil {
-		return err
-	}
-
-	if err := c.Copy(ConfigMountpoint, buff); err != nil {
+	if err := c.Copy(files); err != nil {
 		return err
 	}
 
@@ -242,6 +204,8 @@ func (m *hostConfiguredContainer) Create() error {
 	if err != nil {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
+
+	files := []*types.File{}
 
 	// Loop over mount points
 	for _, m := range m.container.Config.Mounts {
@@ -258,25 +222,15 @@ func (m *hostConfiguredContainer) Create() error {
 
 		// TODO perhaps path handling should be improved here
 		if rc == nil && m.Source[len(m.Source)-1:] == "/" {
-			buff := new(bytes.Buffer)
-			tw := tar.NewWriter(buff)
-			h := &tar.Header{
-				Name: fmt.Sprintf("%s/", m.Source),
+			files = append(files, &types.File{
+				Path: fmt.Sprintf("%s/", path.Join(ConfigMountpoint, m.Source)),
 				Mode: 0755,
-			}
-
-			if err := tw.WriteHeader(h); err != nil {
-				return err
-			}
-
-			if err := tw.Close(); err != nil {
-				return err
-			}
-
-			if err := c.Copy(ConfigMountpoint, buff); err != nil {
-				return err
-			}
+			})
 		}
+	}
+
+	if err := c.Copy(files); err != nil {
+		return fmt.Errorf("creating host mountpoints failed: %w", err)
 	}
 
 	if err := m.container.Create(); err != nil {

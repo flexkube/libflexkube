@@ -53,7 +53,7 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 		t.Fatalf("Initializing host configured container should succeed, got: %v", err)
 	}
 
-	if err = hcc.Configure(f); err != nil {
+	if err = hcc.Configure([]string{f}); err != nil {
 		t.Fatalf("Configuring host configured container should succeed, got: %v", err)
 	}
 

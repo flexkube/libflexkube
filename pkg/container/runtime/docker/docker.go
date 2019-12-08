@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -180,9 +182,34 @@ func (d *docker) Delete(id string) error {
 	return d.cli.ContainerRemove(d.ctx, id, dockertypes.ContainerRemoveOptions{})
 }
 
-// Copy copies and extracts TAR archive into container
-func (d *docker) Copy(id string, dstPath string, content io.Reader) error {
-	return d.cli.CopyToContainer(d.ctx, id, dstPath, content, dockertypes.CopyToContainerOptions{})
+// Copy takes map of files and their content and copies it to the container using TAR archive.
+//
+// TODO Add support for base64 encoded content to support copying binary files.
+func (d *docker) Copy(id string, files []*types.File) error {
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	for _, f := range files {
+		h := &tar.Header{
+			Name: f.Path,
+			Mode: f.Mode,
+			Size: int64(len(f.Content)),
+		}
+
+		if err := tw.WriteHeader(h); err != nil {
+			return err
+		}
+
+		if _, err := tw.Write([]byte(f.Content)); err != nil {
+			return err
+		}
+	}
+
+	if err := tw.Close(); err != nil {
+		return err
+	}
+
+	return d.cli.CopyToContainer(d.ctx, id, "/", buf, dockertypes.CopyToContainerOptions{})
 }
 
 // Stat check if given path exists on the container. If it is missing, FileMode will be nil
@@ -199,17 +226,50 @@ func (d *docker) Stat(id string, path string) (*os.FileMode, error) {
 	return &s.Mode, nil
 }
 
-// Read reads single file from the container and returns it in TAR format
-func (d *docker) Read(id string, srcPath string) (io.ReadCloser, error) {
-	// TODO check if we should return stat info here
-	rc, _, err := d.cli.CopyFromContainer(d.ctx, id, srcPath)
-	if err != nil {
-		if client.IsErrNotFound(err) {
-			return nil, nil
+// Read reads files from container
+func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
+	files := []*types.File{}
+
+	for _, f := range srcPaths {
+		rc, ps, err := d.cli.CopyFromContainer(d.ctx, id, f)
+		if err != nil && !client.IsErrNotFound(err) {
+			return nil, fmt.Errorf("failed copying from container: %w", err)
 		}
 
-		return nil, fmt.Errorf("failed copying from container: %w", err)
+		// File does not exist.
+		if ps.Name == "" {
+			continue
+		}
+
+		buf := new(bytes.Buffer)
+		tr := tar.NewReader(rc)
+
+		for {
+			header, err := tr.Next()
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				return nil, fmt.Errorf("failed unpacking tar header from Docker file copy: %w", err)
+			}
+
+			if header.Typeflag != tar.TypeReg {
+				continue
+			}
+
+			if _, err := buf.ReadFrom(tr); err != nil {
+				return nil, fmt.Errorf("failed reading from tar archive: %w", err)
+			}
+		}
+		rc.Close()
+
+		files = append(files, &types.File{
+			Path:    f,
+			Content: buf.String(),
+			Mode:    int64(ps.Mode),
+		})
 	}
 
-	return rc, nil
+	return files, nil
 }
