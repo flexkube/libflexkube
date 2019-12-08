@@ -203,12 +203,7 @@ func (c *containerInstance) Copy(dstPath string, content io.Reader) error {
 // Stat checks if given path exists on the container and if yes, returns information whether
 // it is file, or directory etc.
 func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
-	s, err := c.runtime.Stat(c.status.ID, path)
-	if err != nil {
-		return nil, err
-	}
-
-	return s, err
+	return c.runtime.Stat(c.status.ID, path)
 }
 
 // Start starts the container container
