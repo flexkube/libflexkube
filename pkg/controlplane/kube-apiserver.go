@@ -56,9 +56,8 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:       "kube-apiserver",
-			Image:      k.image,
-			Entrypoint: []string{"/hyperkube"},
+			Name:  "kube-apiserver",
+			Image: k.image,
 			Mounts: []types.Mount{
 				{
 					Source: "/etc/kubernetes/pki/ca.crt",
