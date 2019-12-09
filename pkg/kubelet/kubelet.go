@@ -128,8 +128,6 @@ clusterDNS:
 			// TODO make it configurable?
 			Name:  "kubelet",
 			Image: k.image,
-			// TODO perhaps entrypoint should be a string, not array of strings? we use args for arguments anyway
-			Entrypoint: []string{"/kubelet"},
 			// When kubelet runs as a container, it should be privileged, so it can adjust it's OOM settings.
 			// Without this, you get following errors:
 			// failed to set "/proc/self/oom_score_adj" to "-999": write /proc/self/oom_score_adj: permission denied
@@ -214,6 +212,7 @@ clusterDNS:
 				},
 			},
 			Args: []string{
+				"kubelet",
 				// Tell kubelet to use config file
 				"--config=/etc/kubernetes/kubelet.yaml",
 				// Specify kubeconfig file for kubelet. This enabled API server mode and
