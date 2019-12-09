@@ -120,15 +120,16 @@ func (m *hostConfiguredContainer) createConfigurationContainer() (string, *Conta
 
 // removeConfigurationContainer removes configuration container created with createConfigurationContainer
 func (m *hostConfiguredContainer) removeConfigurationContainer(originalAddress string, c *Container) error {
-	if err := c.Delete(); err != nil {
-		return fmt.Errorf("failed removing config container while checking configuration: %w", err)
-	}
-
 	// Restore original address, so we don't get random values when we serialize back the object to store it
 	// in the state.
-	m.container.Runtime.Docker.SetAddress(originalAddress)
+	defer m.container.Runtime.Docker.SetAddress(originalAddress)
 
-	return nil
+	// If container does not exist anymore, simply return without error. This makes this function idempotent.
+	if c.Status == nil {
+		return nil
+	}
+
+	return c.Delete()
 }
 
 // ConfigurationStatus updates configuration status
@@ -137,6 +138,7 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 	if err != nil {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
+	defer m.removeConfigurationContainer(a, c)
 
 	files := []string{}
 
@@ -204,6 +206,7 @@ func (m *hostConfiguredContainer) Create() error {
 	if err != nil {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
+	defer m.removeConfigurationContainer(a, c)
 
 	files := []*types.File{}
 
