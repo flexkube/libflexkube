@@ -9,7 +9,7 @@ const (
 	KubernetesImage = "k8s.gcr.io/hyperkube:v1.16.3"
 
 	// HAProxyImage is a default container image for APILoadBalancer.
-	HAProxyImage = "haproxy:2.0.7-alpine"
+	HAProxyImage = "haproxy:2.1.0-alpine"
 
 	// DockerAPIVersion is a default API version used when talking to Docker runtime.
 	DockerAPIVersion = "v1.40"
