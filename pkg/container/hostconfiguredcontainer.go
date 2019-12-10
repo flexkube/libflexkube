@@ -1,10 +1,7 @@
 package container
 
 import (
-	"archive/tar"
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path"
 
@@ -25,9 +22,10 @@ type HostConfiguredContainer struct {
 // hostConfiguredContainer is a validated version of HostConfiguredContainer, which allows user to perform
 // actions on it
 type hostConfiguredContainer struct {
-	container   Container
-	host        host.Host
-	configFiles map[string]string
+	container       Container
+	host            host.Host
+	configFiles     map[string]string
+	configContainer *Container
 }
 
 // New validates HostConfiguredContainer struct and return it's executable version
@@ -57,48 +55,49 @@ func (m *HostConfiguredContainer) Validate() error {
 }
 
 // connectAndForward instantiates new host object, connects to it and then
-// forwards connection to container runtime and reconfigures container runtime
-// to connect to forwarded endpoint.
+// forwards given UNIX socket using this connection.
 //
-// TODO maybe we make this take a function to remove boilerplate from helper functions?
-func (m *hostConfiguredContainer) connectAndForward() error {
+// It returns address of local UNIX socket, where user can connect.
+func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 	h, err := host.New(&m.host)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	hc, err := h.Connect()
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	// TODO don't use docker directly
-	a := m.container.Runtime.Docker.GetAddress()
 
 	s, err := hc.ForwardUnixSocket(a)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	return s, nil
+}
+
+// withForwardedRuntime takes action function as an argument and before executing it, it configures the runtime
+// address to be forwarded using SSH. After the action is finished, it restores original address of the runtime.
+func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) error {
+	// Store originally configured address so we can restore it later
+	a := m.container.Runtime.Docker.GetAddress()
+
+	s, err := m.connectAndForward(a)
+	if err != nil {
+		return fmt.Errorf("forwarding host failed: %w", err)
 	}
 
 	m.container.Runtime.Docker.SetAddress(s)
 
-	return nil
+	defer m.container.Runtime.Docker.SetAddress(a)
+
+	return action()
 }
 
-// createConfigurationContainer creates container used for reading and updating configuration.
-//
-// It returns original docker runtime address and created container.
-// It is up to the user to later remove the container and restore original address of runtime
-//
-// TODO maybe configuration container should get it's own simple struct with methods?
-func (m *hostConfiguredContainer) createConfigurationContainer() (string, *Container, error) {
-	// Store originally configured address so we can restore it later
-	a := m.container.Runtime.Docker.GetAddress()
-
-	if err := m.connectAndForward(); err != nil {
-		return "", nil, fmt.Errorf("forwarding host failed: %w", err)
-	}
-
+// createConfigurationContainer creates container used for reading and updating configuration and
+// stores saves it reference.
+func (m *hostConfiguredContainer) createConfigurationContainer() error {
 	c := &Container{
 		Config: types.ContainerConfig{
 			Name:  fmt.Sprintf("%s-config", m.container.Config.Name),
@@ -112,82 +111,84 @@ func (m *hostConfiguredContainer) createConfigurationContainer() (string, *Conta
 		},
 		Runtime: m.container.Runtime,
 	}
+
 	// Docker container does not need to run (be started) to be able to copy files from it
 	// TODO this might not be the case for other container runtimes
 	if err := c.Create(); err != nil {
-		return "", nil, fmt.Errorf("failed creating config container while checking configuration: %w", err)
+		return fmt.Errorf("failed creating config container while checking configuration: %w", err)
 	}
 
-	return a, c, nil
-}
-
-// removeConfigurationContainer removes configuration container created with createConfigurationContainer
-func (m *hostConfiguredContainer) removeConfigurationContainer(originalAddress string, c *Container) error {
-	if err := c.Delete(); err != nil {
-		return fmt.Errorf("failed removing config container while checking configuration: %w", err)
-	}
-
-	// Restore original address, so we don't get random values when we serialize back the object to store it
-	// in the state.
-	m.container.Runtime.Docker.SetAddress(originalAddress)
+	m.configContainer = c
 
 	return nil
 }
 
-// ConfigurationStatus updates configuration status
-func (m *hostConfiguredContainer) ConfigurationStatus() error {
-	a, c, err := m.createConfigurationContainer()
+// removeConfigurationContainer removes configuration container created with createConfigurationContainer.
+// If container does not exist, nil is immediately returned, which makes this function idempotent.
+func (m *hostConfiguredContainer) removeConfigurationContainer() error {
+	if m.configContainer.Status == nil {
+		return nil
+	}
+
+	return m.configContainer.Delete()
+}
+
+// updateConfigurationStatus overrides configFiles field with current content of configuration files.
+// If configuration file is missing, the entry is removed from the map.
+func (m *hostConfiguredContainer) updateConfigurationStatus() error {
+	files := []string{}
+
+	// Build list of the files we should read.
+	for p := range m.configFiles {
+		files = append(files, path.Join(ConfigMountpoint, p))
+	}
+
+	f, err := m.configContainer.Read(files)
 	if err != nil {
+		return fmt.Errorf("failed to read configuration status: %w", err)
+	}
+
+	m.configFiles = map[string]string{}
+
+	for _, f := range f {
+		m.configFiles[f.Path] = f.Content
+	}
+
+	return nil
+}
+
+// withConfigurationContainer is a wrapper function for functions, which require functional
+// configuration container reference. This function creates configuration container before executing
+// desired action and makes sure it's removed after the action is finished.
+//
+// If error occurs in the desired action, this error is returned and configuration container is opportunistically
+// removed. If that operation fails as well, error is only logged.
+func (m *hostConfiguredContainer) withConfigurationContainer(action func() error) error {
+	if err := m.createConfigurationContainer(); err != nil {
 		return fmt.Errorf("failed to create container for managing configuration: %w", err)
 	}
 
-	// Loop over defined config files, check if they are on the host and update configFiles
-	for p := range m.configFiles {
-		fp := path.Join(ConfigMountpoint, p)
-		// TODO kubelet support batch copying. Read interface should probably do that too and then
-		// docker interface (which doesn't support batching) should simply imitate it.
-		rc, err := c.Read(fp)
-		if err != nil {
-			return fmt.Errorf("failed reading file %s: %w", p, err)
+	defer func() {
+		if err := m.removeConfigurationContainer(); err != nil {
+			fmt.Printf("Removing configuration container failed: %v", err)
 		}
-		// If ReadCloser is nil, this means that file does not exist in container
-		// so we should remove the entry from the config map and move to next file.
-		if rc == nil {
-			delete(m.configFiles, p)
-			continue
-		}
+	}()
 
-		// If file exists, we read it and update content in the config map.
-		if rc != nil {
-			tr := tar.NewReader(rc)
-
-			for {
-				header, err := tr.Next()
-				if err == io.EOF {
-					break
-				}
-
-				if err != nil {
-					return err
-				}
-
-				if header.Typeflag == tar.TypeReg {
-					buf := new(bytes.Buffer)
-					if _, err := buf.ReadFrom(tr); err != nil {
-						return err
-					}
-
-					m.configFiles[p] = buf.String()
-				}
-			}
-			rc.Close()
-		}
+	if err := action(); err != nil {
+		return err
 	}
 
-	return m.removeConfigurationContainer(a, c)
+	return m.removeConfigurationContainer()
 }
 
-// Configure copies specified configuration file on target host
+// ConfigurationStatus updates configuration file struct with current state on the target host.
+func (m *hostConfiguredContainer) ConfigurationStatus() error {
+	return m.withForwardedRuntime(func() error {
+		return m.withConfigurationContainer(m.updateConfigurationStatus)
+	})
+}
+
+// Configure copies specified configuration files on target host
 //
 // It uses host definition to connect to container runtime, which is then used
 // to create temporary container used for copying files and also bypassing privileges requirements.
@@ -197,167 +198,124 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 // multiple images, which will save disk space and time. If it happens that this image does not have 'tar' binary,
 // user can override ConfigImage field in the configuration, to specify different image which should be
 // pulled and used for configuration management.
-func (m *hostConfiguredContainer) Configure(p string) error {
-	a, c, err := m.createConfigurationContainer()
-	if err != nil {
-		return fmt.Errorf("failed to create container for managing configuration: %w", err)
-	}
-
-	content, exists := m.configFiles[p]
-	if !exists {
-		return fmt.Errorf("can't configure file which do not exist: %s", p)
-	}
-
-	buff := new(bytes.Buffer)
-	tw := tar.NewWriter(buff)
-	h := &tar.Header{
-		Name: p,
-		Mode: 0600,
-		Size: int64(len(content)),
-	}
-
-	if err := tw.WriteHeader(h); err != nil {
-		return err
-	}
-
-	if _, err := tw.Write([]byte(content)); err != nil {
-		return err
-	}
-
-	if err := tw.Close(); err != nil {
-		return err
-	}
-
-	if err := c.Copy(ConfigMountpoint, buff); err != nil {
-		return err
-	}
-
-	return m.removeConfigurationContainer(a, c)
+func (m *hostConfiguredContainer) Configure(paths []string) error {
+	return m.withForwardedRuntime(func() error {
+		return m.withConfigurationContainer(func() error {
+			return m.copyConfigFiles(paths)
+		})
+	})
 }
 
-// Create creates new container on target host
-func (m *hostConfiguredContainer) Create() error {
-	// Before we create a container, make sure all mounts exists on the host using config container
-	a, c, err := m.createConfigurationContainer()
-	if err != nil {
-		return fmt.Errorf("failed to create container for managing configuration: %w", err)
+// copyConfigFiles takes list of configuration files which should be created in the container
+// and creates them in batch. This function requires functional config container.
+func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
+	files := []*types.File{}
+
+	for _, p := range paths {
+		content, exists := m.configFiles[p]
+		if !exists {
+			return fmt.Errorf("can't configure file which do not exist: %s", p)
+		}
+
+		files = append(files, &types.File{
+			Path:    path.Join(ConfigMountpoint, p),
+			Content: content,
+			Mode:    0600,
+		})
 	}
+
+	if err := m.configContainer.Copy(files); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// statMounts fetches information about mounts on the host.
+func (m *hostConfiguredContainer) statMounts() (map[string]*os.FileMode, error) {
+	paths := []string{}
 
 	// Loop over mount points
 	for _, m := range m.container.Config.Mounts {
-		fp := path.Join(ConfigMountpoint, m.Source)
+		paths = append(paths, path.Join(ConfigMountpoint, m.Source))
+	}
 
-		rc, err := c.Stat(fp)
-		if err != nil {
-			return fmt.Errorf("failed reading file %s: %w", m.Source, err)
-		}
+	return m.configContainer.Stat(paths)
+}
 
-		if rc != nil && *rc == os.ModeDir {
+// createMissingMounts creates missing host directories, which are requested for container.
+//
+// Requested mount source must have trailing slash ('/') in the name to be created as a directory.
+// If requested directory mount is found on host file system as a file, the error is returned.
+func (m *hostConfiguredContainer) createMissingMounts() error {
+	// Get information about existing mountpoints.
+	rc, err := m.statMounts()
+	if err != nil {
+		return fmt.Errorf("failed checking if mountpoints exist: %w", err)
+	}
+
+	// Collect missing mountpoints
+	files := []*types.File{}
+
+	for _, m := range m.container.Config.Mounts {
+		p := path.Join(ConfigMountpoint, m.Source)
+		fm, exists := rc[p]
+
+		if exists && *fm == os.ModeDir {
 			return fmt.Errorf("mountpoint %s exists as file", m.Source)
 		}
 
-		// TODO perhaps path handling should be improved here
-		if rc == nil && m.Source[len(m.Source)-1:] == "/" {
-			buff := new(bytes.Buffer)
-			tw := tar.NewWriter(buff)
-			h := &tar.Header{
-				Name: fmt.Sprintf("%s/", m.Source),
+		// If mountpoint does not exist, and it's name has a trailing slash, we should create it as a directory.
+		if !exists && m.Source[len(m.Source)-1:] == "/" {
+			files = append(files, &types.File{
+				Path: fmt.Sprintf("%s/", p),
 				Mode: 0755,
-			}
-
-			if err := tw.WriteHeader(h); err != nil {
-				return err
-			}
-
-			if err := tw.Close(); err != nil {
-				return err
-			}
-
-			if err := c.Copy(ConfigMountpoint, buff); err != nil {
-				return err
-			}
+			})
 		}
 	}
 
-	if err := m.container.Create(); err != nil {
-		return fmt.Errorf("creating failed: %w", err)
+	// Create missing mountpoints.
+	if err := m.configContainer.Copy(files); err != nil {
+		return fmt.Errorf("creating host mountpoints failed: %w", err)
 	}
 
-	return m.removeConfigurationContainer(a, c)
+	return nil
 }
 
-// Status updates container status
+// Create creates new container on target host.
+func (m *hostConfiguredContainer) Create() error {
+	return m.withForwardedRuntime(func() error {
+		return m.withConfigurationContainer(func() error {
+			if err := m.createMissingMounts(); err != nil {
+				return fmt.Errorf("failed creating missing mountpoints: %w", err)
+			}
+
+			return m.container.Create()
+		})
+	})
+}
+
+// Status updates container status.
 func (m *hostConfiguredContainer) Status() error {
 	// If container does not exist, skip checking the status of it, as it won't work
 	if m.container.Status == nil {
 		return nil
 	}
 
-	// TODO maybe we can cache forwarding somehow?
-	a := m.container.Runtime.Docker.GetAddress()
-
-	if err := m.connectAndForward(); err != nil {
-		return fmt.Errorf("forwarding host failed: %w", err)
-	}
-
-	if err := m.container.UpdateStatus(); err != nil {
-		return fmt.Errorf("updating status failed: %w", err)
-	}
-
-	m.container.Runtime.Docker.SetAddress(a)
-
-	return nil
+	return m.withForwardedRuntime(m.container.UpdateStatus)
 }
 
-// Start starts created container
-// TODO plenty of boilerplate code here, maybe create executeForwarded method
-// which takes function as an argument to clean it up?
+// Start starts created container.
 func (m *hostConfiguredContainer) Start() error {
-	a := m.container.Runtime.Docker.GetAddress()
-
-	if err := m.connectAndForward(); err != nil {
-		return fmt.Errorf("forwarding host failed: %w", err)
-	}
-
-	if err := m.container.Start(); err != nil {
-		return fmt.Errorf("starting failed: %w", err)
-	}
-
-	m.container.Runtime.Docker.SetAddress(a)
-
-	return nil
+	return m.withForwardedRuntime(m.container.Start)
 }
 
-// Stop stops created container
+// Stop stops created container.
 func (m *hostConfiguredContainer) Stop() error {
-	a := m.container.Runtime.Docker.GetAddress()
-
-	if err := m.connectAndForward(); err != nil {
-		return fmt.Errorf("forwarding host failed: %w", err)
-	}
-
-	if err := m.container.Stop(); err != nil {
-		return fmt.Errorf("stopping failed: %w", err)
-	}
-
-	m.container.Runtime.Docker.SetAddress(a)
-
-	return nil
+	return m.withForwardedRuntime(m.container.Stop)
 }
 
-// Delete removes node's data and removes the container
+// Delete removes node's data and removes the container.
 func (m *hostConfiguredContainer) Delete() error {
-	a := m.container.Runtime.Docker.GetAddress()
-
-	if err := m.connectAndForward(); err != nil {
-		return fmt.Errorf("forwarding host failed: %w", err)
-	}
-
-	if err := m.container.Delete(); err != nil {
-		return fmt.Errorf("creating failed: %w", err)
-	}
-
-	m.container.Runtime.Docker.SetAddress(a)
-
-	return nil
+	return m.withForwardedRuntime(m.container.Delete)
 }

@@ -60,9 +60,8 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:       "kube-controller-manager",
-			Image:      k.image,
-			Entrypoint: []string{"/hyperkube"},
+			Name:  "kube-controller-manager",
+			Image: k.image,
 			Mounts: []types.Mount{
 				{
 					Source: "/etc/kubernetes/kube-controller-manager/kubeconfig",

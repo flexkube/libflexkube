@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"io"
 	"os"
 
 	"github.com/flexkube/libflexkube/pkg/container/types"
@@ -25,14 +24,14 @@ type Runtime interface {
 	// Docker currently does not allow to copy multiple files over https://github.com/moby/moby/issues/7710
 	// It seems kubelet does https://github.com/kubernetes/kubernetes/pull/72641/files
 	// TODO consider batching copying and reading
-	Copy(ID string, dstPath string, content io.Reader) error
+	Copy(ID string, files []*types.File) error
 	// Read allows to read file in TAR archive format from container
 	// TODO check if we should return some information about read file
-	Read(ID string, srcPath string) (io.ReadCloser, error)
+	Read(ID string, srcPath []string) ([]*types.File, error)
 
-	// Stat returns os.FileMode from inside the container
+	// Stat returns os.FileMode for requested files from inside the container
 	// TODO this should be improved
-	Stat(ID string, path string) (*os.FileMode, error)
+	Stat(ID string, paths []string) (map[string]*os.FileMode, error)
 }
 
 // Config defines interface for runtime configuration. Since some feature are generic to runtime,

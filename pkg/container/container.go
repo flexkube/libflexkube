@@ -2,7 +2,6 @@ package container
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/flexkube/libflexkube/pkg/container/runtime"
@@ -191,24 +190,19 @@ func (c *containerInstance) updateStatus(container *Container) error {
 }
 
 // Read reads given path from the container and returns reader with TAR format with file content
-func (c *containerInstance) Read(srcPath string) (io.ReadCloser, error) {
+func (c *containerInstance) Read(srcPath []string) ([]*types.File, error) {
 	return c.runtime.Read(c.status.ID, srcPath)
 }
 
 // Copy takes output path and TAR reader as arguments and extracts this TAR archive into container
-func (c *containerInstance) Copy(dstPath string, content io.Reader) error {
-	return c.runtime.Copy(c.status.ID, dstPath, content)
+func (c *containerInstance) Copy(files []*types.File) error {
+	return c.runtime.Copy(c.status.ID, files)
 }
 
 // Stat checks if given path exists on the container and if yes, returns information whether
 // it is file, or directory etc.
-func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
-	s, err := c.runtime.Stat(c.status.ID, path)
-	if err != nil {
-		return nil, err
-	}
-
-	return s, err
+func (c *containerInstance) Stat(paths []string) (map[string]*os.FileMode, error) {
+	return c.runtime.Stat(c.status.ID, paths)
 }
 
 // Start starts the container container
@@ -297,7 +291,7 @@ func (c *Container) Delete() error {
 }
 
 // Read takes file path as an argument and reads this file from the container
-func (c *Container) Read(srcPath string) (io.ReadCloser, error) {
+func (c *Container) Read(srcPath []string) ([]*types.File, error) {
 	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err
@@ -307,22 +301,21 @@ func (c *Container) Read(srcPath string) (io.ReadCloser, error) {
 }
 
 // Copy creates a file in desired path in the container
-func (c *Container) Copy(dstPath string, content io.Reader) error {
+func (c *Container) Copy(files []*types.File) error {
 	ci, err := c.ToInstance()
 	if err != nil {
 		return err
 	}
 
-	return ci.Copy(dstPath, content)
+	return ci.Copy(files)
 }
 
-// Stat checks if file exists in the container. If file exists, it returns file's mode.
-// If file does not exist, nil is returned.
-func (c *Container) Stat(path string) (*os.FileMode, error) {
+// Stat checks if files exist in the container. It returns map of files mode for each requested file.
+func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
 	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err
 	}
 
-	return ci.Stat(path)
+	return ci.Stat(paths)
 }

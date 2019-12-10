@@ -94,25 +94,31 @@ func (c *containers) Execute() error {
 
 	fmt.Println("Checking for configuration files updates")
 
+	// Iterate over all containers we need to create.
 	for i := range c.desiredState {
-		// Loop over desired config files, check if they exist
-		for p, content := range c.desiredState[i].configFiles {
-			var currentContent string
-			if _, exists := c.currentState[i]; exists {
-				currentContent, exists := c.currentState[i].configFiles[p]
-				// If file does not exist or it content differs, deploy it
-				if exists && content == currentContent {
-					continue
-				}
-			}
-			// TODO convert all prints to logging, so we can add more verbose information too
-			fmt.Printf("Detected configuration drift for file '%s'\n", p)
-			fmt.Printf("  current: \n%+v\n", currentContent)
-			fmt.Printf("  desired: \n%+v\n", content)
+		// Store list of files which needs to be created/updated.
+		desiredConfigFiles := []string{}
 
-			if err := c.desiredState[i].Configure(p); err != nil {
-				return err
+		var currentConfigFiles map[string]string
+
+		if cs, exists := c.currentState[i]; exists {
+			currentConfigFiles = cs.configFiles
+		}
+
+		// Loop over desired config files and check if they exist.
+		for p, content := range c.desiredState[i].configFiles {
+			if currentContent, exists := currentConfigFiles[p]; !exists || content != currentContent {
+				// TODO convert all prints to logging, so we can add more verbose information too
+				fmt.Printf("Detected configuration drift for file '%s'\n", p)
+				fmt.Printf("  current: \n%+v\n", currentContent)
+				fmt.Printf("  desired: \n%+v\n", content)
+
+				desiredConfigFiles = append(desiredConfigFiles, p)
 			}
+		}
+
+		if err := c.desiredState[i].Configure(desiredConfigFiles); err != nil {
+			return fmt.Errorf("failed creating config files: %w", err)
 		}
 
 		if _, exists := c.currentState[i]; !exists {

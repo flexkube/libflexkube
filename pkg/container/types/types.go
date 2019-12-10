@@ -42,3 +42,10 @@ type Mount struct {
 	Target      string `json:"target" yaml:"target"`
 	Propagation string `json:"propagation,omitempty" yaml:"propagation,omitempty"`
 }
+
+// File describes file, which can be either copied to or from container.
+type File struct {
+	Path    string `json:"path" yaml:"path"`
+	Content string `json:"content" yaml:"content"`
+	Mode    int64  `json:"mode" yaml:"mode"`
+}
