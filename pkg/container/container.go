@@ -201,8 +201,8 @@ func (c *containerInstance) Copy(files []*types.File) error {
 
 // Stat checks if given path exists on the container and if yes, returns information whether
 // it is file, or directory etc.
-func (c *containerInstance) Stat(path string) (*os.FileMode, error) {
-	return c.runtime.Stat(c.status.ID, path)
+func (c *containerInstance) Stat(paths []string) (map[string]*os.FileMode, error) {
+	return c.runtime.Stat(c.status.ID, paths)
 }
 
 // Start starts the container container
@@ -310,13 +310,12 @@ func (c *Container) Copy(files []*types.File) error {
 	return ci.Copy(files)
 }
 
-// Stat checks if file exists in the container. If file exists, it returns file's mode.
-// If file does not exist, nil is returned.
-func (c *Container) Stat(path string) (*os.FileMode, error) {
+// Stat checks if files exist in the container. It returns map of files mode for each requested file.
+func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
 	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err
 	}
 
-	return ci.Stat(path)
+	return ci.Stat(paths)
 }

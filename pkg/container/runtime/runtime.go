@@ -29,9 +29,9 @@ type Runtime interface {
 	// TODO check if we should return some information about read file
 	Read(ID string, srcPath []string) ([]*types.File, error)
 
-	// Stat returns os.FileMode from inside the container
+	// Stat returns os.FileMode for requested files from inside the container
 	// TODO this should be improved
-	Stat(ID string, path string) (*os.FileMode, error)
+	Stat(ID string, paths []string) (map[string]*os.FileMode, error)
 }
 
 // Config defines interface for runtime configuration. Since some feature are generic to runtime,

@@ -212,18 +212,22 @@ func (d *docker) Copy(id string, files []*types.File) error {
 	return d.cli.CopyToContainer(d.ctx, id, "/", buf, dockertypes.CopyToContainerOptions{})
 }
 
-// Stat check if given path exists on the container. If it is missing, FileMode will be nil
-func (d *docker) Stat(id string, path string) (*os.FileMode, error) {
-	s, err := d.cli.ContainerStatPath(d.ctx, id, path)
-	if err != nil {
-		if client.IsErrNotFound(err) {
-			return nil, nil
+// Stat check if given paths exist on the container.
+func (d *docker) Stat(id string, paths []string) (map[string]*os.FileMode, error) {
+	result := map[string]*os.FileMode{}
+
+	for _, p := range paths {
+		s, err := d.cli.ContainerStatPath(d.ctx, id, p)
+		if err != nil && !client.IsErrNotFound(err) {
+			return nil, err
 		}
 
-		return nil, err
+		if s.Name != "" {
+			result[p] = &s.Mode
+		}
 	}
 
-	return &s.Mode, nil
+	return result, nil
 }
 
 // Read reads files from container
