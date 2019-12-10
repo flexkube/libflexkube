@@ -133,6 +133,12 @@ codeclimate: codeclimate-prepare test-cover
 codeclimate:
 	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build --exit-code $(EXIT_CODE)
 
+.PHONY: cover-upload
+cover-upload: codecov
+	# Make codeclimate as command, as we need to run test-cover twice and make deduplicates that.
+	# Go test results are cached anyway, so it's fine to run it multiple times.
+	make codeclimate
+
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
