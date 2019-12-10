@@ -118,6 +118,7 @@ format:
 
 .PHONY: codecov
 codecov: PROFILEFILE=coverage.txt
+codecov: SHELL=/bin/bash
 codecov: test-cover
 codecov:
 	bash <(curl -s https://codecov.io/bash)
@@ -125,12 +126,18 @@ codecov:
 .PHONY: codeclimate-prepare
 codeclimate-prepare:
 	cc-test-reporter before-build
-\
+
 .PHONY: codeclimate
 codeclimate: PROFILEFILE=c.out
 codeclimate: codeclimate-prepare test-cover
 codeclimate:
 	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build --exit-code $(EXIT_CODE)
+
+.PHONY: cover-upload
+cover-upload: codecov
+	# Make codeclimate as command, as we need to run test-cover twice and make deduplicates that.
+	# Go test results are cached anyway, so it's fine to run it multiple times.
+	make codeclimate
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
