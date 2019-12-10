@@ -118,6 +118,7 @@ format:
 
 .PHONY: codecov
 codecov: PROFILEFILE=coverage.txt
+codecov: SHELL=/bin/bash
 codecov: test-cover
 codecov:
 	bash <(curl -s https://codecov.io/bash)
