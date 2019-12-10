@@ -211,16 +211,6 @@ func (c *Controlplane) New() (*controlplane, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
-	// If shutdown is requested, only shut down containers.
-	if c.Shutdown {
-		return &controlplane{
-			containers: container.Containers{
-				PreviousState: c.State,
-				DesiredState:  make(container.ContainersState),
-			},
-		}, nil
-	}
-
 	controlplane := &controlplane{
 		image:                    c.Image,
 		ssh:                      c.SSH,
@@ -241,6 +231,11 @@ func (c *Controlplane) New() (*controlplane, error) {
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
 		},
+	}
+
+	// If shutdown is requested, don't fill DesiredState to remove everything.
+	if c.Shutdown {
+		return controlplane, nil
 	}
 
 	c.buildKubeAPIServer()
