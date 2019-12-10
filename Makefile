@@ -126,7 +126,7 @@ codecov:
 .PHONY: codeclimate-prepare
 codeclimate-prepare:
 	cc-test-reporter before-build
-\
+
 .PHONY: codeclimate
 codeclimate: PROFILEFILE=c.out
 codeclimate: codeclimate-prepare test-cover
