@@ -224,9 +224,6 @@ clusterDNS:
 				"--kubeconfig=/etc/kubernetes/kubeconfig",
 				// kubeconfig with access token for TLS bootstrapping
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
-				// Be a bit more verbose
-				// TODO should probably be configurable
-				"--v=2",
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
 				"--network-plugin=kubenet",
