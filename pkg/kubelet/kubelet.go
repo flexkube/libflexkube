@@ -207,6 +207,11 @@ clusterDNS:
 					Target: "/lib/modules",
 				},
 				{
+					// Store pod logs on the host, so they are persistent and also can read by Loki.
+					Source: "/var/log/pods/",
+					Target: "/var/log/pods",
+				},
+				{
 					// For reading host cgroups, to get stats for docker.service cgroup etc.
 					// Without this, following error message occurs:
 					// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
