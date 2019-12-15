@@ -110,6 +110,10 @@ healthzPort: 0
 # Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
 # short-names resolution like mysvc.myns.svc does not work.
 clusterDomain: cluster.local
+# Authenticate clients using CA file
+authentication:
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
 # Configure cluster DNS IP addresses
 clusterDNS:
 `, k.podCIDR, k.address)
