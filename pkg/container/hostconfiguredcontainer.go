@@ -136,11 +136,17 @@ func (m *hostConfiguredContainer) removeConfigurationContainer() error {
 // updateConfigurationStatus overrides configFiles field with current content of configuration files.
 // If configuration file is missing, the entry is removed from the map.
 func (m *hostConfiguredContainer) updateConfigurationStatus() error {
+	// Build list of files we need to read from the container
 	files := []string{}
+
+	// Keep map of original paths
+	paths := map[string]string{}
 
 	// Build list of the files we should read.
 	for p := range m.configFiles {
-		files = append(files, path.Join(ConfigMountpoint, p))
+		cpath := path.Join(ConfigMountpoint, p)
+		files = append(files, cpath)
+		paths[cpath] = p
 	}
 
 	f, err := m.configContainer.Read(files)
@@ -151,7 +157,7 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 	m.configFiles = map[string]string{}
 
 	for _, f := range f {
-		m.configFiles[f.Path] = f.Content
+		m.configFiles[paths[f.Path]] = f.Content
 	}
 
 	return nil
