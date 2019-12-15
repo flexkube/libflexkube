@@ -227,7 +227,6 @@ clusterDNS:
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
 				"--network-plugin=kubenet",
-				// Disable listening on random port for exec streaming. May degrade performance!
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 				"--redirect-container-streaming=false",
 				// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
