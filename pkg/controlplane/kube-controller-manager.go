@@ -19,13 +19,11 @@ type KubeControllerManager struct {
 	KubernetesCAKey          string     `json:"kubernetesCAKey,omitempty" yaml:"kubernetesCAKey,omitempty"`
 	ServiceAccountPrivateKey string     `json:"serviceAccountPrivateKey,omitempty" yaml:"serviceAccountPrivateKey,omitempty"`
 	APIServer                string     `json:"apiServer,omitempty" yaml:"apiServer,omitempty"`
-	// TODO don't take the admin key, use dedicated certificate for static controller manager,
-	// which will have a group + create a binding to system:kube-controller-manager clusterRole
-	// as done in self-hosted chart.
 	// TODO since we have access to CA cert and key, we could generate certificate ourselves here
-	AdminCertificate  string `json:"adminCertificate,omitempty" yaml:"adminCertificate,omitempty"`
-	AdminKey          string `json:"adminKey,omitempty" yaml:"adminKey,omitempty"`
-	RootCACertificate string `josn:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
+	ClientCertificate       string `json:"clientCertificate,omitempty" yaml:"clientCertificate,omitempty"`
+	ClientKey               string `json:"clientKey,omitempty" yaml:"clientKey,omitempty"`
+	FrontProxyCACertificate string `json:"frontProxyCACertificate,omitempty" yaml:"frontProxyCACertificate,omitempty"`
+	RootCACertificate       string `json:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager
@@ -36,8 +34,9 @@ type kubeControllerManager struct {
 	kubernetesCAKey          string
 	serviceAccountPrivateKey string
 	apiServer                string
-	adminCertificate         string
-	adminKey                 string
+	clientCertificate        string
+	clientKey                string
+	frontProxyCACertificate  string
 	rootCACertificate        string
 }
 
@@ -53,6 +52,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.crt"] = k.kubernetesCACertificate
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.key"] = k.kubernetesCAKey
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = fmt.Sprintf("%s%s", k.rootCACertificate, k.kubernetesCACertificate)
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = k.frontProxyCACertificate
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -64,18 +64,17 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 			Image: k.image,
 			Mounts: []types.Mount{
 				{
-					Source: "/etc/kubernetes/kube-controller-manager/kubeconfig",
-					Target: "/etc/kubernetes/kubeconfig",
-				},
-				{
-					Source: "/etc/kubernetes/kube-controller-manager/pki",
-					Target: "/etc/kubernetes/pki",
+					Source: "/etc/kubernetes/kube-controller-manager/",
+					Target: "/etc/kubernetes",
 				},
 			},
 			Args: []string{
 				"kube-controller-manager",
-				// This kubeconfig file will be used for talking to API server
-				"--kubeconfig=/etc/kubernetes/kubeconfig",
+				// This makes controller manager use built-in roles, which already has all required
+				// roles binded. As kubeconfig file we use should use kube-controller-manager service
+				// account, this is required for things to function properly. More info here:
+				// https://kubernetes.io/docs/reference/access-authn-authz/rbac/#controller-roles.
+				"--use-service-account-credentials",
 				// signing-cert and signing-key flags are required for issuing certificates
 				// inside cluster. This is for example required for kubelet TLS bootstrapping.
 				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
@@ -85,7 +84,21 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 				//
 				// Kubernetes API server has private key configured for verification.
 				"--service-account-private-key-file=/etc/kubernetes/pki/service-account.key",
+				// Specifies which certificate will be included in service account secrets, which will be used,
+				// to establish trust to API server. This should point to the file containing both Kubernetes CA certificate,
+				// and root CA certificate, as otherwise clients won't trust kube-apiserver service certificate.
 				"--root-ca-file=/etc/kubernetes/pki/root.crt",
+				// This kubeconfig file will be used for talking to API server.
+				"--kubeconfig=/etc/kubernetes/kubeconfig",
+				// Those additional kubeconfig files are suppose to be used with delegated kube-apiserver,
+				// so scenarios, where there is more than one kube-apiserver and they differ in privilege level.
+				// However, not specifying them results in ugly log messages, so we just specify them to create less
+				// environmental noise.
+				"--authentication-kubeconfig=/etc/kubernetes/kubeconfig",
+				"--authorization-kubeconfig=/etc/kubernetes/kubeconfig",
+				// From k8s 1.17.x, without specifying those flags, there are some warning log messages printed.
+				"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
+				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
 			},
 		},
 	}
@@ -110,8 +123,9 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 		kubernetesCAKey:          k.KubernetesCAKey,
 		serviceAccountPrivateKey: k.ServiceAccountPrivateKey,
 		apiServer:                k.APIServer,
-		adminCertificate:         k.AdminCertificate,
-		adminKey:                 k.AdminKey,
+		clientCertificate:        k.ClientCertificate,
+		clientKey:                k.ClientKey,
+		frontProxyCACertificate:  k.FrontProxyCACertificate,
 		rootCACertificate:        k.RootCACertificate,
 	}
 
@@ -128,32 +142,32 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 // TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
 	if k.KubernetesCACertificate == "" {
-		return fmt.Errorf("KubernetesCACertificate is empty")
+		return fmt.Errorf("field kubernetesCACertificate is empty")
 	}
 
 	if k.KubernetesCAKey == "" {
-		return fmt.Errorf("KubernetesCAKey is empty")
+		return fmt.Errorf("field kubernetesCAKey is empty")
 	}
 
 	if k.ServiceAccountPrivateKey == "" {
-		return fmt.Errorf("ServiceAccountPrivateKey is empty")
+		return fmt.Errorf("field serviceAccountPrivateKey is empty")
 	}
 
 	if k.APIServer == "" {
-		return fmt.Errorf("APIServer is empty")
+		return fmt.Errorf("field apiServer is empty")
 	}
 
-	if k.AdminCertificate == "" {
-		return fmt.Errorf("AdminCertificate is empty")
+	if k.ClientCertificate == "" {
+		return fmt.Errorf("field clientCertificate is empty")
 	}
 
-	if k.AdminKey == "" {
-		return fmt.Errorf("AdminKey is empty")
+	if k.ClientKey == "" {
+		return fmt.Errorf("field clientKey is empty")
 	}
 
-	if k.RootCACertificate == "" {
-		return fmt.Errorf("rootCACertificate is empty")
-	}
+	//if k.RootCACertificate == "" {
+	//	return fmt.Errorf("field rootCACertificate is empty")
+	//}
 
 	return nil
 }
@@ -178,5 +192,5 @@ contexts:
   context:
     cluster: static
     user: static
-`, k.apiServer, base64.StdEncoding.EncodeToString([]byte(k.kubernetesCACertificate)), base64.StdEncoding.EncodeToString([]byte(k.adminCertificate)), base64.StdEncoding.EncodeToString([]byte(k.adminKey)))
+`, k.apiServer, base64.StdEncoding.EncodeToString([]byte(k.kubernetesCACertificate)), base64.StdEncoding.EncodeToString([]byte(k.clientCertificate)), base64.StdEncoding.EncodeToString([]byte(k.clientKey)))
 }
