@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.box_url = "https://edge.release.flatcar-linux.net/amd64-usr/current/flatcar_production_vagrant.box"
 
   # Sync using rsync, but don't copy locally built binaries and don't remove Terraform files from virtual machine
-  config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform"]
+  config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing"]
 
   # Virtualbox + resources
   config.vm.provider :virtualbox do |v|

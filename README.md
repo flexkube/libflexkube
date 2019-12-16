@@ -294,11 +294,73 @@ If you just want to run E2E tests and clean everything up afterwards, run the fo
 make vagrant-e2e
 ```
 
+### Local tests
+
+For testing standalone resources, e.g. just `etcd-cluster`, [local-testing](./local-testing) directory can be used, which will use the code from [e2e](./e2e) directory to create a cluster and then will dump all configuration and state files to separate directories, when tools from [cmd](./cmd) directory can be used directly. That allows to skip many sync steps, which speeds up the overall process, making development easier.
+
+#### Target host
+
+By default, local testing is configured to deploy to virtual machine managed by [Vagrantfile](./Vagrantfile), which can be brought up using the following command:
+```sh
+make vagrant-up
+```
+
+However, if you like to test on some other machine, you can override the following parameters, by creating `local-testing/variables.auto.tfvars` file:
+- `ssh_private_key_path` - To provide your own private SSH key.
+- `node_internal_ip` - This should be set to your target host IP, which will be used by cluster components.
+- `node_ssh_port` - Target host SSH port.
+- `node_address` - Target host SSH address and where `kube-apiserver` will be listening for client requests.
+
+#### Requirements
+
+Local testing runs compilation and Terraform locally, so both `go` and `terraform` binaries needs to be available.
+
+If testing using virtual machine, `vagrant` is required to set it up.
+
+If testing with Helm CLI, `helm` binary is needed.
+
+#### Helm charts development
+
+In addition to resources config files, also `values.yaml` files for all chart releases are dumped to the `local-testing/values` directory. This allows to also make developing the helm charts easier.
+
+##### Via Helm CLI
+
+To update the chart using `helm` binary, run following command:
+```sh
+helm upgrade --install -n kube-system -f ./local-testing/values/kubernetes.yaml kubernetes <path to cloned chart source>
+```
+
+##### Via Terraform
+
+Charts can also be tested using Terraform. This can be done by creating `local-testing/variables.auto.tfvars` file, with following example content:
+```
+kube_apiserver_helm_chart_source = "<local path with cloned kube-apiserver chart>"
+```
+
+Then run the following command to deploy updated chart:
+```sh
+make test-local-apply
+```
+
+#### Terraform modules development
+
+Local testing is also handy for testing changes to Terraform modules like [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki).
+
+To test changes, modify [local-testing/main.tf](./local-testing/main.tf) file and change the source of the desired module to point to your copy. Then run the following command:
+```sh
+make test-local-apply
+```
+
 ### Cleaning up
 
 After finished testing, following command can be executed to clean up testing virtual machine:
 ```sh
 make vagrant-destroy
+```
+
+If you want to also remove all artifacts from the repository, like built binaries, coverage files etc, run the following command:
+```sh
+make clean
 ```
 
 ## Contributing
