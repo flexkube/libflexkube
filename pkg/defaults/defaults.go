@@ -11,5 +11,5 @@ const (
 	HAProxyImage = "haproxy:2.1.0-alpine"
 
 	// DockerAPIVersion is a default API version used when talking to Docker runtime.
-	DockerAPIVersion = "v1.40"
+	DockerAPIVersion = "v1.38"
 )
