@@ -165,9 +165,17 @@ func (k *KubeControllerManager) Validate() error {
 		return fmt.Errorf("field clientKey is empty")
 	}
 
-	//if k.RootCACertificate == "" {
-	//	return fmt.Errorf("field rootCACertificate is empty")
-	//}
+	if k.RootCACertificate == "" {
+		return fmt.Errorf("field rootCACertificate is empty")
+	}
+
+	if k.Host == nil {
+		return fmt.Errorf("field host must be defined")
+	}
+
+	if err := k.Host.Validate(); err != nil {
+		return fmt.Errorf("host config validation failed: %w", err)
+	}
 
 	return nil
 }
