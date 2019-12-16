@@ -1,0 +1,4 @@
+values
+resources
+variables.auto.tfvars
+terraform-provider-flexkube

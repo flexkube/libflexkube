@@ -134,6 +134,9 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		NetworkMode:  containertypes.NetworkMode(config.NetworkMode),
 		PidMode:      containertypes.PidMode(config.PidMode),
 		IpcMode:      containertypes.IpcMode(config.IpcMode),
+		RestartPolicy: containertypes.RestartPolicy{
+			Name: "unless-stopped",
+		},
 	}
 
 	// Create container

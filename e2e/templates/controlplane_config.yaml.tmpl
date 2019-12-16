@@ -1,46 +1,59 @@
 kubernetesCACertificate: |
     ${indent(4, trimspace(kubernetes_ca_certificate))}
-kubernetesCAKey: |
-    ${indent(4, trimspace(kubernetes_ca_key))}
 
+frontProxyCACertificate: |
+    ${indent(4, trimspace(front_proxy_ca_certificate))}
 
-apiServerCertificate: |
-    ${indent(4, trimspace(kubernetes_api_server_certificate))}
-apiServerKey: |
-    ${indent(4, trimspace(kubernetes_api_server_key))}
-
-serviceAccountPublicKey: |
-    ${indent(4, trimspace(service_account_public_key))}
-serviceAccountPrivateKey: |
-    ${indent(4, trimspace(service_account_private_key))}
-
-adminCertificate: |
-    ${indent(4, trimspace(admin_certificate))}
-adminKey: |
-    ${indent(4, trimspace(admin_key))}
-
-rootCACertificate: |
-    ${indent(4, trimspace(root_ca_certificate))}
 kubeAPIServer:
+    apiServerCertificate: |
+        ${indent(8, trimspace(kubernetes_api_server_certificate))}
+    apiServerKey: |
+        ${indent(8, trimspace(kubernetes_api_server_key))}
+    frontProxyCertificate: |
+        ${indent(8, trimspace(front_proxy_certificate))}
+    frontProxyKey: |
+        ${indent(8, trimspace(front_proxy_key))}
+    kubeletClientCertificate: |
+        ${indent(8, trimspace(kubelet_client_certificate))}
+    kubeletClientKey: |
+        ${indent(8, trimspace(kubelet_client_key))}
+    serviceAccountPublicKey: |
+        ${indent(8, trimspace(service_account_public_key))}
     serviceCIDR: 11.0.0.0/24
+    etcdServers:
+    %{~ for etcd_server in etcd_servers ~}
+    - ${etcd_server}
+    %{~ endfor ~}
     %{~ if replicas <= 1 ~}
     bindAddress: 0.0.0.0
     %{~ else ~}
     securePort: 8443
     %{~ endif ~}
+
 kubeControllerManager:
+    kubernetesCAKey: |
+        ${indent(8, trimspace(kubernetes_ca_key))}
+    serviceAccountPrivateKey: |
+        ${indent(8, trimspace(service_account_private_key))}
+    clientCertificate: |
+        ${indent(8, trimspace(kube_controller_manager_cert))}
+    clientKey: |
+        ${indent(8, trimspace(kube_controller_manager_key))}
     rootCACertificate: |
         ${indent(8, trimspace(root_ca_certificate))}
+
+kubeScheduler:
+    clientCertificate: |
+        ${indent(8, trimspace(kube_scheduler_cert))}
+    clientKey: |
+        ${indent(8, trimspace(kube_scheduler_key))}
+
 apiServerAddress: ${api_server_address}
 apiServerPort: 6443
-etcdServers:
-%{ for etcd_server in etcd_servers ~}
-- ${etcd_server}
-%{ endfor ~}
 
 ssh:
     user: "core"
     address: ${ssh_address}
+    port: ${ssh_port}
     privateKey: |
         ${indent(8, trimspace(ssh_private_key))}
-serviceCIDR: 11.0.0.0/24

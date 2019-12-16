@@ -110,6 +110,10 @@ healthzPort: 0
 # Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
 # short-names resolution like mysvc.myns.svc does not work.
 clusterDomain: cluster.local
+# Authenticate clients using CA file
+authentication:
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
 # Configure cluster DNS IP addresses
 clusterDNS:
 `, k.podCIDR, k.address)
@@ -203,6 +207,11 @@ clusterDNS:
 					Target: "/lib/modules",
 				},
 				{
+					// Store pod logs on the host, so they are persistent and also can read by Loki.
+					Source: "/var/log/pods/",
+					Target: "/var/log/pods",
+				},
+				{
 					// For reading host cgroups, to get stats for docker.service cgroup etc.
 					// Without this, following error message occurs:
 					// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
@@ -220,13 +229,9 @@ clusterDNS:
 				"--kubeconfig=/etc/kubernetes/kubeconfig",
 				// kubeconfig with access token for TLS bootstrapping
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
-				// Be a bit more verbose
-				// TODO should probably be configurable
-				"--v=2",
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
 				"--network-plugin=kubenet",
-				// Disable listening on random port for exec streaming. May degrade performance!
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 				"--redirect-container-streaming=false",
 				// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,

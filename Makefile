@@ -29,6 +29,11 @@ BINARY_IMAGE=flexkube/libflexkube
 
 DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
 
+TERRAFORM_BIN=/usr/bin/terraform
+
+# Default target when testing locally
+TEST_LOCAL=controlplane
+
 .PHONY: all
 all: build test lint
 
@@ -54,8 +59,8 @@ build-e2e:
 
 .PHONY: clean
 clean:
-	rm -r ./bin c.out coverage.txt kubeconfig 2>/dev/null || true
-	vagrant-destroy || true
+	rm -r ./bin c.out coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/terraform.tfstate* 2>/dev/null || true
+	make vagrant-destroy || true
 
 .PHONY: test
 test:
@@ -88,6 +93,15 @@ test-e2e-destroy:
 .PHONY: test-e2e
 test-e2e: test-e2e-run test-e2e-destroy
 
+.PHONY: test-local
+test-local:
+	cd local-testing/resources/$(TEST_LOCAL) && go run ../../../cmd/$(TEST_LOCAL)/main.go
+
+.PHONY: test-local-apply
+test-local-apply:
+	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
+	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN)	apply
+
 .PHONY: lint
 lint:
 	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration $(GO_PACKAGES)
@@ -105,7 +119,7 @@ update:
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup
 
 .PHONY: codespell-pr
 codespell-pr:

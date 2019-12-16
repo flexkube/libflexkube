@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.box_url = "https://edge.release.flatcar-linux.net/amd64-usr/current/flatcar_production_vagrant.box"
 
   # Sync using rsync, but don't copy locally built binaries and don't remove Terraform files from virtual machine
-  config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform"]
+  config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing"]
 
   # Virtualbox + resources
   config.vm.provider :virtualbox do |v|
@@ -28,6 +28,10 @@ Vagrant.configure("2") do |config|
     sudo update-ssh-keys
     openssl rand -base64 14 > /home/core/.password
     yes $(cat /home/core/.password) | sudo passwd core
+    # SNAT traffic from pods (10.1.0.0/24) to e.g. DNS server (10.0.2.3 by default) using host IP (10.0.2.15)
+    sudo iptables -t nat -A POSTROUTING -s 10.1.0.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
+    sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
+    sudo systemctl start docker systemd-timesyncd
   EOF
 
   # Forward kube-apiserver port to host

@@ -1,27 +1,15 @@
-kubernetesAPIServerKey: |
-  ${indent(2, trimspace(kubernetes_api_server_key))}
-kubernetesAPIServerCertificate: |
-  ${indent(2, trimspace(kubernetes_api_server_certificate))}
-serviceAccountPublicKey: |
-  ${indent(2, trimspace(service_account_public_key))}
-kubernetesCACertificate: |
-  ${indent(2, trimspace(kubernetes_ca_certificate))}
 serviceAccountPrivateKey: |
   ${indent(2, trimspace(service_account_private_key))}
 kubernetesCAKey: |
   ${indent(2, trimspace(kubernetes_ca_key))}
+kubernetesCACertificate: |
+  ${indent(2, trimspace(kubernetes_ca_certificate))}
 rootCACertificate: |
   ${indent(2, trimspace(root_ca_certificate))}
 
-etcdServers: ${join(",", etcd_servers)}
-serviceCIDR: "11.0.0.0/24"
 replicas: ${replicas}
 maxUnavailable: ${max_unavailable}
-%{ if replicas > 1 ~}
-# Bootstrap control plane is running on port 8443 instead of standard 6443, as haproxy is listening on 6443 for
-# load balancing and failover. Bootstrap kube-apiserver registers kubernetes.default.svc with port 8443, so we need to
-# use the same port here as bootstrap kube-apiserver.
-kubeAPIServer:
-  bindOnHostIP: true
-  securePort: 8443
-%{ endif ~}
+apiServers:
+%{ for api_server in api_servers ~}
+- ${api_server}
+%{ endfor ~}
