@@ -119,7 +119,7 @@ update:
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup
 
 .PHONY: codespell-pr
 codespell-pr:
