@@ -14,6 +14,12 @@ RUN wget https://github.com/flexkube/kubernetes-helm-chart/archive/master.zip &&
     mv kubernetes-helm-chart-master /usr/src/libflexkube/charts/kubernetes && \
     rm master.zip
 
+RUN wget https://github.com/flexkube/kube-apiserver-helm-chart/archive/master.zip && \
+    unzip master.zip && \
+    mkdir -p /usr/src/libflexkube/charts && \
+    mv kube-apiserver-helm-chart-master /usr/src/libflexkube/charts/kube-apiserver && \
+    rm master.zip
+
 RUN wget https://get.helm.sh/helm-v3.0.1-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
     mv linux-amd64/helm /usr/local/bin/
 

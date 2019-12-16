@@ -11,5 +11,6 @@ servers:
 %{ endfor ~}
 ssh:
     user: "core"
+    port: ${ssh_port}
     privateKey: |
         ${indent(8, trimspace(ssh_private_key))}
