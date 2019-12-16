@@ -28,6 +28,9 @@ Vagrant.configure("2") do |config|
     sudo update-ssh-keys
     openssl rand -base64 14 > /home/core/.password
     yes $(cat /home/core/.password) | sudo passwd core
+    # SNAT traffic from pods (10.1.0.0/24) to e.g. DNS server (10.0.2.3 by default) using host IP (10.0.2.15)
+    sudo iptables -t nat -A POSTROUTING -s 10.1.0.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
+    sudo systemctl enable iptables-store iptables-restore
   EOF
 
   # Forward kube-apiserver port to host
