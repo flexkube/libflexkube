@@ -1,4 +1,4 @@
-# libflexkube: Go library for deploying kubernetes
+# libflexkube: Go library for deploying Kubernetes
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube)
 
@@ -216,21 +216,19 @@ NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serv
 ## Current known issues and limitations
 
 Currently, there are several things, which are either missing or broken. Here is the list of known problems:
-- fetching logs from pods using `kubectl logs`
 - network plug-ins are not configurable (currently `kubenet` is hardcoded)
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
 - adding/removing etcd members
-- surviving reboot not tested
+- no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
 
 And features, which are not yet implemented:
-- TLS encryption between etcd and kubernetes API server
+- TLS encryption between etcd and Kubernetes API server
 - pod security policies for for control plane pods
 - network policies for kube-system namespace
 - caching port forwarding
-- batching config file updates
 - using SSH agent for authentication
 - bastion host(s) support for SSH
-- paralllel deployments across hosts
+- parallel deployments across hosts
 - showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
 - automatic shutdown/start of bootstrap control plane
