@@ -50,6 +50,9 @@ module "etcd_pki" {
   peer_ips   = [var.node_internal_ip]
   peer_names = ["foo"]
 
+  server_ips   = [var.node_internal_ip]
+  server_names = ["foo"]
+
   organization = "example"
 }
 
@@ -68,14 +71,17 @@ module "kubernetes_pki" {
 
 locals {
   etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
-    peer_ssh_addresses        = [var.node_address]
-    peer_ips                  = module.etcd_pki.etcd_peer_ips
-    peer_names                = module.etcd_pki.etcd_peer_names
-    peer_ca                   = module.etcd_pki.etcd_ca_cert
-    peer_certs                = module.etcd_pki.etcd_peer_certs
-    peer_keys                 = module.etcd_pki.etcd_peer_keys
-    ssh_private_key           = file(var.ssh_private_key_path)
-    ssh_port                  = var.node_ssh_port
+    peer_ssh_addresses = [var.node_address]
+    peer_ips           = module.etcd_pki.etcd_peer_ips
+    peer_names         = module.etcd_pki.etcd_peer_names
+    peer_ca            = module.etcd_pki.etcd_ca_cert
+    peer_certs         = module.etcd_pki.etcd_peer_certs
+    peer_keys          = module.etcd_pki.etcd_peer_keys
+    server_certs       = module.etcd_pki.etcd_server_certs
+    server_keys        = module.etcd_pki.etcd_server_keys
+    server_ips         = [var.node_internal_ip]
+    ssh_private_key    = file(var.ssh_private_key_path)
+    ssh_port           = var.node_ssh_port
   })
 
   apiloadbalancer_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {

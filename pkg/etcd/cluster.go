@@ -15,10 +15,10 @@ import (
 // Cluster represents etcd cluster configuration and state from the user
 type Cluster struct {
 	// User-configurable fields
-	Image             string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH               *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	PeerCACertificate string            `json:"peerCACertificate,omitempty" yaml:"peerCACertificate,omitempty"`
-	Members           map[string]Member `json:"members,omitempty" yaml:"members,omitempty"`
+	Image         string            `json:"image,omitempty" yaml:"image,omitempty"`
+	SSH           *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	CACertificate string            `json:"caCertificate,omitempty" yaml:"caCertificate,omitempty"`
+	Members       map[string]Member `json:"members,omitempty" yaml:"members,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
@@ -26,10 +26,10 @@ type Cluster struct {
 
 // cluster is executable version of Cluster, with validated fields and calculated containers
 type cluster struct {
-	image             string
-	ssh               *ssh.Config
-	peerCACertificate string
-	containers        container.Containers
+	image         string
+	ssh           *ssh.Config
+	caCertificate string
+	containers    container.Containers
 }
 
 // New validates etcd cluster configuration and fills members with default and computed values
@@ -39,9 +39,9 @@ func (c *Cluster) New() (*cluster, error) {
 	}
 
 	cluster := &cluster{
-		image:             c.Image,
-		ssh:               c.SSH,
-		peerCACertificate: c.PeerCACertificate,
+		image:         c.Image,
+		ssh:           c.SSH,
+		caCertificate: c.CACertificate,
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
@@ -85,8 +85,8 @@ func (c *Cluster) New() (*cluster, error) {
 
 		m.Host.SSHConfig = ssh.BuildConfig(m.Host.SSHConfig, c.SSH)
 
-		if m.PeerCACertificate == "" && c.PeerCACertificate != "" {
-			m.PeerCACertificate = c.PeerCACertificate
+		if m.CACertificate == "" && c.CACertificate != "" {
+			m.CACertificate = c.CACertificate
 		}
 
 		member, err := m.New()

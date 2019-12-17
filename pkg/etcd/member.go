@@ -15,12 +15,15 @@ type Member struct {
 	Name              string     `json:"name,omitempty" yaml:"name,omitempty"`
 	Image             string     `json:"image,omitempty" yaml:"image,omitempty"`
 	Host              *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	PeerCACertificate string     `json:"peerCACertificate,omitempty" yaml:"peerCACertificate,omitempty"`
+	CACertificate     string     `json:"caCertificate,omitempty" yaml:"caCertificate,omitempty"`
 	PeerCertificate   string     `json:"peerCertificate,omitempty" yaml:"peerCertificate,omitempty"`
 	PeerKey           string     `json:"peerKey,omitempty" yaml:"peerKey,omitempty"`
 	PeerAddress       string     `json:"peerAddress,omitempty" yaml:"peerAddress,omitempty"`
 	InitialCluster    string     `json:"initialCluster,omitempty" yaml:"initialCluster,omitempty"`
 	PeerCertAllowedCN string     `json:"peerCertAllowedCN,omitempty" yaml:"peerCertAllowedCN,omitempty"`
+	ServerCertificate string     `json:"serverCertificate,omitempty" yaml:"serverCertificate,omitempty"`
+	ServerKey         string     `json:"serverKey,omitempty" yaml:"serverKey,omitempty"`
+	ServerAddress     string     `json:"serverAddress,omitempty" yaml:"serverAddress,omitempty"`
 }
 
 // member is a validated, executable version of Member
@@ -28,19 +31,24 @@ type member struct {
 	name              string
 	image             string
 	host              host.Host
-	peerCACertificate string
+	caCertificate     string
 	peerCertificate   string
 	peerKey           string
 	peerAddress       string
 	initialCluster    string
 	peerCertAllowedCN string
+	serverCertificate string
+	serverKey         string
+	serverAddress     string
 }
 
 func (m *member) configFiles() map[string]string {
 	return map[string]string{
-		"/etc/kubernetes/etcd/ca.crt":   m.peerCACertificate,
-		"/etc/kubernetes/etcd/peer.crt": m.peerCertificate,
-		"/etc/kubernetes/etcd/peer.key": m.peerKey,
+		"/etc/kubernetes/etcd/ca.crt":     m.caCertificate,
+		"/etc/kubernetes/etcd/peer.crt":   m.peerCertificate,
+		"/etc/kubernetes/etcd/peer.key":   m.peerKey,
+		"/etc/kubernetes/etcd/server.crt": m.serverCertificate,
+		"/etc/kubernetes/etcd/server.key": m.serverKey,
 	}
 }
 
@@ -63,7 +71,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 					Target: fmt.Sprintf("/%s.etcd", m.name),
 				},
 				{
-					Source: "/etc/kubernetes/pki/etcd/",
+					Source: "/etc/kubernetes/etcd/",
 					Target: "/etc/kubernetes/pki/etcd",
 				},
 			},
@@ -73,9 +81,9 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 				// Default value 'capnslog' for logger is deprecated and prints warning now.
 				//"--logger=zap", // Available only from 3.4.x
 				// Since we are in container, listen on all interfaces
-				fmt.Sprintf("--listen-client-urls=http://%s:2379", m.peerAddress),
+				fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
 				fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
-				fmt.Sprintf("--advertise-client-urls=http://%s:2379", m.peerAddress),
+				fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
 				fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
 				fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
 				fmt.Sprintf("--name=%s", m.name),
@@ -84,6 +92,9 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 				"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
 				"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
 				"--peer-client-cert-auth",
+				"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
+				"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
+				"--key-file=/etc/kubernetes/pki/etcd/server.key",
 				fmt.Sprintf("--data-dir=/%s.etcd", m.name),
 				// To get rid of warning with default configuration
 				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512", //,ttl=10m", // ttl parameter support has been added in 3.4.x
@@ -111,12 +122,15 @@ func (m *Member) New() (*member, error) {
 		name:              m.Name,
 		image:             m.Image,
 		host:              *m.Host,
-		peerCACertificate: m.PeerCACertificate,
+		caCertificate:     m.CACertificate,
 		peerCertificate:   m.PeerCertificate,
 		peerKey:           m.PeerKey,
 		peerAddress:       m.PeerAddress,
 		initialCluster:    m.InitialCluster,
 		peerCertAllowedCN: m.PeerCertAllowedCN,
+		serverCertificate: m.ServerCertificate,
+		serverKey:         m.ServerKey,
+		serverAddress:     m.ServerAddress,
 	}
 
 	if nm.image == "" {
