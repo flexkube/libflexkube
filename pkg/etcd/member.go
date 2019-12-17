@@ -96,8 +96,9 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 				"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
 				"--key-file=/etc/kubernetes/pki/etcd/server.key",
 				fmt.Sprintf("--data-dir=/%s.etcd", m.name),
-				// To get rid of warning with default configuration
-				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512", //,ttl=10m", // ttl parameter support has been added in 3.4.x
+				// To get rid of warning with default configuration.
+				// ttl parameter support has been added in 3.4.x
+				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
 				// This is set by typhoon, seems like extra safety knob
 				"--strict-reconfig-check",
 				// TODO enable metrics
