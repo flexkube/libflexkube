@@ -1,4 +1,4 @@
-# libflexkube: Go library for deploying kubernetes
+# libflexkube: Go library for deploying Kubernetes
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube)
 
@@ -223,7 +223,7 @@ Currently, there are several things, which are either missing or broken. Here is
 - surviving reboot not tested
 
 And features, which are not yet implemented:
-- TLS encryption between etcd and kubernetes API server
+- TLS encryption between etcd and Kubernetes API server
 - pod security policies for for control plane pods
 - network policies for kube-system namespace
 - caching port forwarding
