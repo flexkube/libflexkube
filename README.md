@@ -216,18 +216,16 @@ NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serv
 ## Current known issues and limitations
 
 Currently, there are several things, which are either missing or broken. Here is the list of known problems:
-- fetching logs from pods using `kubectl logs`
 - network plug-ins are not configurable (currently `kubenet` is hardcoded)
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
 - adding/removing etcd members
-- surviving reboot not tested
+- no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
 
 And features, which are not yet implemented:
 - TLS encryption between etcd and Kubernetes API server
 - pod security policies for for control plane pods
 - network policies for kube-system namespace
 - caching port forwarding
-- batching config file updates
 - using SSH agent for authentication
 - bastion host(s) support for SSH
 - parallel deployments across hosts
