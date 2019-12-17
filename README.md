@@ -230,7 +230,7 @@ And features, which are not yet implemented:
 - batching config file updates
 - using SSH agent for authentication
 - bastion host(s) support for SSH
-- paralllel deployments across hosts
+- parallel deployments across hosts
 - showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
 - automatic shutdown/start of bootstrap control plane
