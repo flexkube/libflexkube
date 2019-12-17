@@ -36,15 +36,16 @@ type member struct {
 	peerCertAllowedCN string
 }
 
+func (m *member) configFiles() map[string]string {
+	return map[string]string{
+		"/etc/kubernetes/etcd/ca.crt":   m.peerCACertificate,
+		"/etc/kubernetes/etcd/peer.crt": m.peerCertificate,
+		"/etc/kubernetes/etcd/peer.key": m.peerKey,
+	}
+}
+
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
 func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer {
-	configFiles := make(map[string]string)
-	if m.peerCACertificate != "" && m.peerCertificate != "" && m.peerKey != "" {
-		configFiles["/etc/kubernetes/pki/etcd/ca.crt"] = m.peerCACertificate
-		configFiles["/etc/kubernetes/pki/etcd/peer.crt"] = m.peerCertificate
-		configFiles["/etc/kubernetes/pki/etcd/peer.key"] = m.peerKey
-	}
-
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
@@ -95,7 +96,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 
 	return &container.HostConfiguredContainer{
 		Host:        m.host,
-		ConfigFiles: configFiles,
+		ConfigFiles: m.configFiles(),
 		Container:   c,
 	}
 }
