@@ -30,6 +30,12 @@ kubeAPIServer:
     {{.PrivateKey}}
   serviceAccountPublicKey: foo
   serviceCIDR: 11.0.0.0/24
+  etcdCACertificate: |
+    {{.Certificate}}
+  etcdClientCertificate: |
+    {{.Certificate}}
+  etcdClientKey: |
+    {{.PrivateKey}}
   etcdServers:
   - http://10.0.2.15:2379
   bindAddress: 0.0.0.0

@@ -53,6 +53,8 @@ module "etcd_pki" {
   server_ips   = [var.node_internal_ip]
   server_names = ["foo"]
 
+  client_cns = ["kube-apiserver-etcd-client"]
+
   organization = "example"
 }
 
@@ -109,8 +111,11 @@ locals {
     kube_scheduler_cert               = module.kubernetes_pki.kube_scheduler_cert
     kube_scheduler_key                = module.kubernetes_pki.kube_scheduler_key
     root_ca_certificate               = module.root_pki.root_ca_cert
+    etcd_ca_certificate               = module.etcd_pki.etcd_ca_cert
+    etcd_client_certificate           = module.etcd_pki.client_certs[0]
+    etcd_client_key                   = module.etcd_pki.client_keys[0]
     api_server_address                = var.node_internal_ip
-    etcd_servers                      = formatlist("http://%s:2379", module.etcd_pki.etcd_peer_ips)
+    etcd_servers                      = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
     ssh_address                       = var.node_address
     ssh_port                          = var.node_ssh_port
     ssh_private_key                   = file(var.ssh_private_key_path)
@@ -128,7 +133,10 @@ locals {
     front_proxy_ca_certificate     = module.kubernetes_pki.kubernetes_front_proxy_ca_cert
     kubelet_client_certificate     = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
     kubelet_client_key             = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
-    etcd_servers                   = formatlist("http://%s:2379", module.etcd_pki.etcd_peer_ips)
+    etcd_ca_certificate            = module.etcd_pki.etcd_ca_cert
+    etcd_client_certificate        = module.etcd_pki.client_certs[0]
+    etcd_client_key                = module.etcd_pki.client_keys[0]
+    etcd_servers                   = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
     replicas                       = 1
     max_unavailable                = 1
   })

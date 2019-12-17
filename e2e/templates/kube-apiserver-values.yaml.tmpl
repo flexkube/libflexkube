@@ -16,6 +16,12 @@ kubeletClientCertificate: |
   ${indent(2, trimspace(kubelet_client_certificate))}
 kubeletClientKey: |
   ${indent(2, trimspace(kubelet_client_key))}
+etcdCACertificate: |
+  ${indent(2, trimspace(etcd_ca_certificate))}
+etcdClientCertificate: |
+  ${indent(2, trimspace(etcd_client_certificate))}
+etcdClientKey: |
+  ${indent(2, trimspace(etcd_client_key))}
 
 etcdServers: ${join(",", etcd_servers)}
 serviceCIDR: "11.0.0.0/24"

@@ -32,6 +32,9 @@ type KubeAPIServer struct {
 	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey" yaml:"frontProxyKey"`
 	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate" yaml:"kubeletClientCertificate"`
 	KubeletClientKey         types.PrivateKey  `json:"kubeletClientKey" yaml:"kubeletClientKey"`
+	EtcdCACertificate        types.Certificate `json:"etcdCACertificate" yaml:"etcdCACertificate"`
+	EtcdClientCertificate    types.Certificate `json:"etcdClientCertificate" yaml:"etcdClientCertificate"`
+	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey" yaml:"etcdClientKey"`
 }
 
 // kubeAPIServer is a validated version of KubeAPIServer
@@ -52,6 +55,9 @@ type kubeAPIServer struct {
 	frontProxyKey            string
 	kubeletClientCertificate string
 	kubeletClientKey         string
+	etcdCACertificate        string
+	etcdClientCertificate    string
+	etcdClientKey            string
 }
 
 // ToHostConfiguredContainer takes configured values and converts them to generic container configuration
@@ -67,6 +73,9 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.key"] = k.frontProxyKey
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.crt"] = k.kubeletClientCertificate
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.key"] = k.kubeletClientKey
+	configFiles["/etc/kubernetes/kube-apiserver/pki/etcd/ca.crt"] = k.etcdCACertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.crt"] = k.etcdClientCertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.key"] = k.etcdClientKey
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -123,6 +132,10 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				// Required for communicating with kubelet.
 				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
 				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
+				// To secure communication to etcd servers.
+				"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
+				"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
+				"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
 			},
 		},
 	}
@@ -157,6 +170,9 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		frontProxyKey:            string(k.FrontProxyKey),
 		kubeletClientCertificate: string(k.KubeletClientCertificate),
 		kubeletClientKey:         string(k.KubeletClientKey),
+		etcdCACertificate:        string(k.EtcdCACertificate),
+		etcdClientCertificate:    string(k.EtcdClientCertificate),
+		etcdClientKey:            string(k.EtcdClientKey),
 	}
 
 	// The only optional parameter

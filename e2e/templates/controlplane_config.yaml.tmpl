@@ -19,6 +19,12 @@ kubeAPIServer:
         ${indent(8, trimspace(kubelet_client_key))}
     serviceAccountPublicKey: |
         ${indent(8, trimspace(service_account_public_key))}
+    etcdCACertificate: |
+        ${indent(8, trimspace(etcd_ca_certificate))}
+    etcdClientCertificate: |
+        ${indent(8, trimspace(etcd_client_certificate))}
+    etcdClientKey: |
+        ${indent(8, trimspace(etcd_client_key))}
     serviceCIDR: 11.0.0.0/24
     etcdServers:
     %{~ for etcd_server in etcd_servers ~}
