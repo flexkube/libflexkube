@@ -36,8 +36,23 @@ func TestPickIntNoValue(t *testing.T) {
 		t.Fatalf("expected %d, got %d", 0, v)
 	}
 }
+
 func TestPickIntFirst(t *testing.T) {
 	if v := PickInt(expectedValueInt, 5); v != expectedValueInt {
 		t.Fatalf("expected %d, got %d", expectedValueInt, v)
+	}
+}
+
+func TestIndent(t *testing.T) {
+	expected := "   foo"
+	if a := Indent("foo", "   "); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
+
+func TestIndentWithNewline(t *testing.T) {
+	expected := "  foo\n  bar\n"
+	if a := Indent("foo\nbar\n", "  "); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
 }
