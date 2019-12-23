@@ -4,31 +4,37 @@ import (
 	"fmt"
 	"strings"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
-	"github.com/flexkube/libflexkube/pkg/container/types"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
-	Image                    string     `json:"image,omitempty" yaml:"image,omitempty"`
-	Host                     *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	KubernetesCACertificate  string     `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	APIServerCertificate     string     `json:"apiServerCertificate,omitempty" yaml:"apiServerCertificate,omitempty"`
-	APIServerKey             string     `json:"apiServerKey,omitempty" yaml:"apiServerKey,omitempty"`
-	ServiceAccountPublicKey  string     `json:"serviceAccountPublicKey,omitempty" yaml:"serviceAccountPublicKey,omitempty"`
-	BindAddress              string     `json:"bindAddress,omitempty" yaml:"bindAddress,omitempty"`
-	AdvertiseAddress         string     `json:"advertiseAddress,omitempty" yaml:"advertiseAddress,omitempty"`
-	EtcdServers              []string   `json:"etcdServers,omitempty" yaml:"etcdServers,omitempty"`
-	ServiceCIDR              string     `json:"serviceCIDR,omitempty" yaml:"serviceCIDR,omitempty"`
-	SecurePort               int        `json:"securePort,omitempty" yaml:"securePort,omitempty"`
-	FrontProxyCACertificate  string     `json:"frontProxyCACertificate,omitempty" yaml:"frontProxyCACertificate,omitempty"`
-	FrontProxyCertificate    string     `json:"frontProxyCertificate,omitempty" yaml:"frontProxyCertificate,omitempty"`
-	FrontProxyKey            string     `json:"frontProxyKey,omitempty" yaml:"frontProxyKey,omitempty"`
-	KubeletClientCertificate string     `json:"kubeletClientCertificate,omitempty" yaml:"kubeletClientCertificate,omitempty"`
-	KubeletClientKey         string     `json:"kubeletClientKey,omitempty" yaml:"kubeletClientKey,omitempty"`
+	Image                    string            `json:"image" yaml:"image"`
+	Host                     *host.Host        `json:"host" yaml:"host"`
+	KubernetesCACertificate  types.Certificate `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
+	APIServerCertificate     types.Certificate `json:"apiServerCertificate" yaml:"apiServerCertificate"`
+	APIServerKey             types.PrivateKey  `json:"apiServerKey" yaml:"apiServerKey"`
+	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey" yaml:"serviceAccountPublicKey"`
+	BindAddress              string            `json:"bindAddress" yaml:"bindAddress"`
+	AdvertiseAddress         string            `json:"advertiseAddress" yaml:"advertiseAddress"`
+	EtcdServers              []string          `json:"etcdServers" yaml:"etcdServers"`
+	ServiceCIDR              string            `json:"serviceCIDR" yaml:"serviceCIDR"`
+	SecurePort               int               `json:"securePort" yaml:"securePort"`
+	FrontProxyCACertificate  types.Certificate `json:"frontProxyCACertificate" yaml:"frontProxyCACertificate"`
+	FrontProxyCertificate    types.Certificate `json:"frontProxyCertificate" yaml:"frontProxyCertificate"`
+	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey" yaml:"frontProxyKey"`
+	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate" yaml:"kubeletClientCertificate"`
+	KubeletClientKey         types.PrivateKey  `json:"kubeletClientKey" yaml:"kubeletClientKey"`
+	EtcdCACertificate        types.Certificate `json:"etcdCACertificate" yaml:"etcdCACertificate"`
+	EtcdClientCertificate    types.Certificate `json:"etcdClientCertificate" yaml:"etcdClientCertificate"`
+	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey" yaml:"etcdClientKey"`
 }
 
 // kubeAPIServer is a validated version of KubeAPIServer
@@ -49,6 +55,9 @@ type kubeAPIServer struct {
 	frontProxyKey            string
 	kubeletClientCertificate string
 	kubeletClientKey         string
+	etcdCACertificate        string
+	etcdClientCertificate    string
+	etcdClientKey            string
 }
 
 // ToHostConfiguredContainer takes configured values and converts them to generic container configuration
@@ -64,22 +73,25 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.key"] = k.frontProxyKey
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.crt"] = k.kubeletClientCertificate
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.key"] = k.kubeletClientKey
+	configFiles["/etc/kubernetes/kube-apiserver/pki/etcd/ca.crt"] = k.etcdCACertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.crt"] = k.etcdClientCertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.key"] = k.etcdClientKey
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
 			Docker: &docker.Config{},
 		},
-		Config: types.ContainerConfig{
+		Config: containertypes.ContainerConfig{
 			Name:  "kube-apiserver",
 			Image: k.image,
-			Mounts: []types.Mount{
+			Mounts: []containertypes.Mount{
 				{
 					Source: "/etc/kubernetes/kube-apiserver/pki/",
 					Target: "/etc/kubernetes/pki",
 				},
 			},
-			Ports: []types.PortMap{
+			Ports: []containertypes.PortMap{
 				{
 					IP:       k.bindAddress,
 					Protocol: "tcp",
@@ -120,6 +132,10 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				// Required for communicating with kubelet.
 				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
 				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
+				// To secure communication to etcd servers.
+				"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
+				"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
+				"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
 			},
 		},
 	}
@@ -140,20 +156,23 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 	nk := &kubeAPIServer{
 		image:                    k.Image,
 		host:                     *k.Host,
-		kubernetesCACertificate:  k.KubernetesCACertificate,
-		apiServerCertificate:     k.APIServerCertificate,
-		apiServerKey:             k.APIServerKey,
+		kubernetesCACertificate:  string(k.KubernetesCACertificate),
+		apiServerCertificate:     string(k.APIServerCertificate),
+		apiServerKey:             string(k.APIServerKey),
 		serviceAccountPublicKey:  k.ServiceAccountPublicKey,
 		bindAddress:              k.BindAddress,
 		advertiseAddress:         k.AdvertiseAddress,
 		etcdServers:              k.EtcdServers,
 		serviceCIDR:              k.ServiceCIDR,
 		securePort:               k.SecurePort,
-		frontProxyCACertificate:  k.FrontProxyCACertificate,
-		frontProxyCertificate:    k.FrontProxyCertificate,
-		frontProxyKey:            k.FrontProxyKey,
-		kubeletClientCertificate: k.KubeletClientCertificate,
-		kubeletClientKey:         k.KubeletClientKey,
+		frontProxyCACertificate:  string(k.FrontProxyCACertificate),
+		frontProxyCertificate:    string(k.FrontProxyCertificate),
+		frontProxyKey:            string(k.FrontProxyKey),
+		kubeletClientCertificate: string(k.KubeletClientCertificate),
+		kubeletClientKey:         string(k.KubeletClientKey),
+		etcdCACertificate:        string(k.EtcdCACertificate),
+		etcdClientCertificate:    string(k.EtcdClientCertificate),
+		etcdClientKey:            string(k.EtcdClientKey),
 	}
 
 	// The only optional parameter
@@ -168,60 +187,17 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 //
 // TODO add validation of certificates if specified
 func (k *KubeAPIServer) Validate() error {
-	if k.KubernetesCACertificate == "" {
-		return fmt.Errorf("field KubernetesCACertificate is empty")
+	b, err := yaml.Marshal(k)
+	if err != nil {
+		return fmt.Errorf("failed to validate: %w", err)
 	}
 
-	if k.APIServerCertificate == "" {
-		return fmt.Errorf("field ApiServerCertificate is empty")
-	}
-
-	if k.APIServerKey == "" {
-		return fmt.Errorf("field ApiServerKey is empty")
-	}
-
-	if k.ServiceAccountPublicKey == "" {
-		return fmt.Errorf("field ServiceAccountPublicKey is empty")
-	}
-
-	if k.BindAddress == "" {
-		return fmt.Errorf("field BindAddress is empty")
-	}
-
-	if k.AdvertiseAddress == "" {
-		return fmt.Errorf("field AdvertiseAddress is empty")
+	if err := yaml.Unmarshal(b, &k); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	if len(k.EtcdServers) == 0 {
 		return fmt.Errorf("at least one etcd server must be defined")
-	}
-
-	if k.ServiceCIDR == "" {
-		return fmt.Errorf("field ServiceCIDR is empty")
-	}
-
-	if k.SecurePort == 0 {
-		return fmt.Errorf("field securePort must be defined")
-	}
-
-	if k.FrontProxyCACertificate == "" {
-		return fmt.Errorf("field frontProxyCACertificate is empty")
-	}
-
-	if k.FrontProxyCertificate == "" {
-		return fmt.Errorf("field frontProxyCertificate is empty")
-	}
-
-	if k.FrontProxyKey == "" {
-		return fmt.Errorf("field frontProxyKey is empty")
-	}
-
-	if k.KubeletClientCertificate == "" {
-		return fmt.Errorf("field kubeletClientCertificate is empty")
-	}
-
-	if k.KubeletClientKey == "" {
-		return fmt.Errorf("field kubeletClientKey is empty")
 	}
 
 	return nil

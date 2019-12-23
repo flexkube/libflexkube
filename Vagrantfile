@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
     # SNAT traffic from pods (10.1.0.0/24) to e.g. DNS server (10.0.2.3 by default) using host IP (10.0.2.15)
     sudo iptables -t nat -A POSTROUTING -s 10.1.0.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
     sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
-    sudo systemctl start docker systemd-timesyncd
+    sudo systemctl start docker systemd-timesyncd iptables-store
   EOF
 
   # Forward kube-apiserver port to host

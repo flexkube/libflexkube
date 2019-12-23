@@ -4,8 +4,9 @@ package apiloadbalancer
 
 import (
 	"io/ioutil"
-	"strings"
 	"testing"
+
+	"github.com/flexkube/libflexkube/internal/util"
 )
 
 func TestDeploy(t *testing.T) {
@@ -27,7 +28,7 @@ ssh:
   user: core
   privateKey: |-
 `
-	config += indent(string(key), "    ")
+	config += util.Indent(string(key), "    ")
 
 	c, err := FromYaml([]byte(config))
 	if err != nil {
@@ -65,24 +66,4 @@ apiLoadBalancers: []
 	if err := c.Deploy(); err != nil {
 		t.Fatalf("tearing down should succeed, got: %v", err)
 	}
-}
-
-// indent indents a block of text with an indent string
-func indent(text, indent string) string {
-	if text[len(text)-1:] == "\n" {
-		result := ""
-		for _, j := range strings.Split(text[:len(text)-1], "\n") {
-			result += indent + j + "\n"
-		}
-
-		return result
-	}
-
-	result := ""
-
-	for _, j := range strings.Split(strings.TrimRight(text, "\n"), "\n") {
-		result += indent + j + "\n"
-	}
-
-	return result[:len(result)-1]
 }
