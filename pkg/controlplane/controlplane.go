@@ -9,6 +9,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Controlplane represents etcd controlplane configuration and state from the user
@@ -18,8 +19,8 @@ type Controlplane struct {
 	// should be defined directly there.
 	Image                   string                `json:"image,omitempty" yaml:"image,omitempty"`
 	SSH                     *ssh.Config           `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	KubernetesCACertificate string                `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	FrontProxyCACertificate string                `json:"frontProxyCACertificate,omitempty" yaml:"frontProxyCACertificate,omitempty"`
+	KubernetesCACertificate types.Certificate     `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
+	FrontProxyCACertificate types.Certificate     `json:"frontProxyCACertificate,omitempty" yaml:"frontProxyCACertificate,omitempty"`
 	APIServerAddress        string                `json:"apiServerAddress,omitempty" yaml:"apiServerAddress,omitempty"`
 	APIServerPort           int                   `json:"apiServerPort,omitempty" yaml:"apiServerPort,omitempty"`
 	KubeAPIServer           KubeAPIServer         `json:"kubeAPIServer,omitempty" yaml:"kubeAPIServer,omitempty"`
@@ -51,11 +52,11 @@ func (c *Controlplane) buildKubeScheduler() {
 	}
 
 	if c.KubeScheduler.KubernetesCACertificate == "" && c.KubernetesCACertificate != "" {
-		c.KubeScheduler.KubernetesCACertificate = c.KubernetesCACertificate
+		c.KubeScheduler.KubernetesCACertificate = string(c.KubernetesCACertificate)
 	}
 
 	if c.KubeScheduler.FrontProxyCACertificate == "" && c.FrontProxyCACertificate != "" {
-		c.KubeScheduler.FrontProxyCACertificate = c.FrontProxyCACertificate
+		c.KubeScheduler.FrontProxyCACertificate = string(c.FrontProxyCACertificate)
 	}
 
 	if c.KubeScheduler.APIServer == "" && c.APIServerAddress != "" {
@@ -85,11 +86,11 @@ func (c *Controlplane) buildKubeControllerManager() {
 	}
 
 	if c.KubeControllerManager.KubernetesCACertificate == "" && c.KubernetesCACertificate != "" {
-		c.KubeControllerManager.KubernetesCACertificate = c.KubernetesCACertificate
+		c.KubeControllerManager.KubernetesCACertificate = string(c.KubernetesCACertificate)
 	}
 
 	if c.KubeControllerManager.FrontProxyCACertificate == "" && c.FrontProxyCACertificate != "" {
-		c.KubeControllerManager.FrontProxyCACertificate = c.FrontProxyCACertificate
+		c.KubeControllerManager.FrontProxyCACertificate = string(c.FrontProxyCACertificate)
 	}
 
 	if c.KubeControllerManager.APIServer == "" && c.APIServerAddress != "" {
@@ -164,7 +165,7 @@ func (c *Controlplane) New() (*controlplane, error) {
 	controlplane := &controlplane{
 		image:                   c.Image,
 		ssh:                     c.SSH,
-		kubernetesCACertificate: c.KubernetesCACertificate,
+		kubernetesCACertificate: string(c.KubernetesCACertificate),
 		apiServerAddress:        c.APIServerAddress,
 		apiServerPort:           c.APIServerPort,
 		shutdown:                c.Shutdown,
