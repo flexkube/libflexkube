@@ -222,7 +222,6 @@ Currently, there are several things, which are either missing or broken. Here is
 - no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
 
 And features, which are not yet implemented:
-- TLS encryption between etcd and Kubernetes API server
 - pod security policies for for control plane pods
 - network policies for kube-system namespace
 - caching port forwarding
