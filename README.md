@@ -160,7 +160,7 @@ All deployments require X.509 certificates to secure the communication between c
 
 Following Terraform modules are the recommended way to manage those certificates:
 - [terraform-root-pki](https://github.com/flexkube/terraform-root-pki) - generates root CA certificate, which should be used to sign intermediate CA certificates (etcd CA, Kubernetes CA etc).
-- [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki) - generates etcd CA certificate, peer certificates and client certificates
+- [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki) - generates etcd CA certificate, peer certificates, server certificates and client certificates
 - [terraform-kubernetes-pki](https://github.com/flexkube/terraform-kubernetes-pki) - generates Kubernetes CA and all other required certificates for functional Kubernetes cluster
 
 In the future go package might be added to manage them, to avoid having Terraform as a dependency.
@@ -196,7 +196,7 @@ Recommended way of doing that is using [kubernetes-helm-chart](https://github.co
 
 The helm chart can be installed using one of the following methods:
 - using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
-- uning [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
+- using [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
 - using `flexkube_helm_release` Terraform resource (as at the time of writing, [terraform-provider-helm](https://github.com/terraform-providers/terraform-provider-helm) does not support helm 3 yet. Upstream issue: https://github.com/terraform-providers/terraform-provider-helm/issues/299)
 
 Once the chart is installed and it's pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm chart configuration is updated.
@@ -251,7 +251,7 @@ make test GO_PACKAGES=./pkg/host/transport/ssh/...
 ### Integration tests
 
 As this library interacts a lot with other systems, in addition to unit tests, there are also integration tests defined, which has extra environmental requirements, like Docker daemon running or SSH server available.
-To make running such tests easier, there is a `Vagrantfile`, which spawns [Flatcar Container Linux](https://www.flatcar-linux.org/) virtual machine, where all further tests can be executed. Currently the only tested provider
+To make running such tests easier, there is a `Vagrantfile` available, which spawns [Flatcar Container Linux](https://www.flatcar-linux.org/) virtual machine, where all further tests can be executed. Currently the only tested provider
 for Vagrant is VirtualBox.
 
 In order to run integration tests in virtual environment, execute the following command:
@@ -279,7 +279,7 @@ E2E tests can be executed using following command:
 make vagrant-e2e-run
 ```
 
-This command will create testing virtual machine, compile Flexkube Terraform provider inside it and then use Terraform to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the project's root directory, which allows further inspection.
+This command will create testing virtual machine, compile Flexkube Terraform provider inside it and then use Terraform to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the `e2e` directory, which allows further inspection.
 
 If you don't have `kubectl` available on host, following command can be executed to spawn shell in E2E container on virtual machine, which contains additional tools like `kubectl` or `helm` binaries and comes with `kubeconfig` predefined, to ease up testing:
 ```sh
