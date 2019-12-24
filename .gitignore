@@ -8,3 +8,4 @@ terraform.tfstate*
 bin
 .vagrant
 kubeconfig
+.terraform.tfstate.lock.info
