@@ -21,7 +21,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -33,6 +33,14 @@ TERRAFORM_BIN=/usr/bin/terraform
 
 # Default target when testing locally
 TEST_LOCAL=controlplane
+
+CONTROLLERS=1
+
+WORKERS=0
+
+NODES_CIDR="192.168.50.0/24"
+
+VAGRANTCMD=TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) vagrant
 
 .PHONY: all
 all: build test lint
@@ -100,7 +108,7 @@ test-local:
 .PHONY: test-local-apply
 test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
-	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN)	apply
+	cd local-testing && $(TERRAFORM_BIN) init && TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: lint
 lint:
@@ -171,27 +179,27 @@ install-ci: install-golangci-lint install-golint install-cc-test-reporter
 
 .PHONY: vagrant-up
 vagrant-up:
-	vagrant up
+	$(VAGRANTCMD) up
 
 .PHONY: vagrant-rsync
 vagrant-rsync:
-	vagrant rsync
+	$(VAGRANTCMD) rsync
 
 .PHONY: vagrant-destroy
 vagrant-destroy:
-	vagrant destroy --force
+	$(VAGRANTCMD) destroy --force
 
 .PHONY: vagrant-integration-build
 vagrant-integration-build:
-	vagrant ssh -c "docker build -t $(INTEGRATION_IMAGE) libflexkube/integration"
+	$(VAGRANTCMD) ssh -c "docker build -t $(INTEGRATION_IMAGE) libflexkube/integration"
 
 .PHONY: vagrant-integration-run
 vagrant-integration-run:
-	vagrant ssh -c "$(INTEGRATION_CMD) make test-integration GO_PACKAGES=$(GO_PACKAGES)"
+	$(VAGRANTCMD) ssh -c "$(INTEGRATION_CMD) make test-integration GO_PACKAGES=$(GO_PACKAGES)"
 
 .PHONY: vagrant-integration-shell
 vagrant-integration-shell:
-	vagrant ssh -c "$(INTEGRATION_CMD) bash"
+	$(VAGRANTCMD) ssh -c "$(INTEGRATION_CMD) bash"
 
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
@@ -199,12 +207,12 @@ vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-
 
 .PHONY: vagrant-build-bin
 vagrant-build-bin: vagrant-integration-build
-	vagrant ssh -c "$(BUILD_CMD) make build-bin"
+	$(VAGRANTCMD) ssh -c "$(BUILD_CMD) make build-bin"
 
 
 .PHONY: vagrant-e2e-build
 vagrant-e2e-build:
-	vagrant ssh -c "$(BUILD_CMD) make build-e2e"
+	$(VAGRANTCMD) ssh -c "$(BUILD_CMD) make build-e2e"
 
 .PHONY: vagrant-e2e-kubeconfig
 vagrant-e2e-kubeconfig:
@@ -212,16 +220,16 @@ vagrant-e2e-kubeconfig:
 
 .PHONY: vagrant-e2e-run
 vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
-	vagrant ssh -c "$(E2E_CMD) -c 'make test-e2e-run'"
+	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-run'"
 	make vagrant-e2e-kubeconfig
 
 .PHONY: vagrant-e2e-destroy
 vagrant-e2e-destroy:
-	vagrant ssh -c "$(E2E_CMD) -c 'make test-e2e-destroy'"
+	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-destroy'"
 
 .PHONY: vagrant-e2e-shell
 vagrant-e2e-shell:
-	vagrant ssh -c "$(E2E_CMD)"
+	$(VAGRANTCMD) ssh -c "$(E2E_CMD)"
 
 .PHONY: vagrant-e2e
 vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy

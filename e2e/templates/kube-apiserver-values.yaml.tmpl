@@ -31,7 +31,6 @@ maxUnavailable: ${max_unavailable}
 # Bootstrap control plane is running on port 8443 instead of standard 6443, as haproxy is listening on 6443 for
 # load balancing and failover. Bootstrap kube-apiserver registers kubernetes.default.svc with port 8443, so we need to
 # use the same port here as bootstrap kube-apiserver.
-kubeAPIServer:
-  bindOnHostIP: true
-  securePort: 8443
+bindOnHostIP: true
+securePort: 8443
 %{ endif ~}

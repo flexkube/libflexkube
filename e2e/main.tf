@@ -6,16 +6,24 @@ provider "local" {
   version = "= 1.4.0"
 }
 
+provider "null" {
+  version = "= 2.1.2"
+}
+
 variable "ssh_private_key_path" {
   default = "/root/.ssh/id_rsa"
 }
 
-variable "node_internal_ip" {
-  default = "10.0.2.15"
+variable "controllers_count" {
+  default = 1
 }
 
-variable "node_address" {
-  default = "127.0.0.1"
+variable "workers_count" {
+  default = 0
+}
+
+variable "nodes_cidr" {
+  default = "192.168.50.0/24"
 }
 
 variable "node_ssh_port" {
@@ -40,6 +48,23 @@ module "root_pki" {
   organization = "example"
 }
 
+resource "null_resource" "controller_ips" {
+  count = var.controllers_count
+
+  triggers = {
+    name = format("controller%02d", count.index)
+    ip   = cidrhost(var.nodes_cidr, count.index + 2)
+    cidr = cidrsubnet("10.1.0.0/16", 8, count.index)
+  }
+}
+
+locals {
+  controller_ips      = null_resource.controller_ips.*.triggers.ip
+  first_controller_ip = local.controller_ips[0]
+  controller_names    = null_resource.controller_ips.*.triggers.name
+  controller_cidrs    = null_resource.controller_ips.*.triggers.cidr
+}
+
 module "etcd_pki" {
   source = "git::https://github.com/flexkube/terraform-etcd-pki.git"
 
@@ -47,11 +72,11 @@ module "etcd_pki" {
   root_ca_key       = module.root_pki.root_ca_key
   root_ca_algorithm = module.root_pki.root_ca_algorithm
 
-  peer_ips   = [var.node_internal_ip]
-  peer_names = ["foo"]
+  peer_ips   = local.controller_ips
+  peer_names = local.controller_names
 
-  server_ips   = [var.node_internal_ip]
-  server_names = ["foo"]
+  server_ips   = local.controller_ips
+  server_names = local.controller_names
 
   client_cns = ["kube-apiserver-etcd-client"]
 
@@ -65,15 +90,28 @@ module "kubernetes_pki" {
   root_ca_key       = module.root_pki.root_ca_key
   root_ca_algorithm = module.root_pki.root_ca_algorithm
 
-  api_server_ips            = [var.node_internal_ip]
+  api_server_ips            = local.controller_ips
   api_server_external_ips   = ["127.0.1.1"]
   api_server_external_names = ["kube-apiserver.example.com"]
   organization              = "example"
 }
 
+resource "null_resource" "workers" {
+  count = var.workers_count
+
+  triggers = {
+    name = format("worker%02d", count.index)
+    ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
+    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + var.controllers_count)
+  }
+}
+
 locals {
+  worker_ips = null_resource.workers.*.triggers.ip
+  worker_cidrs = null_resource.workers.*.triggers.cidr
+
   etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
-    peer_ssh_addresses = [var.node_address]
+    peer_ssh_addresses = local.controller_ips
     peer_ips           = module.etcd_pki.etcd_peer_ips
     peer_names         = module.etcd_pki.etcd_peer_names
     peer_ca            = module.etcd_pki.etcd_ca_cert
@@ -81,17 +119,17 @@ locals {
     peer_keys          = module.etcd_pki.etcd_peer_keys
     server_certs       = module.etcd_pki.etcd_server_certs
     server_keys        = module.etcd_pki.etcd_server_keys
-    server_ips         = [var.node_internal_ip]
+    server_ips         = local.controller_ips
     ssh_private_key    = file(var.ssh_private_key_path)
     ssh_port           = var.node_ssh_port
   })
 
   apiloadbalancer_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    metrics_bind_addresses = [var.node_internal_ip]
+    metrics_bind_addresses = concat(local.controller_ips, local.worker_ips)
     ssh_private_key        = file(var.ssh_private_key_path)
-    ssh_addresses          = [var.node_internal_ip]
+    ssh_addresses          = concat(local.controller_ips, local.worker_ips)
     ssh_port               = var.node_ssh_port
-    servers                = [var.node_internal_ip]
+    servers                = local.controller_ips
   })
 
   controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
@@ -114,13 +152,13 @@ locals {
     etcd_ca_certificate               = module.etcd_pki.etcd_ca_cert
     etcd_client_certificate           = module.etcd_pki.client_certs[0]
     etcd_client_key                   = module.etcd_pki.client_keys[0]
-    api_server_address                = var.node_internal_ip
+    api_server_address                = local.first_controller_ip
     etcd_servers                      = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
-    ssh_address                       = var.node_address
+    ssh_address                       = local.first_controller_ip
     ssh_port                          = var.node_ssh_port
     ssh_private_key                   = file(var.ssh_private_key_path)
     root_ca_certificate               = module.root_pki.root_ca_cert
-    replicas                          = 1
+    replicas                          = var.controllers_count
   })
 
   kube_apiserver_values = templatefile("./templates/kube-apiserver-values.yaml.tmpl", {
@@ -137,8 +175,8 @@ locals {
     etcd_client_certificate        = module.etcd_pki.client_certs[0]
     etcd_client_key                = module.etcd_pki.client_keys[0]
     etcd_servers                   = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
-    replicas                       = 1
-    max_unavailable                = 1
+    replicas                       = var.controllers_count
+    max_unavailable                = var.controllers_count > 1 ? 1 : 0
   })
 
   kubernetes_values = templatefile("./templates/values.yaml.tmpl", {
@@ -146,9 +184,9 @@ locals {
     kubernetes_ca_key           = module.kubernetes_pki.kubernetes_ca_key
     root_ca_certificate         = module.root_pki.root_ca_cert
     kubernetes_ca_certificate   = module.kubernetes_pki.kubernetes_ca_cert
-    api_servers                 = ["${var.node_internal_ip}:6443"]
-    replicas                    = 1
-    max_unavailable             = 0
+    api_servers                 = formatlist("%s:6443", local.controller_ips)
+    replicas                    = var.controllers_count
+    max_unavailable             = var.controllers_count > 1 ? 1 : 0
   })
 
   coredns_values = <<EOF
@@ -158,25 +196,38 @@ EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
-    server      = "https://${var.node_address}:6443"
+    server      = "https://${local.first_controller_ip}:6443"
     ca_cert     = base64encode(module.kubernetes_pki.kubernetes_ca_cert)
     client_cert = base64encode(module.kubernetes_pki.kubernetes_admin_cert)
     client_key  = base64encode(module.kubernetes_pki.kubernetes_admin_key)
   })
 
   bootstrap_kubeconfig = templatefile("./templates/bootstrap-kubeconfig.tmpl", {
-    address = var.node_internal_ip
+    address = var.controllers_count > 1 ? "localhost" : cidrhost(var.nodes_cidr, 2)
   })
 
   kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses         = [var.node_internal_ip]
-    bootstrap_kubeconfigs     = [local.bootstrap_kubeconfig]
+    kubelet_addresses         = local.controller_ips
+    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
     ssh_private_key           = file(var.ssh_private_key_path)
-    ssh_addresses             = [var.node_address]
+    ssh_addresses             = local.controller_ips
     ssh_port                  = var.node_ssh_port
-    kubelet_pod_cidrs         = ["10.1.0.0/24"]
+    kubelet_pod_cidrs         = local.controller_cidrs
     kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
   })
+
+  kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
+    kubelet_addresses         = local.worker_ips
+    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+    ssh_private_key           = file(var.ssh_private_key_path)
+    ssh_addresses             = local.worker_ips
+    ssh_port                  = var.node_ssh_port
+    kubelet_pod_cidrs         = local.worker_cidrs
+    kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+  })
+
+  deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0
+  deploy_workers         = var.workers_count > 0 ? 1 : 0
 }
 
 resource "local_file" "kubeconfig" {
@@ -189,7 +240,8 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 
 resource "flexkube_apiloadbalancer_pool" "controllers" {
-  count  = 0
+  count = local.deploy_apiloadbalancer
+
   config = local.apiloadbalancer_config
 
   depends_on = [
@@ -255,6 +307,17 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
 
 resource "flexkube_kubelet_pool" "controller" {
   config = local.kubelet_pool_config
+
+  depends_on = [
+    flexkube_apiloadbalancer_pool.controllers,
+    flexkube_helm_release.kubernetes,
+  ]
+}
+
+resource "flexkube_kubelet_pool" "workers" {
+  count = local.deploy_workers
+
+  config = local.kubelet_worker_pool_config
 
   depends_on = [
     flexkube_apiloadbalancer_pool.controllers,

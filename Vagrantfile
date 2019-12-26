@@ -1,39 +1,101 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 Vagrant.configure("2") do |config|
-  # Box setup
+  # Box setup.
   config.vm.box     = "flatcar-edge"
   config.vm.box_url = "https://edge.release.flatcar-linux.net/amd64-usr/current/flatcar_production_vagrant.box"
 
-  # Sync using rsync, but don't copy locally built binaries and don't remove Terraform files from virtual machine
-  config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing"]
-
-  # Virtualbox + resources
+  # Virtualbox resources.
   config.vm.provider :virtualbox do |v|
     v.check_guest_additions = false
     v.functional_vboxsf     = false
-    v.cpus                  = 6
-    v.memory                = 4096
+    v.cpus                  = 2
+    v.memory                = 2048
     v.customize ['modifyvm', :id, '--paravirtprovider', 'kvm']
   end
 
-  # SSH
-  config.ssh.username   = 'core'
+  # SSH.
+  config.ssh.username = 'core'
 
-  # Provisioning
+  # Number of controllers and workers.
+  controllers = ENV["TF_VAR_controllers_count"].to_i || 1
+  workers = ENV["TF_VAR_workers_count"].to_i || 0
+  nodes_cidr = (ENV["TF_VAR_nodes_cidr"] || "192.168.50.0/24").split("/")[0].split(".")[0..2].join(".") + "."
+
+  # Make sure there is only one primary VM.
+  primary = true
+
+  # Build route table for each node.
+  #
+  # TODO only required when kubenet network plugin is used.
+  routes = []
+  (2..253).each do |i|
+    r = <<EOF
+[Route]
+Gateway=192.168.50.#{i}
+Destination=10.1.#{i-2}.0/24
+EOF
+    routes.push(r)
+  end
+
+  # Controllers.
+  (1..controllers).each do |i|
+    config.vm.define vm_name = "controller%02d" % i, primary: primary do |config|
+      # Set hostname
+      config.vm.hostname = vm_name
+
+      config.vm.network "private_network", ip: nodes_cidr + (i+1).to_s
+
+      if primary
+        primary = false
+
+        config.vm.provider :virtualbox do |v|
+          v.cpus                  = 6
+          v.memory                = 4096
+        end
+
+        # Sync using rsync, but don't copy locally built binaries and don't remove Terraform files from virtual machine.
+        config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing"]
+
+        # Read content of Vagrant SSH private key.
+        ssh_private_key = File.read(ENV['HOME'] + "/.vagrant.d/insecure_private_key")
+
+        # Provisioning.
+        config.vm.provision "shell", inline: <<-EOF
+          set -e
+          echo "#{ssh_private_key}" > /home/core/.ssh/id_rsa && chmod 0600 /home/core/.ssh/id_rsa
+          openssl rand -base64 14 > /home/core/.password
+          yes $(cat /home/core/.password) | sudo passwd core
+          mkdir -p /etc/systemd/network/50-vagrant1.network.d && echo "#{(routes - [routes[i-1]]).join("\n")}" | sudo tee /etc/systemd/network/50-vagrant1.network.d/routes.conf >/dev/null
+          sudo iptables -t nat -A POSTROUTING -s 10.1.#{i-1}.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
+        EOF
+
+        # Forward kube-apiserver port to host.
+        config.vm.network "forwarded_port", guest: 6443, host: 6443
+      end
+    end
+  end
+
+  # Workers.
+  (1..workers).each do |i|
+    config.vm.define vm_name = "worker%02d" % i do |config|
+      config.vm.hostname = vm_name
+      config.vm.network "private_network", ip: nodes_cidr + (i+1+controllers).to_s
+
+      # Provisioning.
+      config.vm.provision "shell", inline: <<-EOF
+        set -e
+        mkdir -p /etc/systemd/network/50-vagrant1.network.d && echo "#{(routes - [routes[i-1+controllers]]).join("\n")}" | sudo tee /etc/systemd/network/50-vagrant1.network.d/routes.conf >/dev/null
+        sudo iptables -t nat -A POSTROUTING -s 10.1.#{i-1+controllers}.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
+      EOF
+    end
+  end
+
+  # Provisioning.
   config.vm.provision "shell", inline: <<-EOF
     set -e
-    ssh-keygen -b 2048 -t rsa -f /home/core/.ssh/id_rsa -q -N ''
-    cat /home/core/.ssh/id_rsa.pub >> /home/core/.ssh/authorized_keys.d/generated
-    sudo update-ssh-keys
-    openssl rand -base64 14 > /home/core/.password
-    yes $(cat /home/core/.password) | sudo passwd core
-    # SNAT traffic from pods (10.1.0.0/24) to e.g. DNS server (10.0.2.3 by default) using host IP (10.0.2.15)
-    sudo iptables -t nat -A POSTROUTING -s 10.1.0.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
     sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
+    sudo systemctl restart systemd-networkd
     sudo systemctl start docker systemd-timesyncd iptables-store
   EOF
-
-  # Forward kube-apiserver port to host
-  config.vm.network "forwarded_port", guest: 6443, host: 6443
 end

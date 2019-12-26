@@ -3,7 +3,7 @@ kubelets:
 - address: ${kubelet_addresses[index]}
   podCIDR: ${kubelet_pod_cidrs[index]}
   bootstrapKubeconfig: |
-      ${indent(6, trimspace(bootstrap_kubeconfigs[index]))}
+      ${indent(6, trimspace(bootstrap_kubeconfig))}
   host:
       ssh:
           address: ${ssh_address}
