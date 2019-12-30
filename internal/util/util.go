@@ -26,7 +26,7 @@ func PickInt(values ...int) int {
 	return 0
 }
 
-// Indent indents a block of text with an indent string
+// Indent indents a block of text with an indent string.
 func Indent(text, indent string) string {
 	if text[len(text)-1:] == "\n" {
 		result := ""
