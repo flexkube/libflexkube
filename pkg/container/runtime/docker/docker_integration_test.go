@@ -222,3 +222,89 @@ func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
 
 	return r, (r.(*docker))
 }
+
+func deleteImage(t *testing.T, image string) {
+	_, d := getDockerRuntime(t)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Finding image to delete failed: %v", err)
+	}
+
+	if id == "" {
+		return
+	}
+
+	if _, err := d.cli.ImageRemove(d.ctx, id, dockertypes.ImageRemoveOptions{}); err != nil {
+		t.Fatalf("Removing existing docker image should succeed, got: %v", err)
+	}
+}
+
+// imageID()
+func TestImageID(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "haproxy:2.0.7-alpine"
+
+	// Make sure image is present on the host.
+	if err := d.pullImage(image); err != nil {
+		t.Fatalf("Pulling image failed: %v", err)
+	}
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Checking image presence failed: %v", err)
+	}
+
+	if id == "" {
+		t.Fatalf("Pre-pulled image should be present")
+	}
+}
+
+func TestImageIDMissing(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "wrk2:latest"
+
+	deleteImage(t, image)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id != "" {
+		t.Fatalf("Deleted image should not be not found")
+	}
+}
+
+// pullImage()
+func TestPullImage(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "busybox:latest"
+
+	deleteImage(t, image)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id != "" {
+		t.Fatalf("Deleted image should not be not found")
+	}
+
+	if err := d.pullImage(image); err != nil {
+		t.Fatalf("Pulling image failed: %v", err)
+	}
+
+	id, err = d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id == "" {
+		t.Fatalf("Pulled image should be present")
+	}
+}

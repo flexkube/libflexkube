@@ -280,3 +280,42 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 
 	return files, nil
 }
+
+// imageID lists images which are pulled on the host and looks for the tag given by the user.
+//
+// If image with given tag is found, it's ID is returned.
+// If image is not pulled, empty string is returned.
+//
+// This method allows to check if the image is present on the host.
+func (d *docker) imageID(image string) (string, error) {
+	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("listing docker images failed: %w", err)
+	}
+
+	for _, i := range images {
+		for _, tag := range i.RepoTags {
+			if tag == image {
+				return i.ID, nil
+			}
+		}
+	}
+
+	return "", nil
+}
+
+// pullImage pulls specified container image.
+func (d *docker) pullImage(image string) error {
+	out, err := d.cli.ImagePull(d.ctx, image, dockertypes.ImagePullOptions{})
+	if err != nil {
+		return fmt.Errorf("pulling image failed: %w", err)
+	}
+
+	defer out.Close()
+
+	if _, err := io.Copy(ioutil.Discard, out); err != nil {
+		return fmt.Errorf("failed to discard pulling messages: %w", err)
+	}
+
+	return nil
+}
