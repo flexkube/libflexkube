@@ -74,15 +74,16 @@ func (c *Config) New() (runtime.Runtime, error) {
 func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
-	out, err := d.cli.ImagePull(d.ctx, config.Image, dockertypes.ImagePullOptions{})
+	id, err := d.imageID(config.Image)
 	if err != nil {
-		return "", fmt.Errorf("pulling image: %w", err)
+		return "", fmt.Errorf("failed checking for image presence: %w", err)
 	}
 
-	defer out.Close()
+	if id == "" {
 
-	if _, err := io.Copy(ioutil.Discard, out); err != nil {
-		return "", fmt.Errorf("failed to pull image: %w", err)
+		if err := d.pullImage(config.Image); err != nil {
+			return "", fmt.Errorf("failed pulling image: %w", err)
+		}
 	}
 
 	// TODO That should be validated at ContainerConfig level!
