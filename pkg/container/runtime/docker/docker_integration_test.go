@@ -61,20 +61,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 
 	r, d := getDockerRuntime(t)
 
-	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
-	if err != nil {
-		t.Fatalf("Listing docker images should succeed, got: %v", err)
-	}
-
-	for _, i := range images {
-		for _, tag := range i.RepoTags {
-			if tag == image {
-				if _, err := d.cli.ImageRemove(d.ctx, i.ID, dockertypes.ImageRemoveOptions{}); err != nil {
-					t.Fatalf("Removing existing docker image should succeed, got: %v", err)
-				}
-			}
-		}
-	}
+	deleteImage(t, image)
 
 	c := &types.ContainerConfig{
 		Image: image,
