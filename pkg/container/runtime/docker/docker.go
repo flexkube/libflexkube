@@ -23,23 +23,23 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
-// Config struct represents Docker container runtime configuration
+// Config struct represents Docker container runtime configuration.
 type Config struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
 }
 
-// docker struct is a struct, which can be used to manage Docker containers
+// docker struct is a struct, which can be used to manage Docker containers.
 type docker struct {
 	ctx context.Context
 	cli *client.Client
 }
 
-// SetAddress sets runtime config address where it should connect
+// SetAddress sets runtime config address where it should connect.
 func (c *Config) SetAddress(s string) {
 	c.Host = s
 }
 
-// GetAddress returns configured container runtime address
+// GetAddress returns configured container runtime address.
 func (c *Config) GetAddress() string {
 	if c != nil && c.Host != "" {
 		return c.Host
@@ -70,7 +70,7 @@ func (c *Config) New() (runtime.Runtime, error) {
 	}, nil
 }
 
-// Start starts Docker container
+// Start starts Docker container.
 func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
@@ -139,7 +139,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		},
 	}
 
-	// Create container
+	// Create container.
 	c, err := d.cli.ContainerCreate(d.ctx, &dockerConfig, &hostConfig, &network.NetworkingConfig{}, config.Name)
 	if err != nil {
 		return "", fmt.Errorf("creating container: %w", err)
@@ -148,23 +148,23 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	return c.ID, nil
 }
 
-// Start starts Docker container
+// Start starts Docker container.
 func (d *docker) Start(id string) error {
 	return d.cli.ContainerStart(d.ctx, id, dockertypes.ContainerStartOptions{})
 }
 
-// Stop stops Docker container
+// Stop stops Docker container.
 func (d *docker) Stop(id string) error {
 	// TODO make this configurable?
 	timeout := time.Duration(30) * time.Second
 	return d.cli.ContainerStop(d.ctx, id, &timeout)
 }
 
-// Status returns container status
+// Status returns container status.
 func (d *docker) Status(id string) (*types.ContainerStatus, error) {
 	status, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
-		// If container is missing, return no status
+		// If container is missing, return no status.
 		if client.IsErrNotFound(err) {
 			return nil, nil
 		}
@@ -180,7 +180,7 @@ func (d *docker) Status(id string) (*types.ContainerStatus, error) {
 	}, nil
 }
 
-// Delete removes the container
+// Delete removes the container.
 func (d *docker) Delete(id string) error {
 	return d.cli.ContainerRemove(d.ctx, id, dockertypes.ContainerRemoveOptions{})
 }
@@ -233,7 +233,7 @@ func (d *docker) Stat(id string, paths []string) (map[string]*os.FileMode, error
 	return result, nil
 }
 
-// Read reads files from container
+// Read reads files from container.
 func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 	files := []*types.File{}
 
