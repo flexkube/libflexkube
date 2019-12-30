@@ -56,3 +56,16 @@ func TestIndentWithNewline(t *testing.T) {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
 }
+
+func TestJoinSorted(t *testing.T) {
+	expected := "baz/doh|foo/bar"
+
+	values := map[string]string{
+		"foo": "bar",
+		"baz": "doh",
+	}
+
+	if a := JoinSorted(values, "/", "|"); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
