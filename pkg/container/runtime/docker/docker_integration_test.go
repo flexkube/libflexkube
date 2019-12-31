@@ -8,35 +8,26 @@ import (
 
 	dockertypes "github.com/docker/docker/api/types"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
 // Create
 func TestContainerCreate(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
 	}
 
-	if _, err = r.Create(cc); err != nil {
+	if _, err := r.Create(cc); err != nil {
 		t.Errorf("Creating container should succeed, got: %s", err)
 	}
 }
 
 func TestContainerCreateDelete(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
@@ -53,18 +44,13 @@ func TestContainerCreateDelete(t *testing.T) {
 }
 
 func TestContainerCreateNonExistingImage(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
 		Image: "nonexistingimage",
 	}
 
-	if _, err = r.Create(cc); err == nil {
+	if _, err := r.Create(cc); err == nil {
 		t.Errorf("Creating container with non-existing image should fail")
 	}
 }
@@ -73,29 +59,9 @@ func TestContainerCreatePullImage(t *testing.T) {
 	// Don't use default version of image, to have better chance it can be removed
 	image := "gcr.io/etcd-development/etcd:v3.3.0"
 
-	dc := &Config{}
+	r, d := getDockerRuntime(t)
 
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
-
-	d := (r.(*docker))
-
-	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
-	if err != nil {
-		t.Fatalf("Listing docker images should succeed, got: %v", err)
-	}
-
-	for _, i := range images {
-		for _, tag := range i.RepoTags {
-			if tag == image {
-				if _, err := d.cli.ImageRemove(d.ctx, i.ID, dockertypes.ImageRemoveOptions{}); err != nil {
-					t.Fatalf("Removing existing docker image should succeed, got: %v", err)
-				}
-			}
-		}
-	}
+	deleteImage(t, image)
 
 	c := &types.ContainerConfig{
 		Image: image,
@@ -114,12 +80,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 func TestContainerCreateWithArgs(t *testing.T) {
 	args := []string{"--logger=zap"}
 
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, d := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
 		Image:      defaults.EtcdImage,
@@ -131,8 +92,6 @@ func TestContainerCreateWithArgs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Creating container with args should succeed, got: %v", err)
 	}
-
-	d := (r.(*docker))
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
@@ -147,12 +106,7 @@ func TestContainerCreateWithArgs(t *testing.T) {
 func TestContainerCreateWithEntrypoint(t *testing.T) {
 	entrypoint := []string{"/bin/bash"}
 
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, d := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
 		Image:      defaults.EtcdImage,
@@ -163,8 +117,6 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Creating container with entrypoint should succeed, got: %v", err)
 	}
-
-	d := (r.(*docker))
 
 	data, err := d.cli.ContainerInspect(d.ctx, id)
 	if err != nil {
@@ -178,12 +130,7 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 
 // Start()
 func TestContainerStart(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
@@ -201,12 +148,7 @@ func TestContainerStart(t *testing.T) {
 
 // Stop()
 func TestContainerStop(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
@@ -228,12 +170,7 @@ func TestContainerStop(t *testing.T) {
 
 // Status()
 func TestContainerStatus(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
 		Image: defaults.EtcdImage,
@@ -250,12 +187,7 @@ func TestContainerStatus(t *testing.T) {
 }
 
 func TestContainerStatusNonExistent(t *testing.T) {
-	dc := &Config{}
-
-	r, err := dc.New()
-	if err != nil {
-		t.Errorf("Creating new docker runtime should succeed, got: %s", err)
-	}
+	r, _ := getDockerRuntime(t)
 
 	status, err := r.Status("nonexistent")
 	if err != nil {
@@ -264,5 +196,102 @@ func TestContainerStatusNonExistent(t *testing.T) {
 
 	if status != nil {
 		t.Errorf("Getting non-existent container status shouldn't return any status")
+	}
+}
+
+func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
+	dc := &Config{}
+
+	r, err := dc.New()
+	if err != nil {
+		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
+	}
+
+	return r, (r.(*docker))
+}
+
+func deleteImage(t *testing.T, image string) {
+	_, d := getDockerRuntime(t)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Finding image to delete failed: %v", err)
+	}
+
+	if id == "" {
+		return
+	}
+
+	if _, err := d.cli.ImageRemove(d.ctx, id, dockertypes.ImageRemoveOptions{}); err != nil {
+		t.Fatalf("Removing existing docker image should succeed, got: %v", err)
+	}
+}
+
+// imageID()
+func TestImageID(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "haproxy:2.0.7-alpine"
+
+	// Make sure image is present on the host.
+	if err := d.pullImage(image); err != nil {
+		t.Fatalf("Pulling image failed: %v", err)
+	}
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Checking image presence failed: %v", err)
+	}
+
+	if id == "" {
+		t.Fatalf("Pre-pulled image should be present")
+	}
+}
+
+func TestImageIDMissing(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "wrk2:latest"
+
+	deleteImage(t, image)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id != "" {
+		t.Fatalf("Deleted image should not be not found")
+	}
+}
+
+// pullImage()
+func TestPullImage(t *testing.T) {
+	_, d := getDockerRuntime(t)
+
+	image := "busybox:latest"
+
+	deleteImage(t, image)
+
+	id, err := d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id != "" {
+		t.Fatalf("Deleted image should not be not found")
+	}
+
+	if err := d.pullImage(image); err != nil {
+		t.Fatalf("Pulling image failed: %v", err)
+	}
+
+	id, err = d.imageID(image)
+	if err != nil {
+		t.Fatalf("Getting image ID failed: %v", err)
+	}
+
+	if id == "" {
+		t.Fatalf("Pulled image should be present")
 	}
 }
