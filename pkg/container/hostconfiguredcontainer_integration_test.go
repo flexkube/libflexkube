@@ -14,6 +14,11 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
+const (
+	// containerRunningDelay is how long we wait for container to start and report as running by Docker.
+	containerRunningDelay = 3 * time.Second
+)
+
 // Create()
 func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	p := "/tmp/foo"
@@ -66,7 +71,7 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	}
 
 	// Sleep a bit, to make sure container starts etc.
-	time.Sleep(3 * time.Second)
+	time.Sleep(containerRunningDelay)
 
 	if err = hcc.Status(); err != nil {
 		t.Fatalf("Checking host configured container status should succeed, got: %v", err)

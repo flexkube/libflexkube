@@ -23,6 +23,11 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
+const (
+	// stopTimeout is how long we wait when gracefully stopping the container before force-killing it.
+	stopTimeout = 30 * time.Second
+)
+
 // Config struct represents Docker container runtime configuration.
 type Config struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
@@ -155,8 +160,8 @@ func (d *docker) Start(id string) error {
 
 // Stop stops Docker container.
 func (d *docker) Stop(id string) error {
-	// TODO make this configurable?
-	timeout := time.Duration(30) * time.Second
+	// TODO make timeout configurable?
+	timeout := stopTimeout
 	return d.cli.ContainerStop(d.ctx, id, &timeout)
 }
 

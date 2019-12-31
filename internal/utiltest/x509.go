@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+const (
+	// certValidityDuration is how long certificate is valid from the moment of generation.
+	certValidityDuration = 1 * time.Hour
+)
+
 // GenerateX509Certificate generates random X.509 certificate and
 // returns it as string in PEM format.
 func GenerateX509Certificate(t *testing.T) string {
@@ -20,7 +25,7 @@ func GenerateX509Certificate(t *testing.T) string {
 		t.Fatalf("Failed to generate RSA key: %v", err)
 	}
 
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -33,7 +38,7 @@ func GenerateX509Certificate(t *testing.T) string {
 			Organization: []string{"example"},
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(1 * time.Hour),
+		NotAfter:  time.Now().Add(certValidityDuration),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
