@@ -81,3 +81,18 @@ func (s containersState) CreateAndStart(containerName string) error {
 
 	return nil
 }
+
+// Export converts unexported containersState to exported type, so it can be serialized and stored.
+func (s containersState) Export() ContainersState {
+	cs := ContainersState{}
+
+	for i, m := range s {
+		cs[i] = &HostConfiguredContainer{
+			Container:   m.container,
+			Host:        m.host,
+			ConfigFiles: m.configFiles,
+		}
+	}
+
+	return cs
+}
