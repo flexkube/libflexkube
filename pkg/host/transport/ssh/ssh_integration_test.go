@@ -30,7 +30,7 @@ func TestPasswordAuth(t *testing.T) {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 		Password:          strings.TrimSpace(string(pass)),
 	}
 
@@ -51,7 +51,7 @@ func TestPasswordAuthFail(t *testing.T) {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 		Password:          "badpassword",
 	}
 
@@ -85,7 +85,7 @@ func withPrivateKey(t *testing.T) transport.Transport {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 		PrivateKey:        string(key),
 	}
 

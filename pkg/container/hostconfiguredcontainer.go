@@ -9,8 +9,16 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
-// ConfigMountpoint is where host file-system is mounted in the -config container.
-const ConfigMountpoint = "/mnt/host"
+const (
+	// ConfigMountpoint is where host file-system is mounted in the -config container.
+	ConfigMountpoint = "/mnt/host"
+
+	// configFileMode is default configuration file permissions.
+	configFileMode = 0600
+
+	// mountpointDirMode is default host mountpoint directory permission.
+	mountpointDirMode = 0755
+)
 
 // HostConfiguredContainer represents single container, running on remote host with it's configuration files
 type HostConfiguredContainer struct {
@@ -226,7 +234,7 @@ func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
 		files = append(files, &types.File{
 			Path:    path.Join(ConfigMountpoint, p),
 			Content: content,
-			Mode:    0600,
+			Mode:    configFileMode,
 		})
 	}
 
@@ -275,7 +283,7 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 		if !exists && m.Source[len(m.Source)-1:] == "/" {
 			files = append(files, &types.File{
 				Path: fmt.Sprintf("%s/", p),
-				Mode: 0755,
+				Mode: mountpointDirMode,
 			})
 		}
 	}

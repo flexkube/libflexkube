@@ -9,6 +9,11 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
+const (
+	// securePort is a TLS port used for testing.
+	securePort = 6443
+)
+
 func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
@@ -22,7 +27,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 		AdvertiseAddress:         nonEmptyString,
 		EtcdServers:              []string{nonEmptyString},
 		ServiceCIDR:              nonEmptyString,
-		SecurePort:               6443,
+		SecurePort:               securePort,
 		FrontProxyCACertificate:  cert,
 		FrontProxyCertificate:    cert,
 		FrontProxyKey:            privateKey,
@@ -67,7 +72,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				AdvertiseAddress:        nonEmptyString,
 				EtcdServers:             []string{nonEmptyString},
 				ServiceCIDR:             nonEmptyString,
-				SecurePort:              6443,
+				SecurePort:              securePort,
 				FrontProxyCACertificate: cert,
 				FrontProxyCertificate:   cert,
 				FrontProxyKey:           privateKey,
@@ -89,7 +94,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				AdvertiseAddress:         nonEmptyString,
 				EtcdServers:              []string{nonEmptyString},
 				ServiceCIDR:              nonEmptyString,
-				SecurePort:               6443,
+				SecurePort:               securePort,
 				FrontProxyCACertificate:  cert,
 				FrontProxyCertificate:    cert,
 				FrontProxyKey:            privateKey,
@@ -112,7 +117,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				AdvertiseAddress:         nonEmptyString,
 				EtcdServers:              []string{nonEmptyString},
 				ServiceCIDR:              nonEmptyString,
-				SecurePort:               6443,
+				SecurePort:               securePort,
 				FrontProxyCACertificate:  cert,
 				FrontProxyCertificate:    cert,
 				FrontProxyKey:            privateKey,

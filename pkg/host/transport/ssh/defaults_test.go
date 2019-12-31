@@ -5,6 +5,11 @@ import (
 	"testing"
 )
 
+const (
+	// customPort is a port, which differs from default SSH port.
+	customPort = 33
+)
+
 func TestBuildConfig(t *testing.T) {
 	cases := []struct {
 		config   *Config
@@ -159,12 +164,12 @@ func TestBuildConfig(t *testing.T) {
 		// Port
 		{
 			&Config{
-				Port: 33,
+				Port: customPort,
 			},
 			nil,
 			&Config{
 				ConnectionTimeout: ConnectionTimeout,
-				Port:              33,
+				Port:              customPort,
 				User:              User,
 				RetryTimeout:      RetryTimeout,
 				RetryInterval:     RetryInterval,
@@ -172,14 +177,14 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			&Config{
-				Port: 33,
+				Port: customPort,
 			},
 			&Config{
-				Port: 44,
+				Port: 44, //nolint:gomnd
 			},
 			&Config{
 				ConnectionTimeout: ConnectionTimeout,
-				Port:              33,
+				Port:              customPort,
 				User:              User,
 				RetryTimeout:      RetryTimeout,
 				RetryInterval:     RetryInterval,
@@ -188,11 +193,11 @@ func TestBuildConfig(t *testing.T) {
 		{
 			nil,
 			&Config{
-				Port: 33,
+				Port: customPort,
 			},
 			&Config{
 				ConnectionTimeout: ConnectionTimeout,
-				Port:              33,
+				Port:              customPort,
 				User:              User,
 				RetryTimeout:      RetryTimeout,
 				RetryInterval:     RetryInterval,

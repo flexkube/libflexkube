@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 		PrivateKey:        privateKey,
 	}
 	if _, err := c.New(); err != nil {
@@ -52,7 +52,7 @@ func TestValidateRequireAddress(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require address field")
@@ -66,7 +66,7 @@ func TestValidateRequireUser(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require user field")
@@ -80,7 +80,7 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require at least one authentication method")
@@ -94,7 +94,7 @@ func TestValidateRequireConnectionTimeout(t *testing.T) {
 		Password:      "foo",
 		RetryTimeout:  "60s",
 		RetryInterval: "1s",
-		Port:          22,
+		Port:          Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require connection timeout field")
@@ -108,7 +108,7 @@ func TestValidateRequireRetryTimeout(t *testing.T) {
 		Password:          "foo",
 		ConnectionTimeout: "30s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should require retry timeout field")
@@ -120,7 +120,7 @@ func TestValidateRequireRetryInterval(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		Password:          "foo",
-		Port:              22,
+		Port:              Port,
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 	}
@@ -151,7 +151,7 @@ func TestValidateParseConnectionTimeout(t *testing.T) {
 		ConnectionTimeout: "30",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should parse connection timeout")
@@ -166,7 +166,7 @@ func TestValidateParseRetryTimeout(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should parse retry timeout")
@@ -181,7 +181,7 @@ func TestValidateParseRetryInterval(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1",
-		Port:              22,
+		Port:              Port,
 	}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("validating SSH configuration should parse retry interval")
@@ -195,7 +195,7 @@ func TestValidateParsePrivateKey(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-		Port:              22,
+		Port:              Port,
 		PrivateKey:        "foo",
 	}
 	if _, err := c.New(); err == nil {
