@@ -20,11 +20,21 @@ const (
 	mountpointDirMode = 0755
 )
 
+// Hooks defines type of hooks HostConfiguredContainer supports.
+type Hooks struct {
+	PostStart *Hook
+}
+
+// Hook is an action, which may be called before or after certain container operation, like starting or creating.
+type Hook func() error
+
 // HostConfiguredContainer represents single container, running on remote host with it's configuration files
 type HostConfiguredContainer struct {
 	Container   Container         `json:"container" yaml:"container"`
 	Host        host.Host         `json:"host" yaml:"host"`
 	ConfigFiles map[string]string `json:"configFiles,omitempty" yaml:"configFiles,omitempty"`
+
+	Hooks *Hooks `json:"-" yaml:"-"`
 }
 
 // hostConfiguredContainer is a validated version of HostConfiguredContainer, which allows user to perform
@@ -34,6 +44,7 @@ type hostConfiguredContainer struct {
 	host            host.Host
 	configFiles     map[string]string
 	configContainer *Container
+	hooks           *Hooks
 }
 
 // New validates HostConfiguredContainer struct and return it's executable version
@@ -42,11 +53,18 @@ func (m *HostConfiguredContainer) New() (*hostConfiguredContainer, error) {
 		return nil, fmt.Errorf("failed to valide container configuration: %w", err)
 	}
 
-	return &hostConfiguredContainer{
+	hcc := &hostConfiguredContainer{
 		container:   m.Container,
 		host:        m.Host,
 		configFiles: m.ConfigFiles,
-	}, nil
+		hooks:       m.Hooks,
+	}
+
+	if hcc.hooks == nil {
+		hcc.hooks = &Hooks{}
+	}
+
+	return hcc, nil
 }
 
 // Validate validates HostConfiguredContainer struct. All validation rules should be placed here.
@@ -321,7 +339,9 @@ func (m *hostConfiguredContainer) Status() error {
 
 // Start starts created container.
 func (m *hostConfiguredContainer) Start() error {
-	return m.withForwardedRuntime(m.container.Start)
+	return withHook(nil, func() error {
+		return m.withForwardedRuntime(m.container.Start)
+	}, m.hooks.PostStart)
 }
 
 // Stop stops created container.
@@ -332,4 +352,25 @@ func (m *hostConfiguredContainer) Stop() error {
 // Delete removes node's data and removes the container.
 func (m *hostConfiguredContainer) Delete() error {
 	return m.withForwardedRuntime(m.container.Delete)
+}
+
+// withHook wraps given action function with pre and post functionality.
+//
+// This allows to inject custom actions before and after hostConfiguredContainer operations.
+func withHook(preHook *Hook, action func() error, postHook *Hook) error {
+	if preHook != nil {
+		if err := (*preHook)(); err != nil {
+			return err
+		}
+	}
+
+	if err := action(); err != nil {
+		return err
+	}
+
+	if postHook == nil {
+		return nil
+	}
+
+	return (*postHook)()
 }

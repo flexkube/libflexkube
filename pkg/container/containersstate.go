@@ -91,6 +91,7 @@ func (s containersState) Export() ContainersState {
 			Container:   m.container,
 			Host:        m.host,
 			ConfigFiles: m.configFiles,
+			Hooks:       m.hooks,
 		}
 	}
 
