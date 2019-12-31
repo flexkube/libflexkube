@@ -59,7 +59,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	// Don't use default version of image, to have better chance it can be removed
 	image := "gcr.io/etcd-development/etcd:v3.3.0"
 
-	r, d := getDockerRuntime(t)
+	r, _ := getDockerRuntime(t)
 
 	deleteImage(t, image)
 

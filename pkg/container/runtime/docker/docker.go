@@ -80,7 +80,6 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	}
 
 	if id == "" {
-
 		if err := d.pullImage(config.Image); err != nil {
 			return "", fmt.Errorf("failed pulling image: %w", err)
 		}
