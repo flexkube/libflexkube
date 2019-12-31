@@ -65,6 +65,7 @@ func (s containersState) RemoveContainer(containerName string) error {
 	return nil
 }
 
+// CreateAndStart is a helper, which creates and spawns given container.
 func (s containersState) CreateAndStart(containerName string) error {
 	if _, exists := s[containerName]; !exists {
 		return fmt.Errorf("can't create non-existing container")
