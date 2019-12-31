@@ -252,53 +252,20 @@ func FromYaml(c []byte) (*containers, error) {
 	return cl, nil
 }
 
-func (c *containers) CurrentStateToExported() *Containers {
-	containers := &Containers{
-		PreviousState: ContainersState{},
-	}
-	for i, m := range c.currentState {
-		containers.PreviousState[i] = &HostConfiguredContainer{
-			Container:   m.container,
-			Host:        m.host,
-			ConfigFiles: m.configFiles,
-		}
-	}
-
-	return containers
-}
-
+// CurrentStateToYaml dumps current state as previousState in exported format,
+// which can be serialized and stored.
 func (c *containers) CurrentStateToYaml() ([]byte, error) {
-	return yaml.Marshal(c.CurrentStateToExported())
-}
-
-func (c *containers) DesiredStateToExported() *Containers {
 	containers := &Containers{
-		DesiredState: ContainersState{},
-	}
-	for i, m := range c.desiredState {
-		containers.DesiredState[i] = &HostConfiguredContainer{
-			Container:   m.container,
-			Host:        m.host,
-			ConfigFiles: m.configFiles,
-		}
+		PreviousState: c.previousState.Export(),
 	}
 
-	return containers
+	return yaml.Marshal(containers)
 }
 
-func (c *containers) DesiredStateToYAML() ([]byte, error) {
-	return yaml.Marshal(c.DesiredStateToExported())
-}
-
+// ToExported converts containers struct to exported Containers.
 func (c *containers) ToExported() *Containers {
-	ccs := c.CurrentStateToExported()
-	ds := c.DesiredStateToExported()
-	ccs.DesiredState = ds.DesiredState
-
-	return ccs
-}
-
-// ToYaml allows to dump containers state to YAML, so it can be restored later.
-func (c *containers) ToYaml() ([]byte, error) {
-	return yaml.Marshal(c.ToExported())
+	return &Containers{
+		PreviousState: c.previousState.Export(),
+		DesiredState:  c.desiredState.Export(),
+	}
 }
