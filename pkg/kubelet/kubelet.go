@@ -21,6 +21,7 @@ type Kubelet struct {
 	// bootstrap-kubeconfig too then?
 	KubernetesCACertificate string   `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
 	ClusterDNSIPs           []string `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
+	Name                    string   `json:"name" yaml:"name"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
@@ -35,6 +36,7 @@ type kubelet struct {
 	kubernetesCACertificate string
 	clusterDNSIPs           []string
 	podCIDR                 string
+	name                    string
 }
 
 // New validates Kubelet configuration and returns it's usable version
@@ -52,6 +54,7 @@ func (k *Kubelet) New() (*kubelet, error) {
 		kubernetesCACertificate: k.KubernetesCACertificate,
 		clusterDNSIPs:           k.ClusterDNSIPs,
 		podCIDR:                 k.PodCIDR,
+		name:                    k.Name,
 	}
 
 	if nk.image == "" {
@@ -238,6 +241,8 @@ clusterDNS:
 				// we specify it equal to address.
 				// TODO make it optional/configurable?
 				fmt.Sprintf("--node-ip=%s", k.address),
+				// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
+				fmt.Sprintf("--hostname-override=%s", k.name),
 			},
 		},
 	}
