@@ -17,9 +17,26 @@ const (
 	certValidityDuration = 1 * time.Hour
 )
 
+// PKI struct holds X509 certificate and belonging RSA private key in PEM format.
+type PKI struct {
+	Certificate string
+	PrivateKey  string
+}
+
 // GenerateX509Certificate generates random X.509 certificate and
 // returns it as string in PEM format.
 func GenerateX509Certificate(t *testing.T) string {
+	return GeneratePKI(t).Certificate
+}
+
+// GenerateRSAPrivateKey generates RSA private key and returns it
+// as string in PEM format.
+func GenerateRSAPrivateKey(t *testing.T) string {
+	return GeneratePKI(t).PrivateKey
+}
+
+// GeneratePKI generates PKI struct
+func GeneratePKI(t *testing.T) *PKI {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("Failed to generate RSA key: %v", err)
@@ -50,20 +67,9 @@ func GenerateX509Certificate(t *testing.T) string {
 		t.Fatalf("Failed to create certificate: %v", err)
 	}
 
-	var buf bytes.Buffer
-	if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+	var cert bytes.Buffer
+	if err := pem.Encode(&cert, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
 		t.Fatalf("Failed to write data to cert.pem: %s", err)
-	}
-
-	return buf.String()
-}
-
-// GenerateRSAPrivateKey generates RSA private key and returns it
-// as string in PEM format.
-func GenerateRSAPrivateKey(t *testing.T) string {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("Failed to generate RSA key: %v", err)
 	}
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
@@ -71,10 +77,13 @@ func GenerateRSAPrivateKey(t *testing.T) string {
 		t.Fatalf("Unable to marshal private key: %v", err)
 	}
 
-	var buf bytes.Buffer
-	if err := pem.Encode(&buf, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
+	var key bytes.Buffer
+	if err := pem.Encode(&key, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
 		t.Fatalf("Failed to write data to key.pem: %s", err)
 	}
 
-	return buf.String()
+	return &PKI{
+		Certificate: cert.String(),
+		PrivateKey:  key.String(),
+	}
 }
