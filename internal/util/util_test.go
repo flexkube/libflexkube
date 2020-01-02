@@ -57,6 +57,27 @@ func TestIndentWithNewline(t *testing.T) {
 	}
 }
 
+func TestIndentEmpty(t *testing.T) {
+	expected := ""
+	if a := Indent("", ""); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
+
+func TestIndentEmptyText(t *testing.T) {
+	expected := ""
+	if a := Indent("", "  "); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
+
+func TestIndentEmptyIndent(t *testing.T) {
+	expected := "foo\nbar"
+	if a := Indent("foo\nbar", ""); a != expected {
+		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
+
 func TestJoinSorted(t *testing.T) {
 	expected := "baz/doh|foo/bar"
 

@@ -2,6 +2,7 @@ kubelets:
 %{ for index, ssh_address in ssh_addresses ~}
 - address: ${kubelet_addresses[index]}
   podCIDR: ${kubelet_pod_cidrs[index]}
+  name: ${kubelet_names[index]}
   bootstrapKubeconfig: |
       ${indent(6, trimspace(bootstrap_kubeconfig))}
   host:

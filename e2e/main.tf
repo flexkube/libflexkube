@@ -109,6 +109,7 @@ resource "null_resource" "workers" {
 locals {
   worker_ips = null_resource.workers.*.triggers.ip
   worker_cidrs = null_resource.workers.*.triggers.cidr
+  worker_names = null_resource.workers.*.triggers.name
 
   etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
     peer_ssh_addresses = local.controller_ips
@@ -214,6 +215,7 @@ EOF
     ssh_port                  = var.node_ssh_port
     kubelet_pod_cidrs         = local.controller_cidrs
     kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+    kubelet_names             = local.controller_names
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
@@ -224,6 +226,7 @@ EOF
     ssh_port                  = var.node_ssh_port
     kubelet_pod_cidrs         = local.worker_cidrs
     kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+    kubelet_names             = local.worker_names
   })
 
   deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0

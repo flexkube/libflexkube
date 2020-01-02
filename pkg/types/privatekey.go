@@ -8,7 +8,7 @@ import (
 )
 
 // PrivateKey is a wrapper on string type, which parses it's content
-// as PKCS#1 private key while unmarshalling. This allows to validate the
+// as private key while unmarshalling. This allows to validate the
 // data during unmarshalling process.
 type PrivateKey string
 
@@ -24,16 +24,22 @@ func (c *PrivateKey) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to decode PEM format")
 	}
 
-	if _, err := x509.ParsePKCS8PrivateKey(der.Bytes); err == nil {
+	f := func() error {
+		*c = PrivateKey(p)
+
 		return nil
+	}
+
+	if _, err := x509.ParsePKCS8PrivateKey(der.Bytes); err == nil {
+		return f()
 	}
 
 	if _, err := x509.ParsePKCS1PrivateKey(der.Bytes); err == nil {
-		return nil
+		return f()
 	}
 
 	if _, err := x509.ParseECPrivateKey(der.Bytes); err == nil {
-		return nil
+		return f()
 	}
 
 	return fmt.Errorf("unable to parse private key")
