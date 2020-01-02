@@ -30,6 +30,10 @@ func PickInt(values ...int) int {
 
 // Indent indents a block of text with an indent string.
 func Indent(text, indent string) string {
+	if text == "" {
+		return ""
+	}
+
 	if text[len(text)-1:] == "\n" {
 		result := ""
 		for _, j := range strings.Split(text[:len(text)-1], "\n") {
