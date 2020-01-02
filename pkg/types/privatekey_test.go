@@ -35,8 +35,23 @@ func TestPrivateKeyParse(t *testing.T) {
 
 		t.Run(n, func(t *testing.T) {
 			bar := &Foo{}
-			if err := yaml.Unmarshal([]byte(c.YAML), bar); !c.Error && err != nil {
+
+			err := yaml.Unmarshal([]byte(c.YAML), bar)
+
+			if c.Error && err == nil {
+				t.Fatalf("Expected error and didn't get any.")
+			}
+
+			if !c.Error && err != nil {
 				t.Fatalf("Didn't expect error, got: %v", err)
+			}
+
+			if err == nil && bar.Bar == "" {
+				t.Fatalf("Didn't get any error, but field is empty")
+			}
+
+			if err != nil && bar.Bar != "" {
+				t.Fatalf("Got error and still got some content")
 			}
 		})
 	}

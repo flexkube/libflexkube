@@ -28,5 +28,7 @@ func (c *Certificate) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
+	*c = Certificate(p)
+
 	return nil
 }
