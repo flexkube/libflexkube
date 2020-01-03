@@ -21,32 +21,34 @@ type Config struct {
 
 // Validate validates Config struct.
 func (c *Config) Validate() error {
+	var errors types.ValidateError
+
 	if c.Server == "" {
-		return fmt.Errorf("server is empty")
+		errors = append(errors, fmt.Errorf("server is empty"))
 	}
 
 	if c.ClientCertificate == "" {
-		return fmt.Errorf("client certificate is empty")
+		errors = append(errors, fmt.Errorf("client certificate is empty"))
 	}
 
 	if c.ClientKey == "" {
-		return fmt.Errorf("client key is empty")
+		errors = append(errors, fmt.Errorf("client key is empty"))
 	}
 
 	if c.CACertificate == "" {
-		return fmt.Errorf("ca certificate is empty")
+		errors = append(errors, fmt.Errorf("ca certificate is empty"))
 	}
 
 	b, err := yaml.Marshal(c)
 	if err != nil {
-		return fmt.Errorf("marshaling config should succeed, got: %w", err)
+		return append(errors, fmt.Errorf("marshaling config should succeed, got: %w", err))
 	}
 
 	if err := yaml.Unmarshal(b, c); err != nil {
-		return fmt.Errorf("certificate validation failed: %w", err)
+		return append(errors, fmt.Errorf("certificate validation failed: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // ToYAMLString converts given configuration to kubeconfig format as YAML text
