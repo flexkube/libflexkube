@@ -55,6 +55,21 @@ func (c *Config) ToYAMLString() (string, error) {
 		return "", fmt.Errorf("failed validating config: %w", err)
 	}
 
+	kubeconfig, err := c.renderKubeconfig()
+	if err != nil {
+		return "", fmt.Errorf("failed rendering kubeconfig: %w", err)
+	}
+
+	// Parse generated kubeconfig with Kubernetes client, to make sure everything is correct.
+	if _, err := NewClient([]byte(kubeconfig)); err != nil {
+		return "", fmt.Errorf("generated kubeconfig is invalid: %w", err)
+	}
+
+	return kubeconfig, nil
+}
+
+// renderKubeconfig renders Config as kubeconfig YAML.
+func (c *Config) renderKubeconfig() (string, error) {
 	t := `apiVersion: v1
 kind: Config
 clusters:
@@ -96,11 +111,6 @@ contexts:
 
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed executing template: %w", err)
-	}
-
-	// Parse generated kubeconfig with Kubernetes client, to make sure everything is correct.
-	if _, err := NewClient(buf.Bytes()); err != nil {
-		return "", fmt.Errorf("generated kubeconfig is invalid: %w", err)
 	}
 
 	return buf.String(), nil
