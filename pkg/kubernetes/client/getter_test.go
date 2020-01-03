@@ -19,4 +19,8 @@ func TestGetter(t *testing.T) {
 	if _, err := g.ToRESTMapper(); err != nil {
 		t.Errorf("Turning getter into REST mapper should work, got: %v", err)
 	}
+
+	if c := g.ToRawKubeConfigLoader(); c == nil {
+		t.Errorf("Turning getter into RawKubeConfigLoader should work")
+	}
 }
