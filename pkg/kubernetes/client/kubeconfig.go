@@ -5,24 +5,62 @@ import (
 	"encoding/base64"
 	"fmt"
 	"text/template"
+
+	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Config is a simlified version of kubeconfig.
 type Config struct {
-	Server            string `json:"server" yaml:"server"`
-	CACertificate     string `json:"caCertificate" yaml:"caCertificate"`
-	ClientCertificate string `json:"clientCertificate" yaml:"clientCertificate"`
-	ClientKey         string `json:"clientKey" yaml:"clientKey"`
+	Server            string            `json:"server" yaml:"server"`
+	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
+	ClientCertificate types.Certificate `json:"clientCertificate" yaml:"clientCertificate"`
+	ClientKey         types.PrivateKey  `json:"clientKey" yaml:"clientKey"`
+}
+
+// Validate validates Config struct.
+func (c *Config) Validate() error {
+	if c.Server == "" {
+		return fmt.Errorf("server is empty")
+	}
+
+	if c.ClientCertificate == "" {
+		return fmt.Errorf("client certificate is empty")
+	}
+
+	if c.ClientKey == "" {
+		return fmt.Errorf("client key is empty")
+	}
+
+	if c.CACertificate == "" {
+		return fmt.Errorf("ca certificate is empty")
+	}
+
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("marshaling config should succeed, got: %w", err)
+	}
+
+	if err := yaml.Unmarshal(b, c); err != nil {
+		return fmt.Errorf("certificate validation failed: %w", err)
+	}
+
+	return nil
 }
 
 // ToYAMLString converts given configuration to kubeconfig format as YAML text
 func (c *Config) ToYAMLString() (string, error) {
+	if err := c.Validate(); err != nil {
+		return "", fmt.Errorf("failed validating config: %w", err)
+	}
+
 	t := `apiVersion: v1
 kind: Config
 clusters:
 - name: static
   cluster:
-    server: https://{{ .Server }}:6443
+    server: https://{{ .Server }}
     certificate-authority-data: {{ .CACertificate }}
 users:
 - name: static
