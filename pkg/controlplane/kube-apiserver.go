@@ -173,22 +173,24 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 //
 // TODO add validation of certificates if specified
 func (k *KubeAPIServer) Validate() error {
+	var errors types.ValidateError
+
 	b, err := yaml.Marshal(k)
 	if err != nil {
-		return fmt.Errorf("failed to validate: %w", err)
+		return append(errors, fmt.Errorf("failed to validate: %w", err))
 	}
 
 	if err := yaml.Unmarshal(b, &k); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+		return append(errors, fmt.Errorf("validation failed: %w", err))
 	}
 
 	if len(k.EtcdServers) == 0 {
-		return fmt.Errorf("at least one etcd server must be defined")
+		errors = append(errors, fmt.Errorf("at least one etcd server must be defined"))
 	}
 
 	if err := k.Host.Validate(); err != nil {
-		return fmt.Errorf("host config validation failed: %w", err)
+		errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }
