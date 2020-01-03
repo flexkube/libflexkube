@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -289,11 +290,61 @@ func TestBuildConfig(t *testing.T) {
 				RetryInterval:     "5s",
 			},
 		},
+
+		// Address
+		{
+			&Config{
+				Address: "localhost",
+			},
+			nil,
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Address:           "localhost",
+			},
+		},
+		{
+			&Config{
+				Address: "localhost",
+			},
+			&Config{
+				Address: "foo",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Address:           "localhost",
+			},
+		},
+		{
+			nil,
+			&Config{
+				Address: "localhost",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Address:           "localhost",
+			},
+		},
 	}
 
-	for _, c := range cases {
-		if nc := BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
-			t.Fatalf("expected %+v, got %+v", c.result, nc)
-		}
+	for i, c := range cases {
+		c := c
+
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			if nc := BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
+				t.Fatalf("expected %+v, got %+v", c.result, nc)
+			}
+		})
 	}
 }
