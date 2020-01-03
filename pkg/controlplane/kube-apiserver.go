@@ -9,16 +9,14 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
-	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
-	Image                    string            `json:"image" yaml:"image"`
-	Host                     *host.Host        `json:"host" yaml:"host"`
-	KubernetesCACertificate  types.Certificate `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
+	Common                   Common            `json:"common" yaml:"common"`
+	Host                     host.Host         `json:"host" yaml:"host"`
 	APIServerCertificate     types.Certificate `json:"apiServerCertificate" yaml:"apiServerCertificate"`
 	APIServerKey             types.PrivateKey  `json:"apiServerKey" yaml:"apiServerKey"`
 	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey" yaml:"serviceAccountPublicKey"`
@@ -27,7 +25,6 @@ type KubeAPIServer struct {
 	EtcdServers              []string          `json:"etcdServers" yaml:"etcdServers"`
 	ServiceCIDR              string            `json:"serviceCIDR" yaml:"serviceCIDR"`
 	SecurePort               int               `json:"securePort" yaml:"securePort"`
-	FrontProxyCACertificate  types.Certificate `json:"frontProxyCACertificate" yaml:"frontProxyCACertificate"`
 	FrontProxyCertificate    types.Certificate `json:"frontProxyCertificate" yaml:"frontProxyCertificate"`
 	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey" yaml:"frontProxyKey"`
 	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate" yaml:"kubeletClientCertificate"`
@@ -39,9 +36,8 @@ type KubeAPIServer struct {
 
 // kubeAPIServer is a validated version of KubeAPIServer
 type kubeAPIServer struct {
-	image                    string
+	common                   Common
 	host                     host.Host
-	kubernetesCACertificate  string
 	apiServerCertificate     string
 	apiServerKey             string
 	serviceAccountPublicKey  string
@@ -50,7 +46,6 @@ type kubeAPIServer struct {
 	etcdServers              []string
 	serviceCIDR              string
 	securePort               int
-	frontProxyCACertificate  string
 	frontProxyCertificate    string
 	frontProxyKey            string
 	kubeletClientCertificate string
@@ -64,11 +59,11 @@ type kubeAPIServer struct {
 func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
-	configFiles["/etc/kubernetes/kube-apiserver/pki/ca.crt"] = k.kubernetesCACertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver.crt"] = k.apiServerCertificate
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver.key"] = k.apiServerKey
 	configFiles["/etc/kubernetes/kube-apiserver/pki/service-account.crt"] = k.serviceAccountPublicKey
-	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-ca.crt"] = k.frontProxyCACertificate
+	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
 	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.crt"] = k.frontProxyCertificate
 	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.key"] = k.frontProxyKey
 	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.crt"] = k.kubeletClientCertificate
@@ -84,7 +79,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 		},
 		Config: containertypes.ContainerConfig{
 			Name:  "kube-apiserver",
-			Image: k.image,
+			Image: k.common.GetImage(),
 			Mounts: []containertypes.Mount{
 				{
 					Source: "/etc/kubernetes/kube-apiserver/pki/",
@@ -153,10 +148,9 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
 	}
 
-	nk := &kubeAPIServer{
-		image:                    k.Image,
-		host:                     *k.Host,
-		kubernetesCACertificate:  string(k.KubernetesCACertificate),
+	return &kubeAPIServer{
+		common:                   k.Common,
+		host:                     k.Host,
 		apiServerCertificate:     string(k.APIServerCertificate),
 		apiServerKey:             string(k.APIServerKey),
 		serviceAccountPublicKey:  k.ServiceAccountPublicKey,
@@ -165,7 +159,6 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		etcdServers:              k.EtcdServers,
 		serviceCIDR:              k.ServiceCIDR,
 		securePort:               k.SecurePort,
-		frontProxyCACertificate:  string(k.FrontProxyCACertificate),
 		frontProxyCertificate:    string(k.FrontProxyCertificate),
 		frontProxyKey:            string(k.FrontProxyKey),
 		kubeletClientCertificate: string(k.KubeletClientCertificate),
@@ -173,14 +166,7 @@ func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
 		etcdCACertificate:        string(k.EtcdCACertificate),
 		etcdClientCertificate:    string(k.EtcdClientCertificate),
 		etcdClientKey:            string(k.EtcdClientKey),
-	}
-
-	// The only optional parameter
-	if nk.image == "" {
-		nk.image = defaults.KubernetesImage
-	}
-
-	return nk, nil
+	}, nil
 }
 
 // Validate validates KubeAPIServer struct
@@ -198,6 +184,10 @@ func (k *KubeAPIServer) Validate() error {
 
 	if len(k.EtcdServers) == 0 {
 		return fmt.Errorf("at least one etcd server must be defined")
+	}
+
+	if err := k.Host.Validate(); err != nil {
+		return fmt.Errorf("host config validation failed: %w", err)
 	}
 
 	return nil

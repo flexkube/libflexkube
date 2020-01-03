@@ -1,43 +1,34 @@
 package controlplane
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
-	"github.com/flexkube/libflexkube/pkg/container/types"
-	"github.com/flexkube/libflexkube/pkg/defaults"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // KubeControllerManager represents kube-controller-manager container configuration
 type KubeControllerManager struct {
-	Image                    string     `json:"image,omitempty" yaml:"image,omitempty"`
-	Host                     *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	KubernetesCACertificate  string     `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	KubernetesCAKey          string     `json:"kubernetesCAKey,omitempty" yaml:"kubernetesCAKey,omitempty"`
-	ServiceAccountPrivateKey string     `json:"serviceAccountPrivateKey,omitempty" yaml:"serviceAccountPrivateKey,omitempty"`
-	APIServer                string     `json:"apiServer,omitempty" yaml:"apiServer,omitempty"`
-	// TODO since we have access to CA cert and key, we could generate certificate ourselves here
-	ClientCertificate       string `json:"clientCertificate,omitempty" yaml:"clientCertificate,omitempty"`
-	ClientKey               string `json:"clientKey,omitempty" yaml:"clientKey,omitempty"`
-	FrontProxyCACertificate string `json:"frontProxyCACertificate,omitempty" yaml:"frontProxyCACertificate,omitempty"`
-	RootCACertificate       string `json:"rootCACertificate,omitempty" yaml:"rootCACertificate,omitempty"`
+	Common                   Common            `json:"common" yaml:"common"`
+	Host                     host.Host         `json:"host" yaml:"host"`
+	Kubeconfig               client.Config     `json:"kubeconfig" yaml:"kubeconfig"`
+	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey" yaml:"kubernetesCAKey"`
+	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey" yaml:"serviceAccountPrivateKey"`
+	RootCACertificate        types.Certificate `json:"rootCACertificate" yaml:"rootCACertificate"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager
 type kubeControllerManager struct {
-	image                    string
+	common                   Common
 	host                     host.Host
-	kubernetesCACertificate  string
 	kubernetesCAKey          string
 	serviceAccountPrivateKey string
-	apiServer                string
-	clientCertificate        string
-	clientKey                string
-	frontProxyCACertificate  string
 	rootCACertificate        string
+	kubeconfig               string
 }
 
 // ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer
@@ -47,22 +38,22 @@ type kubeControllerManager struct {
 func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
-	configFiles["/etc/kubernetes/kube-controller-manager/kubeconfig"] = k.toKubeconfig()
+	configFiles["/etc/kubernetes/kube-controller-manager/kubeconfig"] = k.kubeconfig
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/service-account.key"] = k.serviceAccountPrivateKey
-	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.crt"] = k.kubernetesCACertificate
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.key"] = k.kubernetesCAKey
-	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = fmt.Sprintf("%s%s", k.rootCACertificate, k.kubernetesCACertificate)
-	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = k.frontProxyCACertificate
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = fmt.Sprintf("%s%s", k.rootCACertificate, string(k.common.KubernetesCACertificate))
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
 			Docker: &docker.Config{},
 		},
-		Config: types.ContainerConfig{
+		Config: containertypes.ContainerConfig{
 			Name:  "kube-controller-manager",
-			Image: k.image,
-			Mounts: []types.Mount{
+			Image: k.common.GetImage(),
+			Mounts: []containertypes.Mount{
 				{
 					Source: "/etc/kubernetes/kube-controller-manager/",
 					Target: "/etc/kubernetes",
@@ -116,22 +107,16 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
 	}
 
-	nk := &kubeControllerManager{
-		image:                    k.Image,
-		host:                     *k.Host,
-		kubernetesCACertificate:  k.KubernetesCACertificate,
-		kubernetesCAKey:          k.KubernetesCAKey,
-		serviceAccountPrivateKey: k.ServiceAccountPrivateKey,
-		apiServer:                k.APIServer,
-		clientCertificate:        k.ClientCertificate,
-		clientKey:                k.ClientKey,
-		frontProxyCACertificate:  k.FrontProxyCACertificate,
-		rootCACertificate:        k.RootCACertificate,
-	}
+	// It's fine to skip the error, Validate() will handle it.
+	kubeconfig, _ := k.Kubeconfig.ToYAMLString()
 
-	// The only optional parameter
-	if nk.image == "" {
-		nk.image = defaults.KubernetesImage
+	nk := &kubeControllerManager{
+		common:                   k.Common,
+		host:                     k.Host,
+		kubernetesCAKey:          string(k.KubernetesCAKey),
+		serviceAccountPrivateKey: string(k.ServiceAccountPrivateKey),
+		rootCACertificate:        string(k.RootCACertificate),
+		kubeconfig:               kubeconfig,
 	}
 
 	return nk, nil
@@ -141,64 +126,9 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 //
 // TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
-	if k.KubernetesCACertificate == "" {
-		return fmt.Errorf("field kubernetesCACertificate is empty")
-	}
-
-	if k.KubernetesCAKey == "" {
-		return fmt.Errorf("field kubernetesCAKey is empty")
-	}
-
-	if k.ServiceAccountPrivateKey == "" {
-		return fmt.Errorf("field serviceAccountPrivateKey is empty")
-	}
-
-	if k.APIServer == "" {
-		return fmt.Errorf("field apiServer is empty")
-	}
-
-	if k.ClientCertificate == "" {
-		return fmt.Errorf("field clientCertificate is empty")
-	}
-
-	if k.ClientKey == "" {
-		return fmt.Errorf("field clientKey is empty")
-	}
-
-	if k.RootCACertificate == "" {
-		return fmt.Errorf("field rootCACertificate is empty")
-	}
-
-	if k.Host == nil {
-		return fmt.Errorf("field host must be defined")
-	}
-
 	if err := k.Host.Validate(); err != nil {
 		return fmt.Errorf("host config validation failed: %w", err)
 	}
 
 	return nil
-}
-
-// toKubeconfig converts given configuration to kubeconfig format as YAML text
-func (k *kubeControllerManager) toKubeconfig() string {
-	return fmt.Sprintf(`apiVersion: v1
-kind: Config
-clusters:
-- name: static
-  cluster:
-    server: https://%s:6443
-    certificate-authority-data: %s
-users:
-- name: static
-  user:
-    client-certificate-data: %s
-    client-key-data: %s
-current-context: static
-contexts:
-- name: static
-  context:
-    cluster: static
-    user: static
-`, k.apiServer, base64.StdEncoding.EncodeToString([]byte(k.kubernetesCACertificate)), base64.StdEncoding.EncodeToString([]byte(k.clientCertificate)), base64.StdEncoding.EncodeToString([]byte(k.clientKey)))
 }

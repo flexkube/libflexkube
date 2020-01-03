@@ -11,10 +11,12 @@ import (
 )
 
 func TestControlplaneFromYaml(t *testing.T) {
-	c := `kubernetesCACertificate: |
-  {{.CertificateTop}}
-frontProxyCACertificate: |
-  {{.CertificateTop}}
+	c := `
+common:
+  kubernetesCACertificate: |
+    {{.Certificate}}
+  frontProxyCACertificate: |
+    {{.Certificate}}
 kubeAPIServer:
   apiServerCertificate: |
     {{.Certificate}}
@@ -45,19 +47,20 @@ kubeControllerManager:
     {{.PrivateKey}}
   serviceAccountPrivateKey: |
     {{.PrivateKey}}
-  clientCertificate: |
-    {{.Certificate}}
-  clientKey: |
-    {{.PrivateKey}}
+  kubeconfig:
+    clientCertificate: |
+      {{.CertificateDeep}}
+    clientKey: |
+      {{.PrivateKeyDeep}}
   rootCACertificate: |
     {{.Certificate}}
-  apiServer: 127.0.0.1:6443
+apiServerAddress: 127.0.0.1
 kubeScheduler:
-  clientCertificate: |
-    {{.Certificate}}
-  clientKey: |
-    {{.PrivateKey}}
-  apiServer: 127.0.0.1:6443
+  kubeconfig:
+    clientCertificate: |
+      {{.CertificateDeep}}
+    clientKey: |
+      {{.PrivateKeyDeep}}
 apiServerPort: 6443
 ssh:
   user: "core"
@@ -65,14 +68,18 @@ ssh:
   port: 2222
   password: "foo"
 `
+	pki := utiltest.GeneratePKI(t)
+
 	data := struct {
-		CertificateTop string
-		Certificate    string
-		PrivateKey     string
+		Certificate     string
+		PrivateKey      string
+		CertificateDeep string
+		PrivateKeyDeep  string
 	}{
-		strings.TrimSpace(util.Indent(utiltest.GenerateX509Certificate(t), "  ")),
 		strings.TrimSpace(util.Indent(utiltest.GenerateX509Certificate(t), "    ")),
 		strings.TrimSpace(util.Indent(utiltest.GenerateRSAPrivateKey(t), "    ")),
+		strings.TrimSpace(util.Indent(pki.Certificate, "      ")),
+		strings.TrimSpace(util.Indent(pki.PrivateKey, "      ")),
 	}
 
 	var buf bytes.Buffer
@@ -84,5 +91,24 @@ ssh:
 
 	if _, err := FromYaml(buf.Bytes()); err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
+	}
+}
+
+// GetImage()
+func TestCommonGetImage(t *testing.T) {
+	c := Common{}
+	if a := c.GetImage(); a == "" {
+		t.Fatalf("GetImage() should always return at least default image")
+	}
+}
+
+func TestCommonGetImageSpecified(t *testing.T) {
+	i := "foo"
+	c := Common{
+		Image: i,
+	}
+
+	if a := c.GetImage(); a != i {
+		t.Fatalf("GetImage() should return specified image, if it's defined")
 	}
 }

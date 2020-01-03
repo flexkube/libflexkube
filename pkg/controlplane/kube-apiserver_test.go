@@ -12,6 +12,9 @@ import (
 const (
 	// securePort is a TLS port used for testing.
 	securePort = 6443
+
+	// nonEmptyString is a string used for testing.
+	nonEmptyString = "foo"
 )
 
 func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
@@ -19,7 +22,10 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
 	kas := &KubeAPIServer{
-		KubernetesCACertificate:  cert,
+		Common: Common{
+			KubernetesCACertificate: cert,
+			FrontProxyCACertificate: cert,
+		},
 		APIServerCertificate:     cert,
 		APIServerKey:             privateKey,
 		ServiceAccountPublicKey:  nonEmptyString,
@@ -28,7 +34,6 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 		EtcdServers:              []string{nonEmptyString},
 		ServiceCIDR:              nonEmptyString,
 		SecurePort:               securePort,
-		FrontProxyCACertificate:  cert,
 		FrontProxyCertificate:    cert,
 		FrontProxyKey:            privateKey,
 		KubeletClientCertificate: cert,
@@ -36,7 +41,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 		EtcdCACertificate:        cert,
 		EtcdClientCertificate:    cert,
 		EtcdClientKey:            privateKey,
-		Host: &host.Host{
+		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
@@ -54,8 +59,13 @@ func TestKubeAPIServerValidate(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
-	hostConfig := &host.Host{
+	hostConfig := host.Host{
 		DirectConfig: &direct.Config{},
+	}
+
+	common := Common{
+		KubernetesCACertificate: cert,
+		FrontProxyCACertificate: cert,
 	}
 
 	cases := map[string]struct {
@@ -64,7 +74,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 	}{
 		"require kubeletClientCertificate": {
 			Config: &KubeAPIServer{
-				KubernetesCACertificate: cert,
+				Common:                  common,
 				APIServerCertificate:    cert,
 				APIServerKey:            privateKey,
 				ServiceAccountPublicKey: nonEmptyString,
@@ -73,7 +83,6 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				EtcdServers:             []string{nonEmptyString},
 				ServiceCIDR:             nonEmptyString,
 				SecurePort:              securePort,
-				FrontProxyCACertificate: cert,
 				FrontProxyCertificate:   cert,
 				FrontProxyKey:           privateKey,
 				KubeletClientKey:        privateKey,
@@ -86,7 +95,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		},
 		"validate kubeletClientCertificate": {
 			Config: &KubeAPIServer{
-				KubernetesCACertificate:  cert,
+				Common:                   common,
 				APIServerCertificate:     cert,
 				APIServerKey:             privateKey,
 				ServiceAccountPublicKey:  nonEmptyString,
@@ -95,7 +104,6 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				EtcdServers:              []string{nonEmptyString},
 				ServiceCIDR:              nonEmptyString,
 				SecurePort:               securePort,
-				FrontProxyCACertificate:  cert,
 				FrontProxyCertificate:    cert,
 				FrontProxyKey:            privateKey,
 				KubeletClientKey:         privateKey,
@@ -109,7 +117,7 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		},
 		"valid": {
 			Config: &KubeAPIServer{
-				KubernetesCACertificate:  cert,
+				Common:                   common,
 				APIServerCertificate:     cert,
 				APIServerKey:             privateKey,
 				ServiceAccountPublicKey:  nonEmptyString,
@@ -118,7 +126,6 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				EtcdServers:              []string{nonEmptyString},
 				ServiceCIDR:              nonEmptyString,
 				SecurePort:               securePort,
-				FrontProxyCACertificate:  cert,
 				FrontProxyCertificate:    cert,
 				FrontProxyKey:            privateKey,
 				KubeletClientKey:         privateKey,

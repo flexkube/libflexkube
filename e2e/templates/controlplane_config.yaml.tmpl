@@ -1,8 +1,8 @@
-kubernetesCACertificate: |
-    ${indent(4, trimspace(kubernetes_ca_certificate))}
-
-frontProxyCACertificate: |
-    ${indent(4, trimspace(front_proxy_ca_certificate))}
+common:
+    kubernetesCACertificate: |
+        ${indent(8, trimspace(kubernetes_ca_certificate))}
+    frontProxyCACertificate: |
+        ${indent(8, trimspace(front_proxy_ca_certificate))}
 
 kubeAPIServer:
     apiServerCertificate: |
@@ -41,18 +41,20 @@ kubeControllerManager:
         ${indent(8, trimspace(kubernetes_ca_key))}
     serviceAccountPrivateKey: |
         ${indent(8, trimspace(service_account_private_key))}
-    clientCertificate: |
-        ${indent(8, trimspace(kube_controller_manager_cert))}
-    clientKey: |
-        ${indent(8, trimspace(kube_controller_manager_key))}
     rootCACertificate: |
         ${indent(8, trimspace(root_ca_certificate))}
+    kubeconfig:
+        clientCertificate: |
+            ${indent(12, trimspace(kube_controller_manager_cert))}
+        clientKey: |
+            ${indent(12, trimspace(kube_controller_manager_key))}
 
 kubeScheduler:
-    clientCertificate: |
-        ${indent(8, trimspace(kube_scheduler_cert))}
-    clientKey: |
-        ${indent(8, trimspace(kube_scheduler_key))}
+    kubeconfig:
+        clientCertificate: |
+            ${indent(12, trimspace(kube_scheduler_cert))}
+        clientKey: |
+            ${indent(12, trimspace(kube_scheduler_key))}
 
 apiServerAddress: ${api_server_address}
 apiServerPort: 6443
