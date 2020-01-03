@@ -11,7 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Config is a simlified version of kubeconfig.
+// Config is a simplified version of kubeconfig.
 type Config struct {
 	Server            string            `json:"server" yaml:"server"`
 	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
