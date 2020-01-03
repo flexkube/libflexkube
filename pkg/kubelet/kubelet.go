@@ -4,39 +4,50 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
-	"github.com/flexkube/libflexkube/pkg/container/types"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Kubelet represents single kubelet instance
 type Kubelet struct {
-	Address             string     `json:"address,omitempty" yaml:"address,omitempty"`
-	Image               string     `json:"image,omitempty" yaml:"image,omitempty"`
-	Host                *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	BootstrapKubeconfig string     `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
+	Address             string    `json:"address" yaml:"address"`
+	Image               string    `json:"image" yaml:"image"`
+	Host                host.Host `json:"host" yaml:"host"`
+	BootstrapKubeconfig string    `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
 	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
-	KubernetesCACertificate string   `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
-	Name                    string   `json:"name" yaml:"name"`
+	KubernetesCACertificate    string            `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs" yaml:"clusterDNSIPs"`
+	Name                       string            `json:"name" yaml:"name"`
+	Taints                     map[string]string `json:"taints" yaml:"taints"`
+	Labels                     map[string]string `json:"labels" yaml:"labels"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
-	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
+	PodCIDR string `json:"podCIDR" yaml:"podCIDR"`
 }
 
 // kubelet is a validated, executable version of Kubelet
 type kubelet struct {
-	address                 string
-	image                   string
-	host                    *host.Host
-	bootstrapKubeconfig     string
-	kubernetesCACertificate string
-	clusterDNSIPs           []string
-	podCIDR                 string
-	name                    string
+	address                    string
+	image                      string
+	host                       host.Host
+	bootstrapKubeconfig        string
+	kubernetesCACertificate    string
+	clusterDNSIPs              []string
+	podCIDR                    string
+	name                       string
+	taints                     map[string]string
+	labels                     map[string]string
+	privilegedLabels           map[string]string
+	privilegedLabelsKubeconfig string
 }
 
 // New validates Kubelet configuration and returns it's usable version
@@ -47,14 +58,18 @@ func (k *Kubelet) New() (*kubelet, error) {
 	}
 
 	nk := &kubelet{
-		image:                   k.Image,
-		address:                 k.Address,
-		host:                    k.Host,
-		bootstrapKubeconfig:     k.BootstrapKubeconfig,
-		kubernetesCACertificate: k.KubernetesCACertificate,
-		clusterDNSIPs:           k.ClusterDNSIPs,
-		podCIDR:                 k.PodCIDR,
-		name:                    k.Name,
+		image:                      k.Image,
+		address:                    k.Address,
+		host:                       k.Host,
+		bootstrapKubeconfig:        k.BootstrapKubeconfig,
+		kubernetesCACertificate:    k.KubernetesCACertificate,
+		clusterDNSIPs:              k.ClusterDNSIPs,
+		podCIDR:                    k.PodCIDR,
+		name:                       k.Name,
+		taints:                     k.Taints,
+		labels:                     k.Labels,
+		privilegedLabels:           k.PrivilegedLabels,
+		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
 	}
 
 	if nk.image == "" {
@@ -68,11 +83,25 @@ func (k *Kubelet) New() (*kubelet, error) {
 //
 // TODO better validation should be done here
 func (k *Kubelet) Validate() error {
+	var errors types.ValidateError
+
 	if k.BootstrapKubeconfig == "" {
-		return fmt.Errorf("bootstrapKubeconfig can't be empty")
+		errors = append(errors, fmt.Errorf("bootstrapKubeconfig can't be empty"))
 	}
 
-	return nil
+	if len(k.PrivilegedLabels) > 0 && k.PrivilegedLabelsKubeconfig == "" {
+		errors = append(errors, fmt.Errorf("privilegedLabels requested, but privilegedLabelsKubeconfig is empty"))
+	}
+
+	if k.PrivilegedLabelsKubeconfig != "" && len(k.PrivilegedLabels) == 0 {
+		errors = append(errors, fmt.Errorf("privilegedLabelsKubeconfig specified, but no privilegedLabels requested"))
+	}
+
+	if err := k.Host.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
+	}
+
+	return errors.Return()
 }
 
 // ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer
@@ -131,7 +160,7 @@ clusterDNS:
 		Runtime: container.RuntimeConfig{
 			Docker: &docker.Config{},
 		},
-		Config: types.ContainerConfig{
+		Config: containertypes.ContainerConfig{
 			// TODO make it configurable?
 			Name:  "kubelet",
 			Image: k.image,
@@ -145,7 +174,7 @@ clusterDNS:
 			NetworkMode: "host",
 			// Required for adding containers into correct network namespaces
 			PidMode: "host",
-			Mounts: []types.Mount{
+			Mounts: []containertypes.Mount{
 				{
 					// Kubelet is using this file to determine what OS it runs on and then reports that to API server
 					// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
@@ -247,9 +276,50 @@ clusterDNS:
 		},
 	}
 
+	if len(k.labels) > 0 {
+		c.Config.Args = append(c.Config.Args, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.labels, "=", ",")))
+	}
+
+	if len(k.taints) > 0 {
+		c.Config.Args = append(c.Config.Args, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.taints, "=:", ",")))
+	}
+
 	return &container.HostConfiguredContainer{
-		Host:        *k.host,
+		Host:        k.host,
 		ConfigFiles: configFiles,
 		Container:   c,
+		Hooks:       k.getHooks(),
 	}
+}
+
+// getHooks returns HostConfiguredContainer hooks associated with kubelet.
+func (k *kubelet) getHooks() *container.Hooks {
+	return &container.Hooks{
+		PostStart: k.postStartHook(),
+	}
+}
+
+// applyPrivilegedLabels adds privileged labels to kubelet object using Kubernetes API.
+func (k *kubelet) applyPrivilegedLabels() error {
+	c, err := client.NewClient([]byte(k.privilegedLabelsKubeconfig))
+	if err != nil {
+		return fmt.Errorf("failed creating kubernetes client: %w", err)
+	}
+
+	return c.LabelNode(k.name, k.privilegedLabels)
+}
+
+// postStartHook defines actions which will be executed after new kubelet instance is created.
+func (k *kubelet) postStartHook() *container.Hook {
+	f := container.Hook(func() error {
+		if len(k.privilegedLabelsKubeconfig) > 0 {
+			if err := k.applyPrivilegedLabels(); err != nil {
+				return fmt.Errorf("failed applying privileged labels: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	return &f
 }

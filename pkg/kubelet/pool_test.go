@@ -11,6 +11,7 @@ bootstrapKubeconfig: foo
 kubelets:
 - {}
 `
+
 	p, err := FromYaml([]byte(y))
 	if err != nil {
 		t.Fatalf("Creating pool from YAML should succeed, got: %v", err)

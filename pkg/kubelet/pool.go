@@ -15,15 +15,19 @@ import (
 // Pool represents group of kubelet instances and their configuration
 type Pool struct {
 	// User-configurable fields
-	Image                   string      `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH                     *ssh.Config `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	BootstrapKubeconfig     string      `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
-	Kubelets                []Kubelet   `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
-	KubernetesCACertificate string      `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string    `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
+	Image                      string            `json:"image" yaml:"image"`
+	SSH                        *ssh.Config       `json:"ssh" yaml:"ssh"`
+	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
+	Kubelets                   []Kubelet         `json:"kubelets" yaml:"kubelets"`
+	KubernetesCACertificate    string            `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs" yaml:"clusterDNSIPs"`
+	Taints                     map[string]string `json:"taints" yaml:"taints"`
+	Labels                     map[string]string `json:"labels" yaml:"labels"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	State container.ContainersState `json:"state" yaml:"state"`
 }
 
 // pool is a validated version of Pool
@@ -65,18 +69,36 @@ func (p *Pool) New() (*pool, error) {
 			k.ClusterDNSIPs = p.ClusterDNSIPs
 		}
 
+		if len(k.Labels) == 0 && len(p.Labels) > 0 {
+			k.Labels = p.Labels
+		}
+
+		if len(k.PrivilegedLabels) == 0 && len(p.PrivilegedLabels) > 0 {
+			k.PrivilegedLabels = p.PrivilegedLabels
+		}
+
+		if k.PrivilegedLabelsKubeconfig == "" && p.PrivilegedLabelsKubeconfig != "" {
+			k.PrivilegedLabelsKubeconfig = p.PrivilegedLabelsKubeconfig
+		}
+
+		if len(k.Taints) == 0 && len(p.Taints) > 0 {
+			k.Taints = p.Taints
+		}
+
 		// TODO find better way to handle defaults!!!
-		if k.Host == nil || (k.Host.DirectConfig == nil && k.Host.SSHConfig == nil) {
-			k.Host = &host.Host{
+		if k.Host.DirectConfig == nil && k.Host.SSHConfig == nil && p.SSH == nil {
+			k.Host = host.Host{
 				DirectConfig: &direct.Config{},
 			}
 		}
 
-		k.Host.SSHConfig = ssh.BuildConfig(k.Host.SSHConfig, p.SSH)
+		if p.SSH != nil {
+			k.Host.SSHConfig = ssh.BuildConfig(k.Host.SSHConfig, p.SSH)
+		}
 
 		kubelet, err := k.New()
 		if err != nil {
-			return nil, fmt.Errorf("that was unexpected: %w", err)
+			return nil, fmt.Errorf("failed to create kubelet object: %w", err)
 		}
 
 		pool.containers.DesiredState[strconv.Itoa(i)] = kubelet.ToHostConfiguredContainer()
@@ -101,7 +123,7 @@ func FromYaml(c []byte) (*pool, error) {
 
 	p, err := pool.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster object: %w", err)
+		return nil, fmt.Errorf("failed to create pool object: %w", err)
 	}
 
 	return p, nil
