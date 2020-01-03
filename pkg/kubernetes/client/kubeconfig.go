@@ -5,24 +5,79 @@ import (
 	"encoding/base64"
 	"fmt"
 	"text/template"
+
+	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Config is a simlified version of kubeconfig.
+// Config is a simplified version of kubeconfig.
 type Config struct {
-	Server            string `json:"server" yaml:"server"`
-	CACertificate     string `json:"caCertificate" yaml:"caCertificate"`
-	ClientCertificate string `json:"clientCertificate" yaml:"clientCertificate"`
-	ClientKey         string `json:"clientKey" yaml:"clientKey"`
+	Server            string            `json:"server" yaml:"server"`
+	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
+	ClientCertificate types.Certificate `json:"clientCertificate" yaml:"clientCertificate"`
+	ClientKey         types.PrivateKey  `json:"clientKey" yaml:"clientKey"`
+}
+
+// Validate validates Config struct.
+func (c *Config) Validate() error {
+	var errors types.ValidateError
+
+	if c.Server == "" {
+		errors = append(errors, fmt.Errorf("server is empty"))
+	}
+
+	if c.ClientCertificate == "" {
+		errors = append(errors, fmt.Errorf("client certificate is empty"))
+	}
+
+	if c.ClientKey == "" {
+		errors = append(errors, fmt.Errorf("client key is empty"))
+	}
+
+	if c.CACertificate == "" {
+		errors = append(errors, fmt.Errorf("ca certificate is empty"))
+	}
+
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		return append(errors, fmt.Errorf("marshaling config should succeed, got: %w", err))
+	}
+
+	if err := yaml.Unmarshal(b, c); err != nil {
+		return append(errors, fmt.Errorf("certificate validation failed: %w", err))
+	}
+
+	return errors.Return()
 }
 
 // ToYAMLString converts given configuration to kubeconfig format as YAML text
 func (c *Config) ToYAMLString() (string, error) {
+	if err := c.Validate(); err != nil {
+		return "", fmt.Errorf("failed validating config: %w", err)
+	}
+
+	kubeconfig, err := c.renderKubeconfig()
+	if err != nil {
+		return "", fmt.Errorf("failed rendering kubeconfig: %w", err)
+	}
+
+	// Parse generated kubeconfig with Kubernetes client, to make sure everything is correct.
+	if _, err := NewClient([]byte(kubeconfig)); err != nil {
+		return "", fmt.Errorf("generated kubeconfig is invalid: %w", err)
+	}
+
+	return kubeconfig, nil
+}
+
+// renderKubeconfig renders Config as kubeconfig YAML.
+func (c *Config) renderKubeconfig() (string, error) {
 	t := `apiVersion: v1
 kind: Config
 clusters:
 - name: static
   cluster:
-    server: https://{{ .Server }}:6443
+    server: https://{{ .Server }}
     certificate-authority-data: {{ .CACertificate }}
 users:
 - name: static
@@ -58,11 +113,6 @@ contexts:
 
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed executing template: %w", err)
-	}
-
-	// Parse generated kubeconfig with Kubernetes client, to make sure everything is correct.
-	if _, err := NewClient(buf.Bytes()); err != nil {
-		return "", fmt.Errorf("generated kubeconfig is invalid: %w", err)
 	}
 
 	return buf.String(), nil

@@ -44,5 +44,7 @@ func BuildConfig(sshConfig *Config, defaults *Config) *Config {
 
 	sshConfig.Port = util.PickInt(sshConfig.Port, defaults.Port, Port)
 
+	sshConfig.Address = util.PickString(sshConfig.Address, defaults.Address)
+
 	return sshConfig
 }
