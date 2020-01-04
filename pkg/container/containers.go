@@ -5,6 +5,8 @@ import (
 	"reflect"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/flexkube/libflexkube/internal/util"
 )
 
 // Containers allow to orchestrate and update multiple containers spread
@@ -80,6 +82,48 @@ func (c *containers) CheckCurrentState() error {
 	return c.currentState.CheckState()
 }
 
+// filesToUpdate returns list of files, which needs to be updated, based on the current state of the container.
+// If the file is missing or it's content is not the same as desired content, it will be added to the list.
+func filesToUpdate(d hostConfiguredContainer, c *hostConfiguredContainer) []string {
+	// If current state does not exist, just return all files.
+	if c == nil {
+		return util.KeysStringMap(d.configFiles)
+	}
+
+	files := []string{}
+
+	// Loop over desired config files and check if they exist.
+	for p, content := range d.configFiles {
+		if currentContent, exists := c.configFiles[p]; !exists || content != currentContent {
+			// TODO convert all prints to logging, so we can add more verbose information too
+			fmt.Printf("Detected configuration drift for file '%s'\n", p)
+			fmt.Printf("  current: \n%+v\n", currentContent)
+			fmt.Printf("  desired: \n%+v\n", content)
+
+			files = append(files, p)
+		}
+	}
+
+	return files
+}
+
+// ensureConfigured makes sure that all desired configuration files are correct.
+func ensureConfigured(d hostConfiguredContainer, c *hostConfiguredContainer) error {
+	if err := d.Configure(filesToUpdate(d, c)); err != nil {
+		return fmt.Errorf("failed creating config files: %w", err)
+	}
+
+	// If current state does not exist, simply replace it with desired state.
+	if c == nil {
+		c = &d
+	}
+
+	// Update current state config files map.
+	c.configFiles = d.configFiles
+
+	return nil
+}
+
 // Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
@@ -96,36 +140,9 @@ func (c *containers) Execute() error {
 
 	// Iterate over all containers we need to create.
 	for i := range c.desiredState {
-		// Store list of files which needs to be created/updated.
-		desiredConfigFiles := []string{}
-
-		var currentConfigFiles map[string]string
-
-		if cs, exists := c.currentState[i]; exists {
-			currentConfigFiles = cs.configFiles
+		if err := ensureConfigured(*c.desiredState[i], c.currentState[i]); err != nil {
+			return fmt.Errorf("failed configuring container %s: %w", i, err)
 		}
-
-		// Loop over desired config files and check if they exist.
-		for p, content := range c.desiredState[i].configFiles {
-			if currentContent, exists := currentConfigFiles[p]; !exists || content != currentContent {
-				// TODO convert all prints to logging, so we can add more verbose information too
-				fmt.Printf("Detected configuration drift for file '%s'\n", p)
-				fmt.Printf("  current: \n%+v\n", currentContent)
-				fmt.Printf("  desired: \n%+v\n", content)
-
-				desiredConfigFiles = append(desiredConfigFiles, p)
-			}
-		}
-
-		if err := c.desiredState[i].Configure(desiredConfigFiles); err != nil {
-			return fmt.Errorf("failed creating config files: %w", err)
-		}
-
-		if _, exists := c.currentState[i]; !exists {
-			c.currentState[i] = c.desiredState[i]
-		}
-
-		c.currentState[i].configFiles = c.desiredState[i].configFiles
 	}
 
 	fmt.Println("Checking for stopped containers")
