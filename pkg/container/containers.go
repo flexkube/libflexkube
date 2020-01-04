@@ -14,7 +14,7 @@ import (
 type Containers struct {
 	// PreviousState stores previous state of the containers, which should be obtained and persisted
 	// after containers modifications.
-	PreviousState ContainersState `json:"previousState:omitempty" yaml:"previousState,omitempty"`
+	PreviousState ContainersState `json:"previousState,omitempty" yaml:"previousState,omitempty"`
 	// DesiredState is a user-defined desired containers configuration.
 	DesiredState ContainersState `json:"desiredState,omitempty" yaml:"desiredState,omitempty"`
 }
