@@ -6,31 +6,49 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
-	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
 // Pool represents group of kubelet instances and their configuration
 type Pool struct {
 	// User-configurable fields
-	Image                   string      `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH                     *ssh.Config `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	BootstrapKubeconfig     string      `json:"bootstrapKubeconfig,omitempty" yaml:"bootstrapKubeconfig,omitempty"`
-	Kubelets                []Kubelet   `json:"kubelets,omitempty" yaml:"kubelets,omitempty"`
-	KubernetesCACertificate string      `json:"kubernetesCACertificate,omitempty" yaml:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string    `json:"clusterDNSIPs,omitempty" yaml:"clusterDNSIPs,omitempty"`
+	Image                      string            `json:"image" yaml:"image"`
+	SSH                        *ssh.Config       `json:"ssh" yaml:"ssh"`
+	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
+	Kubelets                   []Kubelet         `json:"kubelets" yaml:"kubelets"`
+	KubernetesCACertificate    string            `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs" yaml:"clusterDNSIPs"`
+	Taints                     map[string]string `json:"taints" yaml:"taints"`
+	Labels                     map[string]string `json:"labels" yaml:"labels"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	State container.ContainersState `json:"state" yaml:"state"`
 }
 
 // pool is a validated version of Pool
 type pool struct {
-	image      string
-	ssh        *ssh.Config
 	containers container.Containers
+}
+
+// propagateKubelet fills given kubelet with values from Pool object.
+func (p *Pool) propagateKubelet(k *Kubelet) {
+	k.Image = util.PickString(k.Image, p.Image)
+	k.BootstrapKubeconfig = util.PickString(k.BootstrapKubeconfig, p.BootstrapKubeconfig)
+	k.KubernetesCACertificate = util.PickString(k.KubernetesCACertificate, p.KubernetesCACertificate)
+	k.ClusterDNSIPs = util.PickStringSlice(k.ClusterDNSIPs, p.ClusterDNSIPs)
+	k.Labels = util.PickStringMap(k.Labels, p.Labels)
+	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
+	k.PrivilegedLabelsKubeconfig = util.PickString(k.PrivilegedLabelsKubeconfig, p.PrivilegedLabelsKubeconfig)
+	k.Taints = util.PickStringMap(k.Taints, p.Taints)
+
+	k.Host = host.BuildConfig(k.Host, host.Host{
+		SSHConfig: p.SSH,
+	})
 }
 
 // New validates kubelet pool configuration and fills all members with configured values
@@ -40,43 +58,20 @@ func (p *Pool) New() (*pool, error) {
 	}
 
 	pool := &pool{
-		image: p.Image,
-		ssh:   p.SSH,
 		containers: container.Containers{
 			PreviousState: p.State,
 			DesiredState:  make(container.ContainersState),
 		},
 	}
 
-	for i, k := range p.Kubelets {
-		if k.Image == "" && p.Image != "" {
-			k.Image = p.Image
-		}
+	for i := range p.Kubelets {
+		k := &p.Kubelets[i]
 
-		if k.BootstrapKubeconfig == "" && p.BootstrapKubeconfig != "" {
-			k.BootstrapKubeconfig = p.BootstrapKubeconfig
-		}
-
-		if k.KubernetesCACertificate == "" && p.KubernetesCACertificate != "" {
-			k.KubernetesCACertificate = p.KubernetesCACertificate
-		}
-
-		if len(k.ClusterDNSIPs) == 0 && len(p.ClusterDNSIPs) > 0 {
-			k.ClusterDNSIPs = p.ClusterDNSIPs
-		}
-
-		// TODO find better way to handle defaults!!!
-		if k.Host == nil || (k.Host.DirectConfig == nil && k.Host.SSHConfig == nil) {
-			k.Host = &host.Host{
-				DirectConfig: &direct.Config{},
-			}
-		}
-
-		k.Host.SSHConfig = ssh.BuildConfig(k.Host.SSHConfig, p.SSH)
+		p.propagateKubelet(k)
 
 		kubelet, err := k.New()
 		if err != nil {
-			return nil, fmt.Errorf("that was unexpected: %w", err)
+			return nil, fmt.Errorf("failed to create kubelet object: %w", err)
 		}
 
 		pool.containers.DesiredState[strconv.Itoa(i)] = kubelet.ToHostConfiguredContainer()
@@ -101,7 +96,7 @@ func FromYaml(c []byte) (*pool, error) {
 
 	p, err := pool.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster object: %w", err)
+		return nil, fmt.Errorf("failed to create pool object: %w", err)
 	}
 
 	return p, nil

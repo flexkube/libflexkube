@@ -193,6 +193,12 @@ locals {
   coredns_values = <<EOF
 service:
   clusterIP: 11.0.0.10
+nodeSelector:
+  node-role.kubernetes.io/master: ""
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
 EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
@@ -208,25 +214,37 @@ EOF
   })
 
   kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses         = local.controller_ips
-    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
-    ssh_private_key           = file(var.ssh_private_key_path)
-    ssh_addresses             = local.controller_ips
-    ssh_port                  = var.node_ssh_port
-    kubelet_pod_cidrs         = local.controller_cidrs
-    kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
-    kubelet_names             = local.controller_names
+    kubelet_addresses            = local.controller_ips
+    bootstrap_kubeconfig         = local.bootstrap_kubeconfig
+    ssh_private_key              = file(var.ssh_private_key_path)
+    ssh_addresses                = local.controller_ips
+    ssh_port                     = var.node_ssh_port
+    kubelet_pod_cidrs            = local.controller_cidrs
+    kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
+    kubelet_names                = local.controller_names
+    labels                       = {}
+    privileged_labels            = {
+      "node-role.kubernetes.io/master" = ""
+    }
+    privileged_labels_kubeconfig = local.kubeconfig_admin
+    taints                       = {
+      "node-role.kubernetes.io/master" = "NoSchedule"
+    }
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses         = local.worker_ips
-    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
-    ssh_private_key           = file(var.ssh_private_key_path)
-    ssh_addresses             = local.worker_ips
-    ssh_port                  = var.node_ssh_port
-    kubelet_pod_cidrs         = local.worker_cidrs
-    kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
-    kubelet_names             = local.worker_names
+    kubelet_addresses            = local.worker_ips
+    bootstrap_kubeconfig         = local.bootstrap_kubeconfig
+    ssh_private_key              = file(var.ssh_private_key_path)
+    ssh_addresses                = local.worker_ips
+    ssh_port                     = var.node_ssh_port
+    kubelet_pod_cidrs            = local.worker_cidrs
+    kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
+    kubelet_names                = local.worker_names
+    labels                       = {}
+    taints                       = {}
+    privileged_labels            = {}
+    privileged_labels_kubeconfig = ""
   })
 
   deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0

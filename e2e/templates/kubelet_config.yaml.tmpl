@@ -13,6 +13,34 @@ kubernetesCACertificate: |
     ${indent(4, trimspace(kubernetes_ca_certificate))}
 clusterDNSIPs:
 - 11.0.0.10
+
+%{~ if length(labels) > 0 ~}
+labels:
+%{ for k, v in labels ~}
+  ${k}: '${v}'
+%{ endfor ~}
+%{~ endif ~}
+
+%{~ if length(taints) > 0 ~}
+taints:
+%{ for k, v in taints ~}
+  ${k}: '${v}'
+%{ endfor ~}
+%{~ endif ~}
+
+%{ if privileged_labels_kubeconfig != "" ~}
+privilegedLabelsKubeconfig: |
+    ${indent(4, trimspace(privileged_labels_kubeconfig))}
+%{ endif ~}
+
+%{ if length(privileged_labels) > 0 }
+
+privilegedLabels:
+%{ for k, v in privileged_labels ~}
+  ${k}: '${v}'
+%{ endfor ~}
+%{~ endif ~}
+
 ssh:
     user: "core"
     port: ${ssh_port}

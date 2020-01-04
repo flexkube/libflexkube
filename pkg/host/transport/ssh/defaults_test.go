@@ -336,6 +336,52 @@ func TestBuildConfig(t *testing.T) {
 				Address:           "localhost",
 			},
 		},
+
+		// Password
+		{
+			&Config{
+				Password: "foo",
+			},
+			nil,
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Password:          "foo",
+			},
+		},
+		{
+			&Config{
+				Password: "foo",
+			},
+			&Config{
+				Password: "bar",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Password:          "foo",
+			},
+		},
+		{
+			nil,
+			&Config{
+				Password: "foo",
+			},
+			&Config{
+				ConnectionTimeout: ConnectionTimeout,
+				Port:              Port,
+				User:              User,
+				RetryTimeout:      RetryTimeout,
+				RetryInterval:     RetryInterval,
+				Password:          "foo",
+			},
+		},
 	}
 
 	for i, c := range cases {

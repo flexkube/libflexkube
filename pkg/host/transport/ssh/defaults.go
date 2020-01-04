@@ -46,5 +46,7 @@ func BuildConfig(sshConfig *Config, defaults *Config) *Config {
 
 	sshConfig.Address = util.PickString(sshConfig.Address, defaults.Address)
 
+	sshConfig.Password = util.PickString(sshConfig.Password, defaults.Password)
+
 	return sshConfig
 }

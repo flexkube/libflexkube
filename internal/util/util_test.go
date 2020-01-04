@@ -1,6 +1,7 @@
 package util
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -88,5 +89,33 @@ func TestJoinSorted(t *testing.T) {
 
 	if a := JoinSorted(values, "/", "|"); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
+	}
+}
+
+func TestPickStringSlice(t *testing.T) {
+	expected := []string{"foo"}
+	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
+		t.Fatalf("Expected %v, got %v", expected, v)
+	}
+}
+
+func TestPickStringMap(t *testing.T) {
+	expected := map[string]string{"foo": "bar"}
+	if v := PickStringMap(map[string]string{}, expected); !reflect.DeepEqual(v, expected) {
+		t.Fatalf("Expected %v, got %v", expected, v)
+	}
+}
+
+func TestPickStringSliceEmpty(t *testing.T) {
+	expected := []string{}
+	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
+		t.Fatalf("Expected %v, got %v", expected, v)
+	}
+}
+
+func TestPickStringMapEmpty(t *testing.T) {
+	expected := map[string]string{}
+	if v := PickStringMap(map[string]string{}, expected); !reflect.DeepEqual(v, expected) {
+		t.Fatalf("Expected %v, got %v", expected, v)
 	}
 }
