@@ -119,3 +119,15 @@ func TestPickStringMapEmpty(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expected, v)
 	}
 }
+
+func TestKeysStringMap(t *testing.T) {
+	expected := []string{"foo", "baz"}
+	m := map[string]string{
+		"foo": "bar",
+		"baz": "doh",
+	}
+
+	if k := KeysStringMap(m); !reflect.DeepEqual(expected, k) {
+		t.Fatalf("Expected %v, got %v", expected, k)
+	}
+}
