@@ -6,7 +6,12 @@ import (
 
 func GetPool(t *testing.T) *pool {
 	y := `
-ssh: {}
+ssh:
+  address: localhost
+  password: foo
+  connectionTimeout: 1s
+  retryTimeout: 1s
+  retryInterval: 1s
 bootstrapKubeconfig: foo
 kubelets:
 - {}
