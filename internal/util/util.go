@@ -17,6 +17,28 @@ func PickString(values ...string) string {
 	return ""
 }
 
+// PickStringSlice returns first non-empty strings slice.
+func PickStringSlice(values ...[]string) []string {
+	for _, v := range values {
+		if len(v) > 0 {
+			return v
+		}
+	}
+
+	return []string{}
+}
+
+// PickStringMap returns first non-empty map of strings.
+func PickStringMap(values ...map[string]string) map[string]string {
+	for _, v := range values {
+		if len(v) > 0 {
+			return v
+		}
+	}
+
+	return map[string]string{}
+}
+
 // PickInt returns first non-zero integer passed.
 func PickInt(values ...int) int {
 	for _, v := range values {
