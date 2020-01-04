@@ -59,6 +59,12 @@ func (h *Host) Validate() error {
 		return fmt.Errorf("host must have transport method defined")
 	}
 
+	if h.SSHConfig != nil {
+		if err := h.SSHConfig.Validate(); err != nil {
+			return fmt.Errorf("host ssh config invalid: %w", err)
+		}
+	}
+
 	return nil
 }
 
