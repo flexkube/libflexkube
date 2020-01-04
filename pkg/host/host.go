@@ -86,3 +86,16 @@ func (h *host) Connect() (*hostConnected, error) {
 func (h *hostConnected) ForwardUnixSocket(path string) (string, error) {
 	return h.transport.ForwardUnixSocket(path)
 }
+
+// BuildConfig merges values from both host objects.
+func BuildConfig(h Host, d Host) Host {
+	if h.DirectConfig == nil && h.SSHConfig == nil && d.SSHConfig == nil {
+		return Host{
+			DirectConfig: &direct.Config{},
+		}
+	}
+
+	h.SSHConfig = ssh.BuildConfig(h.SSHConfig, d.SSHConfig)
+
+	return h
+}
