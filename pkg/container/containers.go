@@ -20,7 +20,7 @@ type Containers struct {
 // containers is a validated version of the Containers, which allows user to perform operations on them
 // like planning, getting status etc.
 type containers struct {
-	// previousState is a previous state of the containers, given by user
+	// previousState is a previous state of the containers, given by user.
 	previousState containersState
 	// currentState stores current state of the containers. It is fed by calling Refresh() function.
 	currentState containersState
@@ -28,13 +28,13 @@ type containers struct {
 	desiredState containersState
 }
 
-// New validates Containers configuration and returns "executable" containers object
+// New validates Containers configuration and returns "executable" containers object.
 func (c *Containers) New() (*containers, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate containers configuration: %w", err)
 	}
 
-	// Validate already checks for errors, so we can skip checking here
+	// Validate already checks for errors, so we can skip checking here.
 	previousState, _ := c.PreviousState.New()
 	desiredState, _ := c.DesiredState.New()
 
@@ -44,7 +44,7 @@ func (c *Containers) New() (*containers, error) {
 	}, nil
 }
 
-// Validate validates Containers struct and all structs used underneath
+// Validate validates Containers struct and all structs used underneath.
 func (c *Containers) Validate() error {
 	if c.PreviousState == nil && c.DesiredState == nil {
 		return fmt.Errorf("either current state or desired state must be defined")
@@ -68,7 +68,7 @@ func (c *Containers) Validate() error {
 }
 
 // CheckCurrentState copies previous state to current state, to mark, that it has been called at least once
-// and then updates state of all containers
+// and then updates state of all containers.
 func (c *containers) CheckCurrentState() error {
 	if c.currentState == nil {
 		// We just assign the pointer, but it's fine, since we don't need previous
@@ -80,7 +80,7 @@ func (c *containers) CheckCurrentState() error {
 	return c.currentState.CheckState()
 }
 
-// Execute checks for containers configurion drifts and tries to reach desired state
+// Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
 // TODO add planning, so it is possible to inspect what will be done
@@ -129,7 +129,7 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for stopped containers")
-	// Start stopped containers
+	// Start stopped containers.
 	for i := range c.currentState {
 		if c.currentState[i].container.Status != nil && c.currentState[i].container.Status.Status != "running" {
 			fmt.Printf("Starting stopped container '%s'\n", i)
@@ -141,9 +141,9 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for missing containers to re-create")
-	// Schedule missing containers for recreation
+	// Schedule missing containers for recreation.
 	for i := range c.currentState {
-		// Container is gone, we need to re-create it
+		// Container is gone, we need to re-create it.
 		// TODO also remove from the containers
 		if c.currentState[i].container.Status == nil {
 			delete(c.currentState, i)
@@ -151,7 +151,7 @@ func (c *containers) Execute() error {
 	}
 
 	fmt.Println("Checking for new containers to create")
-	// Iterate over desired state to find which containers should be created
+	// Iterate over desired state to find which containers should be created.
 	for i := range c.desiredState {
 		// TODO Move this logic to function
 		// Simple logic can stay inline, complex logic should go to function?
@@ -161,16 +161,16 @@ func (c *containers) Execute() error {
 			if err := c.desiredState.CreateAndStart(i); err != nil {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
-			// After new container is created, add it to current state, so it can be returned to the user
+			// After new container is created, add it to current state, so it can be returned to the user.
 			c.currentState[i] = c.desiredState[i]
 		}
 	}
 
 	fmt.Println("Checking for host configuration updates")
-	// Update containers on hosts
-	// This can move containers between hosts, but NOT the data
+	// Update containers on hosts.
+	// This can move containers between hosts, but NOT the data.
 	for i := range c.currentState {
-		// Don't update nodes scheduled for removal
+		// Don't update nodes scheduled for removal.
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
 			continue
@@ -189,15 +189,15 @@ func (c *containers) Execute() error {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
 
-			// After new container is created, add it to current state, so it can be returned to the user
+			// After new container is created, add it to current state, so it can be returned to the user.
 			c.currentState[i].host = c.desiredState[i].host
 		}
 	}
 
 	fmt.Println("Checking for configuration updates on containers")
-	// Update containers configurations
+	// Update containers configurations.
 	for i := range c.currentState {
-		// Don't update containers scheduled for removal
+		// Don't update containers scheduled for removal.
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Skipping configuration check for container '%s', as it will be removed\n", i)
 			continue
@@ -217,13 +217,13 @@ func (c *containers) Execute() error {
 				return fmt.Errorf("failed creating new container: %w", err)
 			}
 
-			// After new container is created, add it to current state, so it can be returned to the user
+			// After new container is created, add it to current state, so it can be returned to the user.
 			c.currentState[i] = c.desiredState[i]
 		}
 	}
 
 	fmt.Println("Checking for old containers to remove")
-	// Remove old containers
+	// Remove old containers.
 	for i := range c.currentState {
 		if _, exists := c.desiredState[i]; !exists {
 			fmt.Printf("Removing old container '%s'\n", i)
