@@ -6,6 +6,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
@@ -47,25 +48,27 @@ func New(h *Host) (*host, error) {
 
 // Validate validates host configuration.
 func (h *Host) Validate() error {
+	var errors types.ValidateError
+
 	if err := h.DirectConfig.Validate(); err != nil {
-		return fmt.Errorf("direct config validation failed: %w", err)
+		errors = append(errors, fmt.Errorf("direct config validation failed: %w", err))
 	}
 
 	if h.DirectConfig != nil && h.SSHConfig != nil {
-		return fmt.Errorf("host must have only one transport method defined")
+		errors = append(errors, fmt.Errorf("host must have only one transport method defined"))
 	}
 
 	if h.DirectConfig == nil && h.SSHConfig == nil {
-		return fmt.Errorf("host must have transport method defined")
+		errors = append(errors, fmt.Errorf("host must have transport method defined"))
 	}
 
 	if h.SSHConfig != nil {
 		if err := h.SSHConfig.Validate(); err != nil {
-			return fmt.Errorf("host ssh config invalid: %w", err)
+			errors = append(errors, fmt.Errorf("host ssh config invalid: %w", err))
 		}
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // selectTransport returns transport protocol configured for container.
