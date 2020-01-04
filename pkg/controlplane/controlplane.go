@@ -9,7 +9,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
-	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -70,15 +69,9 @@ func (c *Controlplane) propagateKubeconfig(d *client.Config) {
 // propagateHost merges given host configuration with values stored in Controlplane.
 // Values in given host config has priority over ones from the Controlplane.
 func (c *Controlplane) propagateHost(h host.Host) host.Host {
-	if h.DirectConfig == nil && h.SSHConfig == nil && c.SSH == nil {
-		return host.Host{
-			DirectConfig: &direct.Config{},
-		}
-	}
-
-	h.SSHConfig = ssh.BuildConfig(h.SSHConfig, c.SSH)
-
-	return h
+	return host.BuildConfig(h, host.Host{
+		SSHConfig: c.SSH,
+	})
 }
 
 // propagateCommon merges given common configuration with values stored in Controlplane.
