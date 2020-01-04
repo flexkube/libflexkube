@@ -6,9 +6,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
-	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
@@ -32,9 +32,23 @@ type Pool struct {
 
 // pool is a validated version of Pool
 type pool struct {
-	image      string
-	ssh        *ssh.Config
 	containers container.Containers
+}
+
+// propagateKubelet fills given kubelet with values from Pool object.
+func (p *Pool) propagateKubelet(k *Kubelet) {
+	k.Image = util.PickString(k.Image, p.Image)
+	k.BootstrapKubeconfig = util.PickString(k.BootstrapKubeconfig, p.BootstrapKubeconfig)
+	k.KubernetesCACertificate = util.PickString(k.KubernetesCACertificate, p.KubernetesCACertificate)
+	k.ClusterDNSIPs = util.PickStringSlice(k.ClusterDNSIPs, p.ClusterDNSIPs)
+	k.Labels = util.PickStringMap(k.Labels, p.Labels)
+	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
+	k.PrivilegedLabelsKubeconfig = util.PickString(k.PrivilegedLabelsKubeconfig, p.PrivilegedLabelsKubeconfig)
+	k.Taints = util.PickStringMap(k.Taints, p.Taints)
+
+	k.Host = host.BuildConfig(k.Host, host.Host{
+		SSHConfig: p.SSH,
+	})
 }
 
 // New validates kubelet pool configuration and fills all members with configured values
@@ -44,57 +58,16 @@ func (p *Pool) New() (*pool, error) {
 	}
 
 	pool := &pool{
-		image: p.Image,
-		ssh:   p.SSH,
 		containers: container.Containers{
 			PreviousState: p.State,
 			DesiredState:  make(container.ContainersState),
 		},
 	}
 
-	for i, k := range p.Kubelets {
-		if k.Image == "" && p.Image != "" {
-			k.Image = p.Image
-		}
+	for i := range p.Kubelets {
+		k := &p.Kubelets[i]
 
-		if k.BootstrapKubeconfig == "" && p.BootstrapKubeconfig != "" {
-			k.BootstrapKubeconfig = p.BootstrapKubeconfig
-		}
-
-		if k.KubernetesCACertificate == "" && p.KubernetesCACertificate != "" {
-			k.KubernetesCACertificate = p.KubernetesCACertificate
-		}
-
-		if len(k.ClusterDNSIPs) == 0 && len(p.ClusterDNSIPs) > 0 {
-			k.ClusterDNSIPs = p.ClusterDNSIPs
-		}
-
-		if len(k.Labels) == 0 && len(p.Labels) > 0 {
-			k.Labels = p.Labels
-		}
-
-		if len(k.PrivilegedLabels) == 0 && len(p.PrivilegedLabels) > 0 {
-			k.PrivilegedLabels = p.PrivilegedLabels
-		}
-
-		if k.PrivilegedLabelsKubeconfig == "" && p.PrivilegedLabelsKubeconfig != "" {
-			k.PrivilegedLabelsKubeconfig = p.PrivilegedLabelsKubeconfig
-		}
-
-		if len(k.Taints) == 0 && len(p.Taints) > 0 {
-			k.Taints = p.Taints
-		}
-
-		// TODO find better way to handle defaults!!!
-		if k.Host.DirectConfig == nil && k.Host.SSHConfig == nil && p.SSH == nil {
-			k.Host = host.Host{
-				DirectConfig: &direct.Config{},
-			}
-		}
-
-		if p.SSH != nil {
-			k.Host.SSHConfig = ssh.BuildConfig(k.Host.SSHConfig, p.SSH)
-		}
+		p.propagateKubelet(k)
 
 		kubelet, err := k.New()
 		if err != nil {
