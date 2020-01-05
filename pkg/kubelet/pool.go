@@ -12,9 +12,9 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
-// Pool represents group of kubelet instances and their configuration
+// Pool represents group of kubelet instances and their configuration.
 type Pool struct {
-	// User-configurable fields
+	// User-configurable fields.
 	Image                      string            `json:"image" yaml:"image"`
 	SSH                        *ssh.Config       `json:"ssh" yaml:"ssh"`
 	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
@@ -26,11 +26,11 @@ type Pool struct {
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 
-	// Serializable fields
+	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
 }
 
-// pool is a validated version of Pool
+// pool is a validated version of Pool.
 type pool struct {
 	containers container.Containers
 }
@@ -51,7 +51,7 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	})
 }
 
-// New validates kubelet pool configuration and fills all members with configured values
+// New validates kubelet pool configuration and fills all members with configured values.
 func (p *Pool) New() (*pool, error) {
 	if err := p.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate pool configuration: %w", err)
@@ -80,7 +80,7 @@ func (p *Pool) New() (*pool, error) {
 	return pool, nil
 }
 
-// Validate validates Pool configuration
+// Validate validates Pool configuration.
 //
 // TODO add actual validation
 func (p *Pool) Validate() error {
