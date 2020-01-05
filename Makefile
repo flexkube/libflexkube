@@ -27,7 +27,7 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
-DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocyclo,gocognit,gosec
+DISABLED_LINTERS=golint,godox,lll,funlen,dupl,gocognit,gosec
 
 TERRAFORM_BIN=/usr/bin/terraform
 
