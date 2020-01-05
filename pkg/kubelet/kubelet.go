@@ -14,7 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Kubelet represents single kubelet instance
+// Kubelet represents single kubelet instance.
 type Kubelet struct {
 	Address             string    `json:"address" yaml:"address"`
 	Image               string    `json:"image" yaml:"image"`
@@ -34,7 +34,7 @@ type Kubelet struct {
 	PodCIDR string `json:"podCIDR" yaml:"podCIDR"`
 }
 
-// kubelet is a validated, executable version of Kubelet
+// kubelet is a validated, executable version of Kubelet.
 type kubelet struct {
 	address                    string
 	image                      string
@@ -50,7 +50,7 @@ type kubelet struct {
 	privilegedLabelsKubeconfig string
 }
 
-// New validates Kubelet configuration and returns it's usable version
+// New validates Kubelet configuration and returns it's usable version.
 func (k *Kubelet) New() (*kubelet, error) {
 	// TODO when creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
@@ -79,7 +79,7 @@ func (k *Kubelet) New() (*kubelet, error) {
 	return nk, nil
 }
 
-// Validate validates kubelet configuration
+// Validate validates kubelet configuration.
 //
 // TODO better validation should be done here
 func (k *Kubelet) Validate() error {
@@ -104,7 +104,7 @@ func (k *Kubelet) Validate() error {
 	return errors.Return()
 }
 
-// ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer
+// ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
 func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
 	configFiles := make(map[string]string)
 
@@ -114,7 +114,7 @@ func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer
 		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
 	}
 
-	// kubelet.yaml file is a recommended way to configure the kubelet
+	// kubelet.yaml file is a recommended way to configure the kubelet.
 	//
 	// TODO maybe we store that as a struct, and we marshal here to YAML?
 	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
@@ -172,7 +172,7 @@ clusterDNS:
 			// Required for detecting node IP address, --node-ip is not enough as kubelet is trying to verify
 			// that this IP address is present on the node.
 			NetworkMode: "host",
-			// Required for adding containers into correct network namespaces
+			// Required for adding containers into correct network namespaces.
 			PidMode: "host",
 			Mounts: []containertypes.Mount{
 				{
@@ -202,7 +202,7 @@ clusterDNS:
 					Target: "/var/run/docker.sock",
 				},
 				{
-					// For testing kubenet
+					// For testing kubenet.
 					// TODO do we need it?
 					Source: "/etc/cni/net.d/",
 					Target: "/etc/cni/net.d",
@@ -234,7 +234,7 @@ clusterDNS:
 					Target: "/var/lib/cni",
 				},
 				{
-					// For loading kernel modules for kubenet plugin
+					// For loading kernel modules for kubenet plugin.
 					Source: "/lib/modules/",
 					Target: "/lib/modules",
 				},
@@ -254,12 +254,12 @@ clusterDNS:
 			},
 			Args: []string{
 				"kubelet",
-				// Tell kubelet to use config file
+				// Tell kubelet to use config file.
 				"--config=/etc/kubernetes/kubelet.yaml",
 				// Specify kubeconfig file for kubelet. This enabled API server mode and
 				// specifies when kubelet will write kubeconfig file after TLS bootstrapping.
 				"--kubeconfig=/etc/kubernetes/kubeconfig",
-				// kubeconfig with access token for TLS bootstrapping
+				// kubeconfig with access token for TLS bootstrapping.
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
