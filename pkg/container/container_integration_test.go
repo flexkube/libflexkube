@@ -3,8 +3,8 @@
 package container
 
 import (
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 
@@ -209,5 +209,5 @@ func randomContainerName() string {
 		panic(err)
 	}
 
-	return fmt.Sprintf("foo-%x", md5.Sum(token))
+	return fmt.Sprintf("foo-%x", sha256.Sum256(token))
 }
