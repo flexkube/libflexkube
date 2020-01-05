@@ -108,18 +108,103 @@ func filesToUpdate(d hostConfiguredContainer, c *hostConfiguredContainer) []stri
 }
 
 // ensureConfigured makes sure that all desired configuration files are correct.
-func ensureConfigured(d hostConfiguredContainer, c *hostConfiguredContainer) error {
-	if err := d.Configure(filesToUpdate(d, c)); err != nil {
+func (c *containers) ensureConfigured(n string) error {
+	d := c.desiredState[n]
+
+	// Container won't be needed anyway, so skip everything.
+	if d == nil {
+		return nil
+	}
+
+	r := c.currentState[n]
+
+	if err := d.Configure(filesToUpdate(*d, r)); err != nil {
 		return fmt.Errorf("failed creating config files: %w", err)
 	}
 
 	// If current state does not exist, simply replace it with desired state.
-	if c == nil {
-		c = &d
+	if r == nil {
+		c.currentState[n] = d
+		r = d
 	}
 
 	// Update current state config files map.
-	c.configFiles = d.configFiles
+	r.configFiles = d.configFiles
+
+	return nil
+}
+
+// ensureRunning makes sure that given container is running.
+func ensureRunning(c *hostConfiguredContainer) error {
+	if c == nil {
+		return fmt.Errorf("can't start non-existing container")
+	}
+
+	if c.container.IsRunning() {
+		return nil
+	}
+
+	return c.Start()
+}
+
+func (c *containers) ensureExists(n string) error {
+	r := c.currentState[n]
+	if r != nil && r.container.Exists() {
+		return nil
+	}
+
+	fmt.Printf("Creating new container '%s'\n", n)
+
+	if err := c.desiredState.CreateAndStart(n); err != nil {
+		return fmt.Errorf("failed creating new container: %w", err)
+	}
+
+	d := c.desiredState[n]
+
+	// If current state does not exist, simply replace it with desired state.
+	if r == nil {
+		c.currentState[n] = d
+		r = d
+	}
+
+	// After new container is created, add it to current state, so it can be returned to the user.
+	r.container.Status = d.container.Status
+
+	return nil
+}
+
+// ensureHost makes sure container is running on the right host.
+//
+// If host configuration changes, existing container will be removed and new one will be created.
+//
+// TODO This might be an overkill. e.g. changing SSH key for deployment will re-create all containers.
+func (c *containers) ensureHost(n string) error {
+	r := c.currentState[n]
+	if r == nil {
+		return fmt.Errorf("can't update non-existing container")
+	}
+
+	dr := c.desiredState[n]
+
+	// Don't update containers scheduled for removal and containers with unchanged configuration
+	if dr == nil || reflect.DeepEqual(r.host, dr.host) {
+		return nil
+	}
+
+	fmt.Printf("Detected host configuration drift '%s'\n", n)
+	fmt.Printf("  From: %+v\n%+v\n%+v\n", r.host, r.host.DirectConfig, r.host.SSHConfig)
+	fmt.Printf("  To:   %+v\n%+v\n%+v\n", dr.host, dr.host.DirectConfig, dr.host.SSHConfig)
+
+	if err := c.currentState.RemoveContainer(n); err != nil {
+		return fmt.Errorf("failed removing old container: %w", err)
+	}
+
+	if err := c.desiredState.CreateAndStart(n); err != nil {
+		return fmt.Errorf("failed creating new container: %w", err)
+	}
+
+	// After new container is created, add it to current state, so it can be returned to the user.
+	r.host = dr.host
 
 	return nil
 }
@@ -136,118 +221,50 @@ func (c *containers) Execute() error {
 		return fmt.Errorf("can't execute without knowing current state of the containers")
 	}
 
-	fmt.Println("Checking for configuration files updates")
+	fmt.Println("Checking for stopped and missing containers")
 
-	// Iterate over all containers we need to create.
+	for n, r := range c.currentState {
+		if err := ensureRunning(r); err != nil {
+			return fmt.Errorf("failed to start stopped container: %w", err)
+		}
+
+		// Container is gone, we need to re-create it.
+		if !r.container.Exists() {
+			delete(c.currentState, n)
+		}
+	}
+
+	fmt.Println("Configuring and creating new containers")
+
 	for i := range c.desiredState {
-		if err := ensureConfigured(*c.desiredState[i], c.currentState[i]); err != nil {
+		if err := c.ensureConfigured(i); err != nil {
 			return fmt.Errorf("failed configuring container %s: %w", i, err)
 		}
-	}
 
-	fmt.Println("Checking for stopped containers")
-	// Start stopped containers.
-	for i := range c.currentState {
-		if c.currentState[i].container.Status != nil && c.currentState[i].container.Status.Status != "running" {
-			fmt.Printf("Starting stopped container '%s'\n", i)
-
-			if err := c.currentState[i].Start(); err != nil {
-				return fmt.Errorf("failed starting container: %w", err)
-			}
+		if err := c.ensureExists(i); err != nil {
+			return fmt.Errorf("failed creating new container %s: %w", i, err)
 		}
 	}
 
-	fmt.Println("Checking for missing containers to re-create")
-	// Schedule missing containers for recreation.
+	fmt.Println("Updating existing containers")
+
 	for i := range c.currentState {
-		// Container is gone, we need to re-create it.
-		// TODO also remove from the containers
-		if c.currentState[i].container.Status == nil {
-			delete(c.currentState, i)
+		// Update containers on hosts.
+		// This can move containers between hosts, but NOT the data.
+		if err := c.ensureHost(i); err != nil {
+			return fmt.Errorf("failed updating host configuration of container %s: %w", i, err)
 		}
-	}
 
-	fmt.Println("Checking for new containers to create")
-	// Iterate over desired state to find which containers should be created.
-	for i := range c.desiredState {
-		// TODO Move this logic to function
-		// Simple logic can stay inline, complex logic should go to function?
-		if _, exists := c.currentState[i]; !exists {
-			fmt.Printf("Creating new container '%s'\n", i)
-
-			if err := c.desiredState.CreateAndStart(i); err != nil {
-				return fmt.Errorf("failed creating new container: %w", err)
-			}
-			// After new container is created, add it to current state, so it can be returned to the user.
-			c.currentState[i] = c.desiredState[i]
+		if err := c.ensureConfigured(i); err != nil {
+			return fmt.Errorf("failed updating configuration for container %s: %w", i, err)
 		}
-	}
 
-	fmt.Println("Checking for host configuration updates")
-	// Update containers on hosts.
-	// This can move containers between hosts, but NOT the data.
-	for i := range c.currentState {
-		// Don't update nodes scheduled for removal.
-		if _, exists := c.desiredState[i]; !exists {
-			fmt.Printf("Skipping runtime configuration check for container '%s', as it will be removed\n", i)
+		if _, exists := c.desiredState[i]; exists {
 			continue
 		}
 
-		if !reflect.DeepEqual(c.currentState[i].host, c.desiredState[i].host) {
-			fmt.Printf("Detected host configuration drift '%s'\n", i)
-			fmt.Printf("  From: %+v\n%+v\n%+v\n", c.currentState[i].host, c.currentState[i].host.DirectConfig, c.currentState[i].host.SSHConfig)
-			fmt.Printf("  To:   %+v\n%+v\n%+v\n", c.desiredState[i].host, c.desiredState[i].host.DirectConfig, c.desiredState[i].host.SSHConfig)
-
-			if err := c.currentState.RemoveContainer(i); err != nil {
-				return fmt.Errorf("failed removing old container: %w", err)
-			}
-
-			if err := c.desiredState.CreateAndStart(i); err != nil {
-				return fmt.Errorf("failed creating new container: %w", err)
-			}
-
-			// After new container is created, add it to current state, so it can be returned to the user.
-			c.currentState[i].host = c.desiredState[i].host
-		}
-	}
-
-	fmt.Println("Checking for configuration updates on containers")
-	// Update containers configurations.
-	for i := range c.currentState {
-		// Don't update containers scheduled for removal.
-		if _, exists := c.desiredState[i]; !exists {
-			fmt.Printf("Skipping configuration check for container '%s', as it will be removed\n", i)
-			continue
-		}
-
-		// If container configuration differs, re-create the container
-		if !reflect.DeepEqual(c.currentState[i].container.Config, c.desiredState[i].container.Config) {
-			fmt.Printf("Updating container configuration '%s'\n", i)
-			fmt.Printf("  From: %+v\n", c.currentState[i].container.Config)
-			fmt.Printf("  To: %+v\n", c.desiredState[i].container.Config)
-
-			if err := c.currentState.RemoveContainer(i); err != nil {
-				return fmt.Errorf("failed removing old container: %w", err)
-			}
-
-			if err := c.desiredState.CreateAndStart(i); err != nil {
-				return fmt.Errorf("failed creating new container: %w", err)
-			}
-
-			// After new container is created, add it to current state, so it can be returned to the user.
-			c.currentState[i] = c.desiredState[i]
-		}
-	}
-
-	fmt.Println("Checking for old containers to remove")
-	// Remove old containers.
-	for i := range c.currentState {
-		if _, exists := c.desiredState[i]; !exists {
-			fmt.Printf("Removing old container '%s'\n", i)
-
-			if err := c.currentState.RemoveContainer(i); err != nil {
-				return fmt.Errorf("failed removing old container: %w", err)
-			}
+		if err := c.currentState.RemoveContainer(i); err != nil {
+			return fmt.Errorf("failed removing old container: %w", err)
 		}
 	}
 
