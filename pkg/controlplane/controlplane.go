@@ -28,7 +28,7 @@ func (co Common) GetImage() string {
 
 // Controlplane represents kubernetes controlplane configuration and state from the user.
 type Controlplane struct {
-	// User-configurable fields
+	// User-configurable fields.
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
 	Common                Common                `json:"common" yaml:"common"`
@@ -41,7 +41,7 @@ type Controlplane struct {
 
 	Shutdown bool `json:"shutdown" yaml:"shutdown"`
 
-	// Serializable fields
+	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
 }
 
