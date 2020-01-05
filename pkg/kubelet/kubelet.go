@@ -51,7 +51,7 @@ type kubelet struct {
 }
 
 // New validates Kubelet configuration and returns it's usable version.
-func (k *Kubelet) New() (*kubelet, error) {
+func (k *Kubelet) New() (container.ResourceInstance, error) {
 	// TODO when creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate kubelet configuration: %w", err)
