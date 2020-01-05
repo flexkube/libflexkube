@@ -20,13 +20,20 @@ const (
 	RetryTimeout = 30 * time.Second
 )
 
+// Client defines exported capabilities of flexkube k8s client.
+type Client interface {
+	CheckNodeExists(name string) func() (bool, error)
+	WaitForNode(name string) error
+	LabelNode(name string, labels map[string]string) error
+}
+
 type client struct {
 	*kubernetes.Clientset
 }
 
 // NewClient takes content of kubeconfig file as an argument and returns flexkube kubernetes client,
 // which implements bunch of helper methods for Kubernetes API.
-func NewClient(kubeconfig []byte) (*client, error) {
+func NewClient(kubeconfig []byte) (Client, error) {
 	c, err := NewClientset(kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating kubernetes clientset: %w", err)
