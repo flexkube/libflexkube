@@ -9,6 +9,11 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
+// ResourceInstance interface represents struct, which can be converted to HostConfiguredContainer.
+type ResourceInstance interface {
+	ToHostConfiguredContainer() *HostConfiguredContainer
+}
+
 const (
 	// ConfigMountpoint is where host file-system is mounted in the -config container.
 	ConfigMountpoint = "/mnt/host"
