@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
@@ -14,14 +14,14 @@ import (
 // APILoadBalancers represents group of APILoadBalancer instances. It allows to set default values for
 // all configured instances.
 type APILoadBalancers struct {
-	Image            string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH              *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	Servers          []string          `json:"servers,omitempty" yaml:"servers,omitempty"`
-	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty" yaml:"apiLoadBalancers,omitempty"`
-	BindPort         int               `json:"bindPort,omitempty" yaml:"bindPort,omitempty"`
+	Image            string            `json:"image" yaml:"image"`
+	SSH              *ssh.Config       `json:"ssh" yaml:"ssh"`
+	Servers          []string          `json:"servers" yaml:"servers"`
+	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers" yaml:"apiLoadBalancers"`
+	BindPort         int               `json:"bindPort" yaml:"bindPort"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	State container.ContainersState `json:"state:omitempty" yaml:"state"`
 }
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers
