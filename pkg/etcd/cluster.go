@@ -12,19 +12,19 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
-// Cluster represents etcd cluster configuration and state from the user
+// Cluster represents etcd cluster configuration and state from the user.
 type Cluster struct {
-	// User-configurable fields
+	// User-configurable fields.
 	Image         string            `json:"image" yaml:"image"`
 	SSH           *ssh.Config       `json:"ssh" yaml:"ssh"`
 	CACertificate string            `json:"caCertificate" yaml:"caCertificate"`
 	Members       map[string]Member `json:"members" yaml:"members"`
 
-	// Serializable fields
+	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
 }
 
-// cluster is executable version of Cluster, with validated fields and calculated containers
+// cluster is executable version of Cluster, with validated fields and calculated containers.
 type cluster struct {
 	image         string
 	ssh           *ssh.Config
@@ -32,7 +32,7 @@ type cluster struct {
 	containers    container.Containers
 }
 
-// New validates etcd cluster configuration and fills members with default and computed values
+// New validates etcd cluster configuration and fills members with default and computed values.
 func (c *Cluster) New() (*cluster, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
@@ -100,7 +100,7 @@ func (c *Cluster) New() (*cluster, error) {
 	return cluster, nil
 }
 
-// Validate validates Cluster configuration
+// Validate validates Cluster configuration.
 func (c *Cluster) Validate() error {
 	if len(c.Members) == 0 && c.State == nil {
 		return fmt.Errorf("either members or previous state needs to be defined")
@@ -147,7 +147,7 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(Cluster{State: c.containers.PreviousState})
 }
 
-// CheckCurrentState refreshes current state of the cluster
+// CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
 	containers, err := c.containers.New()
 	if err != nil {
@@ -163,7 +163,7 @@ func (c *cluster) CheckCurrentState() error {
 	return nil
 }
 
-// Deploy refreshes current state of the cluster and deploys detected changes
+// Deploy refreshes current state of the cluster and deploys detected changes.
 func (c *cluster) Deploy() error {
 	containers, err := c.containers.New()
 	if err != nil {
