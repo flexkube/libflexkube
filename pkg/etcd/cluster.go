@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
@@ -15,13 +15,13 @@ import (
 // Cluster represents etcd cluster configuration and state from the user
 type Cluster struct {
 	// User-configurable fields
-	Image         string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH           *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	CACertificate string            `json:"caCertificate,omitempty" yaml:"caCertificate,omitempty"`
-	Members       map[string]Member `json:"members,omitempty" yaml:"members,omitempty"`
+	Image         string            `json:"image" yaml:"image"`
+	SSH           *ssh.Config       `json:"ssh" yaml:"ssh"`
+	CACertificate string            `json:"caCertificate" yaml:"caCertificate"`
+	Members       map[string]Member `json:"members" yaml:"members"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	State container.ContainersState `json:"state" yaml:"state"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers
