@@ -10,6 +10,8 @@ import (
 	"helm.sh/helm/v3/pkg/storage"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Release is an interface representing helm release.
@@ -91,34 +93,36 @@ func (r *Config) New() (Release, error) {
 
 // Validate validates Release configuration
 func (r *Config) Validate() error {
+	var errors types.ValidateError
+
 	// Check if all required values are filled in
 	if r.Kubeconfig == "" {
-		return fmt.Errorf("kubeconfig is empty")
+		errors = append(errors, fmt.Errorf("kubeconfig is empty"))
 	}
 
 	if r.Namespace == "" {
-		return fmt.Errorf("namespace is empty")
+		errors = append(errors, fmt.Errorf("namespace is empty"))
 	}
 
 	if r.Name == "" {
-		return fmt.Errorf("name is empty")
+		errors = append(errors, fmt.Errorf("name is empty"))
 	}
 
 	if r.Chart == "" {
-		return fmt.Errorf("chart is empty")
+		errors = append(errors, fmt.Errorf("chart is empty"))
 	}
 
 	// Try to create a clients
 	if _, _, _, err := newClients(r.Kubeconfig); err != nil {
-		return fmt.Errorf("failed to create kubernetes clients: %w", err)
+		errors = append(errors, fmt.Errorf("failed to create kubernetes clients: %w", err))
 	}
 
 	// Parse given values
 	if _, err := r.parseValues(); err != nil {
-		return fmt.Errorf("failed to parse values: %w", err)
+		errors = append(errors, fmt.Errorf("failed to parse values: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // ValidateChart locates and parses the chart.
