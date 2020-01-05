@@ -12,8 +12,18 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Release represents user-configured Helm release
-type Release struct {
+// Release is an interface representing helm release.
+type Release interface {
+	ValidateChart() error
+	Install() error
+	Upgrade() error
+	InstallOrUpgrade() error
+	Exists() (bool, error)
+	Uninstall() error
+}
+
+// Config represents user-configured Helm release
+type Config struct {
 
 	// Kubeconfig is content of kubeconfig file in YAML format, which will be used to authenticate
 	// to the cluster and create a release.
@@ -35,7 +45,7 @@ type Release struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
-// release is a validated and installable/update'able version of Release
+// release is a validated and installable/update'able version of Config
 type release struct {
 	actionConfig *action.Configuration
 	settings     *cli.EnvSettings
@@ -47,7 +57,7 @@ type release struct {
 }
 
 // New validates release configuration and builts installable version of it
-func (r *Release) New() (*release, error) {
+func (r *Config) New() (Release, error) {
 	if err := r.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate helm release: %w", err)
 	}
@@ -80,7 +90,7 @@ func (r *Release) New() (*release, error) {
 }
 
 // Validate validates Release configuration
-func (r *Release) Validate() error {
+func (r *Config) Validate() error {
 	// Check if all required values are filled in
 	if r.Kubeconfig == "" {
 		return fmt.Errorf("kubeconfig is empty")
@@ -259,7 +269,7 @@ func (r *release) uninstallClient() *action.Uninstall {
 }
 
 // parseValues parses release values and returns it ready to use when installing chart
-func (r *Release) parseValues() (map[string]interface{}, error) {
+func (r *Config) parseValues() (map[string]interface{}, error) {
 	values := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(r.Values), &values); err != nil {
 		return nil, fmt.Errorf("failed to parse values: %w", err)
@@ -269,8 +279,8 @@ func (r *Release) parseValues() (map[string]interface{}, error) {
 }
 
 // FromYaml allows to quickly create new release object from serialized representation.
-func FromYaml(data []byte) (*release, error) {
-	r := Release{}
+func FromYaml(data []byte) (Release, error) {
+	r := Config{}
 
 	if err := yaml.Unmarshal(data, &r); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal release: %w", err)

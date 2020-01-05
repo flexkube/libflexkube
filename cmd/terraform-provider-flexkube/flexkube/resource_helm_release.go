@@ -37,7 +37,7 @@ func resourceHelmRelease() *schema.Resource {
 }
 
 func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
+	r := release.Config{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
@@ -62,7 +62,7 @@ func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
+	r := release.Config{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
@@ -92,7 +92,7 @@ func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseDelete(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
+	r := release.Config{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
