@@ -10,6 +10,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Cluster represents etcd cluster configuration and state from the user.
@@ -33,7 +34,7 @@ type cluster struct {
 }
 
 // New validates etcd cluster configuration and fills members with default and computed values.
-func (c *Cluster) New() (*cluster, error) {
+func (c *Cluster) New() (types.Resource, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
 	}
@@ -128,7 +129,7 @@ func (c *Cluster) Validate() error {
 }
 
 // FromYaml allows to restore cluster state from YAML.
-func FromYaml(c []byte) (*cluster, error) {
+func FromYaml(c []byte) (types.Resource, error) {
 	cluster := &Cluster{}
 	if err := yaml.Unmarshal(c, &cluster); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
@@ -149,45 +150,10 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 
 // CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.CheckCurrentState()
 }
 
 // Deploy refreshes current state of the cluster and deploys detected changes.
 func (c *cluster) Deploy() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
-	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
-	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
-	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
-	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
-	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
-	// make additional validation or not.
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := containers.Execute(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.Deploy()
 }
