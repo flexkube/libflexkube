@@ -69,6 +69,51 @@ func (c *Containers) Validate() error {
 	return nil
 }
 
+// CheckCurrentState checks the state of existing containers and updates their state.
+func (c *Containers) CheckCurrentState() error {
+	containers, err := c.New()
+	if err != nil {
+		return err
+	}
+
+	if err := containers.CheckCurrentState(); err != nil {
+		return err
+	}
+
+	*c = *containers.ToExported()
+
+	return nil
+}
+
+// Deploy deploys defined containers.
+func (c *Containers) Deploy() error {
+	containers, err := c.New()
+	if err != nil {
+		return err
+	}
+
+	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
+	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
+	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
+	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
+	// differ.
+	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
+	// some optimization.
+	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
+	// make additional validation or not.
+	if err := containers.CheckCurrentState(); err != nil {
+		return err
+	}
+
+	if err := containers.Execute(); err != nil {
+		return err
+	}
+
+	*c = *containers.ToExported()
+
+	return nil
+}
+
 // CheckCurrentState copies previous state to current state, to mark, that it has been called at least once
 // and then updates state of all containers.
 func (c *containers) CheckCurrentState() error {
