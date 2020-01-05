@@ -111,7 +111,7 @@ frontend stats
 // If configuration is wrong, error is returned.
 //
 // TODO I think we shouldn't fill the default values here. Maybe do it one level up?
-func (a *APILoadBalancer) New() (*apiLoadBalancer, error) {
+func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate API Load balancer configuration: %w", err)
 	}
