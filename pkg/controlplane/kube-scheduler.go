@@ -76,7 +76,7 @@ clientConnection:
 }
 
 // New validates KubeScheduler struct and returns it's usable version
-func (k *KubeScheduler) New() (*kubeScheduler, error) {
+func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Scheduler configuration: %w", err)
 	}

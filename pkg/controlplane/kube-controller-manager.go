@@ -102,7 +102,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 }
 
 // New validates KubeControllerManager and returns usable kubeControllerManager.
-func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
+func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
 	}
