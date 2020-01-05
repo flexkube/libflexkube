@@ -319,3 +319,13 @@ func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
 
 	return ci.Stat(paths)
 }
+
+// Exists returns true, if the container has been created.
+func (c *Container) Exists() bool {
+	return c.Status != nil
+}
+
+// IsRunning returns true, if container exists and it's running.
+func (c *Container) IsRunning() bool {
+	return c.Exists() && c.Status.Status == "running"
+}
