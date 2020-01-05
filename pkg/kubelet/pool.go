@@ -10,6 +10,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Pool represents group of kubelet instances and their configuration.
@@ -52,7 +53,7 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 }
 
 // New validates kubelet pool configuration and fills all members with configured values.
-func (p *Pool) New() (*pool, error) {
+func (p *Pool) New() (types.Resource, error) {
 	if err := p.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate pool configuration: %w", err)
 	}
@@ -88,7 +89,7 @@ func (p *Pool) Validate() error {
 }
 
 // FromYaml allows to restore cluster state from YAML.
-func FromYaml(c []byte) (*pool, error) {
+func FromYaml(c []byte) (types.Resource, error) {
 	pool := &Pool{}
 	if err := yaml.Unmarshal(c, &pool); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
@@ -107,46 +108,12 @@ func (p *pool) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(Pool{State: p.containers.PreviousState})
 }
 
-// CheckCurrentState refreshes state of configured instances
+// CheckCurrentState refreshes state of configured instances.
 func (p *pool) CheckCurrentState() error {
-	containers, err := p.containers.New()
-	if err != nil {
-		return err
-	}
-
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	p.containers = *containers.ToExported()
-
-	return nil
+	return p.containers.CheckCurrentState()
 }
 
-// Deploy checks current status of the pool and deploy configuration changes
+// Deploy checks current status of the pool and deploy configuration changes.
 func (p *pool) Deploy() error {
-	containers, err := p.containers.New()
-	if err != nil {
-		return err
-	}
-	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
-	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
-	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
-	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
-	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
-	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
-	// make additional validation or not.
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := containers.Execute(); err != nil {
-		return err
-	}
-
-	p.containers = *containers.ToExported()
-
-	return nil
+	return p.containers.Deploy()
 }

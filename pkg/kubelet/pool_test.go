@@ -2,9 +2,11 @@ package kubelet
 
 import (
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-func GetPool(t *testing.T) *pool {
+func GetPool(t *testing.T) types.Resource {
 	y := `
 ssh:
   address: localhost
