@@ -27,7 +27,7 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
-DISABLED_LINTERS=golint,godox,lll,funlen,dupl
+DISABLED_LINTERS=godox,lll,funlen,dupl
 
 TERRAFORM_BIN=/usr/bin/terraform
 
@@ -113,12 +113,6 @@ test-local-apply:
 .PHONY: lint
 lint:
 	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration $(GO_PACKAGES)
-	# Since golint is very opinionated about certain things, for example exported functions returning
-	# unexported structs, which we use here a lot, let's filter them out and set status ourselves.
-	#
-	# TODO Maybe cache golint result somewhere, do we don't have to run it twice?
-	golint $$(go list $(GO_PACKAGES)) | grep -v -E 'returns unexported type.*, which can be annoying to use' || true
-	test $$(golint $$(go list $(GO_PACKAGES)) | grep -v -E "returns unexported type.*, which can be annoying to use" | wc -l) -eq 0
 
 .PHONY: update
 update:
@@ -165,17 +159,13 @@ cover-upload: codecov
 install-golangci-lint:
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
 
-.PHONY: install-golint
-install-golint:
-	$(GOGET) -u golang.org/x/lint/golint
-
 .PHONY: install-cc-test-reporter
 install-cc-test-reporter:
 	curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > $(BIN_PATH)/cc-test-reporter
 	chmod +x $(BIN_PATH)/cc-test-reporter
 
 .PHONY: install-ci
-install-ci: install-golangci-lint install-golint install-cc-test-reporter
+install-ci: install-golangci-lint install-cc-test-reporter
 
 .PHONY: vagrant-up
 vagrant-up:
