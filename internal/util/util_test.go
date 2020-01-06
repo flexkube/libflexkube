@@ -121,7 +121,7 @@ func TestPickStringMapEmpty(t *testing.T) {
 }
 
 func TestKeysStringMap(t *testing.T) {
-	expected := []string{"foo", "baz"}
+	expected := []string{"baz", "foo"}
 	m := map[string]string{
 		"foo": "bar",
 		"baz": "doh",

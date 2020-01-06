@@ -101,5 +101,7 @@ func KeysStringMap(m map[string]string) []string {
 		keys = append(keys, k)
 	}
 
+	sort.Strings(keys)
+
 	return keys
 }
