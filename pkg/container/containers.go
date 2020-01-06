@@ -9,6 +9,14 @@ import (
 	"github.com/flexkube/libflexkube/internal/util"
 )
 
+// ContainersInterface represents capabilities of containers struct.
+type ContainersInterface interface {
+	CheckCurrentState() error
+	Execute() error
+	CurrentStateToYaml() ([]byte, error)
+	ToExported() *Containers
+}
+
 // Containers allow to orchestrate and update multiple containers spread
 // across multiple hosts and update their configurations.
 type Containers struct {
@@ -31,7 +39,7 @@ type containers struct {
 }
 
 // New validates Containers configuration and returns "executable" containers object.
-func (c *Containers) New() (*containers, error) {
+func (c *Containers) New() (ContainersInterface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate containers configuration: %w", err)
 	}
@@ -317,7 +325,7 @@ func (c *containers) Execute() error {
 }
 
 // FromYaml allows to restore containers state from YAML.
-func FromYaml(c []byte) (*containers, error) {
+func FromYaml(c []byte) (ContainersInterface, error) {
 	containers := &Containers{}
 	if err := yaml.Unmarshal(c, &containers); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
