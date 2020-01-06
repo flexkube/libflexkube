@@ -4,38 +4,39 @@ import (
 	"fmt"
 	"strconv"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // APILoadBalancers represents group of APILoadBalancer instances. It allows to set default values for
 // all configured instances.
 type APILoadBalancers struct {
-	Image            string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH              *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	Servers          []string          `json:"servers,omitempty" yaml:"servers,omitempty"`
-	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty" yaml:"apiLoadBalancers,omitempty"`
-	BindPort         int               `json:"bindPort,omitempty" yaml:"bindPort,omitempty"`
+	Image            string            `json:"image" yaml:"image"`
+	SSH              *ssh.Config       `json:"ssh" yaml:"ssh"`
+	Servers          []string          `json:"servers" yaml:"servers"`
+	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers" yaml:"apiLoadBalancers"`
+	BindPort         int               `json:"bindPort" yaml:"bindPort"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	State container.ContainersState `json:"state:omitempty" yaml:"state"`
 }
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers
 type apiLoadBalancers struct {
 	image      string
 	ssh        *ssh.Config
-	containers container.Containers
+	containers *container.Containers
 }
 
 // New validates APILoadBalancers struct and fills all required fields in members with default values
 // provided by the user.
 //
 // TODO move filling the defaults to separated function, so it can be re-used in Validate.
-func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
+func (a *APILoadBalancers) New() (types.Resource, error) {
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate API Load balancers configuration: %w", err)
 	}
@@ -43,7 +44,7 @@ func (a *APILoadBalancers) New() (*apiLoadBalancers, error) {
 	apiLoadBalancers := &apiLoadBalancers{
 		image: a.Image,
 		ssh:   a.SSH,
-		containers: container.Containers{
+		containers: &container.Containers{
 			PreviousState: a.State,
 			DesiredState:  make(container.ContainersState),
 		},
@@ -95,7 +96,7 @@ func (a *APILoadBalancers) Validate() error {
 }
 
 // FromYaml allows to restore cluster state from YAML.
-func FromYaml(c []byte) (*apiLoadBalancers, error) {
+func FromYaml(c []byte) (types.Resource, error) {
 	apiLoadBalancers := &APILoadBalancers{}
 	if err := yaml.Unmarshal(c, &apiLoadBalancers); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
@@ -114,47 +115,13 @@ func (a *apiLoadBalancers) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(APILoadBalancers{State: a.containers.PreviousState})
 }
 
+// CheckCurrentState reads current state of the deployed resources.
 func (a *apiLoadBalancers) CheckCurrentState() error {
-	containers, err := a.containers.New()
-	if err != nil {
-		return err
-	}
-
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	a.containers = *containers.ToExported()
-
-	return nil
+	return a.containers.CheckCurrentState()
 }
 
 // Deploy checks current status of deployed group of instances and updates them if there is some
 // configuration drift.
 func (a *apiLoadBalancers) Deploy() error {
-	containers, err := a.containers.New()
-	if err != nil {
-		return err
-	}
-
-	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
-	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
-	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
-	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
-	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
-	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
-	// make additional validation or not.
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := containers.Execute(); err != nil {
-		return err
-	}
-
-	a.containers = *containers.ToExported()
-
-	return nil
+	return a.containers.Deploy()
 }

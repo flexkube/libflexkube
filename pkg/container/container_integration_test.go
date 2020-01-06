@@ -3,8 +3,8 @@
 package container
 
 import (
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 
@@ -104,7 +104,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
 
-	c.status.ID = "nonexistent"
+	c.(*containerInstance).status.ID = "nonexistent"
 
 	status, err := c.Status()
 	if err != nil {
@@ -209,5 +209,5 @@ func randomContainerName() string {
 		panic(err)
 	}
 
-	return fmt.Sprintf("foo-%x", md5.Sum(token))
+	return fmt.Sprintf("foo-%x", sha256.Sum256(token))
 }

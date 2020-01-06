@@ -28,7 +28,7 @@ func (co Common) GetImage() string {
 
 // Controlplane represents kubernetes controlplane configuration and state from the user.
 type Controlplane struct {
-	// User-configurable fields
+	// User-configurable fields.
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
 	Common                Common                `json:"common" yaml:"common"`
@@ -41,7 +41,7 @@ type Controlplane struct {
 
 	Shutdown bool `json:"shutdown" yaml:"shutdown"`
 
-	// Serializable fields
+	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
 }
 
@@ -127,7 +127,7 @@ func (c *Controlplane) buildKubeAPIServer() {
 
 // New validates Controlplane configuration and fills populates all values provided by the users
 // to the structs underneath.
-func (c *Controlplane) New() (*controlplane, error) {
+func (c *Controlplane) New() (types.Resource, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
@@ -196,7 +196,7 @@ func (c *Controlplane) Validate() error {
 }
 
 // FromYaml allows to restore controlplane state from YAML.
-func FromYaml(c []byte) (*controlplane, error) {
+func FromYaml(c []byte) (types.Resource, error) {
 	controlplane := &Controlplane{}
 	if err := yaml.Unmarshal(c, &controlplane); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
@@ -216,45 +216,10 @@ func (c *controlplane) StateToYaml() ([]byte, error) {
 }
 
 func (c *controlplane) CheckCurrentState() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.CheckCurrentState()
 }
 
 // Deploy checks the status of the control plane and deploys configuration updates.
 func (c *controlplane) Deploy() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
-	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
-	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
-	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
-	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
-	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
-	// make additional validation or not.
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := containers.Execute(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.Deploy()
 }

@@ -143,7 +143,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 }
 
 // New validates KubeAPIServer configuration and populates default for some fields, if they are empty
-func (k *KubeAPIServer) New() (*kubeAPIServer, error) {
+func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
 	}

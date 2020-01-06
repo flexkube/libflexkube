@@ -9,6 +9,25 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
+// Interface represents container capabilities.
+type Interface interface {
+	GetRuntimeAddress() string
+	SetRuntimeAddress(string)
+	Create() (InstanceInterface, error)
+	FromStatus() (InstanceInterface, error)
+}
+
+// InstanceInterface represents containerInstance capabilities.
+type InstanceInterface interface {
+	Status() (*types.ContainerStatus, error)
+	Read(srcPath []string) ([]*types.File, error)
+	Copy(files []*types.File) error
+	Stat(paths []string) (map[string]*os.FileMode, error)
+	Start() error
+	Stop() error
+	Delete() error
+}
+
 // Container represents public, serializable version of the container object.
 //
 // It should be used for persisting and restoring container state with combination
@@ -56,7 +75,7 @@ type base struct {
 
 // New creates new instance of container from Container and validates it's configuration
 // It also validates container runtime configuration.
-func New(c *Container) (*container, error) {
+func New(c *Container) (Interface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
@@ -94,7 +113,7 @@ func (c *Container) Validate() error {
 }
 
 // ToInstance returns containerInstance directly from Container
-func (c *Container) ToInstance() (*containerInstance, error) {
+func (c *Container) ToInstance() (InstanceInterface, error) {
 	container, err := New(c)
 	if err != nil {
 		return nil, err
@@ -131,7 +150,7 @@ func (c *container) SetRuntimeAddress(a string) {
 }
 
 // Create creates container container from it's definition
-func (c *container) Create() (*containerInstance, error) {
+func (c *container) Create() (InstanceInterface, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
 		return nil, fmt.Errorf("creating container failed: %w", err)
@@ -150,7 +169,7 @@ func (c *container) Create() (*containerInstance, error) {
 }
 
 // FromStatus creates containerInstance from previously restored status
-func (c *container) FromStatus() (*containerInstance, error) {
+func (c *container) FromStatus() (InstanceInterface, error) {
 	if c.status == nil {
 		return nil, fmt.Errorf("can't create container instance from empty status")
 	}
@@ -228,7 +247,7 @@ func (c *Container) UpdateStatus() error {
 		return err
 	}
 
-	return ci.updateStatus(c)
+	return ci.(*containerInstance).updateStatus(c)
 }
 
 // Start starts existing Container and updates it's status
@@ -242,7 +261,7 @@ func (c *Container) Start() error {
 		return err
 	}
 
-	return ci.updateStatus(c)
+	return ci.(*containerInstance).updateStatus(c)
 }
 
 // Stop stops existing Container and updates it's status
@@ -256,7 +275,7 @@ func (c *Container) Stop() error {
 		return err
 	}
 
-	return ci.updateStatus(c)
+	return ci.(*containerInstance).updateStatus(c)
 }
 
 // Create creates container and gets it's status
@@ -271,7 +290,7 @@ func (c *Container) Create() error {
 		return err
 	}
 
-	return ci.updateStatus(c)
+	return ci.(*containerInstance).updateStatus(c)
 }
 
 // Delete removes container and removes it's status
@@ -318,4 +337,14 @@ func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
 	}
 
 	return ci.Stat(paths)
+}
+
+// Exists returns true, if the container has been created.
+func (c *Container) Exists() bool {
+	return c.Status != nil
+}
+
+// IsRunning returns true, if container exists and it's running.
+func (c *Container) IsRunning() bool {
+	return c.Exists() && c.Status.Status == "running"
 }

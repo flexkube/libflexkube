@@ -114,7 +114,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 }
 
 // New valides Member configuration and returns it's usable version
-func (m *Member) New() (*member, error) {
+func (m *Member) New() (container.ResourceInstance, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
 	}

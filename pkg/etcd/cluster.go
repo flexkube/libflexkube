@@ -4,27 +4,28 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Cluster represents etcd cluster configuration and state from the user
+// Cluster represents etcd cluster configuration and state from the user.
 type Cluster struct {
-	// User-configurable fields
-	Image         string            `json:"image,omitempty" yaml:"image,omitempty"`
-	SSH           *ssh.Config       `json:"ssh,omitempty" yaml:"ssh,omitempty"`
-	CACertificate string            `json:"caCertificate,omitempty" yaml:"caCertificate,omitempty"`
-	Members       map[string]Member `json:"members,omitempty" yaml:"members,omitempty"`
+	// User-configurable fields.
+	Image         string            `json:"image" yaml:"image"`
+	SSH           *ssh.Config       `json:"ssh" yaml:"ssh"`
+	CACertificate string            `json:"caCertificate" yaml:"caCertificate"`
+	Members       map[string]Member `json:"members" yaml:"members"`
 
-	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state,omitempty"`
+	// Serializable fields.
+	State container.ContainersState `json:"state" yaml:"state"`
 }
 
-// cluster is executable version of Cluster, with validated fields and calculated containers
+// cluster is executable version of Cluster, with validated fields and calculated containers.
 type cluster struct {
 	image         string
 	ssh           *ssh.Config
@@ -32,8 +33,8 @@ type cluster struct {
 	containers    container.Containers
 }
 
-// New validates etcd cluster configuration and fills members with default and computed values
-func (c *Cluster) New() (*cluster, error) {
+// New validates etcd cluster configuration and fills members with default and computed values.
+func (c *Cluster) New() (types.Resource, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
 	}
@@ -100,7 +101,7 @@ func (c *Cluster) New() (*cluster, error) {
 	return cluster, nil
 }
 
-// Validate validates Cluster configuration
+// Validate validates Cluster configuration.
 func (c *Cluster) Validate() error {
 	if len(c.Members) == 0 && c.State == nil {
 		return fmt.Errorf("either members or previous state needs to be defined")
@@ -128,7 +129,7 @@ func (c *Cluster) Validate() error {
 }
 
 // FromYaml allows to restore cluster state from YAML.
-func FromYaml(c []byte) (*cluster, error) {
+func FromYaml(c []byte) (types.Resource, error) {
 	cluster := &Cluster{}
 	if err := yaml.Unmarshal(c, &cluster); err != nil {
 		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
@@ -147,47 +148,12 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 	return yaml.Marshal(Cluster{State: c.containers.PreviousState})
 }
 
-// CheckCurrentState refreshes current state of the cluster
+// CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.CheckCurrentState()
 }
 
-// Deploy refreshes current state of the cluster and deploys detected changes
+// Deploy refreshes current state of the cluster and deploys detected changes.
 func (c *cluster) Deploy() error {
-	containers, err := c.containers.New()
-	if err != nil {
-		return err
-	}
-
-	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
-	// structs to enforce validation of objects, we lose current state, as we want it to be computed.
-	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
-	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
-	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
-	// some optimization.
-	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
-	// make additional validation or not.
-	if err := containers.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := containers.Execute(); err != nil {
-		return err
-	}
-
-	c.containers = *containers.ToExported()
-
-	return nil
+	return c.containers.Deploy()
 }

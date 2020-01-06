@@ -9,6 +9,16 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
+// Interface represents exported host capabilities.
+type Interface interface {
+	Connect() (Connected, error)
+}
+
+// Connected represents capabilities of connected host.
+type Connected interface {
+	ForwardUnixSocket(path string) (string, error)
+}
+
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
 type Host struct {
@@ -25,7 +35,7 @@ type hostConnected struct {
 }
 
 // New validates Host configuration and sets configured transport method.
-func New(h *Host) (*host, error) {
+func New(h *Host) (Interface, error) {
 	if err := h.Validate(); err != nil {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
 	}
@@ -74,7 +84,7 @@ func (h *Host) Validate() error {
 // selectTransport returns transport protocol configured for container.
 //
 // It returns error if transport protocol configuration is invalid.
-func (h *host) Connect() (*hostConnected, error) {
+func (h *host) Connect() (Connected, error) {
 	d, err := h.transportConfig.New()
 	if err != nil {
 		return nil, fmt.Errorf("selecting transport protocol failed: %w", err)

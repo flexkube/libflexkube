@@ -126,3 +126,25 @@ func TestFromStatusNoStatus(t *testing.T) {
 		t.Fatalf("Container instance should not be created from container without status")
 	}
 }
+
+// Exists()
+func TestExists(t *testing.T) {
+	c := &Container{}
+
+	if c.Exists() {
+		t.Fatalf("Container without status shouldn't exist")
+	}
+}
+
+// IsRunning()
+func TestIsRunning(t *testing.T) {
+	c := &Container{
+		Status: &types.ContainerStatus{
+			Status: "running",
+		},
+	}
+
+	if !c.IsRunning() {
+		t.Fatalf("Container should be running")
+	}
+}

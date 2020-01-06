@@ -1,6 +1,7 @@
 package container
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -14,7 +15,7 @@ func TestContainersNew(t *testing.T) {
 	GetContainers(t)
 }
 
-func GetContainers(t *testing.T) *containers {
+func GetContainers(t *testing.T) ContainersInterface {
 	cc := &Containers{
 		DesiredState: ContainersState{
 			"foo": &HostConfiguredContainer{
@@ -91,5 +92,19 @@ desiredState:
 
 	if _, err := FromYaml([]byte(y)); err != nil {
 		t.Fatalf("Creating containers from valid YAML should work, got: %v", err)
+	}
+}
+
+func TestFilesToUpdateEmpty(t *testing.T) {
+	expected := []string{"foo"}
+
+	d := hostConfiguredContainer{
+		configFiles: map[string]string{
+			"foo": "bar",
+		},
+	}
+
+	if v := filesToUpdate(d, nil); !reflect.DeepEqual(expected, v) {
+		t.Fatalf("Expected %v, got %v", expected, d)
 	}
 }

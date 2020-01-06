@@ -92,3 +92,16 @@ func JoinSorted(values map[string]string, valueSeparator string, keySeparator st
 
 	return strings.Join(v, keySeparator)
 }
+
+// KeysStringMap returns keys from given map.
+func KeysStringMap(m map[string]string) []string {
+	keys := []string{}
+
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}

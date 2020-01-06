@@ -10,10 +10,22 @@ import (
 	"helm.sh/helm/v3/pkg/storage"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Release represents user-configured Helm release
-type Release struct {
+// Release is an interface representing helm release.
+type Release interface {
+	ValidateChart() error
+	Install() error
+	Upgrade() error
+	InstallOrUpgrade() error
+	Exists() (bool, error)
+	Uninstall() error
+}
+
+// Config represents user-configured Helm release
+type Config struct {
 
 	// Kubeconfig is content of kubeconfig file in YAML format, which will be used to authenticate
 	// to the cluster and create a release.
@@ -35,7 +47,7 @@ type Release struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
-// release is a validated and installable/update'able version of Release
+// release is a validated and installable/update'able version of Config
 type release struct {
 	actionConfig *action.Configuration
 	settings     *cli.EnvSettings
@@ -47,7 +59,7 @@ type release struct {
 }
 
 // New validates release configuration and builts installable version of it
-func (r *Release) New() (*release, error) {
+func (r *Config) New() (Release, error) {
 	if err := r.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate helm release: %w", err)
 	}
@@ -80,35 +92,37 @@ func (r *Release) New() (*release, error) {
 }
 
 // Validate validates Release configuration
-func (r *Release) Validate() error {
+func (r *Config) Validate() error {
+	var errors types.ValidateError
+
 	// Check if all required values are filled in
 	if r.Kubeconfig == "" {
-		return fmt.Errorf("kubeconfig is empty")
+		errors = append(errors, fmt.Errorf("kubeconfig is empty"))
 	}
 
 	if r.Namespace == "" {
-		return fmt.Errorf("namespace is empty")
+		errors = append(errors, fmt.Errorf("namespace is empty"))
 	}
 
 	if r.Name == "" {
-		return fmt.Errorf("name is empty")
+		errors = append(errors, fmt.Errorf("name is empty"))
 	}
 
 	if r.Chart == "" {
-		return fmt.Errorf("chart is empty")
+		errors = append(errors, fmt.Errorf("chart is empty"))
 	}
 
 	// Try to create a clients
 	if _, _, _, err := newClients(r.Kubeconfig); err != nil {
-		return fmt.Errorf("failed to create kubernetes clients: %w", err)
+		errors = append(errors, fmt.Errorf("failed to create kubernetes clients: %w", err))
 	}
 
 	// Parse given values
 	if _, err := r.parseValues(); err != nil {
-		return fmt.Errorf("failed to parse values: %w", err)
+		errors = append(errors, fmt.Errorf("failed to parse values: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // ValidateChart locates and parses the chart.
@@ -259,7 +273,7 @@ func (r *release) uninstallClient() *action.Uninstall {
 }
 
 // parseValues parses release values and returns it ready to use when installing chart
-func (r *Release) parseValues() (map[string]interface{}, error) {
+func (r *Config) parseValues() (map[string]interface{}, error) {
 	values := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(r.Values), &values); err != nil {
 		return nil, fmt.Errorf("failed to parse values: %w", err)
@@ -269,8 +283,8 @@ func (r *Release) parseValues() (map[string]interface{}, error) {
 }
 
 // FromYaml allows to quickly create new release object from serialized representation.
-func FromYaml(data []byte) (*release, error) {
-	r := Release{}
+func FromYaml(data []byte) (Release, error) {
+	r := Config{}
 
 	if err := yaml.Unmarshal(data, &r); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal release: %w", err)

@@ -124,7 +124,11 @@ func (d *ssh) connect() (*gossh.Client, error) {
 		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
 		User:    d.user,
-		// TODO add possibility to specify host keys, which should be accepted
+		// TODO add possibility to specify host keys, which should be accepted.
+		// Since user may not know the public keys of their server, for convenience,
+		// allow insecure host keys.
+		//
+		// #nosec G106
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 

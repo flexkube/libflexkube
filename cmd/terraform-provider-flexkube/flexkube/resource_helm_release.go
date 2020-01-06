@@ -36,8 +36,8 @@ func resourceHelmRelease() *schema.Resource {
 	}
 }
 
-func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
+func getRelease(d *schema.ResourceData, m interface{}) (release.Release, error) {
+	r := release.Config{
 		Kubeconfig: d.Get("kubeconfig").(string),
 		Namespace:  d.Get("namespace").(string),
 		Name:       d.Get("name").(string),
@@ -46,7 +46,15 @@ func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
 		Version:    ">0.0.0-0",
 	}
 
-	release, err := r.New()
+	l := m.(*meta)
+	l.helmClientLock.Lock()
+	defer l.helmClientLock.Unlock()
+
+	return r.New()
+}
+
+func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
+	release, err := getRelease(d, m)
 	if err != nil {
 		return err
 	}
@@ -62,16 +70,7 @@ func resourceHelmReleaseCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
-		Kubeconfig: d.Get("kubeconfig").(string),
-		Namespace:  d.Get("namespace").(string),
-		Name:       d.Get("name").(string),
-		Chart:      d.Get("chart").(string),
-		Values:     d.Get("values").(string),
-		Version:    ">0.0.0-0",
-	}
-
-	release, err := r.New()
+	release, err := getRelease(d, m)
 	if err != nil {
 		return err
 	}
@@ -92,16 +91,7 @@ func resourceHelmReleaseRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceHelmReleaseDelete(d *schema.ResourceData, m interface{}) error {
-	r := release.Release{
-		Kubeconfig: d.Get("kubeconfig").(string),
-		Namespace:  d.Get("namespace").(string),
-		Name:       d.Get("name").(string),
-		Chart:      d.Get("chart").(string),
-		Values:     d.Get("values").(string),
-		Version:    ">0.0.0-0",
-	}
-
-	release, err := r.New()
+	release, err := getRelease(d, m)
 	if err != nil {
 		return err
 	}

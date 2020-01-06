@@ -11,7 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// KubeControllerManager represents kube-controller-manager container configuration
+// KubeControllerManager represents kube-controller-manager container configuration.
 type KubeControllerManager struct {
 	Common                   Common            `json:"common" yaml:"common"`
 	Host                     host.Host         `json:"host" yaml:"host"`
@@ -21,7 +21,7 @@ type KubeControllerManager struct {
 	RootCACertificate        types.Certificate `json:"rootCACertificate" yaml:"rootCACertificate"`
 }
 
-// kubeControllerManager is a validated version of KubeControllerManager
+// kubeControllerManager is a validated version of KubeControllerManager.
 type kubeControllerManager struct {
 	common                   Common
 	host                     host.Host
@@ -31,7 +31,7 @@ type kubeControllerManager struct {
 	kubeconfig               string
 }
 
-// ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer
+// ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer.
 //
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
@@ -101,8 +101,8 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 	}
 }
 
-// New validates KubeControllerManager and returns usable kubeControllerManager
-func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
+// New validates KubeControllerManager and returns usable kubeControllerManager.
+func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
 	}
@@ -122,7 +122,7 @@ func (k *KubeControllerManager) New() (*kubeControllerManager, error) {
 	return nk, nil
 }
 
-// Validate validates KubeControllerManager configuration
+// Validate validates KubeControllerManager configuration.
 //
 // TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
