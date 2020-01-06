@@ -104,7 +104,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Creating node should succeed, got: %v", err)
 	}
 
-	c.status.ID = "nonexistent"
+	c.(*containerInstance).status.ID = "nonexistent"
 
 	status, err := c.Status()
 	if err != nil {
