@@ -14,6 +14,17 @@ type ResourceInstance interface {
 	ToHostConfiguredContainer() *HostConfiguredContainer
 }
 
+// HostConfiguredContainerInterface exports hostConfiguredContainer capabilities.
+type HostConfiguredContainerInterface interface {
+	ConfigurationStatus() error
+	Configure(paths []string) error
+	Create() error
+	Status() error
+	Start() error
+	Stop() error
+	Delete() error
+}
+
 const (
 	// ConfigMountpoint is where host file-system is mounted in the -config container.
 	ConfigMountpoint = "/mnt/host"
@@ -53,7 +64,7 @@ type hostConfiguredContainer struct {
 }
 
 // New validates HostConfiguredContainer struct and return it's executable version
-func (m *HostConfiguredContainer) New() (*hostConfiguredContainer, error) {
+func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to valide container configuration: %w", err)
 	}

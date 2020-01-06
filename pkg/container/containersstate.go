@@ -24,7 +24,7 @@ func (s ContainersState) New() (containersState, error) {
 			return nil, err
 		}
 
-		state[name] = m
+		state[name] = m.(*hostConfiguredContainer)
 	}
 
 	return state, nil
