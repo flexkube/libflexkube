@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+// ContainersStateInterface exports constainersState capabilities.
+type ContainersStateInterface interface {
+	CheckState() error
+	RemoveContainer(containerName string) error
+	CreateAndStart(containerName string) error
+	Export() ContainersState
+}
+
 // ContainersState represents states of multiple containers
 type ContainersState map[string]*HostConfiguredContainer
 
@@ -11,7 +19,7 @@ type ContainersState map[string]*HostConfiguredContainer
 type containersState map[string]*hostConfiguredContainer
 
 // New validates ContainersState struct and returns operational containerState.
-func (s ContainersState) New() (containersState, error) {
+func (s ContainersState) New() (ContainersStateInterface, error) {
 	if s == nil {
 		s = ContainersState{}
 	}

@@ -41,8 +41,8 @@ func (c *Containers) New() (*containers, error) {
 	desiredState, _ := c.DesiredState.New()
 
 	return &containers{
-		previousState: previousState,
-		desiredState:  desiredState,
+		previousState: previousState.(containersState),
+		desiredState:  desiredState.(containersState),
 	}, nil
 }
 
@@ -62,7 +62,7 @@ func (c *Containers) Validate() error {
 		return err
 	}
 
-	if len(previousState) == 0 && len(desiredState) == 0 {
+	if len(previousState.(containersState)) == 0 && len(desiredState.(containersState)) == 0 {
 		return fmt.Errorf("either current state or desired state should have containers defined")
 	}
 
