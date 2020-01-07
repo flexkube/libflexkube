@@ -52,9 +52,9 @@ resource "null_resource" "controller_ips" {
   count = var.controllers_count
 
   triggers = {
-    name = format("controller%02d", count.index)
+    name = format("controller%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index)
+    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2)
   }
 }
 
@@ -100,9 +100,9 @@ resource "null_resource" "workers" {
   count = var.workers_count
 
   triggers = {
-    name = format("worker%02d", count.index)
+    name = format("worker%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + var.controllers_count)
+    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2 + var.controllers_count)
   }
 }
 
@@ -199,6 +199,32 @@ tolerations:
   - key: node-role.kubernetes.io/master
     operator: Exists
     effect: NoSchedule
+servers:
+# Configured as recommended in https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
+- zones:
+  - zone: .
+  port: 53
+  plugins:
+  - name: errors
+  - name: health
+    configBlock: |-
+      lameduck 5s
+  - name: ready
+  - name: kubernetes
+    parameters: cluster.local in-addr.arpa ip6.arpa
+    configBlock: |-
+      pods insecure
+      fallthrough in-addr.arpa ip6.arpa
+      ttl 30
+  - name: prometheus
+    parameters: 0.0.0.0:9153
+  - name: forward
+    parameters: . /etc/resolv.conf
+  - name: cache
+    parameters: 30
+  - name: loop
+  - name: reload
+  - name: loadbalance
 EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
