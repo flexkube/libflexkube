@@ -123,7 +123,10 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 				"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
 				"--proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key",
 				"--proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt",
-				"--requestheader-allowed-names=\"\"",
+				"--requestheader-allowed-names=",
+				"--requestheader-extra-headers-prefix=X-Remote-Extra-",
+				"--requestheader-group-headers=X-Remote-Group",
+				"--requestheader-username-headers=X-Remote-User",
 				// Required for communicating with kubelet.
 				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
 				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
