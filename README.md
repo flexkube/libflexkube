@@ -26,6 +26,21 @@ from operational logic, other modes can be implemented easily in the future, for
 - Kubernetes operator, which would be capable of SSH-ing into the cluster nodes and performing updates
 - `kubectl exec` as a transport protocol
 
+## Features
+
+* Minimal host requirements - Use SSH connection forwarding for talking directly to the container runtime on remote machines for managing static containers and configuration files.
+* Independent management of etcd, kubelets, static control plane and self-hosted components.
+* All self-hosted control plane components managed using helm (e.g CoreDNS).
+* 1st class support for Terraform provider for automation.
+* Others:
+  * etcd, kubelet and static control plane running as containers.
+  * Self-hosted control plane.
+  * Supported container runtimes:
+    * Docker
+  * Configuration via YAML or via Terraform.
+  * Deployment using CLI tools or via Terraform.
+  * HAProxy for load-balancing and failover between API servers.
+
 ## Requirements
 
 Using this library has minimal target host (where containers will run) requirements:
