@@ -199,6 +199,8 @@ Once bootstrap (static) control plane is running and functional, self-hosted ver
 
 Recommended way of doing that is using [kube-apiserver-helm-chart](https://github.com/flexkube/kube-apiserver-helm-chart) and [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
 
+There are 2 helm charts for the controlplane, as [version-skew-policy/#supported-component-upgrade-order](https://kubernetes.io/docs/setup/release/version-skew-policy/#supported-component-upgrade-order) recommends, that `kube-apiserver` should be upgraded first, then remaining components of the control plane and helm currently does not support such ordering.
+
 The helm charts can be installed using one of the following methods:
 - using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
 - using [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
