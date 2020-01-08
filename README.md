@@ -2,16 +2,6 @@
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube) [![GoDoc](https://godoc.org/github.com/flexkube/libflexkube?status.svg)](https://godoc.org/github.com/flexkube/libflexkube)
 
-## Status of the project
-
-At the time of writing, this project is in active development state and it is not suitable for production use. Breaking changes
-might be introduced at any point in time, for both library interface and for existing deployments.
-
-Currently, there is no good documentation describing how to configure and use implemented tools. Digging into the source code is highly recommended.
-With help of error messages as trace points, the code should be clear enough to figure out the right configuration.
-
-More examples of use will be added in the future.
-
 ## Introduction
 
 libflexkube is a go library, which implements the logic required for deploying self-hosted Kubernetes cluster.
@@ -35,6 +25,21 @@ from operational logic, other modes can be implemented easily in the future, for
 - Creating local configs per host to feed the binary mentioned above
 - Kubernetes operator, which would be capable of SSH-ing into the cluster nodes and performing updates
 - `kubectl exec` as a transport protocol
+
+## Features
+
+* Minimal host requirements - Use SSH connection forwarding for talking directly to the container runtime on remote machines for managing static containers and configuration files.
+* Independent management of etcd, kubelets, static control plane and self-hosted components.
+* All self-hosted control plane components managed using helm (e.g CoreDNS).
+* 1st class support for Terraform provider for automation.
+* Others:
+  * etcd, kubelet and static control plane running as containers.
+  * Self-hosted control plane.
+  * Supported container runtimes:
+    * Docker
+  * Configuration via YAML or via Terraform.
+  * Deployment using CLI tools or via Terraform.
+  * HAProxy for load-balancing and failover between API servers.
 
 ## Requirements
 
@@ -192,16 +197,14 @@ All those 3 containers can be created using [cmd/controlplane](cmd/controlplane)
 
 Once bootstrap (static) control plane is running and functional, self-hosted version of it should be installed on top of that, to ensure better survivability and graceful updates.
 
-Recommended way of doing that is using [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
+Recommended way of doing that is using [kube-apiserver-helm-chart](https://github.com/flexkube/kube-apiserver-helm-chart) and [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
 
-The helm chart can be installed using one of the following methods:
+There are 2 helm charts for the controlplane, as [version-skew-policy/#supported-component-upgrade-order](https://kubernetes.io/docs/setup/release/version-skew-policy/#supported-component-upgrade-order) recommends, that `kube-apiserver` should be upgraded first, then remaining components of the control plane and helm currently does not support such ordering.
+
+The helm charts can be installed using one of the following methods:
 - using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
 - using [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
 - using `flexkube_helm_release` Terraform resource (as at the time of writing, [terraform-provider-helm](https://github.com/terraform-providers/terraform-provider-helm) does not support helm 3 yet. Upstream issue: https://github.com/terraform-providers/terraform-provider-helm/issues/299)
-
-Once the chart is installed and it's pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm chart configuration is updated.
-
-Currently, this needs to be done manually using `docker stop` command.
 
 ### Deploying kubelet pools
 
@@ -212,6 +215,14 @@ This can be done using [cmd/kubelet-pool](cmd/kubelet-pool), which deploys kubel
 The configuration reference can be found in [pkg/kubelet/pool.go#L18](pkg/kubelet/pool.go#L18).
 
 NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serving certificates (for HTTPS communication coming from from kube-apiserver) will be requested from the cluster. Currently, such certificates are not automatically approved, so it is recommended to use [kubelet-rubber-stamp](https://github.com/kontena/kubelet-rubber-stamp) to automate approval process. It can be deployed using [kubelet-rubber-stamp](https://github.com/flexkube/kubelet-rubber-stamp-helm-chart) helm chart.
+
+### Shutting down static control plane
+
+Once the charts are installed and their pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm charts configuration is updated.
+
+This can be done in 2 ways:
+- By running `docker stop kube-apiserver kube-scheduler kube-controller-manager` on the bootstrap host.
+- By adding `shutdown: true` to `controlplane` resource and re-applying it. Please note that this will remove static containers as well.
 
 ## Current known issues and limitations
 
@@ -365,3 +376,13 @@ make clean
 All contributions to this project are welcome. If it does not satisfy your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
 
 If you just want to help the project grow and mature, there are many TODOs spread across the code, which should be addresses sooner or later.
+
+## Status of the project
+
+At the time of writing, this project is in active development state and it is not suitable for production use. Breaking changes
+might be introduced at any point in time, for both library interface and for existing deployments.
+
+Currently, there is no good documentation describing how to configure and use implemented tools. Digging into the source code is highly recommended.
+With help of error messages as trace points, the code should be clear enough to figure out the right configuration.
+
+More examples of use will be added in the future.
