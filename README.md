@@ -2,16 +2,6 @@
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube) [![GoDoc](https://godoc.org/github.com/flexkube/libflexkube?status.svg)](https://godoc.org/github.com/flexkube/libflexkube)
 
-## Status of the project
-
-At the time of writing, this project is in active development state and it is not suitable for production use. Breaking changes
-might be introduced at any point in time, for both library interface and for existing deployments.
-
-Currently, there is no good documentation describing how to configure and use implemented tools. Digging into the source code is highly recommended.
-With help of error messages as trace points, the code should be clear enough to figure out the right configuration.
-
-More examples of use will be added in the future.
-
 ## Introduction
 
 libflexkube is a go library, which implements the logic required for deploying self-hosted Kubernetes cluster.
@@ -365,3 +355,13 @@ make clean
 All contributions to this project are welcome. If it does not satisfy your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
 
 If you just want to help the project grow and mature, there are many TODOs spread across the code, which should be addresses sooner or later.
+
+## Status of the project
+
+At the time of writing, this project is in active development state and it is not suitable for production use. Breaking changes
+might be introduced at any point in time, for both library interface and for existing deployments.
+
+Currently, there is no good documentation describing how to configure and use implemented tools. Digging into the source code is highly recommended.
+With help of error messages as trace points, the code should be clear enough to figure out the right configuration.
+
+More examples of use will be added in the future.
