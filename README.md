@@ -197,16 +197,12 @@ All those 3 containers can be created using [cmd/controlplane](cmd/controlplane)
 
 Once bootstrap (static) control plane is running and functional, self-hosted version of it should be installed on top of that, to ensure better survivability and graceful updates.
 
-Recommended way of doing that is using [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
+Recommended way of doing that is using [kube-apiserver-helm-chart](https://github.com/flexkube/kube-apiserver-helm-chart) and [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
 
-The helm chart can be installed using one of the following methods:
+The helm charts can be installed using one of the following methods:
 - using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
 - using [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
 - using `flexkube_helm_release` Terraform resource (as at the time of writing, [terraform-provider-helm](https://github.com/terraform-providers/terraform-provider-helm) does not support helm 3 yet. Upstream issue: https://github.com/terraform-providers/terraform-provider-helm/issues/299)
-
-Once the chart is installed and it's pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm chart configuration is updated.
-
-Currently, this needs to be done manually using `docker stop` command.
 
 ### Deploying kubelet pools
 
@@ -217,6 +213,14 @@ This can be done using [cmd/kubelet-pool](cmd/kubelet-pool), which deploys kubel
 The configuration reference can be found in [pkg/kubelet/pool.go#L18](pkg/kubelet/pool.go#L18).
 
 NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serving certificates (for HTTPS communication coming from from kube-apiserver) will be requested from the cluster. Currently, such certificates are not automatically approved, so it is recommended to use [kubelet-rubber-stamp](https://github.com/kontena/kubelet-rubber-stamp) to automate approval process. It can be deployed using [kubelet-rubber-stamp](https://github.com/flexkube/kubelet-rubber-stamp-helm-chart) helm chart.
+
+### Shutting down static control plane
+
+Once the charts are installed and their pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm charts configuration is updated.
+
+This can be done in 2 ways:
+- By running `docker stop kube-apiserver kube-scheduler kube-controller-manager` on the bootstrap host.
+- By adding `shutdown: true` to `controlplane` resource and re-applying it. Please note that this will remove static containers as well.
 
 ## Current known issues and limitations
 
