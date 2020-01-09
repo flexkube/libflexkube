@@ -179,6 +179,11 @@ vagrant-rsync:
 vagrant-destroy:
 	$(VAGRANTCMD) destroy --force
 
+.PHONY: vagrant
+vagrant: SHELL=/bin/bash
+vagrant:
+	alias vagrant='$(VAGRANTCMD)'
+
 .PHONY: vagrant-integration-build
 vagrant-integration-build:
 	$(VAGRANTCMD) ssh -c "docker build -t $(INTEGRATION_IMAGE) libflexkube/integration"
