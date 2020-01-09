@@ -199,32 +199,6 @@ tolerations:
   - key: node-role.kubernetes.io/master
     operator: Exists
     effect: NoSchedule
-servers:
-# Configured as recommended in https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/
-- zones:
-  - zone: .
-  port: 53
-  plugins:
-  - name: errors
-  - name: health
-    configBlock: |-
-      lameduck 5s
-  - name: ready
-  - name: kubernetes
-    parameters: cluster.local in-addr.arpa ip6.arpa
-    configBlock: |-
-      pods insecure
-      fallthrough in-addr.arpa ip6.arpa
-      ttl 30
-  - name: prometheus
-    parameters: 0.0.0.0:9153
-  - name: forward
-    parameters: . /etc/resolv.conf
-  - name: cache
-    parameters: 30
-  - name: loop
-  - name: reload
-  - name: loadbalance
 EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
