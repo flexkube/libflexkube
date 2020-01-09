@@ -262,6 +262,40 @@ func (c *containers) ensureHost(n string) error {
 	return nil
 }
 
+// ensureContainer makes sure container configuration is up to date.
+//
+// If container configuration changes, existing container will be removed and new one will be created.
+func (c *containers) ensureContainer(n string) error {
+	r := c.currentState[n]
+	if r == nil {
+		return fmt.Errorf("can't update non-existing container")
+	}
+
+	dr := c.desiredState[n]
+
+	// Don't update containers scheduled for removal and containers with unchanged configuration
+	if dr == nil || reflect.DeepEqual(r.container.Config, dr.container.Config) {
+		return nil
+	}
+
+	fmt.Printf("Detected container configuration drift '%s'\n", n)
+	fmt.Printf("  From: %+v\n", r.container.Config)
+	fmt.Printf("  To:   %+v\n", dr.container.Config)
+
+	if err := c.currentState.RemoveContainer(n); err != nil {
+		return fmt.Errorf("failed removing old container: %w", err)
+	}
+
+	if err := c.desiredState.CreateAndStart(n); err != nil {
+		return fmt.Errorf("failed creating new container: %w", err)
+	}
+
+	// After new container is created, add it to current state, so it can be returned to the user.
+	r.container = dr.container
+
+	return nil
+}
+
 // Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
@@ -312,6 +346,11 @@ func (c *containers) Execute() error {
 			return fmt.Errorf("failed updating configuration for container %s: %w", i, err)
 		}
 
+		if err := c.ensureContainer(i); err != nil {
+			return fmt.Errorf("failed updating container %s: %w", i, err)
+		}
+
+		// If container is not scheduled for removal, move to the next one.
 		if _, exists := c.desiredState[i]; exists {
 			continue
 		}
