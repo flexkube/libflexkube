@@ -211,9 +211,12 @@ clusterDNS:
 					Target: "/etc/cni/net.d",
 				},
 				{
-					// TODO do we need it?
+					// Mount host CNI binaries into the kubelet, so it can access it.
+					// Hyperkube image already ships some CNI binaries, so we shouldn't shadow them in the kubelet.
+					// Other CNI plugins may install CNI binaries in this directory on host, so kubelet should have
+					// access to both locations.
 					Source: "/opt/cni/bin/",
-					Target: "/opt/cni/bin",
+					Target: "/host/opt/cni/bin",
 				},
 				{
 					// Required by kubelet when creating Docker containers. rslave borrowed from Rancher.
@@ -275,6 +278,11 @@ clusterDNS:
 				fmt.Sprintf("--node-ip=%s", k.address),
 				// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
 				fmt.Sprintf("--hostname-override=%s", k.name),
+				// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
+				// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
+				//
+				// TODO This flag should only be set if Docker is used as container runtime.
+				"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
 			},
 		},
 	}
