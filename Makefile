@@ -21,7 +21,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -40,7 +40,9 @@ WORKERS=0
 
 NODES_CIDR="192.168.50.0/24"
 
-VAGRANTCMD=TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) vagrant
+FLATCAR_CHANNEL="edge"
+
+VAGRANTCMD=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) vagrant
 
 .PHONY: all
 all: build test lint
@@ -108,7 +110,7 @@ test-local:
 .PHONY: test-local-apply
 test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
-	cd local-testing && $(TERRAFORM_BIN) init && TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) $(TERRAFORM_BIN) apply -auto-approve
+	cd local-testing && $(TERRAFORM_BIN) init && TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: lint
 lint:

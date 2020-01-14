@@ -1,9 +1,11 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 Vagrant.configure("2") do |config|
+  channel = ENV["TF_VAR_flatcar_channel"] || "edge"
+
   # Box setup.
-  config.vm.box     = "flatcar-edge"
-  config.vm.box_url = "https://edge.release.flatcar-linux.net/amd64-usr/current/flatcar_production_vagrant.box"
+  config.vm.box     = "flatcar-#{channel}"
+  config.vm.box_url = "https://#{channel}.release.flatcar-linux.net/amd64-usr/current/flatcar_production_vagrant.box"
 
   # Virtualbox resources.
   config.vm.provider :virtualbox do |v|
