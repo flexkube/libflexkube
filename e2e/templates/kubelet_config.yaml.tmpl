@@ -1,3 +1,4 @@
+cgroupDriver: ${cgroup_driver}
 kubelets:
 %{ for index, ssh_address in ssh_addresses ~}
 - address: ${kubelet_addresses[index]}

@@ -42,6 +42,10 @@ variable "kubelet_rubber_stamp_helm_chart_source" {
   default = "/usr/src/libflexkube/charts/kubelet-rubber-stamp"
 }
 
+variable "flatcar_channel" {
+  default = "edge"
+}
+
 module "root_pki" {
   source = "git::https://github.com/flexkube/terraform-root-pki.git"
 
@@ -107,6 +111,8 @@ resource "null_resource" "workers" {
 }
 
 locals {
+  cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
+
   worker_ips = null_resource.workers.*.triggers.ip
   worker_cidrs = null_resource.workers.*.triggers.cidr
   worker_names = null_resource.workers.*.triggers.name
@@ -230,6 +236,7 @@ EOF
     taints                       = {
       "node-role.kubernetes.io/master" = "NoSchedule"
     }
+    cgroup_driver                = local.cgroup_driver
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
@@ -245,6 +252,7 @@ EOF
     taints                       = {}
     privileged_labels            = {}
     privileged_labels_kubeconfig = ""
+    cgroup_driver                = local.cgroup_driver
   })
 
   deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0

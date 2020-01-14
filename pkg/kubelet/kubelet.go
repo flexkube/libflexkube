@@ -29,6 +29,7 @@ type Kubelet struct {
 	Labels                     map[string]string `json:"labels" yaml:"labels"`
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
+	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR" yaml:"podCIDR"`
@@ -48,6 +49,7 @@ type kubelet struct {
 	labels                     map[string]string
 	privilegedLabels           map[string]string
 	privilegedLabelsKubeconfig string
+	cgroupDriver               string
 }
 
 // New validates Kubelet configuration and returns it's usable version.
@@ -70,6 +72,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 		labels:                     k.Labels,
 		privilegedLabels:           k.PrivilegedLabels,
 		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
+		cgroupDriver:               k.CgroupDriver,
 	}
 
 	if nk.image == "" {
@@ -131,7 +134,7 @@ enforceNodeAllocatable: []
 # If Docker is configured to use systemd as a cgroup driver and Docker is used as container
 # runtime, this needs to be set to match Docker.
 # TODO pull that information dynamically based on what container runtime is configured.
-cgroupDriver: systemd
+cgroupDriver: %s
 # CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
 podCIDR: %s
 # Address where kubelet should listen on.
@@ -148,7 +151,7 @@ authentication:
     clientCAFile: /etc/kubernetes/pki/ca.crt
 # Configure cluster DNS IP addresses
 clusterDNS:
-`, k.podCIDR, k.address)
+`, k.cgroupDriver, k.podCIDR, k.address)
 	// TODO ugly!
 	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
 
