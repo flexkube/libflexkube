@@ -29,7 +29,7 @@ BINARY_IMAGE=flexkube/libflexkube
 
 DISABLED_LINTERS=godox,lll,funlen,dupl
 
-TERRAFORM_BIN=/usr/bin/terraform
+TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
 # Default target when testing locally
 TEST_LOCAL=controlplane
@@ -42,7 +42,9 @@ NODES_CIDR="192.168.50.0/24"
 
 FLATCAR_CHANNEL="edge"
 
-VAGRANTCMD=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) vagrant
+TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR)
+
+VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 
 .PHONY: all
 all: build test lint
@@ -93,12 +95,14 @@ test-cover:
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
 .PHONY: test-e2e-run
+test-e2e-run: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-run:
-	cd e2e && terraform init && terraform apply -auto-approve
+	cd e2e && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: test-e2e-destroy
+test-e2e-destroy: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-destroy:
-	cd e2e && terraform destroy -auto-approve
+	cd e2e && $(TERRAFORM_BIN) destroy -auto-approve
 
 .PHONY: test-e2e
 test-e2e: test-e2e-run test-e2e-destroy
@@ -110,7 +114,7 @@ test-local:
 .PHONY: test-local-apply
 test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
-	cd local-testing && $(TERRAFORM_BIN) init && TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) $(TERRAFORM_BIN) apply -auto-approve
+	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: lint
 lint:
