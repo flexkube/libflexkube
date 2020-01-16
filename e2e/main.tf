@@ -26,6 +26,10 @@ variable "nodes_cidr" {
   default = "192.168.50.0/24"
 }
 
+variable "pod_cidr" {
+  default = "10.1.0.0/16"
+}
+
 variable "node_ssh_port" {
   default = 22
 }
@@ -58,7 +62,7 @@ resource "null_resource" "controller_ips" {
   triggers = {
     name = format("controller%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2)
+    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2)
   }
 }
 
@@ -106,7 +110,7 @@ resource "null_resource" "workers" {
   triggers = {
     name = format("worker%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2 + var.controllers_count)
+    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2 + var.controllers_count)
   }
 }
 
