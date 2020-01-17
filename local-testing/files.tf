@@ -13,6 +13,11 @@ resource "local_file" "coredns_values" {
   filename          = "./values/coredns.yaml"
 }
 
+resource "local_file" "calico_values" {
+  sensitive_content = local.calico_values
+  filename          = "./values/calico.yaml"
+}
+
 resource "local_file" "etcd_config" {
   sensitive_content = local.etcd_config
   filename          = "./resources/etcd-cluster/config.yaml"

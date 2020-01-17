@@ -30,6 +30,10 @@ variable "pod_cidr" {
   default = "10.1.0.0/16"
 }
 
+variable "network_plugin" {
+  default = "cni"
+}
+
 variable "node_ssh_port" {
   default = 22
 }
@@ -44,6 +48,10 @@ variable "kubernetes_helm_chart_source" {
 
 variable "kubelet_rubber_stamp_helm_chart_source" {
   default = "/usr/src/libflexkube/charts/kubelet-rubber-stamp"
+}
+
+variable "calico_helm_chart_source" {
+  default = "/usr/src/libflexkube/charts/calico"
 }
 
 variable "flatcar_channel" {
@@ -211,6 +219,11 @@ tolerations:
     effect: NoSchedule
 EOF
 
+  calico_values = <<EOF
+podCIDR: ${var.pod_cidr}
+flexVolumePluginDir: /var/lib/kubelet/volumeplugins
+EOF
+
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
     server      = "https://${local.first_controller_ip}:6443"
@@ -232,6 +245,7 @@ EOF
     kubelet_pod_cidrs            = local.controller_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.controller_names
+    network_plugin               = var.network_plugin
     labels                       = {}
     privileged_labels            = {
       "node-role.kubernetes.io/master" = ""
@@ -252,6 +266,7 @@ EOF
     kubelet_pod_cidrs            = local.worker_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.worker_names
+    network_plugin               = var.network_plugin
     labels                       = {}
     taints                       = {}
     privileged_labels            = {}
@@ -332,6 +347,18 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   namespace  = "kube-system"
   chart      = var.kubelet_rubber_stamp_helm_chart_source
   name       = "kubelet-rubber-stamp"
+
+  depends_on = [
+    flexkube_helm_release.kubernetes
+  ]
+}
+
+resource "flexkube_helm_release" "calico" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = var.calico_helm_chart_source
+  name       = "calico"
+  values     = local.calico_values
 
   depends_on = [
     flexkube_helm_release.kubernetes

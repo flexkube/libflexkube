@@ -1,8 +1,11 @@
 cgroupDriver: ${cgroup_driver}
+networkPlugin: ${network_plugin}
 kubelets:
 %{ for index, ssh_address in ssh_addresses ~}
 - address: ${kubelet_addresses[index]}
+  %{~ if network_plugin == "kubenet" ~}
   podCIDR: ${kubelet_pod_cidrs[index]}
+  %{~ endif ~}
   name: ${kubelet_names[index]}
   bootstrapKubeconfig: |
       ${indent(6, trimspace(bootstrap_kubeconfig))}
