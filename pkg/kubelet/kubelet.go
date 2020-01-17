@@ -2,7 +2,10 @@ package kubelet
 
 import (
 	"fmt"
-	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeletconfig "k8s.io/kubelet/config/v1beta1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
@@ -111,49 +114,55 @@ func (k *Kubelet) Validate() error {
 func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 
-	// TODO we should use proper templating engine or marshalling for those values.
-	clusterDNS := ""
-	for _, e := range k.clusterDNSIPs {
-		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
+	config := &kubeletconfig.KubeletConfiguration{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "KubeletConfiguration",
+			APIVersion: kubeletconfig.SchemeGroupVersion.String(),
+		},
+		// Enables TLS certificate rotation, which is good from security point of view.
+		RotateCertificates: true,
+		// Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates.
+		ServerTLSBootstrap: true,
+		// To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
+		// This disables QoS based cgroup hierarchy, which is important from resource management perspective.
+		CgroupsPerQOS: &[]bool{false}[0],
+		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
+		// TODO This will be removed by yaml.Marshal, so we add it manually later.
+		EnforceNodeAllocatable: []string{},
+		// If Docker is configured to use systemd as a cgroup driver and Docker is used as container
+		// runtime, this needs to be set to match Docker.
+		// TODO pull that information dynamically based on what container runtime is configured.
+		CgroupDriver: k.cgroupDriver,
+		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
+		PodCIDR: k.podCIDR,
+		// Address where kubelet should listen on.
+		Address: k.address,
+		// Disable healht port for now, since we don't use it.
+		// TODO check how to use it and re-enable it.
+		HealthzPort: &[]int32{0}[0],
+		// Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
+		// short-names resolution like mysvc.myns.svc does not work.
+		ClusterDomain: "cluster.local",
+		// Authenticate clients using CA file.
+		Authentication: kubeletconfig.KubeletAuthentication{
+			X509: kubeletconfig.KubeletX509Authentication{
+				ClientCAFile: "/etc/kubernetes/pki/ca.crt",
+			},
+		},
+		ClusterDNS: k.clusterDNSIPs,
+	}
+
+	kubelet, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed serializing kubelet configuration: %w", err)
 	}
 
 	// kubelet.yaml file is a recommended way to configure the kubelet.
-	//
-	// TODO maybe we store that as a struct, and we marshal here to YAML?
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-# Enables TLS certificate rotation, which is good from security point of view.
-rotateCertificates: true
-# Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates
-serverTLSBootstrap: true
-# To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
-# This disables QoS based cgroup hierarchy, which is important from resource management perspective.
-cgroupsPerQOS: false
-# When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
-enforceNodeAllocatable: []
-# If Docker is configured to use systemd as a cgroup driver and Docker is used as container
-# runtime, this needs to be set to match Docker.
-# TODO pull that information dynamically based on what container runtime is configured.
-cgroupDriver: %s
-# CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
-podCIDR: %s
-# Address where kubelet should listen on.
-address: %s
-# Disable healht port for now, since we don't use it
-# TODO check how to use it and re-enable it
-healthzPort: 0
-# Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
-# short-names resolution like mysvc.myns.svc does not work.
-clusterDomain: cluster.local
-# Authenticate clients using CA file
-authentication:
-  x509:
-    clientCAFile: /etc/kubernetes/pki/ca.crt
-# Configure cluster DNS IP addresses
-clusterDNS:
-`, k.cgroupDriver, k.podCIDR, k.address)
-	// TODO ugly!
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = string(kubelet)
+
+	// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
+	// TODO Figure out how to put that in the struct up there, as when doing yaml.Marshal, it removes empty slice.
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%senforceNodeAllocatable: []\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"])
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate

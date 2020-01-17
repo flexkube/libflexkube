@@ -68,6 +68,7 @@ require (
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kubectl v0.17.0
+	k8s.io/kubelet v0.17.0
 	k8s.io/utils v0.0.0-20191218082557-f07c713de883 // indirect
 	sigs.k8s.io/yaml v1.1.0
 )
