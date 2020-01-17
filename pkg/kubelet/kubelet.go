@@ -33,9 +33,10 @@ type Kubelet struct {
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
-	PodCIDR string `json:"podCIDR" yaml:"podCIDR"`
+	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet.
@@ -53,6 +54,7 @@ type kubelet struct {
 	privilegedLabels           map[string]string
 	privilegedLabelsKubeconfig string
 	cgroupDriver               string
+	networkPlugin              string
 }
 
 // New validates Kubelet configuration and returns it's usable version.
@@ -76,6 +78,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 		privilegedLabels:           k.PrivilegedLabels,
 		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
 		cgroupDriver:               k.CgroupDriver,
+		networkPlugin:              k.NetworkPlugin,
 	}
 
 	if nk.image == "" {
@@ -101,6 +104,19 @@ func (k *Kubelet) Validate() error {
 
 	if k.PrivilegedLabelsKubeconfig != "" && len(k.PrivilegedLabels) == 0 {
 		errors = append(errors, fmt.Errorf("privilegedLabelsKubeconfig specified, but no privilegedLabels requested"))
+	}
+
+	switch k.NetworkPlugin {
+	case "cni":
+		if k.PodCIDR != "" {
+			errors = append(errors, fmt.Errorf("podCIDR has no effect when using 'cni' network plugin"))
+		}
+	case "kubenet":
+		if k.PodCIDR == "" {
+			errors = append(errors, fmt.Errorf("podCIDR must be set when using 'kubenet' network plugin"))
+		}
+	default:
+		errors = append(errors, fmt.Errorf("networkPlugin must be either 'cni' or 'kubenet'"))
 	}
 
 	if err := k.Host.Validate(); err != nil {
@@ -133,8 +149,6 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 		// runtime, this needs to be set to match Docker.
 		// TODO pull that information dynamically based on what container runtime is configured.
 		CgroupDriver: k.cgroupDriver,
-		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
-		PodCIDR: k.podCIDR,
 		// Address where kubelet should listen on.
 		Address: k.address,
 		// Disable healht port for now, since we don't use it.
@@ -150,6 +164,11 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 			},
 		},
 		ClusterDNS: k.clusterDNSIPs,
+	}
+
+	if k.networkPlugin == "kubenet" {
+		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
+		config.PodCIDR = k.podCIDR
 	}
 
 	kubelet, err := yaml.Marshal(config)
@@ -278,7 +297,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
-				"--network-plugin=kubenet",
+				fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 				"--redirect-container-streaming=false",
 				// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,

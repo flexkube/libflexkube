@@ -27,6 +27,7 @@ type Pool struct {
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
 	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
@@ -48,6 +49,7 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.PrivilegedLabelsKubeconfig = util.PickString(k.PrivilegedLabelsKubeconfig, p.PrivilegedLabelsKubeconfig)
 	k.Taints = util.PickStringMap(k.Taints, p.Taints)
 	k.CgroupDriver = util.PickString(k.CgroupDriver, p.CgroupDriver)
+	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin)
 
 	k.Host = host.BuildConfig(k.Host, host.Host{
 		SSHConfig: p.SSH,

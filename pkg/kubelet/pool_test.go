@@ -16,7 +16,7 @@ ssh:
   retryInterval: 1s
 bootstrapKubeconfig: foo
 kubelets:
-- {}
+- networkPlugin: cni
 `
 
 	p, err := FromYaml([]byte(y))

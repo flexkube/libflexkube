@@ -10,6 +10,7 @@ import (
 func TestToHostConfiguredContainer(t *testing.T) {
 	kk := &Kubelet{
 		BootstrapKubeconfig: "foo",
+		NetworkPlugin:       "cni",
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
