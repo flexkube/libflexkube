@@ -6,6 +6,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
@@ -32,6 +33,15 @@ type apiLoadBalancers struct {
 	containers *container.Containers
 }
 
+func (a *APILoadBalancers) propagateInstance(i *APILoadBalancer) {
+	i.Image = util.PickString(i.Image, a.Image)
+	i.Servers = util.PickStringSlice(i.Servers, a.Servers)
+	i.BindPort = util.PickInt(i.BindPort, a.BindPort)
+	i.Host = host.BuildConfig(i.Host, host.Host{
+		SSHConfig: a.SSH,
+	})
+}
+
 // New validates APILoadBalancers struct and fills all required fields in members with default values
 // provided by the user.
 //
@@ -51,36 +61,10 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 	}
 
 	for i, lb := range a.APILoadBalancers {
-		if lb.Image == "" && a.Image != "" {
-			lb.Image = a.Image
-		}
+		lb := lb
+		a.propagateInstance(&lb)
 
-		if len(lb.Servers) == 0 && len(a.Servers) > 0 {
-			lb.Servers = a.Servers
-		}
-
-		if lb.BindPort == 0 && a.BindPort != 0 {
-			lb.BindPort = a.BindPort
-		}
-
-		// TODO find better way to handle defaults!!!
-		/*if lb.Host == nil || (lb.Host.DirectConfig == nil && lb.Host.SSHConfig == nil) {
-			lb.Host = &host.Host{
-				DirectConfig: &direct.DirectConfig{},
-			}
-		}*/
-		if lb.Host == nil {
-			lb.Host = &host.Host{
-				SSHConfig: a.SSH,
-			}
-		}
-
-		lb.Host.SSHConfig = ssh.BuildConfig(lb.Host.SSHConfig, a.SSH)
-
-		lbx, err := lb.New()
-		if err != nil {
-			return nil, fmt.Errorf("that was unexpected: %w", err)
-		}
+		lbx, _ := lb.New()
 
 		apiLoadBalancers.containers.DesiredState[strconv.Itoa(i)] = lbx.ToHostConfiguredContainer()
 	}
@@ -88,10 +72,17 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 	return apiLoadBalancers, nil
 }
 
-// Validate validates APILoadBalancers struct
-//
-// TODO Add actual validation rules
+// Validate validates APILoadBalancers struct.
 func (a *APILoadBalancers) Validate() error {
+	for _, lb := range a.APILoadBalancers {
+		lb := lb
+		a.propagateInstance(&lb)
+
+		if _, err := lb.New(); err != nil {
+			return fmt.Errorf("failed creating load balancer instance: %w", err)
+		}
+	}
+
 	return nil
 }
 

@@ -16,18 +16,18 @@ import (
 
 // APILoadBalancer is a user-configurable representation of single instance of API load balancer
 type APILoadBalancer struct {
-	Image              string     `json:"image,omitempty" yaml:"image,omitempty"`
-	Host               *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	MetricsBindAddress string     `json:"metricsBindAddress,omitempty" yaml:"metricsBindAddress,omitempty"`
-	MetricsBindPort    int        `json:"metricsBindPort,omitempty" yaml:"metricsBindPort,omitempty"`
-	Servers            []string   `json:"servers,omitempty" yaml:"servers,omitempty"`
-	BindPort           int        `json:"bindPort,omitempty" yaml:"bindPort,omitempty"`
+	Image              string    `json:"image" yaml:"image"`
+	Host               host.Host `json:"host" yaml:"host"`
+	MetricsBindAddress string    `json:"metricsBindAddress" yaml:"metricsBindAddress"`
+	MetricsBindPort    int       `json:"metricsBindPort" yaml:"metricsBindPort"`
+	Servers            []string  `json:"servers" yaml:"servers"`
+	BindPort           int       `json:"bindPort" yaml:"bindPort"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer
 type apiLoadBalancer struct {
 	image              string
-	host               *host.Host
+	host               host.Host
 	servers            []string
 	metricsBindAddress string
 	metricsBindPort    int
@@ -101,7 +101,7 @@ frontend stats
 	}
 
 	return &container.HostConfiguredContainer{
-		Host:        *a.host,
+		Host:        a.host,
 		ConfigFiles: configFiles,
 		Container:   c,
 	}
@@ -144,10 +144,6 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 // Validate contains all validation rules for APILoadBalancer struct.
 // This method can be used by the user to catch configuration errors early.
 func (a *APILoadBalancer) Validate() error {
-	if a.Host == nil {
-		return fmt.Errorf("field Host must be set")
-	}
-
 	if len(a.Servers) == 0 {
 		return fmt.Errorf("at least one server must be set")
 	}
