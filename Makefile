@@ -97,6 +97,7 @@ test-cover:
 .PHONY: test-e2e-run
 test-e2e-run: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-run:
+	helm repo update
 	cd e2e && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: test-e2e-destroy
