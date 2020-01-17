@@ -35,7 +35,7 @@ type kubeControllerManager struct {
 //
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
-func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-controller-manager/kubeconfig"] = k.kubeconfig
@@ -98,7 +98,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 		Host:        k.host,
 		ConfigFiles: configFiles,
 		Container:   c,
-	}
+	}, nil
 }
 
 // New validates KubeControllerManager and returns usable kubeControllerManager.

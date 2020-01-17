@@ -53,7 +53,7 @@ func (m *member) configFiles() map[string]string {
 }
 
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
-func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
@@ -110,7 +110,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 		Host:        m.host,
 		ConfigFiles: m.configFiles(),
 		Container:   c,
-	}
+	}, nil
 }
 
 // New valides Member configuration and returns it's usable version

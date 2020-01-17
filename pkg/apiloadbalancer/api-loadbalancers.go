@@ -65,8 +65,9 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 		a.propagateInstance(&lb)
 
 		lbx, _ := lb.New()
+		lbxHcc, _ := lbx.ToHostConfiguredContainer()
 
-		apiLoadBalancers.containers.DesiredState[strconv.Itoa(i)] = lbx.ToHostConfiguredContainer()
+		apiLoadBalancers.containers.DesiredState[strconv.Itoa(i)] = lbxHcc
 	}
 
 	return apiLoadBalancers, nil
@@ -78,8 +79,13 @@ func (a *APILoadBalancers) Validate() error {
 		lb := lb
 		a.propagateInstance(&lb)
 
-		if _, err := lb.New(); err != nil {
+		lbx, err := lb.New()
+		if err != nil {
 			return fmt.Errorf("failed creating load balancer instance: %w", err)
+		}
+
+		if _, err := lbx.ToHostConfiguredContainer(); err != nil {
+			return fmt.Errorf("failed creating load balancer container configuration: %w", err)
 		}
 	}
 

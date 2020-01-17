@@ -154,15 +154,18 @@ func (c *Controlplane) New() (types.Resource, error) {
 
 	// Skip error checking, as it's done in Verify().
 	kas, _ := c.KubeAPIServer.New()
+	kasHcc, _ := kas.ToHostConfiguredContainer()
 
 	kcm, _ := c.KubeControllerManager.New()
+	kcmHcc, _ := kcm.ToHostConfiguredContainer()
 
 	ks, _ := c.KubeScheduler.New()
+	ksHcc, _ := ks.ToHostConfiguredContainer()
 
 	controlplane.containers.DesiredState = container.ContainersState{
-		"kube-apiserver":          kas.ToHostConfiguredContainer(),
-		"kube-controller-manager": kcm.ToHostConfiguredContainer(),
-		"kube-scheduler":          ks.ToHostConfiguredContainer(),
+		"kube-apiserver":          kasHcc,
+		"kube-controller-manager": kcmHcc,
+		"kube-scheduler":          ksHcc,
 	}
 
 	return controlplane, nil
@@ -180,19 +183,41 @@ func (c *Controlplane) buildComponents() {
 func (c *Controlplane) Validate() error {
 	c.buildComponents()
 
-	if _, err := c.KubeAPIServer.New(); err != nil {
-		return fmt.Errorf("failed to verify kube-apiserver configuration: %w", err)
+	var errors types.ValidateError
+
+	kas, err := c.KubeAPIServer.New()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to verify kube-apiserver configuration: %w", err))
 	}
 
-	if _, err := c.KubeControllerManager.New(); err != nil {
-		return fmt.Errorf("failed to verify kube-controller-manager: %w", err)
+	kcm, err := c.KubeControllerManager.New()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to verify kube-controller-manager: %w", err))
 	}
 
-	if _, err := c.KubeScheduler.New(); err != nil {
-		return fmt.Errorf("failed to verify kube-scheduler configuration: %w", err)
+	ks, err := c.KubeScheduler.New()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to verify kube-scheduler configuration: %w", err))
 	}
 
-	return nil
+	// If there were any errors while creating objects, it's not safe to proceed.
+	if len(errors) > 0 {
+		return errors
+	}
+
+	if _, err := kas.ToHostConfiguredContainer(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to build kube-apiserver container configuration: %w", err))
+	}
+
+	if _, err := kcm.ToHostConfiguredContainer(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to build kube-controller-manager container configuration: %w", err))
+	}
+
+	if _, err := ks.ToHostConfiguredContainer(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to build kube-scheduler container configuration: %w", err))
+	}
+
+	return errors.Return()
 }
 
 // FromYaml allows to restore controlplane state from YAML.

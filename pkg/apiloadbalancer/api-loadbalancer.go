@@ -38,7 +38,7 @@ type apiLoadBalancer struct {
 // which can be then added to Containers struct and executed
 //
 // TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
-func (a *apiLoadBalancer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	servers := []string{}
 	for i, s := range a.servers {
 		servers = append(servers, fmt.Sprintf("server %d %s:8443 check", i, s))
@@ -104,7 +104,7 @@ frontend stats
 		Host:        a.host,
 		ConfigFiles: configFiles,
 		Container:   c,
-	}
+	}, nil
 }
 
 // New validates APILoadBalancer configuration and fills it with default options

@@ -31,7 +31,10 @@ func TestToHostConfiguredContainer(t *testing.T) {
 		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
 	}
 
-	hcc := k.ToHostConfiguredContainer()
+	hcc, err := k.ToHostConfiguredContainer()
+	if err != nil {
+		t.Fatalf("Generating HostConfiguredContainer should work, got: %v", err)
+	}
 
 	if _, err := hcc.New(); err != nil {
 		t.Fatalf("should produce valid HostConfiguredContainer, got: %v", err)

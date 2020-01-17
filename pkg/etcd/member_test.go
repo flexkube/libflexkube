@@ -25,6 +25,12 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 		t.Fatalf("new should not return error, got: %v", err)
 	}
 
-	// TODO grab an object and perform some validation on it?
-	o.ToHostConfiguredContainer()
+	hcc, err := o.ToHostConfiguredContainer()
+	if err != nil {
+		t.Fatalf("Generating HostConfiguredContainer should work, got: %v", err)
+	}
+
+	if _, err := hcc.New(); err != nil {
+		t.Fatalf("ToHostConfiguredContainer() should generate valid HostConfiguredContainer, got: %v", err)
+	}
 }

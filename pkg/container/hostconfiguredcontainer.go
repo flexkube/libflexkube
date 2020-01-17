@@ -11,7 +11,7 @@ import (
 
 // ResourceInstance interface represents struct, which can be converted to HostConfiguredContainer.
 type ResourceInstance interface {
-	ToHostConfiguredContainer() *HostConfiguredContainer
+	ToHostConfiguredContainer() (*HostConfiguredContainer, error)
 }
 
 // HostConfiguredContainerInterface exports hostConfiguredContainer capabilities.

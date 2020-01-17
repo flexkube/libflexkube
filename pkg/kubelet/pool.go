@@ -72,12 +72,10 @@ func (p *Pool) New() (types.Resource, error) {
 
 		p.propagateKubelet(k)
 
-		kubelet, err := k.New()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create kubelet object: %w", err)
-		}
+		kubelet, _ := k.New()
+		kubeletHcc, _ := kubelet.ToHostConfiguredContainer()
 
-		pool.containers.DesiredState[strconv.Itoa(i)] = kubelet.ToHostConfiguredContainer()
+		pool.containers.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
 	return pool, nil
@@ -87,6 +85,22 @@ func (p *Pool) New() (types.Resource, error) {
 //
 // TODO add actual validation
 func (p *Pool) Validate() error {
+	for i := range p.Kubelets {
+		// Make a copy of Kubelet struct to avoid modifying original one.
+		k := p.Kubelets[i]
+
+		p.propagateKubelet(&k)
+
+		kubelet, err := k.New()
+		if err != nil {
+			return fmt.Errorf("failed to create kubelet object: %w", err)
+		}
+
+		if _, err := kubelet.ToHostConfiguredContainer(); err != nil {
+			return fmt.Errorf("failed to generate kubelet container configuration: %w", err)
+		}
+	}
+
 	return nil
 }
 

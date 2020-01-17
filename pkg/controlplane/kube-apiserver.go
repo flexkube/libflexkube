@@ -56,7 +56,7 @@ type kubeAPIServer struct {
 }
 
 // ToHostConfiguredContainer takes configured values and converts them to generic container configuration
-func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-apiserver/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
@@ -142,7 +142,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() *container.HostConfiguredCon
 		Host:        k.host,
 		ConfigFiles: configFiles,
 		Container:   c,
-	}
+	}, nil
 }
 
 // New validates KubeAPIServer configuration and populates default for some fields, if they are empty

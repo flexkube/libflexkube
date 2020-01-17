@@ -108,7 +108,7 @@ func (k *Kubelet) Validate() error {
 }
 
 // ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
-func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 
 	// TODO we should use proper templating engine or marshalling for those values.
@@ -300,7 +300,7 @@ clusterDNS:
 		ConfigFiles: configFiles,
 		Container:   c,
 		Hooks:       k.getHooks(),
-	}
+	}, nil
 }
 
 // getHooks returns HostConfiguredContainer hooks associated with kubelet.

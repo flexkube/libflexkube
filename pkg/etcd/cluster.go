@@ -95,7 +95,12 @@ func (c *Cluster) New() (types.Resource, error) {
 			return nil, fmt.Errorf("that was unexpected: %w", err)
 		}
 
-		cluster.containers.DesiredState[n] = member.ToHostConfiguredContainer()
+		hcc, err := member.ToHostConfiguredContainer()
+		if err != nil {
+			return nil, fmt.Errorf("failed building container configuration: %w", err)
+		}
+
+		cluster.containers.DesiredState[n] = hcc
 	}
 
 	return cluster, nil
