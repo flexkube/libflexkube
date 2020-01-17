@@ -9,6 +9,7 @@ rootCACertificate: |
 
 replicas: ${replicas}
 maxUnavailable: ${max_unavailable}
+flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 apiServers:
 %{ for api_server in api_servers ~}
 - ${api_server}
