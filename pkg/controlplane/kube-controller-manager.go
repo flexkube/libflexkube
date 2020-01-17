@@ -19,6 +19,7 @@ type KubeControllerManager struct {
 	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey" yaml:"kubernetesCAKey"`
 	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey" yaml:"serviceAccountPrivateKey"`
 	RootCACertificate        types.Certificate `json:"rootCACertificate" yaml:"rootCACertificate"`
+	FlexVolumePluginDir      string            `json:"flexVolumePluginDir" yaml:"flexVolumePluginDir"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager.
@@ -29,6 +30,7 @@ type kubeControllerManager struct {
 	serviceAccountPrivateKey string
 	rootCACertificate        string
 	kubeconfig               string
+	flexVolumePluginDir      string
 }
 
 // ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer.
@@ -90,6 +92,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 				// From k8s 1.17.x, without specifying those flags, there are some warning log messages printed.
 				"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
 				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
+				fmt.Sprintf("--flex-volume-plugin-dir=%s", k.flexVolumePluginDir),
 			},
 		},
 	}
@@ -117,6 +120,7 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 		serviceAccountPrivateKey: string(k.ServiceAccountPrivateKey),
 		rootCACertificate:        string(k.RootCACertificate),
 		kubeconfig:               kubeconfig,
+		flexVolumePluginDir:      k.FlexVolumePluginDir,
 	}
 
 	return nk, nil
