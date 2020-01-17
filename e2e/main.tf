@@ -39,19 +39,19 @@ variable "node_ssh_port" {
 }
 
 variable "kube_apiserver_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kube-apiserver"
+  default = "flexkube/kube-apiserver"
 }
 
 variable "kubernetes_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kubernetes"
+  default = "flexkube/kubernetes"
 }
 
 variable "kubelet_rubber_stamp_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kubelet-rubber-stamp"
+  default = "flexkube/kubelet-rubber-stamp"
 }
 
 variable "calico_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/calico"
+  default = "flexkube/calico"
 }
 
 variable "flatcar_channel" {
