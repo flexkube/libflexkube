@@ -3,8 +3,10 @@ package etcd
 import (
 	"testing"
 
+	"github.com/flexkube/libflexkube/internal/utiltest"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 const (
@@ -12,10 +14,18 @@ const (
 )
 
 func TestMemberToHostConfiguredContainer(t *testing.T) {
+	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
+	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
+
 	kas := &Member{
-		Name:        nonEmptyString,
-		PeerAddress: nonEmptyString,
-		Host: &host.Host{
+		Name:              nonEmptyString,
+		PeerAddress:       nonEmptyString,
+		CACertificate:     cert,
+		PeerCertificate:   cert,
+		PeerKey:           privateKey,
+		ServerCertificate: cert,
+		ServerKey:         privateKey,
+		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
