@@ -222,17 +222,7 @@ func (c *Controlplane) Validate() error {
 
 // FromYaml allows to restore controlplane state from YAML.
 func FromYaml(c []byte) (types.Resource, error) {
-	controlplane := &Controlplane{}
-	if err := yaml.Unmarshal(c, &controlplane); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
-	}
-
-	cl, err := controlplane.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create controlplane object: %w", err)
-	}
-
-	return cl, nil
+	return types.ResourceFromYaml(c, &Controlplane{})
 }
 
 // StateToYaml allows to dump controlplane state to YAML, so it can be restored later.

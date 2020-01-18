@@ -94,17 +94,7 @@ func (a *APILoadBalancers) Validate() error {
 
 // FromYaml allows to restore cluster state from YAML.
 func FromYaml(c []byte) (types.Resource, error) {
-	apiLoadBalancers := &APILoadBalancers{}
-	if err := yaml.Unmarshal(c, &apiLoadBalancers); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
-	}
-
-	p, err := apiLoadBalancers.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster object: %w", err)
-	}
-
-	return p, nil
+	return types.ResourceFromYaml(c, &APILoadBalancers{})
 }
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.

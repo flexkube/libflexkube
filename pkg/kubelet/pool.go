@@ -108,17 +108,7 @@ func (p *Pool) Validate() error {
 
 // FromYaml allows to restore cluster state from YAML.
 func FromYaml(c []byte) (types.Resource, error) {
-	pool := &Pool{}
-	if err := yaml.Unmarshal(c, &pool); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
-	}
-
-	p, err := pool.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pool object: %w", err)
-	}
-
-	return p, nil
+	return types.ResourceFromYaml(c, &Pool{})
 }
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.
