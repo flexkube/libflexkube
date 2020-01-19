@@ -10,3 +10,4 @@ bin
 kubeconfig
 .terraform.tfstate.lock.info
 .env
+*.tar.gz
