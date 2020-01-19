@@ -34,13 +34,13 @@ TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 # Default target when testing locally
 TEST_LOCAL=controlplane
 
-CONTROLLERS=$(shell grep CONTROLLERS .env | cut -d= f2 2>/dev/null || echo "1")
+CONTROLLERS=$(shell (grep CONTROLLERS .env 2>/dev/null || echo "1") | cut -d= -f2 2>/dev/null)
 
-WORKERS=$(shell grep WORKERS .env | cut -d= -f2 2>/dev/null || echo "2")
+WORKERS=$(shell (grep WORKERS .env 2>/dev/null || echo "2") | cut -d= -f2 2>/dev/null)
 
 NODES_CIDR="192.168.50.0/24"
 
-FLATCAR_CHANNEL=$(shell grep FLATCAR_CHANNEL .env | cut -d= -f2 2>/dev/null || echo "edge")
+FLATCAR_CHANNEL=$(shell (grep FLATCAR_CHANNEL .env 2>/dev/null || echo "stable") | cut -d= -f2 2>/dev/null)
 
 TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR)
 
