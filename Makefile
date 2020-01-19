@@ -21,7 +21,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -29,18 +29,22 @@ BINARY_IMAGE=flexkube/libflexkube
 
 DISABLED_LINTERS=godox,lll,funlen,dupl
 
-TERRAFORM_BIN=/usr/bin/terraform
+TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
 # Default target when testing locally
 TEST_LOCAL=controlplane
 
-CONTROLLERS=1
+CONTROLLERS=$(shell grep CONTROLLERS .env | cut -d= f2 2>/dev/null || echo "1")
 
-WORKERS=0
+WORKERS=$(shell grep WORKERS .env | cut -d= -f2 2>/dev/null || echo "0")
 
 NODES_CIDR="192.168.50.0/24"
 
-VAGRANTCMD=TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) vagrant
+FLATCAR_CHANNEL=$(shell grep FLATCAR_CHANNEL .env | cut -d= -f2 2>/dev/null || echo "edge")
+
+TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR)
+
+VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 
 .PHONY: all
 all: build test lint
@@ -91,12 +95,15 @@ test-cover:
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
 .PHONY: test-e2e-run
+test-e2e-run: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-run:
-	cd e2e && terraform init && terraform apply -auto-approve
+	helm repo update
+	cd e2e && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: test-e2e-destroy
+test-e2e-destroy: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-destroy:
-	cd e2e && terraform destroy -auto-approve
+	cd e2e && $(TERRAFORM_BIN) destroy -auto-approve
 
 .PHONY: test-e2e
 test-e2e: test-e2e-run test-e2e-destroy
@@ -108,7 +115,7 @@ test-local:
 .PHONY: test-local-apply
 test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
-	cd local-testing && $(TERRAFORM_BIN) init && TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR) $(TERRAFORM_BIN) apply -auto-approve
+	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: lint
 lint:

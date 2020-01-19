@@ -26,6 +26,8 @@ type Pool struct {
 	Labels                     map[string]string `json:"labels" yaml:"labels"`
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
+	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state" yaml:"state"`
@@ -46,6 +48,8 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
 	k.PrivilegedLabelsKubeconfig = util.PickString(k.PrivilegedLabelsKubeconfig, p.PrivilegedLabelsKubeconfig)
 	k.Taints = util.PickStringMap(k.Taints, p.Taints)
+	k.CgroupDriver = util.PickString(k.CgroupDriver, p.CgroupDriver)
+	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin)
 
 	k.Host = host.BuildConfig(k.Host, host.Host{
 		SSHConfig: p.SSH,
@@ -70,12 +74,10 @@ func (p *Pool) New() (types.Resource, error) {
 
 		p.propagateKubelet(k)
 
-		kubelet, err := k.New()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create kubelet object: %w", err)
-		}
+		kubelet, _ := k.New()
+		kubeletHcc, _ := kubelet.ToHostConfiguredContainer()
 
-		pool.containers.DesiredState[strconv.Itoa(i)] = kubelet.ToHostConfiguredContainer()
+		pool.containers.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
 	return pool, nil
@@ -85,22 +87,28 @@ func (p *Pool) New() (types.Resource, error) {
 //
 // TODO add actual validation
 func (p *Pool) Validate() error {
+	for i := range p.Kubelets {
+		// Make a copy of Kubelet struct to avoid modifying original one.
+		k := p.Kubelets[i]
+
+		p.propagateKubelet(&k)
+
+		kubelet, err := k.New()
+		if err != nil {
+			return fmt.Errorf("failed to create kubelet object: %w", err)
+		}
+
+		if _, err := kubelet.ToHostConfiguredContainer(); err != nil {
+			return fmt.Errorf("failed to generate kubelet container configuration: %w", err)
+		}
+	}
+
 	return nil
 }
 
 // FromYaml allows to restore cluster state from YAML.
 func FromYaml(c []byte) (types.Resource, error) {
-	pool := &Pool{}
-	if err := yaml.Unmarshal(c, &pool); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
-	}
-
-	p, err := pool.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pool object: %w", err)
-	}
-
-	return p, nil
+	return types.ResourceFromYaml(c, &Pool{})
 }
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.

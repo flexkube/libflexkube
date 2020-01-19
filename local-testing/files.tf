@@ -13,6 +13,11 @@ resource "local_file" "coredns_values" {
   filename          = "./values/coredns.yaml"
 }
 
+resource "local_file" "calico_values" {
+  sensitive_content = local.calico_values
+  filename          = "./values/calico.yaml"
+}
+
 resource "local_file" "etcd_config" {
   sensitive_content = local.etcd_config
   filename          = "./resources/etcd-cluster/config.yaml"
@@ -33,17 +38,17 @@ resource "local_file" "controlplane_state" {
   filename          = "./resources/controlplane/state.yaml"
 }
 
-#resource "local_file" "apiloadbalancer_config" {
-#  count             = 0
-#  sensitive_content = local.apiloadbalancer_config
-#  filename          = "./resources/api-loadbalancers/config.yaml"
-#}
+resource "local_file" "apiloadbalancer_config" {
+  count             = local.deploy_apiloadbalancer
+  sensitive_content = local.apiloadbalancer_config
+  filename          = "./resources/api-loadbalancers/config.yaml"
+}
 
-#resource "local_file" "apiloadbalancer_state" {
-#  count             = 0
-#  sensitive_content = flexkube_apiloadbalancer_pool.controllers.state
-#  filename          = "./resources/api-loadbalancers/state.yaml"
-#}
+resource "local_file" "apiloadbalancer_state" {
+  count             = local.deploy_apiloadbalancer
+  sensitive_content = flexkube_apiloadbalancer_pool.controllers.0.state
+  filename          = "./resources/api-loadbalancers/state.yaml"
+}
 
 resource "local_file" "kubelet_pool_config" {
   sensitive_content = local.kubelet_pool_config

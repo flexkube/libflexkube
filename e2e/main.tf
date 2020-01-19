@@ -26,20 +26,36 @@ variable "nodes_cidr" {
   default = "192.168.50.0/24"
 }
 
+variable "pod_cidr" {
+  default = "10.1.0.0/16"
+}
+
+variable "network_plugin" {
+  default = "cni"
+}
+
 variable "node_ssh_port" {
   default = 22
 }
 
 variable "kube_apiserver_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kube-apiserver"
+  default = "flexkube/kube-apiserver"
 }
 
 variable "kubernetes_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kubernetes"
+  default = "flexkube/kubernetes"
 }
 
 variable "kubelet_rubber_stamp_helm_chart_source" {
-  default = "/usr/src/libflexkube/charts/kubelet-rubber-stamp"
+  default = "flexkube/kubelet-rubber-stamp"
+}
+
+variable "calico_helm_chart_source" {
+  default = "flexkube/calico"
+}
+
+variable "flatcar_channel" {
+  default = "edge"
 }
 
 module "root_pki" {
@@ -54,7 +70,7 @@ resource "null_resource" "controller_ips" {
   triggers = {
     name = format("controller%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2)
+    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2)
   }
 }
 
@@ -102,11 +118,13 @@ resource "null_resource" "workers" {
   triggers = {
     name = format("worker%02d", count.index + 1)
     ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
-    cidr = cidrsubnet("10.1.0.0/16", 8, count.index + 2 + var.controllers_count)
+    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2 + var.controllers_count)
   }
 }
 
 locals {
+  cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
+
   worker_ips = null_resource.workers.*.triggers.ip
   worker_cidrs = null_resource.workers.*.triggers.cidr
   worker_names = null_resource.workers.*.triggers.name
@@ -201,6 +219,11 @@ tolerations:
     effect: NoSchedule
 EOF
 
+  calico_values = <<EOF
+podCIDR: ${var.pod_cidr}
+flexVolumePluginDir: /var/lib/kubelet/volumeplugins
+EOF
+
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
     server      = "https://${local.first_controller_ip}:6443"
@@ -222,6 +245,7 @@ EOF
     kubelet_pod_cidrs            = local.controller_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.controller_names
+    network_plugin               = var.network_plugin
     labels                       = {}
     privileged_labels            = {
       "node-role.kubernetes.io/master" = ""
@@ -230,6 +254,7 @@ EOF
     taints                       = {
       "node-role.kubernetes.io/master" = "NoSchedule"
     }
+    cgroup_driver                = local.cgroup_driver
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
@@ -241,10 +266,12 @@ EOF
     kubelet_pod_cidrs            = local.worker_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.worker_names
+    network_plugin               = var.network_plugin
     labels                       = {}
     taints                       = {}
     privileged_labels            = {}
     privileged_labels_kubeconfig = ""
+    cgroup_driver                = local.cgroup_driver
   })
 
   deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0
@@ -320,6 +347,18 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   namespace  = "kube-system"
   chart      = var.kubelet_rubber_stamp_helm_chart_source
   name       = "kubelet-rubber-stamp"
+
+  depends_on = [
+    flexkube_helm_release.kubernetes
+  ]
+}
+
+resource "flexkube_helm_release" "calico" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = var.calico_helm_chart_source
+  name       = "calico"
+  values     = local.calico_values
 
   depends_on = [
     flexkube_helm_release.kubernetes

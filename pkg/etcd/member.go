@@ -5,25 +5,26 @@ import (
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
-	"github.com/flexkube/libflexkube/pkg/container/types"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Member represents single etcd member
 type Member struct {
-	Name              string     `json:"name,omitempty" yaml:"name,omitempty"`
-	Image             string     `json:"image,omitempty" yaml:"image,omitempty"`
-	Host              *host.Host `json:"host,omitempty" yaml:"host,omitempty"`
-	CACertificate     string     `json:"caCertificate,omitempty" yaml:"caCertificate,omitempty"`
-	PeerCertificate   string     `json:"peerCertificate,omitempty" yaml:"peerCertificate,omitempty"`
-	PeerKey           string     `json:"peerKey,omitempty" yaml:"peerKey,omitempty"`
-	PeerAddress       string     `json:"peerAddress,omitempty" yaml:"peerAddress,omitempty"`
-	InitialCluster    string     `json:"initialCluster,omitempty" yaml:"initialCluster,omitempty"`
-	PeerCertAllowedCN string     `json:"peerCertAllowedCN,omitempty" yaml:"peerCertAllowedCN,omitempty"`
-	ServerCertificate string     `json:"serverCertificate,omitempty" yaml:"serverCertificate,omitempty"`
-	ServerKey         string     `json:"serverKey,omitempty" yaml:"serverKey,omitempty"`
-	ServerAddress     string     `json:"serverAddress,omitempty" yaml:"serverAddress,omitempty"`
+	Name              string            `json:"name" yaml:"name"`
+	Image             string            `json:"image" yaml:"image"`
+	Host              host.Host         `json:"host" yaml:"host"`
+	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
+	PeerCertificate   types.Certificate `json:"peerCertificate" yaml:"peerCertificate"`
+	PeerKey           types.PrivateKey  `json:"peerKey" yaml:"peerKey"`
+	PeerAddress       string            `json:"peerAddress" yaml:"peerAddress"`
+	InitialCluster    string            `json:"initialCluster" yaml:"initialCluster"`
+	PeerCertAllowedCN string            `json:"peerCertAllowedCN" yaml:"peerCertAllowedCN"`
+	ServerCertificate types.Certificate `json:"serverCertificate" yaml:"serverCertificate"`
+	ServerKey         types.PrivateKey  `json:"serverKey" yaml:"serverKey"`
+	ServerAddress     string            `json:"serverAddress" yaml:"serverAddress"`
 }
 
 // member is a validated, executable version of Member
@@ -53,17 +54,17 @@ func (m *member) configFiles() map[string]string {
 }
 
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
-func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
 			Docker: &docker.Config{},
 		},
-		Config: types.ContainerConfig{
+		Config: containertypes.ContainerConfig{
 			Name:       m.name,
 			Image:      m.image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
-			Mounts: []types.Mount{
+			Mounts: []containertypes.Mount{
 				{
 					// TODO between /var/lib/etcd and data dir we should probably put cluster name, to group them
 					// TODO make data dir configurable
@@ -110,7 +111,7 @@ func (m *member) ToHostConfiguredContainer() *container.HostConfiguredContainer 
 		Host:        m.host,
 		ConfigFiles: m.configFiles(),
 		Container:   c,
-	}
+	}, nil
 }
 
 // New valides Member configuration and returns it's usable version
@@ -122,15 +123,15 @@ func (m *Member) New() (container.ResourceInstance, error) {
 	nm := &member{
 		name:              m.Name,
 		image:             m.Image,
-		host:              *m.Host,
-		caCertificate:     m.CACertificate,
-		peerCertificate:   m.PeerCertificate,
-		peerKey:           m.PeerKey,
+		host:              m.Host,
+		caCertificate:     string(m.CACertificate),
+		peerCertificate:   string(m.PeerCertificate),
+		peerKey:           string(m.PeerKey),
 		peerAddress:       m.PeerAddress,
 		initialCluster:    m.InitialCluster,
 		peerCertAllowedCN: m.PeerCertAllowedCN,
-		serverCertificate: m.ServerCertificate,
-		serverKey:         m.ServerKey,
+		serverCertificate: string(m.ServerCertificate),
+		serverKey:         string(m.ServerKey),
 		serverAddress:     m.ServerAddress,
 	}
 
@@ -144,21 +145,22 @@ func (m *Member) New() (container.ResourceInstance, error) {
 // Validate validates etcd member configuration
 // TODO add validation of certificates if specified
 func (m *Member) Validate() error {
+	var errors types.ValidateError
+
 	// TODO require peer address for now. Later we could figure out
 	// how to use CNI for setting it using env variables or something
 	if m.PeerAddress == "" {
-		return fmt.Errorf("peer address must be set")
+		errors = append(errors, fmt.Errorf("peer address must be set"))
 	}
 
 	// TODO can we auto-generate it?
 	if m.Name == "" {
-		return fmt.Errorf("member name must be set")
+		errors = append(errors, fmt.Errorf("member name must be set"))
 	}
 
-	// TODO actually direct, local container is fine too, this check can be removed
-	if m.Host == nil {
-		return fmt.Errorf("host configuration must be defined")
+	if err := m.Host.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }

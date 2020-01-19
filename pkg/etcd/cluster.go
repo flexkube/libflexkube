@@ -6,9 +6,9 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/host"
-	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
@@ -18,7 +18,7 @@ type Cluster struct {
 	// User-configurable fields.
 	Image         string            `json:"image" yaml:"image"`
 	SSH           *ssh.Config       `json:"ssh" yaml:"ssh"`
-	CACertificate string            `json:"caCertificate" yaml:"caCertificate"`
+	CACertificate types.Certificate `json:"caCertificate" yaml:"caCertificate"`
 	Members       map[string]Member `json:"members" yaml:"members"`
 
 	// Serializable fields.
@@ -33,6 +33,27 @@ type cluster struct {
 	containers    container.Containers
 }
 
+// propagateMember fills given Member's empty fileds with fields from Cluster.
+func (c *Cluster) propagateMember(i string, m *Member) {
+	initialClusterArr := []string{}
+	peerCertAllowedCNArr := []string{}
+
+	for n, m := range c.Members {
+		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", fmt.Sprintf("etcd-%s", n), m.PeerAddress))
+		peerCertAllowedCNArr = append(peerCertAllowedCNArr, fmt.Sprintf("etcd-%s", n))
+	}
+
+	m.Name = util.PickString(m.Name, fmt.Sprintf("etcd-%s", i))
+	m.Image = util.PickString(m.Image, c.Image)
+	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
+	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))
+	m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate)))
+
+	m.Host = host.BuildConfig(m.Host, host.Host{
+		SSHConfig: c.SSH,
+	})
+}
+
 // New validates etcd cluster configuration and fills members with default and computed values.
 func (c *Cluster) New() (types.Resource, error) {
 	if err := c.Validate(); err != nil {
@@ -42,60 +63,21 @@ func (c *Cluster) New() (types.Resource, error) {
 	cluster := &cluster{
 		image:         c.Image,
 		ssh:           c.SSH,
-		caCertificate: c.CACertificate,
+		caCertificate: string(c.CACertificate),
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
 		},
 	}
 
-	initialClusterArr := []string{}
-	peerCertAllowedCNArr := []string{}
-
 	for n, m := range c.Members {
-		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", fmt.Sprintf("etcd-%s", n), m.PeerAddress))
-		peerCertAllowedCNArr = append(peerCertAllowedCNArr, fmt.Sprintf("etcd-%s", n))
-	}
+		m := m
+		c.propagateMember(n, &m)
 
-	initialCluster := strings.Join(initialClusterArr, ",")
-	peerCertAllowedCN := strings.Join(peerCertAllowedCNArr, ",")
+		member, _ := m.New()
+		hcc, _ := member.ToHostConfiguredContainer()
 
-	for n, m := range c.Members {
-		if m.Name == "" {
-			m.Name = fmt.Sprintf("etcd-%s", n)
-		}
-
-		if m.Image == "" && c.Image != "" {
-			m.Image = c.Image
-		}
-
-		if m.InitialCluster == "" {
-			m.InitialCluster = initialCluster
-		}
-
-		if m.PeerCertAllowedCN == "" {
-			m.PeerCertAllowedCN = peerCertAllowedCN
-		}
-
-		// TODO find better way to handle defaults!!!
-		if m.Host == nil || (m.Host.DirectConfig == nil && m.Host.SSHConfig == nil) {
-			m.Host = &host.Host{
-				DirectConfig: &direct.Config{},
-			}
-		}
-
-		m.Host.SSHConfig = ssh.BuildConfig(m.Host.SSHConfig, c.SSH)
-
-		if m.CACertificate == "" && c.CACertificate != "" {
-			m.CACertificate = c.CACertificate
-		}
-
-		member, err := m.New()
-		if err != nil {
-			return nil, fmt.Errorf("that was unexpected: %w", err)
-		}
-
-		cluster.containers.DesiredState[n] = member.ToHostConfiguredContainer()
+		cluster.containers.DesiredState[n] = hcc
 	}
 
 	return cluster, nil
@@ -108,20 +90,16 @@ func (c *Cluster) Validate() error {
 	}
 
 	for n, m := range c.Members {
-		// TODO validate only fills default fields here which will be done in a separated step anyway.
-		// we should make this a function!
-		if m.Name == "" {
-			m.Name = n
-		}
+		m := m
+		c.propagateMember(n, &m)
 
-		if m.Host == nil || m.Host.DirectConfig == nil || m.Host.SSHConfig == nil {
-			m.Host = &host.Host{
-				DirectConfig: &direct.Config{},
-			}
-		}
-
-		if err := m.Validate(); err != nil {
+		member, err := m.New()
+		if err != nil {
 			return fmt.Errorf("failed to validate member '%s': %w", n, err)
+		}
+
+		if _, err := member.ToHostConfiguredContainer(); err != nil {
+			return fmt.Errorf("failed to generate container configuration for member '%s': %w", n, err)
 		}
 	}
 
@@ -130,17 +108,7 @@ func (c *Cluster) Validate() error {
 
 // FromYaml allows to restore cluster state from YAML.
 func FromYaml(c []byte) (types.Resource, error) {
-	cluster := &Cluster{}
-	if err := yaml.Unmarshal(c, &cluster); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
-	}
-
-	cl, err := cluster.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster object: %w", err)
-	}
-
-	return cl, nil
+	return types.ResourceFromYaml(c, &Cluster{})
 }
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.

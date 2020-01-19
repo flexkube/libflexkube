@@ -37,6 +37,7 @@ kubeAPIServer:
     %{~ endif ~}
 
 kubeControllerManager:
+    flexVolumePluginDir: /var/lib/kubelet/volumeplugins
     kubernetesCAKey: |
         ${indent(8, trimspace(kubernetes_ca_key))}
     serviceAccountPrivateKey: |

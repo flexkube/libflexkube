@@ -2,7 +2,10 @@ package kubelet
 
 import (
 	"fmt"
-	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeletconfig "k8s.io/kubelet/config/v1beta1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
@@ -29,9 +32,11 @@ type Kubelet struct {
 	Labels                     map[string]string `json:"labels" yaml:"labels"`
 	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
+	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
-	PodCIDR string `json:"podCIDR" yaml:"podCIDR"`
+	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet.
@@ -48,6 +53,8 @@ type kubelet struct {
 	labels                     map[string]string
 	privilegedLabels           map[string]string
 	privilegedLabelsKubeconfig string
+	cgroupDriver               string
+	networkPlugin              string
 }
 
 // New validates Kubelet configuration and returns it's usable version.
@@ -70,6 +77,8 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 		labels:                     k.Labels,
 		privilegedLabels:           k.PrivilegedLabels,
 		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
+		cgroupDriver:               k.CgroupDriver,
+		networkPlugin:              k.NetworkPlugin,
 	}
 
 	if nk.image == "" {
@@ -97,6 +106,19 @@ func (k *Kubelet) Validate() error {
 		errors = append(errors, fmt.Errorf("privilegedLabelsKubeconfig specified, but no privilegedLabels requested"))
 	}
 
+	switch k.NetworkPlugin {
+	case "cni":
+		if k.PodCIDR != "" {
+			errors = append(errors, fmt.Errorf("podCIDR has no effect when using 'cni' network plugin"))
+		}
+	case "kubenet":
+		if k.PodCIDR == "" {
+			errors = append(errors, fmt.Errorf("podCIDR must be set when using 'kubenet' network plugin"))
+		}
+	default:
+		errors = append(errors, fmt.Errorf("networkPlugin must be either 'cni' or 'kubenet'"))
+	}
+
 	if err := k.Host.Validate(); err != nil {
 		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
 	}
@@ -105,52 +127,61 @@ func (k *Kubelet) Validate() error {
 }
 
 // ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
-func (k *kubelet) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 
-	// TODO we should use proper templating engine or marshalling for those values.
-	clusterDNS := ""
-	for _, e := range k.clusterDNSIPs {
-		clusterDNS = fmt.Sprintf("%s- %s\n", clusterDNS, e)
+	config := &kubeletconfig.KubeletConfiguration{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "KubeletConfiguration",
+			APIVersion: kubeletconfig.SchemeGroupVersion.String(),
+		},
+		// Enables TLS certificate rotation, which is good from security point of view.
+		RotateCertificates: true,
+		// Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates.
+		ServerTLSBootstrap: true,
+		// To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
+		// This disables QoS based cgroup hierarchy, which is important from resource management perspective.
+		CgroupsPerQOS: &[]bool{false}[0],
+		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
+		// TODO This will be removed by yaml.Marshal, so we add it manually later.
+		EnforceNodeAllocatable: []string{},
+		// If Docker is configured to use systemd as a cgroup driver and Docker is used as container
+		// runtime, this needs to be set to match Docker.
+		// TODO pull that information dynamically based on what container runtime is configured.
+		CgroupDriver: k.cgroupDriver,
+		// Address where kubelet should listen on.
+		Address: k.address,
+		// Disable healht port for now, since we don't use it.
+		// TODO check how to use it and re-enable it.
+		HealthzPort: &[]int32{0}[0],
+		// Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
+		// short-names resolution like mysvc.myns.svc does not work.
+		ClusterDomain: "cluster.local",
+		// Authenticate clients using CA file.
+		Authentication: kubeletconfig.KubeletAuthentication{
+			X509: kubeletconfig.KubeletX509Authentication{
+				ClientCAFile: "/etc/kubernetes/pki/ca.crt",
+			},
+		},
+		ClusterDNS: k.clusterDNSIPs,
+	}
+
+	if k.networkPlugin == "kubenet" {
+		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
+		config.PodCIDR = k.podCIDR
+	}
+
+	kubelet, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed serializing kubelet configuration: %w", err)
 	}
 
 	// kubelet.yaml file is a recommended way to configure the kubelet.
-	//
-	// TODO maybe we store that as a struct, and we marshal here to YAML?
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf(`apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-# Enables TLS certificate rotation, which is good from security point of view.
-rotateCertificates: true
-# Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates
-serverTLSBootstrap: true
-# To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
-# This disables QoS based cgroup hierarchy, which is important from resource management perspective.
-cgroupsPerQOS: false
-# When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
-enforceNodeAllocatable: []
-# If Docker is configured to use systemd as a cgroup driver and Docker is used as container
-# runtime, this needs to be set to match Docker.
-# TODO pull that information dynamically based on what container runtime is configured.
-cgroupDriver: systemd
-# CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
-podCIDR: %s
-# Address where kubelet should listen on.
-address: %s
-# Disable healht port for now, since we don't use it
-# TODO check how to use it and re-enable it
-healthzPort: 0
-# Set up cluster domain. Without this, there is no 'search' field in /etc/resolv.conf in containers, so
-# short-names resolution like mysvc.myns.svc does not work.
-clusterDomain: cluster.local
-# Authenticate clients using CA file
-authentication:
-  x509:
-    clientCAFile: /etc/kubernetes/pki/ca.crt
-# Configure cluster DNS IP addresses
-clusterDNS:
-`, k.podCIDR, k.address)
-	// TODO ugly!
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%s%s\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"], strings.TrimSpace(clusterDNS))
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = string(kubelet)
+
+	// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
+	// TODO Figure out how to put that in the struct up there, as when doing yaml.Marshal, it removes empty slice.
+	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%senforceNodeAllocatable: []\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"])
 
 	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
 	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
@@ -208,9 +239,12 @@ clusterDNS:
 					Target: "/etc/cni/net.d",
 				},
 				{
-					// TODO do we need it?
+					// Mount host CNI binaries into the kubelet, so it can access it.
+					// Hyperkube image already ships some CNI binaries, so we shouldn't shadow them in the kubelet.
+					// Other CNI plugins may install CNI binaries in this directory on host, so kubelet should have
+					// access to both locations.
 					Source: "/opt/cni/bin/",
-					Target: "/opt/cni/bin",
+					Target: "/host/opt/cni/bin",
 				},
 				{
 					// Required by kubelet when creating Docker containers. rslave borrowed from Rancher.
@@ -263,7 +297,7 @@ clusterDNS:
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 				// Use 'kubenet' network plugin, as it's the simplest one.
 				// TODO allow to use different CNI plugins (just 'cni' to be precise)
-				"--network-plugin=kubenet",
+				fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 				"--redirect-container-streaming=false",
 				// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
@@ -272,6 +306,11 @@ clusterDNS:
 				fmt.Sprintf("--node-ip=%s", k.address),
 				// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
 				fmt.Sprintf("--hostname-override=%s", k.name),
+				// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
+				// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
+				//
+				// TODO This flag should only be set if Docker is used as container runtime.
+				"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
 			},
 		},
 	}
@@ -289,7 +328,7 @@ clusterDNS:
 		ConfigFiles: configFiles,
 		Container:   c,
 		Hooks:       k.getHooks(),
-	}
+	}, nil
 }
 
 // getHooks returns HostConfiguredContainer hooks associated with kubelet.

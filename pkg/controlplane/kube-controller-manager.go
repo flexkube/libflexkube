@@ -19,6 +19,7 @@ type KubeControllerManager struct {
 	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey" yaml:"kubernetesCAKey"`
 	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey" yaml:"serviceAccountPrivateKey"`
 	RootCACertificate        types.Certificate `json:"rootCACertificate" yaml:"rootCACertificate"`
+	FlexVolumePluginDir      string            `json:"flexVolumePluginDir" yaml:"flexVolumePluginDir"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager.
@@ -29,13 +30,14 @@ type kubeControllerManager struct {
 	serviceAccountPrivateKey string
 	rootCACertificate        string
 	kubeconfig               string
+	flexVolumePluginDir      string
 }
 
 // ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer.
 //
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
-func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-controller-manager/kubeconfig"] = k.kubeconfig
@@ -90,6 +92,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 				// From k8s 1.17.x, without specifying those flags, there are some warning log messages printed.
 				"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
 				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
+				fmt.Sprintf("--flex-volume-plugin-dir=%s", k.flexVolumePluginDir),
 			},
 		},
 	}
@@ -98,7 +101,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() *container.HostConfi
 		Host:        k.host,
 		ConfigFiles: configFiles,
 		Container:   c,
-	}
+	}, nil
 }
 
 // New validates KubeControllerManager and returns usable kubeControllerManager.
@@ -117,6 +120,7 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 		serviceAccountPrivateKey: string(k.ServiceAccountPrivateKey),
 		rootCACertificate:        string(k.RootCACertificate),
 		kubeconfig:               kubeconfig,
+		flexVolumePluginDir:      k.FlexVolumePluginDir,
 	}
 
 	return nk, nil

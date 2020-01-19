@@ -1,4 +1,4 @@
-package kubelet
+package apiloadbalancer
 
 import (
 	"testing"
@@ -8,28 +8,17 @@ import (
 )
 
 func TestToHostConfiguredContainer(t *testing.T) {
-	kk := &Kubelet{
-		BootstrapKubeconfig: "foo",
-		NetworkPlugin:       "cni",
+	kk := &APILoadBalancer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
-		Labels: map[string]string{
-			"foo": "bar",
-		},
-		Taints: map[string]string{
-			"foo": "bar",
-		},
-		PrivilegedLabels: map[string]string{
-			"baz": "bar",
-		},
-		PrivilegedLabelsKubeconfig: "foo",
-		ClusterDNSIPs:              []string{"10.0.0.1"},
+		Servers:            []string{"localhost:9090"},
+		MetricsBindAddress: "0.0.0.0:6443",
 	}
 
 	k, err := kk.New()
 	if err != nil {
-		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
+		t.Fatalf("Creating new api loadbalancer should succeed, got: %v", err)
 	}
 
 	hcc, err := k.ToHostConfiguredContainer()

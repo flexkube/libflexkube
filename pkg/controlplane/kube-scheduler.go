@@ -25,7 +25,7 @@ type kubeScheduler struct {
 }
 
 // ToHostConfiguredContainer converts kubeScheduler into generic container struct
-func (k *kubeScheduler) ToHostConfiguredContainer() *container.HostConfiguredContainer {
+func (k *kubeScheduler) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-scheduler/kubeconfig"] = k.kubeconfig
@@ -72,7 +72,7 @@ clientConnection:
 		Host:        k.host,
 		ConfigFiles: configFiles,
 		Container:   c,
-	}
+	}, nil
 }
 
 // New validates KubeScheduler struct and returns it's usable version
