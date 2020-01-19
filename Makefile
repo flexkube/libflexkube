@@ -206,11 +206,9 @@ vagrant-integration-shell:
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
 
-
 .PHONY: vagrant-build-bin
 vagrant-build-bin: vagrant-integration-build
 	$(VAGRANTCMD) ssh -c "$(BUILD_CMD) make build-bin"
-
 
 .PHONY: vagrant-e2e-build
 vagrant-e2e-build:
