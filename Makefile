@@ -36,7 +36,7 @@ TEST_LOCAL=controlplane
 
 CONTROLLERS=$(shell grep CONTROLLERS .env | cut -d= f2 2>/dev/null || echo "1")
 
-WORKERS=$(shell grep WORKERS .env | cut -d= -f2 2>/dev/null || echo "0")
+WORKERS=$(shell grep WORKERS .env | cut -d= -f2 2>/dev/null || echo "2")
 
 NODES_CIDR="192.168.50.0/24"
 
