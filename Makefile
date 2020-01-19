@@ -117,6 +117,18 @@ test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
 	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
+.PHONY: test-conformance
+test-conformance:SHELL=/bin/bash
+test-conformance:
+	until kubectl get nodes >/dev/null; do sleep 1; done
+	sonobuoy run --mode=certified-conformance || true
+	until sonobuoy status | grep e2e | grep complete; do timeout --foreground 10m sonobuoy logs -f || true; sleep 1; done
+	sonobuoy results $$(sonobuoy retrieve)
+
+.PHONY: test-conformance-clean
+test-conformance-clean:
+	sonobuoy delete
+
 .PHONY: lint
 lint:
 	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration $(GO_PACKAGES)
@@ -233,3 +245,16 @@ vagrant-e2e-shell:
 
 .PHONY: vagrant-e2e
 vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy
+
+.PHONY: vagrant-conformance-run
+vagrant-conformance-run:
+	# Make sure static controlplane is shut down.
+	$(VAGRANTCMD) ssh -c "docker stop kube-apiserver kube-scheduler kube-controller-manager"
+	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-conformance'"
+
+.PHONY: vagrant-conformance
+vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance-copy-results
+
+.PHONY: vagrant-conformance-copy-results
+vagrant-conformance-copy-results:
+	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./

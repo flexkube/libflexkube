@@ -1,6 +1,6 @@
 FROM hashicorp/terraform:light
 
-RUN apk add -U make bash bash-completion vim
+RUN apk add -U make bash bash-completion vim coreutils
 
 RUN wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
     mv linux-amd64/helm /usr/local/bin/
