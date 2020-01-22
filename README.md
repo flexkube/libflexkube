@@ -302,6 +302,21 @@ If you just want to run E2E tests and clean everything up afterwards, run the fo
 make vagrant-e2e
 ```
 
+### Conformance tests
+
+To run conformance tests in the environment provided by `Vagrantfile`, run the following command:
+```
+make vagrant-conformance
+```
+
+The command will deploy E2E environment and then run conformance tests in there.
+
+The test should take a bit more than an hour to finish.
+
+By default, after scheduling the conformance tests, the command will start showing the logs of the tests. One can then use CTRL-C to stop showing the logs, as tests will be running in the background and the command is idempotent.
+
+Once tests are complete, the command should will the test results and archive file with the report will be copied into project's root directory, which can be then submitted to [k8s-conformance](https://github.com/cncf/k8s-conformance) repository.
+
 ### Local tests
 
 For testing standalone resources, e.g. just `etcd-cluster`, [local-testing](./local-testing) directory can be used, which will use the code from [e2e](./e2e) directory to create a cluster and then will dump all configuration and state files to separate directories, when tools from [cmd](./cmd) directory can be used directly. That allows to skip many sync steps, which speeds up the overall process, making development easier.
