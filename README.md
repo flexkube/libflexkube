@@ -383,6 +383,12 @@ If you want to also remove all artifacts from the repository, like built binarie
 make clean
 ```
 
+## Helm charts
+
+All self-hosted control-plane deployments and CNI plugins are managed using [Helm](https://helm.sh/). All used charts are available via `https://flexkube.github.io/charts/` charts repository.
+
+The repository is hosted using GitHub Pages and and it's content can be found in this [charts](https://github.com/flexkube/charts) repository.
+
 ## Contributing
 
 All contributions to this project are welcome. If it does not satisfy your needs, feel free to raise an issue about it or implement the support yourself and create a pull request with the patch, so we can all benefit from it.
