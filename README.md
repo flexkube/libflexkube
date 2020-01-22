@@ -49,7 +49,7 @@ Using this library has minimal target host (where containers will run) requireme
 - when deploying to remote hosts, SSH access with the user allowed to create containers (e.g. when using `Docker` as a container runtime,
   user must be part of `docker` group)
 
-`root` access on the target hosts is NOT required, as all configuration files are managed using temporary configuration containers.
+Direct `root` access (via SSH login or with e.g. `sudo`) on the target hosts is NOT required, as all configuration files are managed using temporary configuration containers.
 
 No Public DNS or any other public discovery service is required for getting cluster up and running either.
 
