@@ -233,8 +233,8 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 					Target: "/var/run/docker.sock",
 				},
 				{
-					// For testing kubenet.
-					// TODO do we need it?
+					// Required when using CNI plugin for networking, as kubelet will verify, that network configuration
+					// has been deployed there before creating pods.
 					Source: "/etc/cni/net.d/",
 					Target: "/etc/cni/net.d",
 				},
@@ -247,23 +247,33 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 					Target: "/host/opt/cni/bin",
 				},
 				{
-					// Required by kubelet when creating Docker containers. rslave borrowed from Rancher.
-					// TODO add better explanation
-					Source:      "/var/lib/docker/",
-					Target:      "/var/lib/docker",
-					Propagation: "rslave",
+					// Required by kubelet when creating Docker containers. This is required, when using Docker as container
+					// runtime, as cAdvisor, which is integrated into kubelet will try to identify image read-write layer for
+					// container when creating a handler for monitoring. This is needed to report disk usage inside the container.
+					//
+					// It is also needed, as kubelet creates a symlink from Docker container's log file to /var/log/pods.
+					Source: "/var/lib/docker/",
+					Target: "/var/lib/docker",
 				},
 				{
-					// Required for kubelet when running Docker containers. Since kubelet mounts stuff there several times
-					// mounts should be propagated, hence the "shared". "shared" borrowed from Rancher.
-					// TODO add better explanation
+					// In there, kubelet persist generated certificates and information about pods. In case of a re-creation of
+					// kubelet containers, this information would get lost, so running pods would become orphans, which is not
+					// desired.
+					//
+					// Kubelet also mounts the pods mounts in there, so those directories must be shared with host (where actual
+					// Docker containers are created).
+					//
+					// "shared" propagation is needed, as those pods mounts should be visible for the kubelet as well, otherwise
+					// kubelet complains when trying to clean up pods volumes.
 					Source:      "/var/lib/kubelet/",
 					Target:      "/var/lib/kubelet",
 					Propagation: "shared",
 				},
 				{
-					// To persist CNI configuration managed by kubelet. Might be only required with 'kubenet' network plugin.
-					// TODO check if this is needed. Maybe explain what is stored there.
+					// This is where kubelet stores information about the network configuration on the node when using 'kubenet'
+					// as network plugin, so it should be persisted.
+					//
+					// It is also used for caching network configuration for both 'kubenet' and CNI plugins.
 					Source: "/var/lib/cni/",
 					Target: "/var/lib/cni",
 				},
@@ -273,7 +283,9 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 					Target: "/lib/modules",
 				},
 				{
-					// Store pod logs on the host, so they are persistent and also can read by Loki.
+					// In this directory, kubelet creates symlinks to container log files, so this directory should be visible
+					// also for other containers. For example for centralised logging, as this is the location, where logging
+					// agent expect to find pods logs.
 					Source: "/var/log/pods/",
 					Target: "/var/log/pods",
 				},
@@ -295,8 +307,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 				"--kubeconfig=/var/lib/kubelet/kubeconfig",
 				// kubeconfig with access token for TLS bootstrapping.
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
-				// Use 'kubenet' network plugin, as it's the simplest one.
-				// TODO allow to use different CNI plugins (just 'cni' to be precise)
+				// Set which network plugin to use.
 				fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
 				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 				"--redirect-container-streaming=false",
