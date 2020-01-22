@@ -31,7 +31,7 @@ variable "pod_cidr" {
 }
 
 variable "network_plugin" {
-  default = "cni"
+  default = "calico"
 }
 
 variable "node_ssh_port" {
@@ -236,6 +236,8 @@ EOF
     address = var.controllers_count > 1 ? "localhost" : cidrhost(var.nodes_cidr, 2)
   })
 
+  network_plugin = var.network_plugin == "kubenet" ? "kubenet" : "cni"
+
   kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
     kubelet_addresses            = local.controller_ips
     bootstrap_kubeconfig         = local.bootstrap_kubeconfig
@@ -245,7 +247,7 @@ EOF
     kubelet_pod_cidrs            = local.controller_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.controller_names
-    network_plugin               = var.network_plugin
+    network_plugin               = local.network_plugin
     labels                       = {}
     privileged_labels            = {
       "node-role.kubernetes.io/master" = ""
@@ -266,7 +268,7 @@ EOF
     kubelet_pod_cidrs            = local.worker_cidrs
     kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
     kubelet_names                = local.worker_names
-    network_plugin               = var.network_plugin
+    network_plugin               = local.network_plugin
     labels                       = {}
     taints                       = {}
     privileged_labels            = {}
@@ -354,6 +356,8 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
 }
 
 resource "flexkube_helm_release" "calico" {
+  count      = var.network_plugin == "calico" ? 1 : 0
+
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.calico_helm_chart_source

@@ -49,7 +49,7 @@ Using this library has minimal target host (where containers will run) requireme
 - when deploying to remote hosts, SSH access with the user allowed to create containers (e.g. when using `Docker` as a container runtime,
   user must be part of `docker` group)
 
-`root` access on the target hosts is NOT required, as all configuration files are managed using temporary configuration containers.
+Direct `root` access (via SSH login or with e.g. `sudo`) on the target hosts is NOT required, as all configuration files are managed using temporary configuration containers.
 
 No Public DNS or any other public discovery service is required for getting cluster up and running either.
 
@@ -227,7 +227,6 @@ This can be done in 2 ways:
 ## Current known issues and limitations
 
 Currently, there are several things, which are either missing or broken. Here is the list of known problems:
-- network plug-ins are not configurable (currently `kubenet` is hardcoded)
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
 - adding/removing etcd members
 - no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
@@ -242,8 +241,6 @@ And features, which are not yet implemented:
 - showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
 - automatic shutdown/start of bootstrap control plane
-- taints and tolerations for control plane
-- role labels for kubelets
 
 ## Testing
 
@@ -301,6 +298,21 @@ If you just want to run E2E tests and clean everything up afterwards, run the fo
 ```sh
 make vagrant-e2e
 ```
+
+### Conformance tests
+
+To run conformance tests in the environment provided by `Vagrantfile`, run the following command:
+```
+make vagrant-conformance
+```
+
+The command will deploy E2E environment and then run conformance tests in there.
+
+The test should take a bit more than an hour to finish.
+
+By default, after scheduling the conformance tests, the command will start showing the logs of the tests. One can then use CTRL-C to stop showing the logs, as tests will be running in the background and the command is idempotent.
+
+Once tests are complete, the command should will the test results and archive file with the report will be copied into project's root directory, which can be then submitted to [k8s-conformance](https://github.com/cncf/k8s-conformance) repository.
 
 ### Local tests
 
@@ -370,6 +382,12 @@ If you want to also remove all artifacts from the repository, like built binarie
 ```sh
 make clean
 ```
+
+## Helm charts
+
+All self-hosted control-plane deployments and CNI plugins are managed using [Helm](https://helm.sh/). All used charts are available via `https://flexkube.github.io/charts/` charts repository.
+
+The repository is hosted using GitHub Pages and and it's content can be found in this [charts](https://github.com/flexkube/charts) repository.
 
 ## Contributing
 

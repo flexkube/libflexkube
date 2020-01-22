@@ -10,7 +10,7 @@ GOMOD=$(GOCMD) mod
 GOBUILD=CGO_ENABLED=$(CGO_ENABLED) $(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.22.2
+GOLANGCI_LINT_VERSION=v1.23.1
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -34,13 +34,13 @@ TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 # Default target when testing locally
 TEST_LOCAL=controlplane
 
-CONTROLLERS=$(shell grep CONTROLLERS .env | cut -d= f2 2>/dev/null || echo "1")
+CONTROLLERS=$(shell (grep CONTROLLERS .env 2>/dev/null || echo "1") | cut -d= -f2 2>/dev/null)
 
-WORKERS=$(shell grep WORKERS .env | cut -d= -f2 2>/dev/null || echo "0")
+WORKERS=$(shell (grep WORKERS .env 2>/dev/null || echo "2") | cut -d= -f2 2>/dev/null)
 
 NODES_CIDR="192.168.50.0/24"
 
-FLATCAR_CHANNEL=$(shell grep FLATCAR_CHANNEL .env | cut -d= -f2 2>/dev/null || echo "edge")
+FLATCAR_CHANNEL=$(shell (grep FLATCAR_CHANNEL .env 2>/dev/null || echo "stable") | cut -d= -f2 2>/dev/null)
 
 TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count=$(CONTROLLERS) TF_VAR_workers_count=$(WORKERS) TF_VAR_nodes_cidr=$(NODES_CIDR)
 
@@ -116,6 +116,18 @@ test-local:
 test-local-apply:
 	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
 	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
+
+.PHONY: test-conformance
+test-conformance:SHELL=/bin/bash
+test-conformance:
+	until kubectl get nodes >/dev/null; do sleep 1; done
+	sonobuoy run --mode=certified-conformance || true
+	until sonobuoy status | grep e2e | grep complete; do timeout --foreground 10m sonobuoy logs -f || true; sleep 1; done
+	sonobuoy results $$(sonobuoy retrieve)
+
+.PHONY: test-conformance-clean
+test-conformance-clean:
+	sonobuoy delete
 
 .PHONY: lint
 lint:
@@ -206,11 +218,9 @@ vagrant-integration-shell:
 .PHONY: vagrant-integration
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
 
-
 .PHONY: vagrant-build-bin
 vagrant-build-bin: vagrant-integration-build
 	$(VAGRANTCMD) ssh -c "$(BUILD_CMD) make build-bin"
-
 
 .PHONY: vagrant-e2e-build
 vagrant-e2e-build:
@@ -235,3 +245,16 @@ vagrant-e2e-shell:
 
 .PHONY: vagrant-e2e
 vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy
+
+.PHONY: vagrant-conformance-run
+vagrant-conformance-run:
+	# Make sure static controlplane is shut down.
+	$(VAGRANTCMD) ssh -c "docker stop kube-apiserver kube-scheduler kube-controller-manager"
+	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-conformance'"
+
+.PHONY: vagrant-conformance
+vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance-copy-results
+
+.PHONY: vagrant-conformance-copy-results
+vagrant-conformance-copy-results:
+	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
