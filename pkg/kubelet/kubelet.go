@@ -292,7 +292,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 				"--config=/etc/kubernetes/kubelet.yaml",
 				// Specify kubeconfig file for kubelet. This enabled API server mode and
 				// specifies when kubelet will write kubeconfig file after TLS bootstrapping.
-				"--kubeconfig=/etc/kubernetes/kubeconfig",
+				"--kubeconfig=/var/lib/kubelet/kubeconfig",
 				// kubeconfig with access token for TLS bootstrapping.
 				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 				// Use 'kubenet' network plugin, as it's the simplest one.
