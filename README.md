@@ -227,7 +227,6 @@ This can be done in 2 ways:
 ## Current known issues and limitations
 
 Currently, there are several things, which are either missing or broken. Here is the list of known problems:
-- network plug-ins are not configurable (currently `kubenet` is hardcoded)
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
 - adding/removing etcd members
 - no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
@@ -242,8 +241,6 @@ And features, which are not yet implemented:
 - showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
 - automatic shutdown/start of bootstrap control plane
-- taints and tolerations for control plane
-- role labels for kubelets
 
 ## Testing
 
