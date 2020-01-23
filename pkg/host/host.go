@@ -22,8 +22,8 @@ type Connected interface {
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
 type Host struct {
-	DirectConfig *direct.Config `json:"direct,omitempty" yaml:"direct,omitempty"`
-	SSHConfig    *ssh.Config    `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	DirectConfig *direct.Config `json:"direct,omitempty"`
+	SSHConfig    *ssh.Config    `json:"ssh,omitempty"`
 }
 
 type host struct {

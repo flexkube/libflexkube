@@ -19,24 +19,24 @@ import (
 
 // Kubelet represents single kubelet instance.
 type Kubelet struct {
-	Address             string    `json:"address" yaml:"address"`
-	Image               string    `json:"image" yaml:"image"`
-	Host                host.Host `json:"host" yaml:"host"`
-	BootstrapKubeconfig string    `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
+	Address             string    `json:"address"`
+	Image               string    `json:"image"`
+	Host                host.Host `json:"host"`
+	BootstrapKubeconfig string    `json:"bootstrapKubeconfig"`
 	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
-	KubernetesCACertificate    string            `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs" yaml:"clusterDNSIPs"`
-	Name                       string            `json:"name" yaml:"name"`
-	Taints                     map[string]string `json:"taints" yaml:"taints"`
-	Labels                     map[string]string `json:"labels" yaml:"labels"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
-	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
-	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
+	KubernetesCACertificate    string            `json:"kubernetesCACertificate"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs"`
+	Name                       string            `json:"name"`
+	Taints                     map[string]string `json:"taints"`
+	Labels                     map[string]string `json:"labels"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
+	CgroupDriver               string            `json:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
-	PodCIDR string `json:"podCIDR,omitempty" yaml:"podCIDR,omitempty"`
+	PodCIDR string `json:"podCIDR,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet.

@@ -16,13 +16,13 @@ import (
 // Cluster represents etcd cluster configuration and state from the user.
 type Cluster struct {
 	// User-configurable fields.
-	Image         string            `json:"image" yaml:"image"`
-	SSH           *ssh.Config       `json:"ssh" yaml:"ssh"`
-	CACertificate types.Certificate `json:"caCertificate" yaml:"caCertificate"`
-	Members       map[string]Member `json:"members" yaml:"members"`
+	Image         string            `json:"image"`
+	SSH           *ssh.Config       `json:"ssh"`
+	CACertificate types.Certificate `json:"caCertificate"`
+	Members       map[string]Member `json:"members"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state" yaml:"state"`
+	State container.ContainersState `json:"state"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.

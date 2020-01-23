@@ -15,23 +15,23 @@ import (
 
 // KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
-	Common                   Common            `json:"common" yaml:"common"`
-	Host                     host.Host         `json:"host" yaml:"host"`
-	APIServerCertificate     types.Certificate `json:"apiServerCertificate" yaml:"apiServerCertificate"`
-	APIServerKey             types.PrivateKey  `json:"apiServerKey" yaml:"apiServerKey"`
-	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey" yaml:"serviceAccountPublicKey"`
-	BindAddress              string            `json:"bindAddress" yaml:"bindAddress"`
-	AdvertiseAddress         string            `json:"advertiseAddress" yaml:"advertiseAddress"`
-	EtcdServers              []string          `json:"etcdServers" yaml:"etcdServers"`
-	ServiceCIDR              string            `json:"serviceCIDR" yaml:"serviceCIDR"`
-	SecurePort               int               `json:"securePort" yaml:"securePort"`
-	FrontProxyCertificate    types.Certificate `json:"frontProxyCertificate" yaml:"frontProxyCertificate"`
-	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey" yaml:"frontProxyKey"`
-	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate" yaml:"kubeletClientCertificate"`
-	KubeletClientKey         types.PrivateKey  `json:"kubeletClientKey" yaml:"kubeletClientKey"`
-	EtcdCACertificate        types.Certificate `json:"etcdCACertificate" yaml:"etcdCACertificate"`
-	EtcdClientCertificate    types.Certificate `json:"etcdClientCertificate" yaml:"etcdClientCertificate"`
-	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey" yaml:"etcdClientKey"`
+	Common                   Common            `json:"common"`
+	Host                     host.Host         `json:"host"`
+	APIServerCertificate     types.Certificate `json:"apiServerCertificate"`
+	APIServerKey             types.PrivateKey  `json:"apiServerKey"`
+	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey"`
+	BindAddress              string            `json:"bindAddress"`
+	AdvertiseAddress         string            `json:"advertiseAddress"`
+	EtcdServers              []string          `json:"etcdServers"`
+	ServiceCIDR              string            `json:"serviceCIDR"`
+	SecurePort               int               `json:"securePort"`
+	FrontProxyCertificate    types.Certificate `json:"frontProxyCertificate"`
+	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey"`
+	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate"`
+	KubeletClientKey         types.PrivateKey  `json:"kubeletClientKey"`
+	EtcdCACertificate        types.Certificate `json:"etcdCACertificate"`
+	EtcdClientCertificate    types.Certificate `json:"etcdClientCertificate"`
+	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey"`
 }
 
 // kubeAPIServer is a validated version of KubeAPIServer

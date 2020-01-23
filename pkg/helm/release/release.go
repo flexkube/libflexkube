@@ -29,22 +29,22 @@ type Config struct {
 
 	// Kubeconfig is content of kubeconfig file in YAML format, which will be used to authenticate
 	// to the cluster and create a release.
-	Kubeconfig string `json:"kubeconfig,omitempty" yaml:"kubeconfig,omitempty"`
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// Namespace is a namespace, where helm release will be created and all it's resources
-	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
 
 	// Name is a name of the release used to identify it
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// Chart is a location of the chart. It may be local path or remote chart in user repository
-	Chart string `json:"chart,omitempty" yaml:"chart,omitempty"`
+	Chart string `json:"chart,omitempty"`
 
 	// Values is a chart values in YAML format
-	Values string `json:"values,omitempty" yaml:"values,omitempty"`
+	Values string `json:"values,omitempty"`
 
 	// Version is a requested version of the chart
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // release is a validated and installable/update'able version of Config

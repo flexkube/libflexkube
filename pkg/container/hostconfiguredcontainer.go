@@ -46,11 +46,11 @@ type Hook func() error
 
 // HostConfiguredContainer represents single container, running on remote host with it's configuration files
 type HostConfiguredContainer struct {
-	Container   Container         `json:"container" yaml:"container"`
-	Host        host.Host         `json:"host" yaml:"host"`
-	ConfigFiles map[string]string `json:"configFiles,omitempty" yaml:"configFiles,omitempty"`
+	Container   Container         `json:"container"`
+	Host        host.Host         `json:"host"`
+	ConfigFiles map[string]string `json:"configFiles,omitempty"`
 
-	Hooks *Hooks `json:"-" yaml:"-"`
+	Hooks *Hooks `json:"-"`
 }
 
 // hostConfiguredContainer is a validated version of HostConfiguredContainer, which allows user to perform

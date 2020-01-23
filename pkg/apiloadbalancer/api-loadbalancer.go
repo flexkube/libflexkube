@@ -16,12 +16,12 @@ import (
 
 // APILoadBalancer is a user-configurable representation of single instance of API load balancer
 type APILoadBalancer struct {
-	Image              string    `json:"image" yaml:"image"`
-	Host               host.Host `json:"host" yaml:"host"`
-	MetricsBindAddress string    `json:"metricsBindAddress" yaml:"metricsBindAddress"`
-	MetricsBindPort    int       `json:"metricsBindPort" yaml:"metricsBindPort"`
-	Servers            []string  `json:"servers" yaml:"servers"`
-	BindPort           int       `json:"bindPort" yaml:"bindPort"`
+	Image              string    `json:"image"`
+	Host               host.Host `json:"host"`
+	MetricsBindAddress string    `json:"metricsBindAddress"`
+	MetricsBindPort    int       `json:"metricsBindPort"`
+	Servers            []string  `json:"servers"`
+	BindPort           int       `json:"bindPort"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer

@@ -16,14 +16,14 @@ import (
 // APILoadBalancers represents group of APILoadBalancer instances. It allows to set default values for
 // all configured instances.
 type APILoadBalancers struct {
-	Image            string            `json:"image" yaml:"image"`
-	SSH              *ssh.Config       `json:"ssh" yaml:"ssh"`
-	Servers          []string          `json:"servers" yaml:"servers"`
-	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers" yaml:"apiLoadBalancers"`
-	BindPort         int               `json:"bindPort" yaml:"bindPort"`
+	Image            string            `json:"image"`
+	SSH              *ssh.Config       `json:"ssh"`
+	Servers          []string          `json:"servers"`
+	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers"`
+	BindPort         int               `json:"bindPort"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty" yaml:"state"`
+	State container.ContainersState `json:"state:omitempty"`
 }
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers

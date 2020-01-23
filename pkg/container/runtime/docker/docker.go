@@ -30,7 +30,7 @@ const (
 
 // Config struct represents Docker container runtime configuration.
 type Config struct {
-	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+	Host string `json:"host,omitempty"`
 }
 
 // docker struct is a struct, which can be used to manage Docker containers.

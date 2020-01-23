@@ -13,18 +13,18 @@ import (
 
 // Member represents single etcd member
 type Member struct {
-	Name              string            `json:"name" yaml:"name"`
-	Image             string            `json:"image" yaml:"image"`
-	Host              host.Host         `json:"host" yaml:"host"`
-	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
-	PeerCertificate   types.Certificate `json:"peerCertificate" yaml:"peerCertificate"`
-	PeerKey           types.PrivateKey  `json:"peerKey" yaml:"peerKey"`
-	PeerAddress       string            `json:"peerAddress" yaml:"peerAddress"`
-	InitialCluster    string            `json:"initialCluster" yaml:"initialCluster"`
-	PeerCertAllowedCN string            `json:"peerCertAllowedCN" yaml:"peerCertAllowedCN"`
-	ServerCertificate types.Certificate `json:"serverCertificate" yaml:"serverCertificate"`
-	ServerKey         types.PrivateKey  `json:"serverKey" yaml:"serverKey"`
-	ServerAddress     string            `json:"serverAddress" yaml:"serverAddress"`
+	Name              string            `json:"name"`
+	Image             string            `json:"image"`
+	Host              host.Host         `json:"host"`
+	CACertificate     types.Certificate `json:"caCertificate"`
+	PeerCertificate   types.Certificate `json:"peerCertificate"`
+	PeerKey           types.PrivateKey  `json:"peerKey"`
+	PeerAddress       string            `json:"peerAddress"`
+	InitialCluster    string            `json:"initialCluster"`
+	PeerCertAllowedCN string            `json:"peerCertAllowedCN"`
+	ServerCertificate types.Certificate `json:"serverCertificate"`
+	ServerKey         types.PrivateKey  `json:"serverKey"`
+	ServerAddress     string            `json:"serverAddress"`
 }
 
 // member is a validated, executable version of Member
