@@ -23,7 +23,7 @@ type APILoadBalancers struct {
 	BindPort         int               `json:"bindPort"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state:omitempty"`
+	State container.ContainersState `json:"state"`
 }
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers
