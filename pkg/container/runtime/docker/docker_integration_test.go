@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 
 	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/types"
@@ -210,6 +211,15 @@ func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
 	return r, (r.(*docker))
 }
 
+func getDockerClient(t *testing.T) *client.Client {
+	c, err := (&Config{}).getDockerClient()
+	if err != nil {
+		t.Fatalf("Failed creating Docker client: %v", err)
+	}
+
+	return c
+}
+
 func deleteImage(t *testing.T, image string) {
 	_, d := getDockerRuntime(t)
 
@@ -222,7 +232,9 @@ func deleteImage(t *testing.T, image string) {
 		return
 	}
 
-	if _, err := d.cli.ImageRemove(d.ctx, id, dockertypes.ImageRemoveOptions{}); err != nil {
+	c := getDockerClient(t)
+
+	if _, err := c.ImageRemove(d.ctx, id, dockertypes.ImageRemoveOptions{}); err != nil {
 		t.Fatalf("Removing existing docker image should succeed, got: %v", err)
 	}
 }

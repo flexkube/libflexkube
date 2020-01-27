@@ -14,7 +14,7 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/network"
+	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
@@ -33,10 +33,26 @@ type Config struct {
 	Host string `json:"host,omitempty"`
 }
 
+// dockerClient is a wrapper interface over
+// https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
+// with the functions we use.
+type dockerClient interface {
+	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
+	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
+	ContainerInspect(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
+	ContainerRemove(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
+	CopyFromContainer(ctx context.Context, container, srcPath string) (io.ReadCloser, dockertypes.ContainerPathStat, error)
+	CopyToContainer(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error
+	ContainerStatPath(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error)
+	ImageList(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error)
+	ImagePull(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error)
+}
+
 // docker struct is a struct, which can be used to manage Docker containers.
 type docker struct {
 	ctx context.Context
-	cli *client.Client
+	cli dockerClient
 }
 
 // SetAddress sets runtime config address where it should connect.
@@ -56,15 +72,7 @@ func (c *Config) GetAddress() string {
 // New validates Docker runtime configuration and returns configured
 // runtime client.
 func (c *Config) New() (runtime.Runtime, error) {
-	opts := []client.Opt{
-		client.WithVersion(defaults.DockerAPIVersion),
-	}
-
-	if c != nil && c.Host != "" {
-		opts = append(opts, client.WithHost(c.Host))
-	}
-
-	cli, err := client.NewClientWithOpts(opts...)
+	cli, err := c.getDockerClient()
 	if err != nil {
 		return nil, fmt.Errorf("creating Docker client: %w", err)
 	}
@@ -73,6 +81,18 @@ func (c *Config) New() (runtime.Runtime, error) {
 		ctx: context.Background(),
 		cli: cli,
 	}, nil
+}
+
+func (c *Config) getDockerClient() (*client.Client, error) {
+	opts := []client.Opt{
+		client.WithVersion(defaults.DockerAPIVersion),
+	}
+
+	if c != nil && c.Host != "" {
+		opts = append(opts, client.WithHost(c.Host))
+	}
+
+	return client.NewClientWithOpts(opts...)
 }
 
 // Start starts Docker container.
@@ -145,7 +165,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	}
 
 	// Create container.
-	c, err := d.cli.ContainerCreate(d.ctx, &dockerConfig, &hostConfig, &network.NetworkingConfig{}, config.Name)
+	c, err := d.cli.ContainerCreate(d.ctx, &dockerConfig, &hostConfig, &networktypes.NetworkingConfig{}, config.Name)
 	if err != nil {
 		return "", fmt.Errorf("creating container: %w", err)
 	}
