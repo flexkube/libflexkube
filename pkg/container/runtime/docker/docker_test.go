@@ -26,3 +26,19 @@ func TestNewClientWithHost(t *testing.T) {
 		t.Fatalf("Client with host set should have '%s' as host, got: '%s'", config.Host, dh)
 	}
 }
+
+func TestSanitizeImageName(t *testing.T) {
+	e := "foo:latest"
+
+	if g := sanitizeImageName("foo"); g != e {
+		t.Fatalf("Expected '%s', got '%s'", e, g)
+	}
+}
+
+func TestSanitizeImageNameWithTag(t *testing.T) {
+	e := "foo:v0.1.0"
+
+	if g := sanitizeImageName(e); g != e {
+		t.Fatalf("Expected '%s', got '%s'", e, g)
+	}
+}

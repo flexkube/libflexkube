@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -306,6 +307,16 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 	return files, nil
 }
 
+// sanitizeImageName ensures, that given image name has tag in it's name.
+// This is to ensure, that we can find the ID of the given image.
+func sanitizeImageName(image string) string {
+	if !strings.Contains(image, ":") {
+		return fmt.Sprintf("%s:latest", image)
+	}
+
+	return image
+}
+
 // imageID lists images which are pulled on the host and looks for the tag given by the user.
 //
 // If image with given tag is found, it's ID is returned.
@@ -318,9 +329,11 @@ func (d *docker) imageID(image string) (string, error) {
 		return "", fmt.Errorf("listing docker images failed: %w", err)
 	}
 
+	name := sanitizeImageName(image)
+
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
-			if tag == image {
+			if tag == name {
 				return i.ID, nil
 			}
 		}
