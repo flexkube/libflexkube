@@ -311,13 +311,14 @@ func (c *containers) Execute() error {
 	fmt.Println("Checking for stopped and missing containers")
 
 	for n, r := range c.currentState {
-		if err := ensureRunning(r); err != nil {
-			return fmt.Errorf("failed to start stopped container: %w", err)
-		}
-
 		// Container is gone, we need to re-create it.
 		if !r.container.Exists() {
 			delete(c.currentState, n)
+			continue
+		}
+
+		if err := ensureRunning(r); err != nil {
+			return fmt.Errorf("failed to start stopped container: %w", err)
 		}
 	}
 
