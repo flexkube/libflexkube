@@ -22,9 +22,9 @@ type ContainersInterface interface {
 type Containers struct {
 	// PreviousState stores previous state of the containers, which should be obtained and persisted
 	// after containers modifications.
-	PreviousState ContainersState `json:"previousState"`
+	PreviousState ContainersState `json:"previousState,omitempty"`
 	// DesiredState is a user-defined desired containers configuration.
-	DesiredState ContainersState `json:"desiredState"`
+	DesiredState ContainersState `json:"desiredState,omitempty"`
 }
 
 // containers is a validated version of the Containers, which allows user to perform operations on them
