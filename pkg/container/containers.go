@@ -291,7 +291,7 @@ func (c *containers) ensureContainer(n string) error {
 	}
 
 	// After new container is created, add it to current state, so it can be returned to the user.
-	r.container = dr.container
+	c.currentState[n] = dr
 
 	return nil
 }
