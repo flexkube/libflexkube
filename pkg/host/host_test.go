@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 		},
 	}, Host{})
 
-	if _, err := New(&h); err != nil {
+	if _, err := h.New(); err != nil {
 		t.Fatalf("Built config should be valid, got: %v", err)
 	}
 }
@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 func TestNewValidate(t *testing.T) {
 	h := &Host{}
 
-	if _, err := New(h); err == nil {
+	if _, err := h.New(); err == nil {
 		t.Fatalf("New should validate the configuration")
 	}
 }
@@ -80,7 +80,7 @@ func TestConnect(t *testing.T) {
 		DirectConfig: &direct.Config{},
 	}
 
-	c, err := New(&h)
+	c, err := h.New()
 	if err != nil {
 		t.Fatalf("Config should be valid, got: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestForwardUnixSocket(t *testing.T) {
 		DirectConfig: &direct.Config{},
 	}
 
-	c, err := New(&h)
+	c, err := h.New()
 	if err != nil {
 		t.Fatalf("Config should be valid, got: %v", err)
 	}

@@ -35,7 +35,7 @@ type hostConnected struct {
 }
 
 // New validates Host configuration and sets configured transport method.
-func New(h *Host) (Interface, error) {
+func (h *Host) New() (Interface, error) {
 	if err := h.Validate(); err != nil {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
 	}

@@ -101,7 +101,7 @@ func (m *HostConfiguredContainer) Validate() error {
 //
 // It returns address of local UNIX socket, where user can connect.
 func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
-	h, err := host.New(&m.host)
+	h, err := m.host.New()
 	if err != nil {
 		return "", err
 	}
