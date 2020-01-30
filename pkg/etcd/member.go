@@ -80,7 +80,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Args: []string{
 				//TODO Add descriptions explaining why we need each line.
 				// Default value 'capnslog' for logger is deprecated and prints warning now.
-				//"--logger=zap", // Available only from 3.4.x
+				"--logger=zap", // Available only from 3.4.x
 				// Since we are in container, listen on all interfaces
 				fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
 				fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
