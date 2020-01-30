@@ -1,7 +1,13 @@
 package etcd
 
 import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+
+	"go.etcd.io/etcd/clientv3"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -25,6 +31,7 @@ type Member struct {
 	ServerCertificate types.Certificate `json:"serverCertificate"`
 	ServerKey         types.PrivateKey  `json:"serverKey"`
 	ServerAddress     string            `json:"serverAddress"`
+	NewCluster        bool              `json:"newCluster"`
 }
 
 // member is a validated, executable version of Member
@@ -41,6 +48,7 @@ type member struct {
 	serverCertificate string
 	serverKey         string
 	serverAddress     string
+	newCluster        bool
 }
 
 func (m *member) configFiles() map[string]string {
@@ -88,7 +96,6 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 				fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
 				fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
 				fmt.Sprintf("--name=%s", m.name),
-				"--initial-cluster-token=etcd-cluster-2",
 				"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
 				"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
 				"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
@@ -105,6 +112,12 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 				// TODO enable metrics
 			},
 		},
+	}
+
+	if m.newCluster {
+		c.Config.Args = append(c.Config.Args, "--initial-cluster-token=etcd-cluster-2")
+	} else {
+		c.Config.Args = append(c.Config.Args, "--initial-cluster-state=existing")
 	}
 
 	return &container.HostConfiguredContainer{
@@ -133,6 +146,7 @@ func (m *Member) New() (container.ResourceInstance, error) {
 		serverCertificate: string(m.ServerCertificate),
 		serverKey:         string(m.ServerKey),
 		serverAddress:     m.ServerAddress,
+		newCluster:        m.NewCluster,
 	}
 
 	if nm.image == "" {
@@ -163,4 +177,116 @@ func (m *Member) Validate() error {
 	}
 
 	return errors.Return()
+}
+
+func (m *member) peerURLs() []string {
+	return []string{fmt.Sprintf("https://%s:2380", m.peerAddress)}
+}
+
+// forwardEndpoints opens forwarding connection for each endpoint
+// and then returns new list of endpoints. If forwarding fails, error is returned.
+func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
+	newEndpoints := []string{}
+
+	h, _ := m.host.New()
+
+	hc, err := h.Connect()
+	if err != nil {
+		return nil, fmt.Errorf("failed opening forwarding connection to host: %w", err)
+	}
+
+	for _, e := range endpoints {
+		e, err := hc.ForwardTCP(e)
+		if err != nil {
+			return nil, fmt.Errorf("failed opening forwarding to member: %w", err)
+		}
+
+		newEndpoints = append(newEndpoints, fmt.Sprintf("https://%s", e))
+	}
+
+	return newEndpoints, nil
+}
+
+func (m *member) getID(cli etcdClient) (uint64, error) {
+	// Get actual list of members.
+	resp, err := cli.MemberList(context.Background())
+	if err != nil {
+		return 0, fmt.Errorf("failed to list existing cluster members: %w", err)
+	}
+
+	for _, v := range resp.Members {
+		if v.Name == fmt.Sprintf("etcd-%s", m.name) {
+			return v.ID, nil
+		}
+
+		for _, p := range v.PeerURLs {
+			for _, u := range m.peerURLs() {
+				if p == u {
+					return v.ID, nil
+				}
+			}
+		}
+	}
+
+	return 0, nil
+}
+
+func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
+	cert, _ := tls.X509KeyPair([]byte(m.peerCertificate), []byte(m.peerKey))
+	der, _ := pem.Decode([]byte(m.caCertificate))
+	ca, _ := x509.ParseCertificate(der.Bytes)
+
+	p := x509.NewCertPool()
+	p.AddCert(ca)
+
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:            endpoints,
+		DialTimeout:          defaultDialTimeout,
+		DialKeepAliveTimeout: defaultDialTimeout,
+		TLS: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      p,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed creating etcd client: %w", err)
+	}
+
+	return cli, nil
+}
+
+func (m *member) add(cli etcdClient) error {
+	id, err := m.getID(cli)
+	if err != nil {
+		return fmt.Errorf("failed getting member ID: %w", err)
+	}
+
+	// If no error is returned, and ID is 0, it means member is already returned.
+	if id != 0 {
+		return nil
+	}
+
+	if _, err := cli.MemberAdd(context.Background(), m.peerURLs()); err != nil {
+		return fmt.Errorf("failed adding new member to the cluster: %w", err)
+	}
+
+	return nil
+}
+
+func (m *member) remove(cli etcdClient) error {
+	id, err := m.getID(cli)
+	if err != nil {
+		return fmt.Errorf("failed getting member ID: %w", err)
+	}
+
+	// If no error is returned, and ID is 0, it means member is already returned.
+	if id == 0 {
+		return nil
+	}
+
+	if _, err = cli.MemberRemove(context.Background(), id); err != nil {
+		return fmt.Errorf("failed removing member: %w", err)
+	}
+
+	return nil
 }

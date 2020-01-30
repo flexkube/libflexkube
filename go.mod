@@ -57,6 +57,7 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	go.etcd.io/etcd v0.5.0-alpha.5.0.20191023171146-3cf2f69b5738
 	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
@@ -80,6 +81,7 @@ replace (
 	github.com/deislabs/oras => github.com/deislabs/oras v0.7.0
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 	k8s.io/client-go => k8s.io/client-go v0.17.0
 	rsc.io/letsencrypt => github.com/dmcgowan/letsencrypt v0.0.0-20160928181947-1847a81d2087
 )
