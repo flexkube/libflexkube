@@ -2,8 +2,8 @@ package container
 
 import (
 	"fmt"
-	"reflect"
 
+	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
@@ -240,13 +240,17 @@ func (c *containers) ensureHost(n string) error {
 	dr := c.desiredState[n]
 
 	// Don't update containers scheduled for removal and containers with unchanged configuration
-	if dr == nil || reflect.DeepEqual(r.host, dr.host) {
+	if dr == nil {
+		return nil
+	}
+
+	diff := cmp.Diff(r.host, dr.host)
+	if diff == "" {
 		return nil
 	}
 
 	fmt.Printf("Detected host configuration drift '%s'\n", n)
-	fmt.Printf("  From: %+v\n%+v\n%+v\n", r.host, r.host.DirectConfig, r.host.SSHConfig)
-	fmt.Printf("  To:   %+v\n%+v\n%+v\n", dr.host, dr.host.DirectConfig, dr.host.SSHConfig)
+	fmt.Printf("  Diff: %v\n", diff)
 
 	if err := c.currentState.RemoveContainer(n); err != nil {
 		return fmt.Errorf("failed removing old container: %w", err)
@@ -272,15 +276,18 @@ func (c *containers) ensureContainer(n string) error {
 	}
 
 	dr := c.desiredState[n]
+	if dr == nil {
+		return nil
+	}
 
 	// Don't update containers scheduled for removal and containers with unchanged configuration
-	if dr == nil || reflect.DeepEqual(r.container.Config, dr.container.Config) {
+	diff := cmp.Diff(r.container.Config, dr.container.Config)
+	if diff == "" {
 		return nil
 	}
 
 	fmt.Printf("Detected container configuration drift '%s'\n", n)
-	fmt.Printf("  From: %+v\n", r.container.Config)
-	fmt.Printf("  To:   %+v\n", dr.container.Config)
+	fmt.Printf("  Diff: %v\n", diff)
 
 	if err := c.currentState.RemoveContainer(n); err != nil {
 		return fmt.Errorf("failed removing old container: %w", err)
