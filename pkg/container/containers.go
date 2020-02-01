@@ -368,6 +368,14 @@ func (c *containers) Execute() error {
 	fmt.Println("Updating existing containers")
 
 	for i := range c.currentState {
+		if _, exists := c.desiredState[i]; !exists {
+			if err := c.currentState.RemoveContainer(i); err != nil {
+				return fmt.Errorf("failed removing old container: %w", err)
+			}
+
+			continue
+		}
+
 		// Update containers on hosts.
 		// This can move containers between hosts, but NOT the data.
 		if err := c.ensureHost(i); err != nil {
@@ -380,15 +388,6 @@ func (c *containers) Execute() error {
 
 		if err := c.ensureContainer(i); err != nil {
 			return fmt.Errorf("failed updating container %s: %w", i, err)
-		}
-
-		// If container is not scheduled for removal, move to the next one.
-		if _, exists := c.desiredState[i]; exists {
-			continue
-		}
-
-		if err := c.currentState.RemoveContainer(i); err != nil {
-			return fmt.Errorf("failed removing old container: %w", err)
 		}
 	}
 
