@@ -95,6 +95,10 @@ func (h *hostConnected) ForwardUnixSocket(path string) (string, error) {
 	return h.transport.ForwardUnixSocket(path)
 }
 
+func (h *hostConnected) ForwardTCP(address string) (string, error) {
+	return h.transport.ForwardTCP(address)
+}
+
 // BuildConfig merges values from both host objects.
 func BuildConfig(h Host, d Host) Host {
 	if h.DirectConfig == nil && h.SSHConfig == nil && d.SSHConfig == nil {

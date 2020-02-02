@@ -265,3 +265,15 @@ func randomUnixSocket(address string) (*net.UnixAddr, error) {
 		Net:  "unix",
 	}, nil
 }
+
+func (d *sshConnected) ForwardTCP(address string) (string, error) {
+	localConn, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", fmt.Errorf("unable to listen on random TCP port: %w", err)
+	}
+
+	// Schedule accepting connections and return.
+	go forwardConnection(localConn, d.client, address, "tcp")
+
+	return localConn.Addr().String(), nil
+}

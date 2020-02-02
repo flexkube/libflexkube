@@ -10,6 +10,8 @@ type Interface interface {
 type Connected interface {
 	// ForwardUnixSocket forwards unix socket to local machine to make it available for the process
 	ForwardUnixSocket(remotePath string) (localPath string, err error)
+	// ForwardTCP listens on random local port and forwards incoming connections to given remote address.
+	ForwardTCP(remoteAddr string) (localAddr string, err error)
 }
 
 // Config describes how Transport interface should be created.

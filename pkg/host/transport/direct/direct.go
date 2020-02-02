@@ -45,3 +45,7 @@ func (d *direct) ForwardUnixSocket(path string) (string, error) {
 func (d *direct) Connect() (transport.Connected, error) {
 	return d, nil
 }
+
+func (d *direct) ForwardTCP(address string) (string, error) {
+	return address, nil
+}
