@@ -305,7 +305,7 @@ func TestExtractPath(t *testing.T) {
 }
 
 func TestExtractPathMalformed(t *testing.T) {
-	if _, err := extractPath("ddd"); err == nil {
+	if _, err := extractPath("ddd\t"); err == nil {
 		t.Fatalf("extracting malformed path should fail")
 	}
 }
