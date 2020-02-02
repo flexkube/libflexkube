@@ -177,7 +177,7 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 	}
 
 	// Schedule accepting connections and return.
-	go forwardConnection(localSock, connection, path)
+	go forwardConnection(localSock, d.client, path, "unix")
 
 	return fmt.Sprintf("unix://%s", unixAddr.String()), nil
 }
@@ -211,7 +211,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 // forwardConnection accepts local connections, and forwards them to remote address
 //
 // TODO should we do some error handling here?
-func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress string) {
+func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress string, connectionType string) {
 	defer l.Close()
 
 	for {
@@ -224,7 +224,7 @@ func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress s
 		}
 
 		// Open remote connection.
-		remoteSock, err := connection.Dial("unix", remoteAddress)
+		remoteSock, err := connection.Dial(connectionType, remoteAddress)
 		if err != nil {
 			fmt.Printf("failed to open remote connection: %v\n", err)
 			return
