@@ -17,12 +17,28 @@ func TestNewClientWithHost(t *testing.T) {
 		Host: "unix:///foo.sock",
 	}
 
-	c, err := config.New()
+	c, err := config.getDockerClient()
 	if err != nil {
 		t.Fatalf("Creating new docker client should work, got: %s", err)
 	}
 
-	if dh := (c.(*docker)).cli.DaemonHost(); dh != config.Host {
+	if dh := c.DaemonHost(); dh != config.Host {
 		t.Fatalf("Client with host set should have '%s' as host, got: '%s'", config.Host, dh)
+	}
+}
+
+func TestSanitizeImageName(t *testing.T) {
+	e := "foo:latest"
+
+	if g := sanitizeImageName("foo"); g != e {
+		t.Fatalf("Expected '%s', got '%s'", e, g)
+	}
+}
+
+func TestSanitizeImageNameWithTag(t *testing.T) {
+	e := "foo:v0.1.0"
+
+	if g := sanitizeImageName(e); g != e {
+		t.Fatalf("Expected '%s', got '%s'", e, g)
 	}
 }

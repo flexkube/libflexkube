@@ -22,8 +22,8 @@ type Connected interface {
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
 type Host struct {
-	DirectConfig *direct.Config `json:"direct,omitempty" yaml:"direct,omitempty"`
-	SSHConfig    *ssh.Config    `json:"ssh,omitempty" yaml:"ssh,omitempty"`
+	DirectConfig *direct.Config `json:"direct,omitempty"`
+	SSHConfig    *ssh.Config    `json:"ssh,omitempty"`
 }
 
 type host struct {
@@ -35,7 +35,7 @@ type hostConnected struct {
 }
 
 // New validates Host configuration and sets configured transport method.
-func New(h *Host) (Interface, error) {
+func (h *Host) New() (Interface, error) {
 	if err := h.Validate(); err != nil {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
 	}

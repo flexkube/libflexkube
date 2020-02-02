@@ -2,8 +2,8 @@ package container
 
 import (
 	"fmt"
-	"reflect"
 
+	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
@@ -22,9 +22,9 @@ type ContainersInterface interface {
 type Containers struct {
 	// PreviousState stores previous state of the containers, which should be obtained and persisted
 	// after containers modifications.
-	PreviousState ContainersState `json:"previousState" yaml:"previousState"`
+	PreviousState ContainersState `json:"previousState,omitempty"`
 	// DesiredState is a user-defined desired containers configuration.
-	DesiredState ContainersState `json:"desiredState" yaml:"desiredState"`
+	DesiredState ContainersState `json:"desiredState,omitempty"`
 }
 
 // containers is a validated version of the Containers, which allows user to perform operations on them
@@ -226,72 +226,103 @@ func (c *containers) ensureExists(n string) error {
 	return nil
 }
 
+// isUpdatable determines if given container can be updated.
+func (c *containers) isUpdatable(n string) error {
+	// Container which currently does not exist can't be updated, only created.
+	if _, ok := c.currentState[n]; !ok {
+		return fmt.Errorf("can't update non-existing container '%s'", n)
+	}
+
+	// Container which is suppose to be removed shouldn't be updated.
+	if _, ok := c.desiredState[n]; !ok {
+		return fmt.Errorf("can't update container '%s', which is scheduler for removal", n)
+	}
+
+	return nil
+}
+
+// diffHost compares host fields of the container and returns it's diff.
+//
+// If the container cannot be updated, error is returned.
+func (c *containers) diffHost(n string) (string, error) {
+	if err := c.isUpdatable(n); err != nil {
+		return "", fmt.Errorf("can't diff container: %w", err)
+	}
+
+	return cmp.Diff(c.currentState[n].host, c.desiredState[n].host), nil
+}
+
+// recreate is a helper, which removes container from current state and creates new one from
+// desired state.
+func (c *containers) recreate(n string) error {
+	if err := c.currentState.RemoveContainer(n); err != nil {
+		return fmt.Errorf("failed removing old container: %w", err)
+	}
+
+	return c.desiredState.CreateAndStart(n)
+}
+
 // ensureHost makes sure container is running on the right host.
 //
 // If host configuration changes, existing container will be removed and new one will be created.
 //
 // TODO This might be an overkill. e.g. changing SSH key for deployment will re-create all containers.
 func (c *containers) ensureHost(n string) error {
-	r := c.currentState[n]
-	if r == nil {
-		return fmt.Errorf("can't update non-existing container")
+	diff, err := c.diffHost(n)
+	if err != nil {
+		return fmt.Errorf("failed to check host diff: %w", err)
 	}
 
-	dr := c.desiredState[n]
-
-	// Don't update containers scheduled for removal and containers with unchanged configuration
-	if dr == nil || reflect.DeepEqual(r.host, dr.host) {
+	if diff == "" {
 		return nil
 	}
 
 	fmt.Printf("Detected host configuration drift '%s'\n", n)
-	fmt.Printf("  From: %+v\n%+v\n%+v\n", r.host, r.host.DirectConfig, r.host.SSHConfig)
-	fmt.Printf("  To:   %+v\n%+v\n%+v\n", dr.host, dr.host.DirectConfig, dr.host.SSHConfig)
+	fmt.Printf("  Diff: %v\n", diff)
 
-	if err := c.currentState.RemoveContainer(n); err != nil {
-		return fmt.Errorf("failed removing old container: %w", err)
-	}
-
-	if err := c.desiredState.CreateAndStart(n); err != nil {
-		return fmt.Errorf("failed creating new container: %w", err)
+	if err := c.recreate(n); err != nil {
+		return fmt.Errorf("failed updating container: %w", err)
 	}
 
 	// After new container is created, add it to current state, so it can be returned to the user.
-	r.host = dr.host
+	c.currentState[n] = c.desiredState[n]
 
 	return nil
+}
+
+// diffContainer compares container fields of the container and returns it's diff.
+//
+// If the container cannot be updated, error is returned.
+func (c *containers) diffContainer(n string) (string, error) {
+	if err := c.isUpdatable(n); err != nil {
+		return "", fmt.Errorf("can't diff container: %w", err)
+	}
+
+	return cmp.Diff(c.currentState[n].container.Config, c.desiredState[n].container.Config), nil
 }
 
 // ensureContainer makes sure container configuration is up to date.
 //
 // If container configuration changes, existing container will be removed and new one will be created.
 func (c *containers) ensureContainer(n string) error {
-	r := c.currentState[n]
-	if r == nil {
-		return fmt.Errorf("can't update non-existing container")
+	diff, err := c.diffContainer(n)
+	if err != nil {
+		return fmt.Errorf("failed to check container diff: %w", err)
 	}
 
-	dr := c.desiredState[n]
-
-	// Don't update containers scheduled for removal and containers with unchanged configuration
-	if dr == nil || reflect.DeepEqual(r.container.Config, dr.container.Config) {
+	if diff == "" {
 		return nil
 	}
 
 	fmt.Printf("Detected container configuration drift '%s'\n", n)
-	fmt.Printf("  From: %+v\n", r.container.Config)
-	fmt.Printf("  To:   %+v\n", dr.container.Config)
+	fmt.Printf("  Diff: %v\n", diff)
 
-	if err := c.currentState.RemoveContainer(n); err != nil {
-		return fmt.Errorf("failed removing old container: %w", err)
-	}
-
-	if err := c.desiredState.CreateAndStart(n); err != nil {
-		return fmt.Errorf("failed creating new container: %w", err)
+	if err := c.recreate(n); err != nil {
+		return fmt.Errorf("failed updating container: %w", err)
 	}
 
 	// After new container is created, add it to current state, so it can be returned to the user.
-	r.container = dr.container
+	c.currentState[n] = c.desiredState[n]
 
 	return nil
 }
@@ -311,13 +342,14 @@ func (c *containers) Execute() error {
 	fmt.Println("Checking for stopped and missing containers")
 
 	for n, r := range c.currentState {
-		if err := ensureRunning(r); err != nil {
-			return fmt.Errorf("failed to start stopped container: %w", err)
-		}
-
 		// Container is gone, we need to re-create it.
 		if !r.container.Exists() {
 			delete(c.currentState, n)
+			continue
+		}
+
+		if err := ensureRunning(r); err != nil {
+			return fmt.Errorf("failed to start stopped container: %w", err)
 		}
 	}
 
@@ -336,6 +368,14 @@ func (c *containers) Execute() error {
 	fmt.Println("Updating existing containers")
 
 	for i := range c.currentState {
+		if _, exists := c.desiredState[i]; !exists {
+			if err := c.currentState.RemoveContainer(i); err != nil {
+				return fmt.Errorf("failed removing old container: %w", err)
+			}
+
+			continue
+		}
+
 		// Update containers on hosts.
 		// This can move containers between hosts, but NOT the data.
 		if err := c.ensureHost(i); err != nil {
@@ -348,15 +388,6 @@ func (c *containers) Execute() error {
 
 		if err := c.ensureContainer(i); err != nil {
 			return fmt.Errorf("failed updating container %s: %w", i, err)
-		}
-
-		// If container is not scheduled for removal, move to the next one.
-		if _, exists := c.desiredState[i]; exists {
-			continue
-		}
-
-		if err := c.currentState.RemoveContainer(i); err != nil {
-			return fmt.Errorf("failed removing old container: %w", err)
 		}
 	}
 

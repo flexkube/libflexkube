@@ -16,21 +16,21 @@ import (
 // Pool represents group of kubelet instances and their configuration.
 type Pool struct {
 	// User-configurable fields.
-	Image                      string            `json:"image" yaml:"image"`
-	SSH                        *ssh.Config       `json:"ssh" yaml:"ssh"`
-	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig" yaml:"bootstrapKubeconfig"`
-	Kubelets                   []Kubelet         `json:"kubelets" yaml:"kubelets"`
-	KubernetesCACertificate    string            `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs" yaml:"clusterDNSIPs"`
-	Taints                     map[string]string `json:"taints" yaml:"taints"`
-	Labels                     map[string]string `json:"labels" yaml:"labels"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels" yaml:"privilegedLabels"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig" yaml:"privilegedLabelsKubeconfig"`
-	CgroupDriver               string            `json:"cgroupDriver" yaml:"cgroupDriver"`
-	NetworkPlugin              string            `json:"networkPlugin" yaml:"networkPlugin"`
+	Image                      string            `json:"image"`
+	SSH                        *ssh.Config       `json:"ssh"`
+	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig"`
+	Kubelets                   []Kubelet         `json:"kubelets"`
+	KubernetesCACertificate    string            `json:"kubernetesCACertificate"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs"`
+	Taints                     map[string]string `json:"taints"`
+	Labels                     map[string]string `json:"labels"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
+	CgroupDriver               string            `json:"cgroupDriver"`
+	NetworkPlugin              string            `json:"networkPlugin"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state" yaml:"state"`
+	State container.ContainersState `json:"state"`
 }
 
 // pool is a validated version of Pool.

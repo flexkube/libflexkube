@@ -16,9 +16,9 @@ import (
 
 // Common struct contains fields, which are common between all controlplane components.
 type Common struct {
-	Image                   string            `json:"image" yaml:"image"`
-	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate" yaml:"kubernetesCACertificate"`
-	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate" yaml:"frontProxyCACertificate"`
+	Image                   string            `json:"image"`
+	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate"`
+	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate"`
 }
 
 // GetImage returns either image defined in common config or Kubernetes default image.
@@ -31,18 +31,18 @@ type Controlplane struct {
 	// User-configurable fields.
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
-	Common                Common                `json:"common" yaml:"common"`
-	SSH                   *ssh.Config           `json:"ssh" yaml:"ssh"`
-	APIServerAddress      string                `json:"apiServerAddress" yaml:"apiServerAddress"`
-	APIServerPort         int                   `json:"apiServerPort" yaml:"apiServerPort"`
-	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer" yaml:"kubeAPIServer"`
-	KubeControllerManager KubeControllerManager `json:"kubeControllerManager" yaml:"kubeControllerManager"`
-	KubeScheduler         KubeScheduler         `json:"kubeScheduler" yaml:"kubeScheduler"`
+	Common                Common                `json:"common"`
+	SSH                   *ssh.Config           `json:"ssh"`
+	APIServerAddress      string                `json:"apiServerAddress"`
+	APIServerPort         int                   `json:"apiServerPort"`
+	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer"`
+	KubeControllerManager KubeControllerManager `json:"kubeControllerManager"`
+	KubeScheduler         KubeScheduler         `json:"kubeScheduler"`
 
-	Shutdown bool `json:"shutdown" yaml:"shutdown"`
+	Shutdown bool `json:"shutdown"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state" yaml:"state"`
+	State container.ContainersState `json:"state"`
 }
 
 // controlplane is executable version of Controlplane, with validated fields and calculated containers.

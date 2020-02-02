@@ -1,7 +1,12 @@
 package container
 
 import (
+	"fmt"
+	"net"
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
 // withHook()
@@ -58,5 +63,33 @@ func TestWithPostHook(t *testing.T) {
 
 	if !post {
 		t.Fatalf("withHook should call post-hook")
+	}
+}
+
+func TestConnectAndForward(t *testing.T) {
+	addr := &net.UnixAddr{
+		Name: "@foo",
+		Net:  "unix",
+	}
+
+	localSock, err := net.ListenUnix("unix", addr)
+	if err != nil {
+		t.Fatalf("unable to listen on address '%s':%v", addr, err)
+	}
+	defer localSock.Close()
+
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+
+	s, err := h.connectAndForward(fmt.Sprintf("unix://%s", addr.String()))
+	if err != nil {
+		t.Fatalf("Direct forwarding to open listener should work, got: %v", err)
+	}
+
+	if s == "" {
+		t.Fatalf("Returned forwarded address shouldn't be empty")
 	}
 }

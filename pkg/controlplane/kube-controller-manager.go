@@ -13,13 +13,13 @@ import (
 
 // KubeControllerManager represents kube-controller-manager container configuration.
 type KubeControllerManager struct {
-	Common                   Common            `json:"common" yaml:"common"`
-	Host                     host.Host         `json:"host" yaml:"host"`
-	Kubeconfig               client.Config     `json:"kubeconfig" yaml:"kubeconfig"`
-	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey" yaml:"kubernetesCAKey"`
-	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey" yaml:"serviceAccountPrivateKey"`
-	RootCACertificate        types.Certificate `json:"rootCACertificate" yaml:"rootCACertificate"`
-	FlexVolumePluginDir      string            `json:"flexVolumePluginDir" yaml:"flexVolumePluginDir"`
+	Common                   Common            `json:"common"`
+	Host                     host.Host         `json:"host"`
+	Kubeconfig               client.Config     `json:"kubeconfig"`
+	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey"`
+	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey"`
+	RootCACertificate        types.Certificate `json:"rootCACertificate"`
+	FlexVolumePluginDir      string            `json:"flexVolumePluginDir"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager.

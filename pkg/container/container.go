@@ -34,17 +34,17 @@ type InstanceInterface interface {
 // with New(), which make sure that the configuration is actually correct.
 type Container struct {
 	// Stores runtime configuration of the container.
-	Config types.ContainerConfig `json:"config" yaml:"config"`
+	Config types.ContainerConfig `json:"config"`
 	// Status of the container
-	Status *types.ContainerStatus `json:"status" yaml:"status"`
+	Status *types.ContainerStatus `json:"status"`
 	// Runtime stores configuration for various container runtimes
-	Runtime RuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }
 
 // RuntimeConfig is a collection of various runtime configurations which can be defined
 // by user.
 type RuntimeConfig struct {
-	Docker *docker.Config `json:"docker,omitempty" yaml:"docker,omitempty"`
+	Docker *docker.Config `json:"docker,omitempty"`
 }
 
 // container represents validated version of Container object, which contains all requires

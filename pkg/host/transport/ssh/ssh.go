@@ -15,14 +15,14 @@ import (
 
 // Config represents SSH transport configuration
 type Config struct {
-	Address           string `json:"address" yaml:"address"`
-	Port              int    `json:"port" yaml:"port"`
-	User              string `json:"user" yaml:"user"`
-	Password          string `json:"password,omitempty" yaml:"password,omitempty"`
-	ConnectionTimeout string `json:"connectionTimeout" yaml:"connectionTimeout"`
-	RetryTimeout      string `json:"retryTimeout" yaml:"retryTimeout"`
-	RetryInterval     string `json:"retryInterval" yaml:"retryInterval"`
-	PrivateKey        string `json:"privateKey,omitempty" yaml:"privateKey,omitempty"`
+	Address           string `json:"address"`
+	Port              int    `json:"port"`
+	User              string `json:"user"`
+	Password          string `json:"password,omitempty"`
+	ConnectionTimeout string `json:"connectionTimeout"`
+	RetryTimeout      string `json:"retryTimeout"`
+	RetryInterval     string `json:"retryInterval"`
+	PrivateKey        string `json:"privateKey,omitempty"`
 }
 
 // ssh is an implementation of Transport interface over SSH protocol

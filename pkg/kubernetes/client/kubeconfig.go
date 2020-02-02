@@ -13,10 +13,10 @@ import (
 
 // Config is a simplified version of kubeconfig.
 type Config struct {
-	Server            string            `json:"server" yaml:"server"`
-	CACertificate     types.Certificate `json:"caCertificate" yaml:"caCertificate"`
-	ClientCertificate types.Certificate `json:"clientCertificate" yaml:"clientCertificate"`
-	ClientKey         types.PrivateKey  `json:"clientKey" yaml:"clientKey"`
+	Server            string            `json:"server"`
+	CACertificate     types.Certificate `json:"caCertificate"`
+	ClientCertificate types.Certificate `json:"clientCertificate"`
+	ClientKey         types.PrivateKey  `json:"clientKey"`
 }
 
 // Validate validates Config struct.

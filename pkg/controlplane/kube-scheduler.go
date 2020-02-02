@@ -12,9 +12,9 @@ import (
 
 // KubeScheduler represents kube-scheduler configuration data
 type KubeScheduler struct {
-	Common     Common        `json:"common" yaml:"common"`
-	Host       host.Host     `json:"host" yaml:"host"`
-	Kubeconfig client.Config `json:"kubeconfig" yaml:"kubeconfig"`
+	Common     Common        `json:"common"`
+	Host       host.Host     `json:"host"`
+	Kubeconfig client.Config `json:"kubeconfig"`
 }
 
 // kubeScheduler is validated and usable version of KubeScheduler
