@@ -36,8 +36,12 @@ type ssh struct {
 }
 
 type sshConnected struct {
-	client  *gossh.Client
+	client  dialer
 	address string
+}
+
+type dialer interface {
+	Dial(network string, address string) (net.Conn, error)
 }
 
 // New creates new instance of ssh struct
@@ -211,7 +215,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 // forwardConnection accepts local connections, and forwards them to remote address
 //
 // TODO should we do some error handling here?
-func forwardConnection(l net.Listener, connection *gossh.Client, remoteAddress string, connectionType string) {
+func forwardConnection(l net.Listener, connection dialer, remoteAddress string, connectionType string) {
 	defer l.Close()
 
 	for {

@@ -332,3 +332,87 @@ func TestRandomUnixSocket(t *testing.T) {
 		t.Fatalf("generated UNIX address should be UNIX address, got net %s", unixAddr.Net)
 	}
 }
+
+// forwardConnection()
+func TestForwardConnection(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+
+	conn, err := net.Dial("tcp", l.Addr().String())
+	if err != nil {
+		t.Fatalf("failed opening connection to listener: %v", err)
+	}
+
+	data := []byte("FOO")
+
+	if _, err := conn.Write(data); err != nil {
+		t.Fatalf("failed writing to connection: %v", err)
+	}
+
+	c, err := r.Accept()
+	if err != nil {
+		t.Fatalf("failed accepting forwarded connection: %v", err)
+	}
+
+	buf := make([]byte, 3)
+
+	if _, err := c.Read(buf); err != nil {
+		t.Fatalf("failed reading data from connection: %v", err)
+	}
+
+	if !reflect.DeepEqual(buf, data) {
+		t.Fatalf("Expected data to be '%s', got '%s'", string(data), string(buf))
+	}
+}
+
+func TestForwardConnectionBadType(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "doh")
+
+	// Try to open connection, so forwarding loop breaks.
+	if _, err := net.Dial("tcp", l.Addr().String()); err != nil {
+		t.Logf("Opening first connection should succeed, got: %v", err)
+	}
+
+	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+		t.Fatalf("Opening connection to bad type should fail")
+	}
+}
+
+func TestForwardConnectionClosedListener(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	l.Close()
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+
+	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+		t.Fatalf("Opening connection to closed listener should fail")
+	}
+}
