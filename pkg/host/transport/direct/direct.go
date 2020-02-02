@@ -15,7 +15,7 @@ type Config struct{}
 type direct struct{}
 
 // New may in the future validate direct configuration.
-func (c *Config) New() (transport.Transport, error) {
+func (c *Config) New() (transport.Interface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("direct host validation failed: %w", err)
 	}
@@ -39,4 +39,9 @@ func (c *Config) Validate() error {
 // etc to fail early?
 func (d *direct) ForwardUnixSocket(path string) (string, error) {
 	return path, nil
+}
+
+// Connect implements Transport interface.
+func (d *direct) Connect() (transport.Connected, error) {
+	return d, nil
 }

@@ -35,8 +35,13 @@ type ssh struct {
 	auth              []gossh.AuthMethod
 }
 
+type sshConnected struct {
+	client  *gossh.Client
+	address string
+}
+
 // New creates new instance of ssh struct
-func (d *Config) New() (transport.Transport, error) {
+func (d *Config) New() (transport.Interface, error) {
 	if err := d.Validate(); err != nil {
 		return nil, fmt.Errorf("ssh host validation failed: %w", err)
 	}
@@ -119,7 +124,7 @@ func (d *Config) Validate() error {
 	return nil
 }
 
-func (d *ssh) connect() (*gossh.Client, error) {
+func (d *ssh) Connect() (transport.Connected, error) {
 	sshConfig := &gossh.ClientConfig{
 		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
@@ -141,7 +146,10 @@ func (d *ssh) connect() (*gossh.Client, error) {
 	// Try until we timeout
 	for time.Since(start) < d.retryTimeout {
 		if connection, err = gossh.Dial("tcp", d.address, sshConfig); err == nil {
-			return connection, nil
+			return &sshConnected{
+				client:  connection,
+				address: d.address,
+			}, nil
 		}
 
 		time.Sleep(d.retryInterval)
@@ -152,12 +160,7 @@ func (d *ssh) connect() (*gossh.Client, error) {
 
 // ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
 // it to the local socket.
-func (d *ssh) ForwardUnixSocket(path string) (string, error) {
-	connection, err := d.connect()
-	if err != nil {
-		return "", fmt.Errorf("failed to open SSH connection: %w", err)
-	}
-
+func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 	unixAddr, err := randomUnixSocket(d.address)
 	if err != nil {
 		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
