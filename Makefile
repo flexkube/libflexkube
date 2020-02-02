@@ -216,6 +216,8 @@ vagrant-integration-shell:
 	$(VAGRANTCMD) ssh -c "$(INTEGRATION_CMD) bash"
 
 .PHONY: vagrant-integration
+vagrant-integration: CONTROLLERS=1
+vagrant-integration: WORKERS=0
 vagrant-integration: vagrant-up vagrant-rsync vagrant-integration-build vagrant-integration-run
 
 .PHONY: vagrant-build-bin
