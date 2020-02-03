@@ -17,7 +17,7 @@ type Host struct {
 }
 
 type host struct {
-	transportConfig transport.Config
+	transport transport.Interface
 }
 
 type hostConnected struct {
@@ -31,18 +31,18 @@ func (h *Host) New() (transport.Interface, error) {
 	}
 
 	// TODO that seems ugly, is there a better way to generalize it?
-	var t transport.Config
+	var t transport.Interface
 
 	if h.DirectConfig != nil {
-		t = h.DirectConfig
+		t, _ = h.DirectConfig.New()
 	}
 
 	if h.SSHConfig != nil {
-		t = h.SSHConfig
+		t, _ = h.SSHConfig.New()
 	}
 
 	return &host{
-		transportConfig: t,
+		transport: t,
 	}, nil
 }
 
@@ -75,12 +75,7 @@ func (h *Host) Validate() error {
 //
 // It returns error if transport protocol configuration is invalid.
 func (h *host) Connect() (transport.Connected, error) {
-	d, err := h.transportConfig.New()
-	if err != nil {
-		return nil, fmt.Errorf("selecting transport protocol failed: %w", err)
-	}
-
-	c, err := d.Connect()
+	c, err := h.transport.Connect()
 	if err != nil {
 		return nil, fmt.Errorf("connecting failed: %w", err)
 	}

@@ -111,6 +111,27 @@ func TestForwardUnixSocket(t *testing.T) {
 	}
 }
 
+// ForwardTCP()
+func TestForwardTCP(t *testing.T) {
+	h := Host{
+		DirectConfig: &direct.Config{},
+	}
+
+	c, err := h.New()
+	if err != nil {
+		t.Fatalf("Config should be valid, got: %v", err)
+	}
+
+	hc, err := c.Connect()
+	if err != nil {
+		t.Fatalf("Direct config should always connect, got: %v", err)
+	}
+
+	if _, err := hc.ForwardTCP("localhost:80"); err != nil {
+		t.Fatalf("Forwarding shouldn't fail, got: %v", err)
+	}
+}
+
 // BuildConfig()
 func TestBuildConfigDirectByDefault(t *testing.T) {
 	h := BuildConfig(Host{}, Host{})
