@@ -33,11 +33,14 @@ type ssh struct {
 	retryTimeout      time.Duration
 	retryInterval     time.Duration
 	auth              []gossh.AuthMethod
+	sshClientGetter   func(network string, address string, config *gossh.ClientConfig) (*gossh.Client, error)
 }
 
 type sshConnected struct {
-	client  dialer
-	address string
+	client   dialer
+	address  string
+	uuid     func() (uuid.UUID, error)
+	listener func(string, string) (net.Listener, error)
 }
 
 type dialer interface {
@@ -62,6 +65,7 @@ func (d *Config) New() (transport.Interface, error) {
 		retryTimeout:      rt,
 		retryInterval:     ri,
 		auth:              []gossh.AuthMethod{},
+		sshClientGetter:   gossh.Dial,
 	}
 
 	if d.Password != "" {
@@ -149,11 +153,8 @@ func (d *ssh) Connect() (transport.Connected, error) {
 
 	// Try until we timeout
 	for time.Since(start) < d.retryTimeout {
-		if connection, err = gossh.Dial("tcp", d.address, sshConfig); err == nil {
-			return &sshConnected{
-				client:  connection,
-				address: d.address,
-			}, nil
+		if connection, err = d.sshClientGetter("tcp", d.address, sshConfig); err == nil {
+			return newConnected(d.address, connection), nil
 		}
 
 		time.Sleep(d.retryInterval)
@@ -162,15 +163,24 @@ func (d *ssh) Connect() (transport.Connected, error) {
 	return nil, err
 }
 
+func newConnected(address string, connection dialer) transport.Connected {
+	return &sshConnected{
+		client:   connection,
+		address:  address,
+		uuid:     uuid.NewRandom,
+		listener: net.Listen,
+	}
+}
+
 // ForwardUnixSocket takes remote UNIX socket path as an argument and forwards
 // it to the local socket.
 func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
-	unixAddr, err := randomUnixSocket(d.address)
+	unixAddr, err := d.randomUnixSocket()
 	if err != nil {
 		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
 	}
 
-	localSock, err := net.ListenUnix("unix", unixAddr)
+	localSock, err := d.listener("unix", unixAddr.String())
 	if err != nil {
 		return "", fmt.Errorf("unable to listen on address '%s':%w", unixAddr, err)
 	}
@@ -256,22 +266,22 @@ func extractPath(path string) (string, error) {
 
 // randomUnixSocket generates random abstract UNIX socket, including unique UUID,
 // to avoid collisions.
-func randomUnixSocket(address string) (*net.UnixAddr, error) {
+func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 	// TODO rather than connecting again every time ForwardUnixSocket is called
 	// we should cache and reuse the connections
-	id, err := uuid.NewRandom()
+	id, err := d.uuid()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
 	}
 
 	return &net.UnixAddr{
-		Name: fmt.Sprintf("@%s-%s", address, id),
+		Name: fmt.Sprintf("@%s-%s", d.address, id),
 		Net:  "unix",
 	}, nil
 }
 
 func (d *sshConnected) ForwardTCP(address string) (string, error) {
-	localConn, err := net.Listen("tcp", "127.0.0.1:0")
+	localConn, err := d.listener("tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", fmt.Errorf("unable to listen on random TCP port: %w", err)
 	}

@@ -97,7 +97,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 	return ssh
 }
 
-func TestForwardUnixSocket(t *testing.T) {
+func TestForwardUnixSocketFull(t *testing.T) {
 	ssh := withPrivateKey(t)
 	expectedMessage := "foo"
 	expectedResponse := "bar"
