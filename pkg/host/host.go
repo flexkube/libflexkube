@@ -9,16 +9,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Interface represents exported host capabilities.
-type Interface interface {
-	Connect() (Connected, error)
-}
-
-// Connected represents capabilities of connected host.
-type Connected interface {
-	ForwardUnixSocket(path string) (string, error)
-}
-
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
 type Host struct {
@@ -27,32 +17,32 @@ type Host struct {
 }
 
 type host struct {
-	transportConfig transport.Config
+	transport transport.Interface
 }
 
 type hostConnected struct {
-	transport transport.Transport
+	transport transport.Connected
 }
 
 // New validates Host configuration and sets configured transport method.
-func (h *Host) New() (Interface, error) {
+func (h *Host) New() (transport.Interface, error) {
 	if err := h.Validate(); err != nil {
 		return nil, fmt.Errorf("host configuration validation failed: %w", err)
 	}
 
 	// TODO that seems ugly, is there a better way to generalize it?
-	var t transport.Config
+	var t transport.Interface
 
 	if h.DirectConfig != nil {
-		t = h.DirectConfig
+		t, _ = h.DirectConfig.New()
 	}
 
 	if h.SSHConfig != nil {
-		t = h.SSHConfig
+		t, _ = h.SSHConfig.New()
 	}
 
 	return &host{
-		transportConfig: t,
+		transport: t,
 	}, nil
 }
 
@@ -84,20 +74,24 @@ func (h *Host) Validate() error {
 // selectTransport returns transport protocol configured for container.
 //
 // It returns error if transport protocol configuration is invalid.
-func (h *host) Connect() (Connected, error) {
-	d, err := h.transportConfig.New()
+func (h *host) Connect() (transport.Connected, error) {
+	c, err := h.transport.Connect()
 	if err != nil {
-		return nil, fmt.Errorf("selecting transport protocol failed: %w", err)
+		return nil, fmt.Errorf("connecting failed: %w", err)
 	}
 
 	return &hostConnected{
-		transport: d,
+		transport: c,
 	}, nil
 }
 
 // ForwardUnixSocket forwards given unix socket path using configured transport method.
 func (h *hostConnected) ForwardUnixSocket(path string) (string, error) {
 	return h.transport.ForwardUnixSocket(path)
+}
+
+func (h *hostConnected) ForwardTCP(address string) (string, error) {
+	return h.transport.ForwardTCP(address)
 }
 
 // BuildConfig merges values from both host objects.

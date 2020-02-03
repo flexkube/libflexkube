@@ -10,6 +10,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -18,11 +22,6 @@ const (
 )
 
 func TestNew(t *testing.T) {
-	privateKey, err := generateRSAPrivateKey()
-	if err != nil {
-		t.Fatalf("generating RSA key failed")
-	}
-
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -31,7 +30,7 @@ func TestNew(t *testing.T) {
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
 		Port:              Port,
-		PrivateKey:        privateKey,
+		PrivateKey:        generateRSAPrivateKey(t),
 	}
 	if _, err := c.New(); err != nil {
 		t.Fatalf("creating new SSH object should succeed, got: %s", err)
@@ -203,10 +202,10 @@ func TestValidateParsePrivateKey(t *testing.T) {
 	}
 }
 
-func generateRSAPrivateKey() (string, error) {
+func generateRSAPrivateKey(t *testing.T) string {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return "", fmt.Errorf("generating key failed: %w", err)
+		t.Fatalf("generating key failed: %v", err)
 	}
 
 	privDER := x509.MarshalPKCS1PrivateKey(privateKey)
@@ -216,7 +215,7 @@ func generateRSAPrivateKey() (string, error) {
 		Bytes:   privDER,
 	}
 
-	return string(pem.EncodeToMemory(&privBlock)), nil
+	return string(pem.EncodeToMemory(&privBlock))
 }
 
 func TestHandleClientLocalRemote(t *testing.T) {
@@ -305,7 +304,7 @@ func TestExtractPath(t *testing.T) {
 }
 
 func TestExtractPathMalformed(t *testing.T) {
-	if _, err := extractPath("ddd"); err == nil {
+	if _, err := extractPath("ddd\t"); err == nil {
 		t.Fatalf("extracting malformed path should fail")
 	}
 }
@@ -316,19 +315,245 @@ func TestExtractPathTCP(t *testing.T) {
 	}
 }
 
+// randomUnixSocket()
 func TestRandomUnixSocket(t *testing.T) {
-	address := "localhost:80"
+	d := newConnected("localhost:80", nil).(*sshConnected)
 
-	unixAddr, err := randomUnixSocket(address)
+	unixAddr, err := d.randomUnixSocket()
 	if err != nil {
 		t.Fatalf("creating random unix socket shouldn't fail, got: %v", err)
 	}
 
-	if !strings.Contains(unixAddr.String(), address) {
-		t.Fatalf("generated UNIX address should contain original address %s, got: %s", address, unixAddr.String())
+	if !strings.Contains(unixAddr.String(), d.address) {
+		t.Fatalf("generated UNIX address should contain original address %s, got: %s", d.address, unixAddr.String())
 	}
 
 	if unixAddr.Net != "unix" {
 		t.Fatalf("generated UNIX address should be UNIX address, got net %s", unixAddr.Net)
+	}
+}
+
+func TestRandomUnixSocketBadUUID(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+	d.uuid = func() (uuid.UUID, error) {
+		return uuid.UUID{}, fmt.Errorf("happened")
+	}
+
+	if _, err := d.randomUnixSocket(); err == nil {
+		t.Fatalf("Creating random unix socket should fail")
+	}
+}
+
+// forwardConnection()
+func TestForwardConnection(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+
+	conn, err := net.Dial("tcp", l.Addr().String())
+	if err != nil {
+		t.Fatalf("failed opening connection to listener: %v", err)
+	}
+
+	data := []byte("FOO")
+
+	if _, err := conn.Write(data); err != nil {
+		t.Fatalf("failed writing to connection: %v", err)
+	}
+
+	c, err := r.Accept()
+	if err != nil {
+		t.Fatalf("failed accepting forwarded connection: %v", err)
+	}
+
+	buf := make([]byte, 3)
+
+	if _, err := c.Read(buf); err != nil {
+		t.Fatalf("failed reading data from connection: %v", err)
+	}
+
+	if !reflect.DeepEqual(buf, data) {
+		t.Fatalf("Expected data to be '%s', got '%s'", string(data), string(buf))
+	}
+}
+
+func TestForwardConnectionBadType(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "doh")
+
+	// Try to open connection, so forwarding loop breaks.
+	if _, err := net.Dial("tcp", l.Addr().String()); err != nil {
+		t.Logf("Opening first connection should succeed, got: %v", err)
+	}
+
+	time.Sleep(time.Second)
+
+	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+		t.Fatalf("Opening connection to bad type should fail")
+	}
+}
+
+func TestForwardConnectionClosedListener(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	l.Close()
+
+	r, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("unable to listen on random TCP port: %v", err)
+	}
+
+	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+
+	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+		t.Fatalf("Opening connection to closed listener should fail")
+	}
+}
+
+// Connect()
+func TestConnect(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+		PrivateKey:        generateRSAPrivateKey(t),
+	}
+
+	s, err := c.New()
+	if err != nil {
+		t.Fatalf("creating new SSH object should succeed, got: %s", err)
+	}
+
+	ss := s.(*ssh)
+
+	ss.sshClientGetter = func(n string, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+		return nil, nil
+	}
+
+	if _, err := ss.Connect(); err != nil {
+		t.Fatalf("Connecting should succeed, got: %v", err)
+	}
+}
+
+func TestConnectFail(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "1s",
+		RetryTimeout:      "1s",
+		RetryInterval:     "1s",
+		Port:              Port,
+		PrivateKey:        generateRSAPrivateKey(t),
+	}
+
+	s, err := c.New()
+	if err != nil {
+		t.Fatalf("creating new SSH object should succeed, got: %s", err)
+	}
+
+	ss := s.(*ssh)
+
+	ss.sshClientGetter = func(n string, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+		return nil, fmt.Errorf("expected")
+	}
+
+	if _, err := ss.Connect(); err == nil {
+		t.Fatalf("Connecting should fail")
+	}
+}
+
+// ForwardTCP()
+func TestForwardTCP(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	d.listener = func(n string, a string) (net.Listener, error) {
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("unable to listen on random TCP port: %v", err)
+		}
+
+		return l, nil
+	}
+
+	if _, err := d.ForwardTCP("localhost:90"); err != nil {
+		t.Fatalf("Forwarding TCP shouldn't fail, got: %v", err)
+	}
+}
+
+func TestForwardTCPFailListen(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	d.listener = func(n string, a string) (net.Listener, error) {
+		return nil, fmt.Errorf("expected")
+	}
+
+	if _, err := d.ForwardTCP("localhost:90"); err == nil {
+		t.Fatalf("Forwarding TCP should fail")
+	}
+}
+
+// ForwardUnixSocket()
+func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	d.uuid = func() (uuid.UUID, error) {
+		return uuid.UUID{}, fmt.Errorf("happened")
+	}
+
+	if _, err := d.ForwardUnixSocket("foo"); err == nil {
+		t.Fatalf("Forwarding with bad unix socket should fail")
+	}
+}
+
+func TestForwardUnixSocketCantListen(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	d.listener = func(n string, a string) (net.Listener, error) {
+		return nil, fmt.Errorf("expected")
+	}
+
+	if _, err := d.ForwardUnixSocket("foo"); err == nil {
+		t.Fatalf("Forwarding with failed listening should fail")
+	}
+}
+
+func TestForwardUnixSocketBadPath(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	if _, err := d.ForwardUnixSocket("foo\t"); err == nil {
+		t.Fatalf("Forwarding with invalid unix socket name should fail")
+	}
+}
+
+func TestForwardUnixSocket(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	if _, err := d.ForwardUnixSocket("unix:///foo"); err != nil {
+		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
 }

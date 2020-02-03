@@ -39,7 +39,7 @@ func TestPasswordAuth(t *testing.T) {
 		t.Fatalf("creating new SSH object should succeed, got: %v", err)
 	}
 
-	if _, err := (s.(*ssh)).connect(); err != nil {
+	if _, err := s.Connect(); err != nil {
 		t.Fatalf("connecting should succeed, got: %v", err)
 	}
 }
@@ -60,7 +60,7 @@ func TestPasswordAuthFail(t *testing.T) {
 		t.Fatalf("creating new SSH object should succeed, got: %v", err)
 	}
 
-	if _, err := (s.(*ssh)).connect(); err == nil {
+	if _, err := s.Connect(); err == nil {
 		t.Fatalf("connecting with bad password should fail")
 	}
 }
@@ -68,12 +68,12 @@ func TestPasswordAuthFail(t *testing.T) {
 func TestPrivateKeyAuth(t *testing.T) {
 	s := withPrivateKey(t)
 
-	if _, err := (s.(*ssh)).connect(); err != nil {
+	if _, err := s.Connect(); err != nil {
 		t.Fatalf("connecting should succeed, got: %v", err)
 	}
 }
 
-func withPrivateKey(t *testing.T) transport.Transport {
+func withPrivateKey(t *testing.T) transport.Interface {
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
 		t.Fatalf("reading SSH private key shouldn't fail, got: %v", err)
@@ -97,12 +97,17 @@ func withPrivateKey(t *testing.T) transport.Transport {
 	return ssh
 }
 
-func TestForwardUnixSocket(t *testing.T) {
+func TestForwardUnixSocketFull(t *testing.T) {
 	ssh := withPrivateKey(t)
 	expectedMessage := "foo"
 	expectedResponse := "bar"
 
-	s, err := ssh.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
+	c, err := ssh.Connect()
+	if err != nil {
+		t.Fatalf("Connecting should succeed, got: %v", err)
+	}
+
+	s, err := c.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
 	if err != nil {
 		t.Fatalf("forwarding should succeed, got: %v", err)
 	}
