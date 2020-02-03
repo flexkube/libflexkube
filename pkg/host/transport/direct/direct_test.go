@@ -26,3 +26,19 @@ func TestForwardUnixSocket(t *testing.T) {
 		t.Fatalf("expected '%s', got '%s'", p, fp)
 	}
 }
+
+func TestConnect(t *testing.T) {
+	d := &direct{}
+	if _, err := d.Connect(); err != nil {
+		t.Fatalf("Connect should always work, got: %v", err)
+	}
+}
+
+func TestForwardTCP(t *testing.T) {
+	d := &direct{}
+	a := "localhost:80"
+
+	if fa, _ := d.ForwardTCP(a); fa != a {
+		t.Fatalf("expected '%s', got '%s'", a, fa)
+	}
+}
