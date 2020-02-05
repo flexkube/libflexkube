@@ -63,8 +63,39 @@ members:
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
 
-	if _, err := FromYaml(buf.Bytes()); err != nil {
+	cluster, err := FromYaml(buf.Bytes())
+	if err != nil {
 		t.Fatalf("Creating etcd cluster from YAML should succeed, got: %v", err)
+	}
+
+	if err := cluster.CheckCurrentState(); err != nil {
+		t.Fatalf("Checking current state for empty cluster should work, got: %v", err)
+	}
+
+	if _, err := cluster.StateToYaml(); err != nil {
+		t.Fatalf("Dumping cluster state to YAML should work, got: %v", err)
+	}
+}
+
+// New()
+func TestNewValidateFail(t *testing.T) {
+	config := &Cluster{}
+
+	if _, err := config.New(); err == nil {
+		t.Fatalf("New() should validate cluster configuration and fail on bad configuration")
+	}
+}
+
+// Validate()
+func TestValidateValidateMembers(t *testing.T) {
+	config := &Cluster{
+		Members: map[string]Member{
+			"foo": {},
+		},
+	}
+
+	if err := config.Validate(); err == nil {
+		t.Fatalf("Should validate members")
 	}
 }
 

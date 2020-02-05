@@ -442,3 +442,12 @@ func TestAddGetIDFail(t *testing.T) {
 		t.Fatalf("Adding member should fail, when getting member id fails")
 	}
 }
+
+// Validate()
+func TestValidateNoName(t *testing.T) {
+	m := &Member{}
+
+	if err := m.Validate(); err == nil {
+		t.Fatalf("Validate() should reject members with empty name")
+	}
+}
