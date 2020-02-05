@@ -281,6 +281,10 @@ func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 }
 
 func (d *sshConnected) ForwardTCP(address string) (string, error) {
+	if _, _, err := net.SplitHostPort(address); err != nil {
+		return "", fmt.Errorf("failed to validate address '%s': %w", address, err)
+	}
+
 	localConn, err := d.listener("tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", fmt.Errorf("unable to listen on random TCP port: %w", err)

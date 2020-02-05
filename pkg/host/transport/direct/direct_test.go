@@ -42,3 +42,12 @@ func TestForwardTCP(t *testing.T) {
 		t.Fatalf("expected '%s', got '%s'", a, fa)
 	}
 }
+
+func TestForwardTCPBadAddress(t *testing.T) {
+	d := &direct{}
+	a := "localhost"
+
+	if _, err := d.ForwardTCP(a); err == nil {
+		t.Fatalf("TCP forwarding should fail when forwarding bad address")
+	}
+}

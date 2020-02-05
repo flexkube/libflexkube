@@ -517,6 +517,18 @@ func TestForwardTCPFailListen(t *testing.T) {
 	}
 }
 
+func TestForwardTCPValidateAddress(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	d.listener = func(n string, a string) (net.Listener, error) {
+		return nil, fmt.Errorf("expected")
+	}
+
+	if _, err := d.ForwardTCP("localhost"); err == nil {
+		t.Fatalf("Forwarding TCP should fail when forwarding bad address")
+	}
+}
+
 // ForwardUnixSocket()
 func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
