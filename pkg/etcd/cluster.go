@@ -41,7 +41,7 @@ type cluster struct {
 	members       map[string]*member
 }
 
-// propagateMember fills given Member's empty fileds with fields from Cluster.
+// propagateMember fills given Member's empty fields with fields from Cluster.
 func (c *Cluster) propagateMember(i string, m *Member) {
 	initialClusterArr := []string{}
 	peerCertAllowedCNArr := []string{}
