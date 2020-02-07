@@ -1,0 +1,15 @@
+systemd:
+  units:
+    - name: locksmithd.service
+      mask: true
+    - name: docker.service
+      enabled: true
+    - name: systemd-timesyncd.service
+      enabled: true
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+%{ for key in core_public_keys ~}
+        - ${key}
+%{ endfor ~}

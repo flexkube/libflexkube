@@ -12,3 +12,9 @@ kubeconfig
 .env
 *.tar.gz
 crash.log
+flatcar_production_qemu_image.img
+flatcar_production_qemu_image.img.bz2
+*.auto.tfvars
+pool
+terraform-provider-ct
+terraform-provider-libvirt
