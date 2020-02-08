@@ -1,84 +1,11 @@
-terraform {
-  required_version = "~> 0.12.0"
-}
-
 provider "local" {
   version = "= 1.4.0"
-}
-
-provider "null" {
-  version = "= 2.1.2"
-}
-
-variable "ssh_private_key_path" {
-  default = "/root/.ssh/id_rsa"
-}
-
-variable "controllers_count" {
-  default = 1
-}
-
-variable "workers_count" {
-  default = 0
-}
-
-variable "nodes_cidr" {
-  default = "192.168.50.0/24"
-}
-
-variable "pod_cidr" {
-  default = "10.1.0.0/16"
-}
-
-variable "network_plugin" {
-  default = "calico"
-}
-
-variable "node_ssh_port" {
-  default = 22
-}
-
-variable "kube_apiserver_helm_chart_source" {
-  default = "flexkube/kube-apiserver"
-}
-
-variable "kubernetes_helm_chart_source" {
-  default = "flexkube/kubernetes"
-}
-
-variable "kubelet_rubber_stamp_helm_chart_source" {
-  default = "flexkube/kubelet-rubber-stamp"
-}
-
-variable "calico_helm_chart_source" {
-  default = "flexkube/calico"
-}
-
-variable "flatcar_channel" {
-  default = "edge"
 }
 
 module "root_pki" {
   source = "git::https://github.com/flexkube/terraform-root-pki.git"
 
   organization = "example"
-}
-
-resource "null_resource" "controller_ips" {
-  count = var.controllers_count
-
-  triggers = {
-    name = format("controller%02d", count.index + 1)
-    ip   = cidrhost(var.nodes_cidr, count.index + 2)
-    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2)
-  }
-}
-
-locals {
-  controller_ips      = null_resource.controller_ips.*.triggers.ip
-  first_controller_ip = local.controller_ips[0]
-  controller_names    = null_resource.controller_ips.*.triggers.name
-  controller_cidrs    = null_resource.controller_ips.*.triggers.cidr
 }
 
 module "etcd_pki" {
@@ -112,22 +39,8 @@ module "kubernetes_pki" {
   organization              = "example"
 }
 
-resource "null_resource" "workers" {
-  count = var.workers_count
-
-  triggers = {
-    name = format("worker%02d", count.index + 1)
-    ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
-    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2 + var.controllers_count)
-  }
-}
-
 locals {
   cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
-
-  worker_ips = null_resource.workers.*.triggers.ip
-  worker_cidrs = null_resource.workers.*.triggers.cidr
-  worker_names = null_resource.workers.*.triggers.name
 
   etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
     peer_ssh_addresses = local.controller_ips

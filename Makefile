@@ -260,3 +260,23 @@ vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance
 .PHONY: vagrant-conformance-copy-results
 vagrant-conformance-copy-results:
 	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
+
+.PHONY: libvirt-apply
+libvirt-apply: libvirt-download-image
+	cd libvirt && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
+
+.PHONY: libvirt-destroy
+libvirt-destroy:
+	cd libvirt && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) destroy -auto-approve
+
+.PHONY: libvirt-download-image
+libvirt-download-image:
+	((test -f libvirt/flatcar_production_qemu_image.img.bz2 || test -f libvirt/flatcar_production_qemu_image.img) || wget https://$(FLATCAR_CHANNEL).release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu_image.img.bz2 -O libvirt/flatcar_production_qemu_image.img.bz2) || true
+	(test -f libvirt/flatcar_production_qemu_image.img.bz2 && bunzip2 libvirt/flatcar_production_qemu_image.img.bz2 && rm libvirt/flatcar_production_qemu_image.img.bz2) || true
+	qemu-img resize libvirt/flatcar_production_qemu_image.img +5G
+
+.PHONY: libvirt-download-providers
+libvirt-download-providers:
+	test -f libvirt/terraform-provider-libvirt || (wget https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v0.6.1/terraform-provider-libvirt-0.6.1+git.1578064534.db13b678.Fedora_28.x86_64.tar.gz -O libvirt/provider.tar.gz && tar zxvf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-libvirt ./libvirt/)
+	test -f libvirt/terraform-provider-ct || (wget https://github.com/poseidon/terraform-provider-ct/releases/download/v0.4.0/terraform-provider-ct-v0.4.0-linux-amd64.tar.gz -O libvirt/provider.tar.gz && tar xzf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-ct-v0.4.0-linux-amd64/terraform-provider-ct ./libvirt/ && rmdir terraform-provider-ct-v0.4.0-linux-amd64)
+

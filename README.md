@@ -320,6 +320,8 @@ For testing standalone resources, e.g. just `etcd-cluster`, [local-testing](./lo
 
 #### Target host
 
+##### VirtualBox
+
 By default, local testing is configured to deploy to virtual machine managed by [Vagrantfile](./Vagrantfile), which can be brought up using the following command:
 ```sh
 make vagrant-up
@@ -330,6 +332,15 @@ However, if you like to test on some other machine, you can override the followi
 - `node_internal_ip` - This should be set to your target host IP, which will be used by cluster components.
 - `node_ssh_port` - Target host SSH port.
 - `node_address` - Target host SSH address and where `kube-apiserver` will be listening for client requests.
+
+##### Libvirt
+
+In addition to VirtualBox, also KVM with libvirt can be used to spawn local environment. The environment is managed with Terraform, so Terraform binary is required. To set it up, use the following command:
+```sh
+make libvirt-apply
+```
+
+The command will download Flatcar QEMU image and required Terraform providers. On subsequent runs, those steps will be skipped. After that, libvirt network, pools and machines will be created.
 
 #### Requirements
 
