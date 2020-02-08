@@ -1,3 +1,6 @@
+<a href="https://www.cncf.io/certification/software-conformance/"><img alt="Certified Kubernetes logo" width="100px" align="right" src="https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/pantone/certified-kubernetes-pantone.png"></a>
+<img alt="Flexkube logo" width="100px" align="right" src="https://github.com/flexkube/assets/raw/master/logo.jpg">
+
 # libflexkube: Go library for deploying Kubernetes
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube) [![GoDoc](https://godoc.org/github.com/flexkube/libflexkube?status.svg)](https://godoc.org/github.com/flexkube/libflexkube) [![Go Report Card](https://goreportcard.com/badge/github.com/flexkube/libflexkube)](https://goreportcard.com/report/github.com/flexkube/libflexkube)
