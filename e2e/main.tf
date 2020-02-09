@@ -121,6 +121,8 @@ locals {
   })
 
   coredns_values = <<EOF
+rbac:
+  pspEnable: true
 service:
   clusterIP: 11.0.0.10
 nodeSelector:
