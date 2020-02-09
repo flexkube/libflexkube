@@ -23,7 +23,10 @@ etcdClientCertificate: |
 etcdClientKey: |
   ${indent(2, trimspace(etcd_client_key))}
 
-etcdServers: ${join(",", etcd_servers)}
+etcdServers:
+%{ for server in  etcd_servers }
+- ${server}
+%{ endfor ~}
 serviceCIDR: "11.0.0.0/24"
 replicas: ${replicas}
 %{ if replicas > 1 ~}
