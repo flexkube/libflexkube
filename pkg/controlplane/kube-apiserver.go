@@ -130,6 +130,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 				// Required for communicating with kubelet.
 				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
 				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
+				"--kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt",
 				// To secure communication to etcd servers.
 				"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
 				"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
