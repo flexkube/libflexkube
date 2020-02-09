@@ -119,6 +119,7 @@ locals {
     api_servers                 = formatlist("%s:6443", local.controller_ips)
     replicas                    = var.controllers_count
     max_unavailable             = var.controllers_count > 1 ? 1 : 0
+    podsCIDR                    = var.pod_cidr
   })
 
   coredns_values = <<EOF
