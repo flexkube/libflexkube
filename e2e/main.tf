@@ -108,7 +108,6 @@ locals {
     etcd_client_key                = module.etcd_pki.client_keys[0]
     etcd_servers                   = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
     replicas                       = var.controllers_count
-    max_unavailable                = var.controllers_count > 1 ? 1 : 0
   })
 
   kubernetes_values = templatefile("./templates/values.yaml.tmpl", {
@@ -118,7 +117,6 @@ locals {
     kubernetes_ca_certificate   = module.kubernetes_pki.kubernetes_ca_cert
     api_servers                 = formatlist("%s:6443", local.controller_ips)
     replicas                    = var.controllers_count
-    max_unavailable             = var.controllers_count > 1 ? 1 : 0
     podsCIDR                    = var.pod_cidr
   })
 

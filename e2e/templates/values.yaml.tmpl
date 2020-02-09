@@ -8,7 +8,6 @@ rootCACertificate: |
   ${indent(2, trimspace(root_ca_certificate))}
 
 replicas: ${replicas}
-maxUnavailable: ${max_unavailable}
 flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 apiServers:
 %{ for api_server in api_servers ~}
