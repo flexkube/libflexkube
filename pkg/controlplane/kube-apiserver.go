@@ -136,7 +136,8 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 				"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
 				// Enable additional admission plugins:
 				// - NodeRestriction for extra protection against rogue cluster nodes.
-				"--enable-admission-plugins=NodeRestriction",
+				// - PodSecurityPolicy for PSP support.
+				"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
 			},
 		},
 	}
