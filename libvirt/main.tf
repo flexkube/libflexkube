@@ -37,8 +37,11 @@ resource "libvirt_network" "network" {
 }
 
 data "ct_config" "ignition" {
+  count = var.controllers_count + var.workers_count
+
   content = templatefile("./templates/ct_config.yaml.tmpl", {
     core_public_keys = var.core_public_keys
+    hostname         = concat(local.controller_names, local.worker_names)[count.index]
   })
 }
 
@@ -69,7 +72,7 @@ resource "libvirt_domain" "controller_machine" {
   }
 
   fw_cfg_name     = "opt/org.flatcar-linux/config"
-  coreos_ignition = libvirt_ignition.ignition.id
+  coreos_ignition = libvirt_ignition.ignition[count.index].id
 
   graphics {
     listen_type = "address"
@@ -102,7 +105,7 @@ resource "libvirt_domain" "worker_machine" {
   }
 
   fw_cfg_name     = "opt/org.flatcar-linux/config"
-  coreos_ignition = libvirt_ignition.ignition.id
+  coreos_ignition = libvirt_ignition.ignition[count.index].id
 
   graphics {
     listen_type = "address"
