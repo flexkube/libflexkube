@@ -23,10 +23,12 @@ etcdClientCertificate: |
 etcdClientKey: |
   ${indent(2, trimspace(etcd_client_key))}
 
-etcdServers: ${join(",", etcd_servers)}
+etcdServers:
+%{ for server in  etcd_servers }
+- ${server}
+%{ endfor ~}
 serviceCIDR: "11.0.0.0/24"
 replicas: ${replicas}
-maxUnavailable: ${max_unavailable}
 %{ if replicas > 1 ~}
 # Bootstrap control plane is running on port 8443 instead of standard 6443, as haproxy is listening on 6443 for
 # load balancing and failover. Bootstrap kube-apiserver registers kubernetes.default.svc with port 8443, so we need to

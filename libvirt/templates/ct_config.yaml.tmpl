@@ -1,3 +1,11 @@
+storage:
+  files:
+    - path: /etc/hostname
+      filesystem: root
+      mode: 0420
+      contents:
+        inline: |
+          ${hostname}
 systemd:
   units:
     - name: locksmithd.service

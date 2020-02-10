@@ -130,13 +130,15 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 				// Required for communicating with kubelet.
 				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
 				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
+				"--kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt",
 				// To secure communication to etcd servers.
 				"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
 				"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
 				"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
 				// Enable additional admission plugins:
 				// - NodeRestriction for extra protection against rogue cluster nodes.
-				"--enable-admission-plugins=NodeRestriction",
+				// - PodSecurityPolicy for PSP support.
+				"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
 			},
 		},
 	}
