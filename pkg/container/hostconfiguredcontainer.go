@@ -66,7 +66,7 @@ type hostConfiguredContainer struct {
 // New validates HostConfiguredContainer struct and return it's executable version
 func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error) {
 	if err := m.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to valide container configuration: %w", err)
+		return nil, fmt.Errorf("failed to validate container configuration: %w", err)
 	}
 
 	hcc := &hostConfiguredContainer{
@@ -86,7 +86,7 @@ func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error
 // Validate validates HostConfiguredContainer struct. All validation rules should be placed here.
 func (m *HostConfiguredContainer) Validate() error {
 	if err := m.Container.Validate(); err != nil {
-		return fmt.Errorf("failed to valide container configuration: %w", err)
+		return fmt.Errorf("failed to validate container configuration: %w", err)
 	}
 
 	if err := m.Host.Validate(); err != nil {
