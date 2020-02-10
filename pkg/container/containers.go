@@ -81,11 +81,11 @@ func (c *Containers) Validate() error {
 func (c *Containers) CheckCurrentState() error {
 	containers, err := c.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating containers configuration: %w", err)
 	}
 
 	if err := containers.CheckCurrentState(); err != nil {
-		return err
+		return fmt.Errorf("failed checking current state of the containers: %w", err)
 	}
 
 	*c = *containers.ToExported()
