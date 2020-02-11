@@ -46,10 +46,12 @@ data "ct_config" "ignition" {
 }
 
 resource "libvirt_ignition" "ignition" {
-  name = "flexkube-ignition"
+  count = var.controllers_count + var.workers_count
+
+  name = "flexkube-ignition-${count.index}"
   pool = libvirt_pool.pool.name
 
-  content = data.ct_config.ignition.rendered
+  content = data.ct_config.ignition[count.index].rendered
 }
 
 resource "libvirt_volume" "controller-disk" {
