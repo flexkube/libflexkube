@@ -7,6 +7,7 @@ GOCMD=env GO111MODULE=on go
 GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe -v
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
+GORUN=$(GOCMD) run
 GOBUILD=CGO_ENABLED=$(CGO_ENABLED) $(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
@@ -280,3 +281,7 @@ libvirt-download-providers:
 	test -f libvirt/terraform-provider-libvirt || (wget https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v0.6.1/terraform-provider-libvirt-0.6.1+git.1578064534.db13b678.Fedora_28.x86_64.tar.gz -O libvirt/provider.tar.gz && tar zxvf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-libvirt ./libvirt/)
 	test -f libvirt/terraform-provider-ct || (wget https://github.com/poseidon/terraform-provider-ct/releases/download/v0.4.0/terraform-provider-ct-v0.4.0-linux-amd64.tar.gz -O libvirt/provider.tar.gz && tar xzf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-ct-v0.4.0-linux-amd64/terraform-provider-ct ./libvirt/ && rmdir terraform-provider-ct-v0.4.0-linux-amd64)
 
+
+.PHONY: test-static
+test-static:
+	$(GORUN) honnef.co/go/tools/cmd/staticcheck $(GO_PACKAGES)
