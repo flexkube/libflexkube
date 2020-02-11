@@ -5,10 +5,10 @@ const (
 	EtcdImage = "gcr.io/etcd-development/etcd:v3.4.3"
 
 	// KubernetesImage is a default container image used for all kubernetes containers.
-	KubernetesImage = "k8s.gcr.io/hyperkube:v1.17.2"
+	KubernetesImage = "k8s.gcr.io/hyperkube:v1.17.3"
 
 	// HAProxyImage is a default container image for APILoadBalancer.
-	HAProxyImage = "haproxy:2.1.0-alpine"
+	HAProxyImage = "haproxy:2.1.2-alpine"
 
 	// DockerAPIVersion is a default API version used when talking to Docker runtime.
 	DockerAPIVersion = "v1.38"
