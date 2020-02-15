@@ -136,7 +136,11 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 
 // CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
-	return c.containers.CheckCurrentState()
+	if err := c.containers.CheckCurrentState(); err != nil {
+		return fmt.Errorf("failed checking current state of etcd cluster: %w", err)
+	}
+
+	return nil
 }
 
 // getExistingEndpoints returns list of already deployed etcd endpoints.
