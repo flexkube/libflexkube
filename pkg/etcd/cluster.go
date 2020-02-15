@@ -107,16 +107,18 @@ func (c *Cluster) Validate() error {
 		return fmt.Errorf("either members or previous state needs to be defined")
 	}
 
+	var errors util.ValidateError
+
 	for n, m := range c.Members {
 		m := m
 		c.propagateMember(n, &m)
 
 		if _, err := m.New(); err != nil {
-			return fmt.Errorf("failed to validate member '%s': %w", n, err)
+			errors = append(errors, fmt.Errorf("failed to validate member '%s': %w", n, err))
 		}
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // FromYaml allows to restore cluster state from YAML.
