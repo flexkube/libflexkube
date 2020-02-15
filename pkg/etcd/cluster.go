@@ -111,13 +111,8 @@ func (c *Cluster) Validate() error {
 		m := m
 		c.propagateMember(n, &m)
 
-		member, err := m.New()
-		if err != nil {
+		if _, err := m.New(); err != nil {
 			return fmt.Errorf("failed to validate member '%s': %w", n, err)
-		}
-
-		if _, err := member.ToHostConfiguredContainer(); err != nil {
-			return fmt.Errorf("failed to generate container configuration for member '%s': %w", n, err)
 		}
 	}
 
