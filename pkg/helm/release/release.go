@@ -11,7 +11,7 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"sigs.k8s.io/yaml"
 
-	"github.com/flexkube/libflexkube/pkg/types"
+	"github.com/flexkube/libflexkube/internal/util"
 )
 
 // Release is an interface representing helm release.
@@ -93,7 +93,7 @@ func (r *Config) New() (Release, error) {
 
 // Validate validates Release configuration
 func (r *Config) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	// Check if all required values are filled in
 	if r.Kubeconfig == "" {
