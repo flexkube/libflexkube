@@ -19,7 +19,7 @@ type Interface interface {
 
 // InstanceInterface represents containerInstance capabilities.
 type InstanceInterface interface {
-	Status() (*types.ContainerStatus, error)
+	Status() (types.ContainerStatus, error)
 	Read(srcPath []string) ([]*types.File, error)
 	Copy(files []*types.File) error
 	Stat(paths []string) (map[string]*os.FileMode, error)
@@ -36,7 +36,7 @@ type Container struct {
 	// Stores runtime configuration of the container.
 	Config types.ContainerConfig `json:"config"`
 	// Status of the container
-	Status *types.ContainerStatus `json:"status"`
+	Status types.ContainerStatus `json:"status"`
 	// Runtime stores configuration for various container runtimes
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }
@@ -53,7 +53,7 @@ type container struct {
 	// Contains common information between container and containerInstance
 	base
 	// Optional container status
-	status *types.ContainerStatus
+	status types.ContainerStatus
 }
 
 // container represents created container. It guarantees that container status is initialised.
@@ -170,28 +170,19 @@ func (c *container) Create() (InstanceInterface, error) {
 
 // FromStatus creates containerInstance from previously restored status
 func (c *container) FromStatus() (InstanceInterface, error) {
-	if c.status == nil {
-		return nil, fmt.Errorf("can't create container instance from empty status")
-	}
-
-	if c.status != nil && c.status.ID == "" {
+	if c.status.ID == "" {
 		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
 	}
 
 	return &containerInstance{
 		base:   c.base,
-		status: *c.status,
+		status: c.status,
 	}, nil
 }
 
 // ReadState reads state of the container from container runtime and returns it to the user
-func (c *containerInstance) Status() (*types.ContainerStatus, error) {
-	status, err := c.runtime.Status(c.status.ID)
-	if err != nil {
-		return nil, fmt.Errorf("getting status for container '%s' failed: %w", c.config.Name, err)
-	}
-
-	return status, nil
+func (c *containerInstance) Status() (types.ContainerStatus, error) {
+	return c.runtime.Status(c.status.ID)
 }
 
 // UpdateStatus updates status of exported Container struct. This function is primarily used
@@ -304,7 +295,7 @@ func (c *Container) Delete() error {
 		return err
 	}
 
-	c.Status = nil
+	c.Status.ID = ""
 
 	return nil
 }
@@ -339,9 +330,9 @@ func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
 	return ci.Stat(paths)
 }
 
-// Exists returns true, if the container has been created.
+// Exists returns true, if the container exists.
 func (c *Container) Exists() bool {
-	return c.Status != nil
+	return c.Status.ID != ""
 }
 
 // IsRunning returns true, if container exists and it's running.

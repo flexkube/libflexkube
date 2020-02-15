@@ -16,7 +16,7 @@ type Runtime interface {
 	// Start starts created container
 	Start(ID string) error
 	// Status returns status of the container
-	Status(ID string) (*types.ContainerStatus, error)
+	Status(ID string) (types.ContainerStatus, error)
 	// Stop takes unique identifier as a parameter and stops the container
 	Stop(ID string) error
 	// Copy allows to copy TAR archive into the container

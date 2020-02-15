@@ -84,7 +84,7 @@ func TestDockerStatus(t *testing.T) {
 }
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
-	node := &Container{
+	c := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -94,25 +94,25 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	ci, err := New(c)
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	cc, err := ci.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	c.(*containerInstance).status.ID = "nonexistent"
+	cc.(*containerInstance).status.ID = ""
 
-	status, err := c.Status()
+	status, err := cc.Status()
 	if err != nil {
-		t.Fatalf("Checking node status for non existing container should succeed")
+		t.Fatalf("Checking container status for non existing container should succeed")
 	}
 
-	if status != nil {
-		t.Fatalf("Node status for non existing container should be nil")
+	if status.ID != "" {
+		t.Fatalf("Container ID for non existing container should be empty")
 	}
 }
 

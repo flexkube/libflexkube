@@ -83,7 +83,7 @@ func TestSelectDockerRuntime(t *testing.T) {
 		base{
 			runtimeConfig: &docker.Config{},
 		},
-		&types.ContainerStatus{},
+		types.ContainerStatus{},
 	}
 	if err := c.selectRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
@@ -98,7 +98,7 @@ func TestSelectDockerRuntime(t *testing.T) {
 func TestFromStatusValid(t *testing.T) {
 	c := &container{
 		base{},
-		&types.ContainerStatus{
+		types.ContainerStatus{
 			ID: "nonexistent",
 		},
 	}
@@ -110,7 +110,7 @@ func TestFromStatusValid(t *testing.T) {
 func TestFromStatusNoID(t *testing.T) {
 	c := &container{
 		base{},
-		&types.ContainerStatus{},
+		types.ContainerStatus{},
 	}
 	if _, err := c.FromStatus(); err == nil {
 		t.Fatalf("Container instance should not be created from container with no container ID")
@@ -120,7 +120,7 @@ func TestFromStatusNoID(t *testing.T) {
 func TestFromStatusNoStatus(t *testing.T) {
 	c := &container{
 		base{},
-		nil,
+		types.ContainerStatus{},
 	}
 	if _, err := c.FromStatus(); err == nil {
 		t.Fatalf("Container instance should not be created from container without status")
@@ -139,7 +139,8 @@ func TestExists(t *testing.T) {
 // IsRunning()
 func TestIsRunning(t *testing.T) {
 	c := &Container{
-		Status: &types.ContainerStatus{
+		Status: types.ContainerStatus{
+			ID:     "existing",
 			Status: "running",
 		},
 	}

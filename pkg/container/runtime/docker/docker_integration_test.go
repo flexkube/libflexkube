@@ -195,7 +195,7 @@ func TestContainerStatusNonExistent(t *testing.T) {
 		t.Errorf("Getting non-existent container status shouldn't return error, got: %s", err)
 	}
 
-	if status != nil {
+	if status.ID != "" {
 		t.Errorf("Getting non-existent container status shouldn't return any status")
 	}
 }

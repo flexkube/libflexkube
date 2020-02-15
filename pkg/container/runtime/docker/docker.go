@@ -187,21 +187,26 @@ func (d *docker) Stop(id string) error {
 }
 
 // Status returns container status.
-func (d *docker) Status(id string) (*types.ContainerStatus, error) {
-	status, err := d.cli.ContainerInspect(d.ctx, id)
-	if err != nil {
-		// If container is missing, return no status.
-		if client.IsErrNotFound(err) {
-			return nil, nil
-		}
-
-		return nil, fmt.Errorf("inspecting container failed: %w", err)
+func (d *docker) Status(id string) (types.ContainerStatus, error) {
+	s := types.ContainerStatus{
+		ID: id,
 	}
 
-	return &types.ContainerStatus{
-		ID:     id,
-		Status: status.State.Status,
-	}, nil
+	status, err := d.cli.ContainerInspect(d.ctx, id)
+	if err != nil {
+		// If container is missing, return status with empty ID.
+		if client.IsErrNotFound(err) {
+			s.ID = ""
+
+			return s, nil
+		}
+
+		return s, fmt.Errorf("inspecting container failed: %w", err)
+	}
+
+	s.Status = status.State.Status
+
+	return s, nil
 }
 
 // Delete removes the container.
