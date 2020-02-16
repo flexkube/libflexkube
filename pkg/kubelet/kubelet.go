@@ -14,7 +14,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
-	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Kubelet represents single kubelet instance.
@@ -92,7 +91,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 //
 // TODO better validation should be done here
 func (k *Kubelet) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	if k.BootstrapKubeconfig == "" {
 		errors = append(errors, fmt.Errorf("bootstrapKubeconfig can't be empty"))

@@ -6,6 +6,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
@@ -181,7 +182,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 //
 // TODO add validation of certificates if specified
 func (k *KubeAPIServer) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	b, err := yaml.Marshal(k)
 	if err != nil {

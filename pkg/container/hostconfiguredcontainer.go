@@ -168,7 +168,7 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 // removeConfigurationContainer removes configuration container created with createConfigurationContainer.
 // If container does not exist, nil is immediately returned, which makes this function idempotent.
 func (m *hostConfiguredContainer) removeConfigurationContainer() error {
-	if m.configContainer.Status == nil {
+	if !m.configContainer.Exists() {
 		return nil
 	}
 
@@ -346,7 +346,7 @@ func (m *hostConfiguredContainer) Create() error {
 // Status updates container status.
 func (m *hostConfiguredContainer) Status() error {
 	// If container does not exist, skip checking the status of it, as it won't work
-	if m.container.Status == nil {
+	if !m.container.Exists() {
 		return nil
 	}
 

@@ -82,7 +82,7 @@ EOF
         end
 
         # Sync using rsync, but don't copy locally built binaries and don't remove Terraform files from virtual machine.
-        config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing"]
+        config.vm.synced_folder ".", "/home/core/libflexkube", type: "rsync", rsync__exclude: [".git/", "bin/", "e2e/terraform.tfstate*", "e2e/.terraform", "local-testing", "libvirt"]
 
         # Read content of Vagrant SSH private key.
         ssh_private_key = File.read(ENV['HOME'] + "/.vagrant.d/insecure_private_key")

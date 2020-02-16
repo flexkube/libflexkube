@@ -107,21 +107,18 @@ func (c *Cluster) Validate() error {
 		return fmt.Errorf("either members or previous state needs to be defined")
 	}
 
+	var errors util.ValidateError
+
 	for n, m := range c.Members {
 		m := m
 		c.propagateMember(n, &m)
 
-		member, err := m.New()
-		if err != nil {
-			return fmt.Errorf("failed to validate member '%s': %w", n, err)
-		}
-
-		if _, err := member.ToHostConfiguredContainer(); err != nil {
-			return fmt.Errorf("failed to generate container configuration for member '%s': %w", n, err)
+		if _, err := m.New(); err != nil {
+			errors = append(errors, fmt.Errorf("failed to validate member '%s': %w", n, err))
 		}
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // FromYaml allows to restore cluster state from YAML.
@@ -136,7 +133,11 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 
 // CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
-	return c.containers.CheckCurrentState()
+	if err := c.containers.CheckCurrentState(); err != nil {
+		return fmt.Errorf("failed checking current state of etcd cluster: %w", err)
+	}
+
+	return nil
 }
 
 // getExistingEndpoints returns list of already deployed etcd endpoints.

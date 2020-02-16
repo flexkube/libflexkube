@@ -9,6 +9,7 @@ import (
 
 	"go.etcd.io/etcd/clientv3"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
@@ -127,7 +128,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 	}, nil
 }
 
-// New valides Member configuration and returns it's usable version
+// New validates Member configuration and returns it's usable version
 func (m *Member) New() (container.ResourceInstance, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
@@ -159,7 +160,7 @@ func (m *Member) New() (container.ResourceInstance, error) {
 // Validate validates etcd member configuration
 // TODO add validation of certificates if specified
 func (m *Member) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	// TODO require peer address for now. Later we could figure out
 	// how to use CNI for setting it using env variables or something

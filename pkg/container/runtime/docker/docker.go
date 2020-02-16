@@ -199,9 +199,7 @@ func (d *docker) Status(id string) (*types.ContainerStatus, error) {
 	}
 
 	return &types.ContainerStatus{
-		Image:  status.Image,
 		ID:     id,
-		Name:   status.Name,
 		Status: status.State.Status,
 	}, nil
 }

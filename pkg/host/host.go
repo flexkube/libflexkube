@@ -3,10 +3,10 @@ package host
 import (
 	"fmt"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
-	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
@@ -48,7 +48,7 @@ func (h *Host) New() (transport.Interface, error) {
 
 // Validate validates host configuration.
 func (h *Host) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	if err := h.DirectConfig.Validate(); err != nil {
 		errors = append(errors, fmt.Errorf("direct config validation failed: %w", err))

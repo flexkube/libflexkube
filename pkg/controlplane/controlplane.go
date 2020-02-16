@@ -183,7 +183,7 @@ func (c *Controlplane) buildComponents() {
 func (c *Controlplane) Validate() error {
 	c.buildComponents()
 
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	kas, err := c.KubeAPIServer.New()
 	if err != nil {

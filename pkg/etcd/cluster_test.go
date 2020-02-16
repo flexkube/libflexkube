@@ -86,6 +86,15 @@ func TestNewValidateFail(t *testing.T) {
 	}
 }
 
+// CheckCurrentState()
+func TestCheckCurrentStateBadContainer(t *testing.T) {
+	c := &cluster{}
+
+	if err := c.CheckCurrentState(); err == nil {
+		t.Fatalf("Should fail on bad cluster object")
+	}
+}
+
 // Validate()
 func TestValidateValidateMembers(t *testing.T) {
 	config := &Cluster{

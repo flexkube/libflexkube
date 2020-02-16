@@ -21,9 +21,7 @@ type ContainerConfig struct {
 // TODO this should cover all fields which are defined in ContainerConfig,
 // so we can read and compare if actual configuration matches our expectations.
 type ContainerStatus struct {
-	Image  string `json:"image"`
 	ID     string `json:"id"`
-	Name   string `json:"name"`
 	Status string `json:"status"`
 }
 

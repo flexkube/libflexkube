@@ -8,6 +8,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -21,7 +22,7 @@ type Config struct {
 
 // Validate validates Config struct.
 func (c *Config) Validate() error {
-	var errors types.ValidateError
+	var errors util.ValidateError
 
 	if c.Server == "" {
 		errors = append(errors, fmt.Errorf("server is empty"))
