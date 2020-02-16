@@ -12,6 +12,7 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
+// getDockerClient()
 func TestNewClientWithHost(t *testing.T) {
 	config := &Config{
 		Host: "unix:///foo.sock",
@@ -27,6 +28,7 @@ func TestNewClientWithHost(t *testing.T) {
 	}
 }
 
+// sanitizeImageName()
 func TestSanitizeImageName(t *testing.T) {
 	e := "foo:latest"
 
