@@ -95,6 +95,7 @@ desiredState:
 	}
 }
 
+// filesToUpdate
 func TestFilesToUpdateEmpty(t *testing.T) {
 	expected := []string{"foo"}
 
@@ -109,6 +110,7 @@ func TestFilesToUpdateEmpty(t *testing.T) {
 	}
 }
 
+// Validate()
 func TestValidateEmpty(t *testing.T) {
 	cc := &Containers{}
 
@@ -162,6 +164,7 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 	}
 }
 
+// isUpdatable()
 func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -201,6 +204,7 @@ func TestIsUpdatable(t *testing.T) {
 	}
 }
 
+// diffHost()
 func TestDiffHostNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -263,6 +267,7 @@ func TestDiffHost(t *testing.T) {
 	}
 }
 
+// diffContainer()
 func TestDiffContainerNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -333,6 +338,7 @@ func TestDiffContainer(t *testing.T) {
 	}
 }
 
+// ensureRunning()
 func TestEnsureRunningNonExistent(t *testing.T) {
 	c := &containers{
 		currentState: containersState{},
@@ -370,6 +376,7 @@ func TestEnsureRunning(t *testing.T) {
 	}
 }
 
+// ensureExists()
 func TestEnsureExists(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -389,6 +396,7 @@ func TestEnsureExists(t *testing.T) {
 	}
 }
 
+// ensureHost()
 func TestEnsureHostNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -412,6 +420,7 @@ func TestEnsureHostNoDiff(t *testing.T) {
 	}
 }
 
+// ensureContainer()
 func TestEnsureContainerNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
