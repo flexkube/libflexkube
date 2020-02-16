@@ -119,22 +119,26 @@ func TestFromStatusNoID(t *testing.T) {
 	}
 }
 
-func TestFromStatusNoStatus(t *testing.T) {
-	c := &container{
-		base{},
-		types.ContainerStatus{},
-	}
-	if _, err := c.FromStatus(); err == nil {
-		t.Fatalf("Container instance should not be created from container without status")
-	}
-}
-
 // Exists()
-func TestExists(t *testing.T) {
-	c := &Container{}
+func TestExistsMissing(t *testing.T) {
+	c := &Container{
+		Status: types.ContainerStatus{},
+	}
 
 	if c.Exists() {
 		t.Fatalf("Container without status shouldn't exist")
+	}
+}
+
+func TestExists(t *testing.T) {
+	c := &Container{
+		Status: types.ContainerStatus{
+			ID: "existing",
+		},
+	}
+
+	if !c.Exists() {
+		t.Fatalf("Container with ID should exist")
 	}
 }
 
