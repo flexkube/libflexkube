@@ -343,6 +343,30 @@ func (c *containers) hasUpdates(n string) (bool, error) {
 	return diffHost != "" || len(f) != 0 || diffContainer != "", nil
 }
 
+func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer) (hostConfiguredContainer, error) {
+	// Container is gone, remove it from current state, so it will be scheduled for recreation.
+	if !r.container.Exists() {
+		delete(c.currentState, n)
+
+		return r, nil
+	}
+
+	if err := c.isUpdatable(n); err == nil {
+		u, err := c.hasUpdates(n)
+		if err != nil {
+			return r, fmt.Errorf("failed checking if container has pending updates: %w", err)
+		}
+
+		// Don't start existing host if they are going to be updated anyway.
+		// If host is wrongly configured, starting won't help anyway.
+		if u {
+			return r, nil
+		}
+	}
+
+	return r, ensureRunning(&r)
+}
+
 // Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
@@ -358,27 +382,12 @@ func (c *containers) Execute() error {
 	fmt.Println("Checking for stopped and missing containers")
 
 	for n, r := range c.currentState {
-		// Container is gone, we need to re-create it.
-		if !r.container.Exists() {
-			delete(c.currentState, n)
-			continue
-		}
+		d, err := c.ensureCurrentContainer(n, *r)
 
-		if err := c.isUpdatable(n); err == nil {
-			u, err := c.hasUpdates(n)
-			if err != nil {
-				return fmt.Errorf("failed checking if container has pending updates: %w", err)
-			}
+		c.currentState[n] = &d
 
-			// Don't start existing host if they are going to be udpated anyway.
-			// If host is wrongly configured, starting won't help anyway.
-			if u {
-				continue
-			}
-		}
-
-		if err := ensureRunning(r); err != nil {
-			return fmt.Errorf("failed to start stopped container: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed to handle existing container %s: %w", n, err)
 		}
 	}
 
