@@ -1,8 +1,10 @@
 package container
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
@@ -147,5 +149,22 @@ func TestIsRunning(t *testing.T) {
 
 	if !c.IsRunning() {
 		t.Fatalf("Container should be running")
+	}
+}
+
+// Status()
+func TestStatus(t *testing.T) {
+	c := &containerInstance{
+		base: base{
+			runtime: runtime.Fake{
+				StatusF: func(ID string) (types.ContainerStatus, error) {
+					return types.ContainerStatus{}, fmt.Errorf("failed checking status")
+				},
+			},
+		},
+	}
+
+	if _, err := c.Status(); err == nil {
+		t.Fatalf("Checking container status should propagate failure")
 	}
 }
