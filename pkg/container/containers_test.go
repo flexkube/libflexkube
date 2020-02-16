@@ -450,3 +450,104 @@ func TestExecuteNoCurrentState(t *testing.T) {
 		t.Fatalf("Execute without current state should fail")
 	}
 }
+
+// hasUpdates()
+func TestHasUpdatesHost(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			"foo": &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+			},
+		},
+		currentState: containersState{
+			"foo": &hostConfiguredContainer{
+				host: host.Host{},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates("foo")
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with host changes should indicate update")
+	}
+}
+
+func TestHasUpdatesConfig(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			"foo": &hostConfiguredContainer{
+				configFiles: map[string]string{
+					"foo": "foo",
+				},
+			},
+		},
+		currentState: containersState{
+			"foo": &hostConfiguredContainer{},
+		},
+	}
+
+	u, err := c.hasUpdates("foo")
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with configuration files changes should indicate update")
+	}
+}
+
+func TestHasUpdatesContainer(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			"foo": &hostConfiguredContainer{
+				container: Container{
+					Config: types.ContainerConfig{},
+				},
+			},
+		},
+		currentState: containersState{
+			"foo": &hostConfiguredContainer{
+				container: Container{
+					Config: types.ContainerConfig{
+						Name: "foo",
+					},
+				},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates("foo")
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with container configuration changes should indicate update")
+	}
+}
+
+func TestHasUpdatesNoUpdates(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			"foo": &hostConfiguredContainer{},
+		},
+		currentState: containersState{
+			"foo": &hostConfiguredContainer{},
+		},
+	}
+
+	u, err := c.hasUpdates("foo")
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if u {
+		t.Fatalf("Container with no changes should indicate no changes")
+	}
+}

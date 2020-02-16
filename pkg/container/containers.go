@@ -326,6 +326,23 @@ func (c *containers) ensureContainer(n string) error {
 	return c.recreate(n)
 }
 
+// hasUpdates return bool if there are any pending configuration changes to the container.
+func (c *containers) hasUpdates(n string) (bool, error) {
+	diffHost, err := c.diffHost(n)
+	if err != nil {
+		return false, fmt.Errorf("failed to check host diff: %w", err)
+	}
+
+	f := filesToUpdate(*c.desiredState[n], c.currentState[n])
+
+	diffContainer, err := c.diffContainer(n)
+	if err != nil {
+		return false, fmt.Errorf("failed to check container diff: %w", err)
+	}
+
+	return diffHost != "" || len(f) != 0 || diffContainer != "", nil
+}
+
 // Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
@@ -345,6 +362,19 @@ func (c *containers) Execute() error {
 		if !r.container.Exists() {
 			delete(c.currentState, n)
 			continue
+		}
+
+		if err := c.isUpdatable(n); err == nil {
+			u, err := c.hasUpdates(n)
+			if err != nil {
+				return fmt.Errorf("failed checking if container has pending updates: %w", err)
+			}
+
+			// Don't start existing host if they are going to be udpated anyway.
+			// If host is wrongly configured, starting won't help anyway.
+			if u {
+				continue
+			}
 		}
 
 		if err := ensureRunning(r); err != nil {
