@@ -95,6 +95,14 @@ test-integration:
 test-cover:
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
+.PHONY: cover-browse
+cover-browse:
+	go tool cover -html=$(PROFILEFILE)
+
+.PHONY: test-cover-browse
+test-cover-browse: PROFILEFILE=c.out
+test-cover-browse: test-cover cover-browse
+
 .PHONY: test-e2e-run
 test-e2e-run: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-run:
