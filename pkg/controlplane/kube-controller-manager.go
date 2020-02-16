@@ -33,7 +33,7 @@ type kubeControllerManager struct {
 	flexVolumePluginDir      string
 }
 
-// ToHostConfiguredContainer takes configured parameters and returns generic HostCOnfiguredContainer.
+// ToHostConfiguredContainer takes configured parameters and returns generic HostConfiguredContainer.
 //
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
