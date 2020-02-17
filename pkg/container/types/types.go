@@ -47,3 +47,11 @@ type File struct {
 	Content string `json:"content"`
 	Mode    int64  `json:"mode"`
 }
+
+func (s *ContainerStatus) Exists() bool {
+	return s.ID != ""
+}
+
+func (s *ContainerStatus) Running() bool {
+	return s.Exists() && s.Status == "running"
+}
