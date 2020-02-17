@@ -87,7 +87,7 @@ type base struct {
 
 // New creates new instance of container from Container and validates it's configuration
 // It also validates container runtime configuration.
-func New(c *Container) (Interface, error) {
+func (c *Container) New() (Interface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
@@ -126,7 +126,7 @@ func (c *Container) Validate() error {
 
 // ToInstance returns containerInstance directly from Container
 func (c *Container) ToInstance() (InstanceInterface, error) {
-	container, err := New(c)
+	container, err := c.New()
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func (c *container) Stop() error {
 
 // Create creates container and gets it's status
 func (c *Container) Create() error {
-	nc, err := New(c)
+	nc, err := c.New()
 	if err != nil {
 		return err
 	}

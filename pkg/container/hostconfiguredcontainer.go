@@ -69,7 +69,7 @@ func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error
 		return nil, fmt.Errorf("failed to validate container configuration: %w", err)
 	}
 
-	c, _ := New(&m.Container)
+	c, _ := m.Container.New()
 
 	hcc := &hostConfiguredContainer{
 		container:   c,

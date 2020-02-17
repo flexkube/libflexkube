@@ -11,7 +11,7 @@ import (
 
 // New()
 func TestNewEmptyConfiguration(t *testing.T) {
-	if _, err := New(&Container{}); err == nil {
+	if _, err := (&Container{}).New(); err == nil {
 		t.Errorf("Creating container with wrong configuration should fail")
 	}
 }
@@ -26,7 +26,7 @@ func TestNewGoodConfiguration(t *testing.T) {
 			Image: "nonexistent",
 		},
 	}
-	if _, err := New(c); err != nil {
+	if _, err := c.New(); err != nil {
 		t.Errorf("Creating container with good configuration should pass, got: %v", err)
 	}
 }
