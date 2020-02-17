@@ -313,12 +313,31 @@ func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
 func (m *hostConfiguredContainer) statMounts() (map[string]os.FileMode, error) {
 	paths := []string{}
 
-	// Loop over mount points
-	for _, m := range m.container.Config().Mounts {
+	// Loop over mount points.
+	for _, m := range m.dirMounts() {
 		paths = append(paths, path.Join(ConfigMountpoint, m.Source))
 	}
 
+	// Don't execute stat at all if there is no files to stat.
+	if len(paths) == 0 {
+		return map[string]os.FileMode{}, nil
+	}
+
 	return m.configContainer.Stat(paths)
+}
+
+// isDirMount checks if given path is intended to be a directory by checking for a
+// trailing slash.
+func (m *hostConfiguredContainer) dirMounts() []types.Mount {
+	r := []types.Mount{}
+
+	for _, m := range m.container.Config().Mounts {
+		if m.Source[len(m.Source)-1:] == "/" {
+			r = append(r, m)
+		}
+	}
+
+	return r
 }
 
 // createMissingMounts creates missing host directories, which are requested for container.
@@ -332,19 +351,20 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 		return fmt.Errorf("failed checking if mountpoints exist: %w", err)
 	}
 
-	// Collect missing mountpoints
+	// Collect missing mountpoints.
 	files := []*types.File{}
 
-	for _, m := range m.container.Config().Mounts {
+	for _, m := range m.dirMounts() {
 		p := path.Join(ConfigMountpoint, m.Source)
 		fm, exists := rc[p]
 
-		if exists && fm == os.ModeDir {
+		// If path exists as a file, it can't be mounted as a directory, so fail.
+		if exists && !fm.IsDir() {
 			return fmt.Errorf("mountpoint %s exists as file", m.Source)
 		}
 
 		// If mountpoint does not exist, and it's name has a trailing slash, we should create it as a directory.
-		if !exists && m.Source[len(m.Source)-1:] == "/" {
+		if !exists {
 			files = append(files, &types.File{
 				Path: fmt.Sprintf("%s/", p),
 				Mode: mountpointDirMode,
@@ -352,12 +372,13 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 		}
 	}
 
-	// Create missing mountpoints.
-	if err := m.configContainer.Copy(files); err != nil {
-		return fmt.Errorf("creating host mountpoints failed: %w", err)
+	// If there is no mountpoints to create, don't call the runtime again.
+	if len(files) == 0 {
+		return nil
 	}
 
-	return nil
+	// Create missing mountpoints.
+	return m.configContainer.Copy(files)
 }
 
 // Create creates new container on target host.
