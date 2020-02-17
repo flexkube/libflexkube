@@ -49,9 +49,9 @@ type InstanceInterface interface {
 type Container struct {
 	// Stores runtime configuration of the container.
 	Config types.ContainerConfig `json:"config"`
-	// Status of the container
+	// Status of the container.
 	Status types.ContainerStatus `json:"status"`
-	// Runtime stores configuration for various container runtimes
+	// Runtime stores configuration for various container runtimes.
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }
 
@@ -64,7 +64,7 @@ type RuntimeConfig struct {
 // container represents validated version of Container object, which contains all requires
 // information for instantiating (by calling Create()).
 type container struct {
-	// Contains common information between container and containerInstance
+	// Contains common information between container and containerInstance.
 	base
 	// Optional container status
 	status types.ContainerStatus
@@ -108,7 +108,7 @@ func New(c *Container) (Interface, error) {
 	return nc, nil
 }
 
-// Validate validates container configuration
+// Validate validates container configuration.
 func (c *Container) Validate() error {
 	if c.Config.Name == "" {
 		return fmt.Errorf("name must be set")
@@ -136,11 +136,11 @@ func (c *Container) ToInstance() (InstanceInterface, error) {
 	return container.FromStatus()
 }
 
-// selectRuntime returns container runtime configured for container
+// selectRuntime returns container runtime configured for container.
 //
-// It returns error if container runtime configuration is invalid
+// It returns error if container runtime configuration is invalid.
 func (c *container) selectRuntime() error {
-	// TODO once we add more runtimes, if there is more than one defined, return an error here
+	// TODO once we add more runtimes, if there is more than one defined, return an error here.
 	r, err := c.runtimeConfig.New()
 	if err != nil {
 		return fmt.Errorf("selecting container runtime failed: %w", err)
@@ -151,7 +151,7 @@ func (c *container) selectRuntime() error {
 	return nil
 }
 
-// Create creates container container from it's definition
+// Create creates container container from it's definition.
 func (c *container) Create() (InstanceInterface, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
@@ -169,7 +169,7 @@ func (c *container) Create() (InstanceInterface, error) {
 	}, nil
 }
 
-// FromStatus creates containerInstance from previously restored status
+// FromStatus creates containerInstance from stored status.
 func (c *container) FromStatus() (InstanceInterface, error) {
 	if c.status.ID == "" {
 		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
@@ -280,7 +280,7 @@ func (c *Container) UpdateStatus() error {
 	return ci.(*containerInstance).updateStatus(c)
 }
 
-// Start starts existing Container and updates it's status
+// Start starts existing Container and updates it's status.
 func (c *container) Start() error {
 	ci, err := c.FromStatus()
 	if err != nil {
@@ -294,7 +294,7 @@ func (c *container) Start() error {
 	return c.UpdateStatus()
 }
 
-// Stop stops existing Container and updates it's status
+// Stop stops existing Container and updates it's status.
 func (c *container) Stop() error {
 	ci, err := c.FromStatus()
 	if err != nil {
@@ -323,7 +323,7 @@ func (c *Container) Create() error {
 	return ci.(*containerInstance).updateStatus(c)
 }
 
-// Delete removes container and removes it's status
+// Delete removes container and removes it's status.
 func (c *container) Delete() error {
 	ci, err := c.FromStatus()
 	if err != nil {
