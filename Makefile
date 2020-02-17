@@ -48,10 +48,10 @@ TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count
 VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 
 .PHONY: all
-all: build test lint
+all: build build-test test lint
 
 .PHONY: all-cover
-all-cover: build test-cover lint
+all-cover: build build-test test-cover lint
 
 .PHONY: build
 build:
@@ -70,13 +70,17 @@ build-docker:
 build-e2e:
 	docker build -t $(E2E_IMAGE) e2e
 
+.PHONY: build-test
+build-test:
+	$(GOTEST) -run=nope -tags integration $(GO_PACKAGES)
+
 .PHONY: clean
 clean:
 	rm -r ./bin c.out coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/terraform.tfstate* 2>/dev/null || true
 	make vagrant-destroy || true
 
 .PHONY: test
-test:
+test: build-test
 	$(GOTEST) $(GO_PACKAGES)
 
 .PHONY: download
@@ -84,15 +88,15 @@ download:
 	$(GOMOD) download
 
 .PHONY: test-race
-test-race:
+test-race: build-test
 	$(GOTEST) -race $(GO_PACKAGES)
 
 .PHONY: test-integration
-test-integration:
+test-integration: build-test
 	$(GOTEST) -tags=integration $(GO_PACKAGES)
 
 .PHONY: test-cover
-test-cover:
+test-cover: build-test
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
 .PHONY: cover-browse
