@@ -245,8 +245,8 @@ func (d *docker) Copy(id string, files []*types.File) error {
 }
 
 // Stat check if given paths exist on the container.
-func (d *docker) Stat(id string, paths []string) (map[string]*os.FileMode, error) {
-	result := map[string]*os.FileMode{}
+func (d *docker) Stat(id string, paths []string) (map[string]os.FileMode, error) {
+	result := map[string]os.FileMode{}
 
 	for _, p := range paths {
 		s, err := d.cli.ContainerStatPath(d.ctx, id, p)
@@ -255,7 +255,7 @@ func (d *docker) Stat(id string, paths []string) (map[string]*os.FileMode, error
 		}
 
 		if s.Name != "" {
-			result[p] = &s.Mode
+			result[p] = s.Mode
 		}
 	}
 

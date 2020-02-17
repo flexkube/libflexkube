@@ -36,7 +36,7 @@ type InstanceInterface interface {
 	Status() (types.ContainerStatus, error)
 	Read(srcPath []string) ([]*types.File, error)
 	Copy(files []*types.File) error
-	Stat(paths []string) (map[string]*os.FileMode, error)
+	Stat(paths []string) (map[string]os.FileMode, error)
 	Start() error
 	Stop() error
 	Delete() error
@@ -250,7 +250,7 @@ func (c *containerInstance) Copy(files []*types.File) error {
 
 // Stat checks if given path exists on the container and if yes, returns information whether
 // it is file, or directory etc.
-func (c *containerInstance) Stat(paths []string) (map[string]*os.FileMode, error) {
+func (c *containerInstance) Stat(paths []string) (map[string]os.FileMode, error) {
 	return c.runtime.Stat(c.status.ID, paths)
 }
 
@@ -360,7 +360,7 @@ func (c *Container) Copy(files []*types.File) error {
 }
 
 // Stat checks if files exist in the container. It returns map of files mode for each requested file.
-func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
+func (c *Container) Stat(paths []string) (map[string]os.FileMode, error) {
 	ci, err := c.ToInstance()
 	if err != nil {
 		return nil, err

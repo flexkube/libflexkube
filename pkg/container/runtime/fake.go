@@ -16,7 +16,7 @@ type Fake struct {
 	StopF   func(id string) error
 	CopyF   func(id string, files []*types.File) error
 	ReadF   func(id string, srcPath []string) ([]*types.File, error)
-	StatF   func(id string, paths []string) (map[string]*os.FileMode, error)
+	StatF   func(id string, paths []string) (map[string]os.FileMode, error)
 }
 
 // Create mocks runtime Create().
@@ -55,7 +55,7 @@ func (f Fake) Read(id string, srcPath []string) ([]*types.File, error) {
 }
 
 // Stat mocks runtime Stat().
-func (f Fake) Stat(id string, paths []string) (map[string]*os.FileMode, error) {
+func (f Fake) Stat(id string, paths []string) (map[string]os.FileMode, error) {
 	return f.StatF(id, paths)
 }
 

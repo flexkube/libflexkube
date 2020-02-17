@@ -31,7 +31,7 @@ type Runtime interface {
 
 	// Stat returns os.FileMode for requested files from inside the container
 	// TODO this should be improved
-	Stat(ID string, paths []string) (map[string]*os.FileMode, error)
+	Stat(ID string, paths []string) (map[string]os.FileMode, error)
 }
 
 // Config defines interface for runtime configuration. Since some feature are generic to runtime,

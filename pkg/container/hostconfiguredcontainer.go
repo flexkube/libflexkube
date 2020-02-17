@@ -310,7 +310,7 @@ func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
 }
 
 // statMounts fetches information about mounts on the host.
-func (m *hostConfiguredContainer) statMounts() (map[string]*os.FileMode, error) {
+func (m *hostConfiguredContainer) statMounts() (map[string]os.FileMode, error) {
 	paths := []string{}
 
 	// Loop over mount points
@@ -339,7 +339,7 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 		p := path.Join(ConfigMountpoint, m.Source)
 		fm, exists := rc[p]
 
-		if exists && *fm == os.ModeDir {
+		if exists && fm == os.ModeDir {
 			return fmt.Errorf("mountpoint %s exists as file", m.Source)
 		}
 
