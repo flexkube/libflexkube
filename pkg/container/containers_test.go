@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
@@ -284,15 +285,19 @@ func TestDiffContainerNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
@@ -312,16 +317,20 @@ func TestDiffContainer(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{
-						Name: "foo",
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Name: "foo",
+						},
 					},
 				},
 			},
@@ -353,16 +362,20 @@ func TestEnsureRunning(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
-					Status: types.ContainerStatus{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+					status: types.ContainerStatus{
 						ID:     "existing",
 						Status: "running",
 					},
@@ -381,9 +394,11 @@ func TestEnsureExists(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
-					Status: types.ContainerStatus{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+					status: types.ContainerStatus{
 						ID: "existing",
 					},
 				},
@@ -425,15 +440,19 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
@@ -465,6 +484,11 @@ func TestHasUpdatesHost(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -472,6 +496,11 @@ func TestHasUpdatesHost(t *testing.T) {
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
 				host: host.Host{},
 			},
 		},
@@ -491,13 +520,24 @@ func TestHasUpdatesConfig(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
 				configFiles: map[string]string{
 					"foo": "foo",
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
 		},
 	}
 
@@ -515,16 +555,20 @@ func TestHasUpdatesContainer(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
 			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{
-						Name: "foo",
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Name: "foo",
+						},
 					},
 				},
 			},
@@ -544,10 +588,22 @@ func TestHasUpdatesContainer(t *testing.T) {
 func TestHasUpdatesNoUpdates(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{},
+			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			"foo": &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
 		},
 	}
 
@@ -558,5 +614,112 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 
 	if u {
 		t.Fatalf("Container with no changes should indicate no changes")
+	}
+}
+
+// ensureConfigured()
+func TestEnsureConfiguredNoUpdates(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			"foo": &hostConfiguredContainer{
+				configFiles: map[string]string{},
+			},
+		},
+		currentState: containersState{
+			"foo": &hostConfiguredContainer{
+				configFiles: map[string]string{},
+			},
+		},
+	}
+
+	if err := c.ensureConfigured("foo"); err != nil {
+		t.Fatalf("Ensure configured should succeed, got: %v", err)
+	}
+}
+
+func TestEnsureConfigured(t *testing.T) {
+	called := false
+
+	f := "foo"
+	cf := map[string]string{
+		f: "bar",
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: cf,
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+								CopyF: func(id string, files []*types.File) error {
+									if id != f {
+										t.Errorf("should copy to configuration container '%s', not to '%s'", f, id)
+									}
+
+									if len(files) != len(cf) {
+										t.Fatalf("should copy just one file")
+									}
+
+									if files[0].Content != "bar" {
+										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
+									}
+
+									called = true
+
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: map[string]string{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureConfigured(f); err != nil {
+		t.Fatalf("Ensure configured should succeed, got: %v", err)
+	}
+
+	if !called {
+		t.Fatalf("should call Copy on container")
 	}
 }

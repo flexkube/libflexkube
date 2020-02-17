@@ -183,7 +183,12 @@ func (c *containers) ensureConfigured(n string) error {
 		r.configFiles = d.configFiles
 	}()
 
-	return d.Configure(filesToUpdate(*d, r))
+	f := filesToUpdate(*d, r)
+	if len(f) == 0 {
+		return nil
+	}
+
+	return d.Configure(f)
 }
 
 // ensureRunning makes sure that given container is running.
@@ -192,7 +197,7 @@ func ensureRunning(c *hostConfiguredContainer) error {
 		return fmt.Errorf("can't start non-existing container")
 	}
 
-	if c.container.IsRunning() {
+	if c.container.Status().Running() {
 		return nil
 	}
 
@@ -201,7 +206,7 @@ func ensureRunning(c *hostConfiguredContainer) error {
 
 func (c *containers) ensureExists(n string) error {
 	r := c.currentState[n]
-	if r != nil && r.container.Exists() {
+	if r != nil && r.container.Status().Exists() {
 		return nil
 	}
 
@@ -221,7 +226,7 @@ func (c *containers) ensureExists(n string) error {
 		}
 
 		// After new container is created, add it to current state, so it can be returned to the user.
-		r.container.Status = d.container.Status
+		*r.container.Status() = *d.container.Status()
 	}()
 
 	return c.desiredState.CreateAndStart(n)
@@ -298,7 +303,7 @@ func (c *containers) diffContainer(n string) (string, error) {
 		return "", fmt.Errorf("can't diff container: %w", err)
 	}
 
-	return cmp.Diff(c.currentState[n].container.Config, c.desiredState[n].container.Config), nil
+	return cmp.Diff(c.currentState[n].container.Config(), c.desiredState[n].container.Config()), nil
 }
 
 // ensureContainer makes sure container configuration is up to date.
@@ -345,7 +350,7 @@ func (c *containers) hasUpdates(n string) (bool, error) {
 
 func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer) (hostConfiguredContainer, error) {
 	// Container is gone, remove it from current state, so it will be scheduled for recreation.
-	if !r.container.Exists() {
+	if !r.container.Status().Exists() {
 		delete(c.currentState, n)
 
 		return r, nil

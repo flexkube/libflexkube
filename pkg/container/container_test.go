@@ -119,43 +119,6 @@ func TestFromStatusNoID(t *testing.T) {
 	}
 }
 
-// Exists()
-func TestExistsMissing(t *testing.T) {
-	c := &Container{
-		Status: types.ContainerStatus{},
-	}
-
-	if c.Exists() {
-		t.Fatalf("Container without status shouldn't exist")
-	}
-}
-
-func TestExists(t *testing.T) {
-	c := &Container{
-		Status: types.ContainerStatus{
-			ID: "existing",
-		},
-	}
-
-	if !c.Exists() {
-		t.Fatalf("Container with ID should exist")
-	}
-}
-
-// IsRunning()
-func TestIsRunning(t *testing.T) {
-	c := &Container{
-		Status: types.ContainerStatus{
-			ID:     "existing",
-			Status: "running",
-		},
-	}
-
-	if !c.IsRunning() {
-		t.Fatalf("Container should be running")
-	}
-}
-
 // Status()
 func TestStatus(t *testing.T) {
 	c := &containerInstance{

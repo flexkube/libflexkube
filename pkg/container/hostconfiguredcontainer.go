@@ -56,10 +56,10 @@ type HostConfiguredContainer struct {
 // hostConfiguredContainer is a validated version of HostConfiguredContainer, which allows user to perform
 // actions on it
 type hostConfiguredContainer struct {
-	container       Container
+	container       Interface
 	host            host.Host
 	configFiles     map[string]string
-	configContainer *Container
+	configContainer InstanceInterface
 	hooks           *Hooks
 }
 
@@ -69,8 +69,10 @@ func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error
 		return nil, fmt.Errorf("failed to validate container configuration: %w", err)
 	}
 
+	c, _ := New(&m.Container)
+
 	hcc := &hostConfiguredContainer{
-		container:   m.Container,
+		container:   c,
 		host:        m.Host,
 		configFiles: m.ConfigFiles,
 		hooks:       m.Hooks,
@@ -122,17 +124,37 @@ func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 // withForwardedRuntime takes action function as an argument and before executing it, it configures the runtime
 // address to be forwarded using SSH. After the action is finished, it restores original address of the runtime.
 func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) error {
+	c := m.container.RuntimeConfig()
+
 	// Store originally configured address so we can restore it later
-	a := m.container.Runtime.Docker.GetAddress()
+	a := c.GetAddress()
 
 	s, err := m.connectAndForward(a)
 	if err != nil {
 		return fmt.Errorf("forwarding host failed: %w", err)
 	}
 
-	m.container.Runtime.Docker.SetAddress(s)
+	// Override configuration with forwarded address and create Runtime from it.
+	c.SetAddress(s)
 
-	defer m.container.Runtime.Docker.SetAddress(a)
+	r, err := c.New()
+	if err != nil {
+		return err
+	}
+
+	// Use forwarded Runtime for managing container.
+	m.container.SetRuntime(r)
+
+	// Restore original address in the runtime configuration (as nested forwarding won't work).
+	c.SetAddress(a)
+
+	ro, err := c.New()
+	if err != nil {
+		return err
+	}
+
+	// After we're done calling action, restore original runtime to the container.
+	defer m.container.SetRuntime(ro)
 
 	return action()
 }
@@ -140,27 +162,30 @@ func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) erro
 // createConfigurationContainer creates container used for reading and updating configuration and
 // stores saves it reference.
 func (m *hostConfiguredContainer) createConfigurationContainer() error {
-	c := &Container{
-		Config: types.ContainerConfig{
-			Name:  fmt.Sprintf("%s-config", m.container.Config.Name),
-			Image: m.container.Config.Image,
-			Mounts: []types.Mount{
-				{
-					Source: "/",
-					Target: ConfigMountpoint,
+	cc := &container{
+		base: base{
+			config: types.ContainerConfig{
+				Name:  fmt.Sprintf("%s-config", m.container.Config().Name),
+				Image: m.container.Config().Image,
+				Mounts: []types.Mount{
+					{
+						Source: "/",
+						Target: ConfigMountpoint,
+					},
 				},
 			},
+			runtime: m.container.Runtime(),
 		},
-		Runtime: m.container.Runtime,
 	}
 
 	// Docker container does not need to run (be started) to be able to copy files from it
 	// TODO this might not be the case for other container runtimes
-	if err := c.Create(); err != nil {
+	ci, err := cc.Create()
+	if err != nil {
 		return fmt.Errorf("failed creating config container while checking configuration: %w", err)
 	}
 
-	m.configContainer = c
+	m.configContainer = ci
 
 	return nil
 }
@@ -168,7 +193,12 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 // removeConfigurationContainer removes configuration container created with createConfigurationContainer.
 // If container does not exist, nil is immediately returned, which makes this function idempotent.
 func (m *hostConfiguredContainer) removeConfigurationContainer() error {
-	if !m.configContainer.Exists() {
+	s, err := m.configContainer.Status()
+	if err != nil {
+		return fmt.Errorf("failed checking if container exists: %w", err)
+	}
+
+	if s.ID == "" {
 		return nil
 	}
 
@@ -284,7 +314,7 @@ func (m *hostConfiguredContainer) statMounts() (map[string]*os.FileMode, error) 
 	paths := []string{}
 
 	// Loop over mount points
-	for _, m := range m.container.Config.Mounts {
+	for _, m := range m.container.Config().Mounts {
 		paths = append(paths, path.Join(ConfigMountpoint, m.Source))
 	}
 
@@ -305,7 +335,7 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 	// Collect missing mountpoints
 	files := []*types.File{}
 
-	for _, m := range m.container.Config.Mounts {
+	for _, m := range m.container.Config().Mounts {
 		p := path.Join(ConfigMountpoint, m.Source)
 		fm, exists := rc[p]
 
@@ -338,7 +368,19 @@ func (m *hostConfiguredContainer) Create() error {
 				return fmt.Errorf("failed creating missing mountpoints: %w", err)
 			}
 
-			return m.container.Create()
+			i, err := m.container.Create()
+			if err != nil {
+				return fmt.Errorf("failed creating container: %w", err)
+			}
+
+			s, err := i.Status()
+			if err != nil {
+				return fmt.Errorf("failed getting container status: %w", err)
+			}
+
+			*m.container.Status() = s
+
+			return nil
 		})
 	})
 }
@@ -346,7 +388,7 @@ func (m *hostConfiguredContainer) Create() error {
 // Status updates container status.
 func (m *hostConfiguredContainer) Status() error {
 	// If container does not exist, skip checking the status of it, as it won't work
-	if !m.container.Exists() {
+	if !m.container.Status().Exists() {
 		return nil
 	}
 

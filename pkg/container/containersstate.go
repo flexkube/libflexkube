@@ -2,6 +2,8 @@ package container
 
 import (
 	"fmt"
+
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 )
 
 // ContainersStateInterface exports constainersState capabilities.
@@ -96,7 +98,13 @@ func (s containersState) Export() ContainersState {
 
 	for i, m := range s {
 		cs[i] = &HostConfiguredContainer{
-			Container:   m.container,
+			Container: Container{
+				Config: m.container.Config(),
+				Status: *m.container.Status(),
+				Runtime: RuntimeConfig{
+					Docker: m.container.RuntimeConfig().(*docker.Config),
+				},
+			},
 			Host:        m.host,
 			ConfigFiles: m.configFiles,
 			Hooks:       m.hooks,
