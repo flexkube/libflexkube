@@ -124,16 +124,6 @@ func (c *Container) Validate() error {
 	return nil
 }
 
-// ToInstance returns containerInstance directly from Container
-func (c *Container) ToInstance() (InstanceInterface, error) {
-	container, err := c.New()
-	if err != nil {
-		return nil, err
-	}
-
-	return container.FromStatus()
-}
-
 // selectRuntime returns container runtime configured for container.
 //
 // It returns error if container runtime configuration is invalid.
@@ -216,67 +206,6 @@ func (c *container) Runtime() runtime.Runtime {
 	return c.runtime
 }
 
-// ReadState reads state of the container from container runtime and returns it to the user
-func (c *containerInstance) Status() (types.ContainerStatus, error) {
-	return c.runtime.Status(c.status.ID)
-}
-
-// UpdateStatus updates status of exported Container struct. This function is primarily used
-// to reduce the boilerplate in helper functions, which allow to perform operations directly on
-// Container struct.
-func (c *containerInstance) updateStatus(container *Container) error {
-	s, err := c.Status()
-	if err != nil {
-		return err
-	}
-
-	container.Status = s
-
-	return nil
-}
-
-// Read reads given path from the container and returns reader with TAR format with file content
-func (c *containerInstance) Read(srcPath []string) ([]*types.File, error) {
-	return c.runtime.Read(c.status.ID, srcPath)
-}
-
-// Copy takes output path and TAR reader as arguments and extracts this TAR archive into container
-func (c *containerInstance) Copy(files []*types.File) error {
-	return c.runtime.Copy(c.status.ID, files)
-}
-
-// Stat checks if given path exists on the container and if yes, returns information whether
-// it is file, or directory etc.
-func (c *containerInstance) Stat(paths []string) (map[string]os.FileMode, error) {
-	return c.runtime.Stat(c.status.ID, paths)
-}
-
-// Start starts the container container
-func (c *containerInstance) Start() error {
-	return c.runtime.Start(c.status.ID)
-}
-
-// Stop stops the container container
-func (c *containerInstance) Stop() error {
-	return c.runtime.Stop(c.status.ID)
-}
-
-// Delete removes container container
-func (c *containerInstance) Delete() error {
-	return c.runtime.Delete(c.status.ID)
-}
-
-// UpdateStatus reads container existing status and updates it by communicating with container daemon
-// This is a helper function, which simplifies calling containerInstance.Status() from Container.
-func (c *Container) UpdateStatus() error {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return err
-	}
-
-	return ci.(*containerInstance).updateStatus(c)
-}
-
 // Start starts existing Container and updates it's status.
 func (c *container) Start() error {
 	ci, err := c.FromStatus()
@@ -305,21 +234,6 @@ func (c *container) Stop() error {
 	return c.UpdateStatus()
 }
 
-// Create creates container and gets it's status
-func (c *Container) Create() error {
-	nc, err := c.New()
-	if err != nil {
-		return err
-	}
-
-	ci, err := nc.Create()
-	if err != nil {
-		return err
-	}
-
-	return ci.(*containerInstance).updateStatus(c)
-}
-
 // Delete removes container and removes it's status.
 func (c *container) Delete() error {
 	ci, err := c.FromStatus()
@@ -336,32 +250,38 @@ func (c *container) Delete() error {
 	return nil
 }
 
-// Read takes file path as an argument and reads this file from the container
-func (c *Container) Read(srcPath []string) ([]*types.File, error) {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	return ci.Read(srcPath)
+// ReadState reads state of the container from container runtime and returns it to the user.
+func (c *containerInstance) Status() (types.ContainerStatus, error) {
+	return c.runtime.Status(c.status.ID)
 }
 
-// Copy creates a file in desired path in the container
-func (c *Container) Copy(files []*types.File) error {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return err
-	}
-
-	return ci.Copy(files)
+// Read reads given path from the container and returns reader with TAR format with file content.
+func (c *containerInstance) Read(srcPath []string) ([]*types.File, error) {
+	return c.runtime.Read(c.status.ID, srcPath)
 }
 
-// Stat checks if files exist in the container. It returns map of files mode for each requested file.
-func (c *Container) Stat(paths []string) (map[string]os.FileMode, error) {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return nil, err
-	}
+// Copy takes output path and TAR reader as arguments and extracts this TAR archive into container.
+func (c *containerInstance) Copy(files []*types.File) error {
+	return c.runtime.Copy(c.status.ID, files)
+}
 
-	return ci.Stat(paths)
+// Stat checks if given path exists on the container and if yes, returns information whether
+// it is file, or directory etc.
+func (c *containerInstance) Stat(paths []string) (map[string]os.FileMode, error) {
+	return c.runtime.Stat(c.status.ID, paths)
+}
+
+// Start starts the container.
+func (c *containerInstance) Start() error {
+	return c.runtime.Start(c.status.ID)
+}
+
+// Stop stops the container.
+func (c *containerInstance) Stop() error {
+	return c.runtime.Stop(c.status.ID)
+}
+
+// Delete removes the container.
+func (c *containerInstance) Delete() error {
+	return c.runtime.Delete(c.status.ID)
 }
