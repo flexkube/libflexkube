@@ -169,7 +169,7 @@ func (c *container) Create() (InstanceInterface, error) {
 
 // FromStatus creates containerInstance from stored status.
 func (c *container) FromStatus() (InstanceInterface, error) {
-	if c.status.ID == "" {
+	if !c.status.Exists() {
 		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
 	}
 
