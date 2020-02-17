@@ -121,9 +121,9 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 						},
 					},
 				},
-			},
-			status: types.ContainerStatus{
-				ID: "foo",
+				status: types.ContainerStatus{
+					ID: "foo",
+				},
 			},
 		},
 	}
@@ -159,9 +159,6 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
-			status: types.ContainerStatus{
-				ID: i,
-			},
 			base: base{
 				runtime: &runtime.Fake{
 					StatusF: func(id string) (types.ContainerStatus, error) {
@@ -178,6 +175,9 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 
 						return nil
 					},
+				},
+				status: types.ContainerStatus{
+					ID: i,
 				},
 			},
 		},

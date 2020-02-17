@@ -374,10 +374,10 @@ func TestEnsureRunning(t *testing.T) {
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
-					},
-					status: types.ContainerStatus{
-						ID:     "existing",
-						Status: "running",
+						status: types.ContainerStatus{
+							ID:     "existing",
+							Status: "running",
+						},
 					},
 				},
 			},
@@ -397,9 +397,9 @@ func TestEnsureExists(t *testing.T) {
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
-					},
-					status: types.ContainerStatus{
-						ID: "existing",
+						status: types.ContainerStatus{
+							ID: "existing",
+						},
 					},
 				},
 			},

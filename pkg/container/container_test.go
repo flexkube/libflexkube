@@ -82,10 +82,10 @@ func TestValidateRequireImage(t *testing.T) {
 // selectRuntime()
 func TestSelectDockerRuntime(t *testing.T) {
 	c := &container{
-		base{
+		base: base{
 			runtimeConfig: &docker.Config{},
+			status:        types.ContainerStatus{},
 		},
-		types.ContainerStatus{},
 	}
 	if err := c.selectRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
@@ -99,9 +99,10 @@ func TestSelectDockerRuntime(t *testing.T) {
 // FromStatus()
 func TestFromStatusValid(t *testing.T) {
 	c := &container{
-		base{},
-		types.ContainerStatus{
-			ID: "nonexistent",
+		base: base{
+			status: types.ContainerStatus{
+				ID: "nonexistent",
+			},
 		},
 	}
 	if _, err := c.FromStatus(); err != nil {
@@ -111,8 +112,9 @@ func TestFromStatusValid(t *testing.T) {
 
 func TestFromStatusNoID(t *testing.T) {
 	c := &container{
-		base{},
-		types.ContainerStatus{},
+		base: base{
+			status: types.ContainerStatus{},
+		},
 	}
 	if _, err := c.FromStatus(); err == nil {
 		t.Fatalf("Container instance should not be created from container with no container ID")

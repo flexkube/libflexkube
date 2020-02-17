@@ -66,16 +66,12 @@ type RuntimeConfig struct {
 type container struct {
 	// Contains common information between container and containerInstance.
 	base
-	// Optional container status
-	status types.ContainerStatus
 }
 
 // container represents created container. It guarantees that container status is initialised.
 type containerInstance struct {
 	// Contains common information between container and containerInstance
 	base
-	// Status of the container
-	status types.ContainerStatus
 }
 
 // base contains basic information about created and not created container.
@@ -85,6 +81,8 @@ type base struct {
 	// Container runtime which will be used to manage the container
 	runtime       runtime.Runtime
 	runtimeConfig runtime.Config
+
+	status types.ContainerStatus
 }
 
 // New creates new instance of container from Container and validates it's configuration
@@ -98,8 +96,8 @@ func New(c *Container) (Interface, error) {
 		base{
 			config:        c.Config,
 			runtimeConfig: c.Runtime.Docker,
+			status:        c.Status,
 		},
-		c.Status,
 	}
 	if err := nc.selectRuntime(); err != nil {
 		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
@@ -162,9 +160,9 @@ func (c *container) Create() (InstanceInterface, error) {
 		base{
 			config:  c.config,
 			runtime: c.runtime,
-		},
-		types.ContainerStatus{
-			ID: id,
+			status: types.ContainerStatus{
+				ID: id,
+			},
 		},
 	}, nil
 }
@@ -176,8 +174,7 @@ func (c *container) FromStatus() (InstanceInterface, error) {
 	}
 
 	return &containerInstance{
-		base:   c.base,
-		status: c.status,
+		base: c.base,
 	}, nil
 }
 
