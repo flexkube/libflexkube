@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -56,98 +57,113 @@ type kubeAPIServer struct {
 	etcdClientKey            string
 }
 
-// ToHostConfiguredContainer takes configured values and converts them to generic container configuration
-func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	configFiles := make(map[string]string)
-	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
-	configFiles["/etc/kubernetes/kube-apiserver/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver.crt"] = k.apiServerCertificate
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver.key"] = k.apiServerKey
-	configFiles["/etc/kubernetes/kube-apiserver/pki/service-account.crt"] = k.serviceAccountPublicKey
-	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
-	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.crt"] = k.frontProxyCertificate
-	configFiles["/etc/kubernetes/kube-apiserver/pki/front-proxy-client.key"] = k.frontProxyKey
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.crt"] = k.kubeletClientCertificate
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-kubelet-client.key"] = k.kubeletClientKey
-	configFiles["/etc/kubernetes/kube-apiserver/pki/etcd/ca.crt"] = k.etcdCACertificate
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.crt"] = k.etcdClientCertificate
-	configFiles["/etc/kubernetes/kube-apiserver/pki/apiserver-etcd-client.key"] = k.etcdClientKey
+const (
+	hostConfigPath      = "/etc/kubernetes/kube-apiserver/pki"
+	containerConfigPath = "/etc/kubernetes/pki"
+	containerName       = "kube-apiserver"
+)
 
-	c := container.Container{
-		// TODO this is weird. This sets docker as default runtime config
-		Runtime: container.RuntimeConfig{
-			Docker: &docker.Config{},
-		},
-		Config: containertypes.ContainerConfig{
-			Name:  "kube-apiserver",
-			Image: k.common.GetImage(),
-			Mounts: []containertypes.Mount{
-				{
-					Source: "/etc/kubernetes/kube-apiserver/pki/",
-					Target: "/etc/kubernetes/pki",
-				},
-			},
-			Ports: []containertypes.PortMap{
-				{
-					IP:       k.bindAddress,
-					Protocol: "tcp",
-					Port:     k.securePort,
-				},
-			},
-			Args: []string{
-				"kube-apiserver",
-				fmt.Sprintf("--etcd-servers=%s", strings.Join(k.etcdServers, ",")),
-				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
-				"--tls-cert-file=/etc/kubernetes/pki/apiserver.crt",
-				"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
-				// Required for TLS bootstrapping
-				"--enable-bootstrap-token-auth=true",
-				// Allow user to configure service CIDR, so it does not conflict with host nor pods CIDRs.
-				fmt.Sprintf("--service-cluster-ip-range=%s", k.serviceCIDR),
-				// To disable access without authentication
-				"--insecure-port=0",
-				// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
-				"--allow-privileged=true",
-				// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
-				"--authorization-mode=RBAC,Node",
-				// Required to validate service account tokens created by controller manager
-				"--service-account-key-file=/etc/kubernetes/pki/service-account.crt",
-				// IP address which will be added to the kubernetes.default service endpoint
-				fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
-				// For static api-server use non-standard port, so haproxy can use standard one
-				fmt.Sprintf("--secure-port=%d", k.securePort),
-				// Be a bit more verbose.
-				//"--v=2",
-				// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
-				"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
-				// Required for enabling aggregation layer.
-				"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
-				"--proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key",
-				"--proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt",
-				"--requestheader-allowed-names=",
-				"--requestheader-extra-headers-prefix=X-Remote-Extra-",
-				"--requestheader-group-headers=X-Remote-Group",
-				"--requestheader-username-headers=X-Remote-User",
-				// Required for communicating with kubelet.
-				"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
-				"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
-				"--kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt",
-				// To secure communication to etcd servers.
-				"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
-				"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
-				"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
-				// Enable additional admission plugins:
-				// - NodeRestriction for extra protection against rogue cluster nodes.
-				// - PodSecurityPolicy for PSP support.
-				"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
-			},
-		},
+// configFiles returns map of file for kube-apiserver.
+func (k *kubeAPIServer) configFiles() map[string]string {
+	m := map[string]string{
+		"ca.crt":                       string(k.common.KubernetesCACertificate),
+		"apiserver.crt":                k.apiServerCertificate,
+		"apiserver.key":                k.apiServerKey,
+		"service-account.crt":          k.serviceAccountPublicKey,
+		"front-proxy-ca.crt":           string(k.common.FrontProxyCACertificate),
+		"front-proxy-client.crt":       k.frontProxyCertificate,
+		"front-proxy-client.key":       k.frontProxyKey,
+		"apiserver-kubelet-client.crt": k.kubeletClientCertificate,
+		"apiserver-kubelet-client.key": k.kubeletClientKey,
+		"etcd/ca.crt":                  k.etcdCACertificate,
+		"apiserver-etcd-client.crt":    k.etcdClientCertificate,
+		"apiserver-etcd-client.key":    k.etcdClientKey,
 	}
 
+	// Append base path to map.
+	for k, v := range m {
+		m[path.Join(hostConfigPath, k)] = v
+		delete(m, v)
+	}
+
+	return m
+}
+
+// ToHostConfiguredContainer takes configured values and converts them to generic container configuration
+func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	return &container.HostConfiguredContainer{
 		Host:        k.host,
-		ConfigFiles: configFiles,
-		Container:   c,
+		ConfigFiles: k.configFiles(),
+		Container: container.Container{
+			// TODO this is weird. This sets docker as default runtime config
+			Runtime: container.RuntimeConfig{
+				Docker: &docker.Config{},
+			},
+			Config: containertypes.ContainerConfig{
+				Name:  containerName,
+				Image: k.common.GetImage(),
+				Mounts: []containertypes.Mount{
+					{
+						Source: hostConfigPath,
+						Target: containerConfigPath,
+					},
+				},
+				Ports: []containertypes.PortMap{
+					{
+						IP:       k.bindAddress,
+						Protocol: "tcp",
+						Port:     k.securePort,
+					},
+				},
+				Args: []string{
+					"kube-apiserver",
+					fmt.Sprintf("--etcd-servers=%s", strings.Join(k.etcdServers, ",")),
+					"--client-ca-file=/etc/kubernetes/pki/ca.crt",
+					"--tls-cert-file=/etc/kubernetes/pki/apiserver.crt",
+					"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
+					// Required for TLS bootstrapping
+					"--enable-bootstrap-token-auth=true",
+					// Allow user to configure service CIDR, so it does not conflict with host nor pods CIDRs.
+					fmt.Sprintf("--service-cluster-ip-range=%s", k.serviceCIDR),
+					// To disable access without authentication
+					"--insecure-port=0",
+					// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
+					"--allow-privileged=true",
+					// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
+					"--authorization-mode=RBAC,Node",
+					// Required to validate service account tokens created by controller manager
+					"--service-account-key-file=/etc/kubernetes/pki/service-account.crt",
+					// IP address which will be added to the kubernetes.default service endpoint
+					fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
+					// For static api-server use non-standard port, so haproxy can use standard one
+					fmt.Sprintf("--secure-port=%d", k.securePort),
+					// Be a bit more verbose.
+					//"--v=2",
+					// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
+					"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
+					// Required for enabling aggregation layer.
+					"--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt",
+					"--proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key",
+					"--proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt",
+					"--requestheader-allowed-names=",
+					"--requestheader-extra-headers-prefix=X-Remote-Extra-",
+					"--requestheader-group-headers=X-Remote-Group",
+					"--requestheader-username-headers=X-Remote-User",
+					// Required for communicating with kubelet.
+					"--kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt",
+					"--kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key",
+					"--kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt",
+					// To secure communication to etcd servers.
+					"--etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt",
+					"--etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt",
+					"--etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key",
+					// Enable additional admission plugins:
+					// - NodeRestriction for extra protection against rogue cluster nodes.
+					// - PodSecurityPolicy for PSP support.
+					"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
+				},
+			},
+		},
 	}, nil
 }
 
