@@ -4,8 +4,10 @@ package apiloadbalancer
 // ^ This comment is below the package keyword, to prevent golint from complaining
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -34,42 +36,75 @@ type apiLoadBalancer struct {
 	bindPort           int
 }
 
+func (a apiLoadBalancer) config() (string, error) {
+	c := `
+defaults
+  # Do TLS passthrough
+  mode tcp
+  # Required values for both frontend and backend
+  timeout connect 5000ms
+  timeout client 50000ms
+  timeout server 50000ms
+
+frontend kube-apiserver
+  # TODO make it configurable
+  bind 0.0.0.0:{{ .BindPort }}
+  default_backend kube-apiserver
+
+backend kube-apiserver
+  {{- range $i, $s := .Servers }}
+  server {{ $i }} {{ $s }}:8443 check
+  {{- end }}
+
+frontend stats
+  bind 0.0.0.0:{{ .MetricsBindPort }}
+  mode http
+  option http-use-htx
+  http-request use-service prometheus-exporter if { path /metrics }
+  stats enable
+  stats uri /stats
+  stats refresh 10s
+`
+
+	t, err := template.New("haproxy.cfg").Parse(c)
+	if err != nil {
+		return "", fmt.Errorf("template parsing failed: %w", err)
+	}
+
+	var buf bytes.Buffer
+
+	d := struct {
+		BindPort        int
+		Servers         []string
+		MetricsBindPort int
+	}{
+		a.bindPort,
+		a.servers,
+		a.metricsBindPort,
+	}
+
+	if err := t.Execute(&buf, d); err != nil {
+		return "", fmt.Errorf("executing template failed: %w", err)
+	}
+
+	return strings.TrimSpace(buf.String()), nil
+}
+
+const (
+	hostConfigPath      = "/etc/haproxy/haproxy.cfg"
+	containerConfigPath = "/usr/local/etc/haproxy/haproxy.cfg"
+	containerName       = "api-loadbalancer-haproxy"
+)
+
 // ToHostConfiguredContainer takes configuration stored in the struct and converts it to HostConfiguredContainer
 // which can be then added to Containers struct and executed
 //
 // TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
 func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	servers := []string{}
-	for i, s := range a.servers {
-		servers = append(servers, fmt.Sprintf("server %d %s:8443 check", i, s))
+	config, err := a.config()
+	if err != nil {
+		return nil, fmt.Errorf("failed generating config: %w", err)
 	}
-
-	configFiles := make(map[string]string)
-	configFiles["/etc/haproxy/haproxy.cfg"] = fmt.Sprintf(`defaults
-	# Do TLS passthrough
-	mode tcp
-	# Required values for both frontend and backend
-	timeout connect 5000ms
-	timeout client 50000ms
-	timeout server 50000ms
-
-frontend kube-apiserver
-	# TODO make it configurable
-	bind 0.0.0.0:%d
-	default_backend kube-apiserver
-
-backend kube-apiserver
-	%s
-
-frontend stats
-	bind 0.0.0.0:%d
-	mode http
-	option http-use-htx
-	http-request use-service prometheus-exporter if { path /metrics }
-	stats enable
-	stats uri /stats
-	stats refresh 10s
-`, a.bindPort, strings.Join(servers, "\n	"), a.metricsBindPort)
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -78,7 +113,7 @@ frontend stats
 		},
 		Config: types.ContainerConfig{
 			// TODO make it configurable? And don't force user to use HAProxy
-			Name:  "api-loadbalancer-haproxy",
+			Name:  containerName,
 			Image: a.image,
 			Ports: []types.PortMap{
 				{
@@ -93,17 +128,19 @@ frontend stats
 			},
 			Mounts: []types.Mount{
 				{
-					Source: "/etc/haproxy/haproxy.cfg",
-					Target: "/usr/local/etc/haproxy/haproxy.cfg",
+					Source: hostConfigPath,
+					Target: containerConfigPath,
 				},
 			},
 		},
 	}
 
 	return &container.HostConfiguredContainer{
-		Host:        a.host,
-		ConfigFiles: configFiles,
-		Container:   c,
+		Host: a.host,
+		ConfigFiles: map[string]string{
+			hostConfigPath: config,
+		},
+		Container: c,
 	}, nil
 }
 
