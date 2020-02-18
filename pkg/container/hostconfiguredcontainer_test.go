@@ -502,3 +502,254 @@ func TestDirMounts(t *testing.T) {
 		t.Fatalf("received wrong dir mounts than expected: %s", diff)
 	}
 }
+
+// withForwardedRuntime()
+func TestWithForwardedRuntimeFailForward(t *testing.T) {
+	h := &hostConfiguredContainer{
+		container: &container{
+			base: base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{},
+				},
+			},
+		},
+	}
+
+	if err := h.withForwardedRuntime(func() error {
+		return nil
+	}); err == nil {
+		t.Fatalf("should fail with bad host")
+	}
+}
+
+func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base: base{
+				runtimeConfig: &runtime.FakeConfig{},
+			},
+		},
+	}
+
+	if err := h.withForwardedRuntime(func() error {
+		return nil
+	}); err == nil {
+		t.Fatalf("should fail with bad runtime")
+	}
+}
+
+func TestWithForwardedRuntime(t *testing.T) {
+	r := &runtime.Fake{}
+
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base: base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: r,
+				},
+			},
+		},
+	}
+
+	// TODO: Test runtime manipulation here.
+	if err := h.withForwardedRuntime(func() error {
+		return nil
+	}); err != nil {
+		t.Fatalf("should work, got: %v", err)
+	}
+}
+
+// Create()
+func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{
+						CreateF: func(config *types.ContainerConfig) (string, error) {
+							return "foo", nil
+						},
+						DeleteF: func(id string) error {
+							return nil
+						},
+						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+							return map[string]os.FileMode{}, fmt.Errorf("stat failed")
+						},
+						StatusF: func(id string) (types.ContainerStatus, error) {
+							return types.ContainerStatus{}, nil
+						},
+					},
+				},
+				config: types.ContainerConfig{
+					Mounts: []types.Mount{
+						{
+							Source: "/etc/",
+							Target: "/etc",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.Create(); err == nil {
+		t.Fatalf("create with failing stat should fail")
+	}
+}
+
+func TestHostConfiguredContainerCreateFail(t *testing.T) {
+	fail := false
+
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{
+						CreateF: func(config *types.ContainerConfig) (string, error) {
+							if fail {
+								return "", fmt.Errorf("2nd create fails")
+							}
+
+							fail = true
+
+							return "foo", nil
+						},
+						DeleteF: func(id string) error {
+							return nil
+						},
+						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+							return map[string]os.FileMode{
+								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
+							}, nil
+						},
+						StatusF: func(id string) (types.ContainerStatus, error) {
+							return types.ContainerStatus{}, nil
+						},
+					},
+				},
+				config: types.ContainerConfig{
+					Mounts: []types.Mount{
+						{
+							Source: "/etc/",
+							Target: "/etc",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.Create(); err == nil {
+		t.Fatalf("create with failing create from runtime should fail")
+	}
+}
+
+func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
+	fail := false
+
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{
+						CreateF: func(config *types.ContainerConfig) (string, error) {
+							return "foo", nil
+						},
+						DeleteF: func(id string) error {
+							return nil
+						},
+						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+							return map[string]os.FileMode{
+								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
+							}, nil
+						},
+						StatusF: func(id string) (types.ContainerStatus, error) {
+							if fail {
+								return types.ContainerStatus{}, fmt.Errorf("2nd status fails")
+							}
+
+							fail = true
+
+							return types.ContainerStatus{}, nil
+						},
+					},
+				},
+				config: types.ContainerConfig{
+					Mounts: []types.Mount{
+						{
+							Source: "/etc/",
+							Target: "/etc",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.Create(); err == nil {
+		t.Fatalf("create with failing status from runtime should fail")
+	}
+}
+
+func TestHostConfiguredContainerCreate(t *testing.T) {
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{
+						CreateF: func(config *types.ContainerConfig) (string, error) {
+							return "foo", nil
+						},
+						DeleteF: func(id string) error {
+							return nil
+						},
+						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+							return map[string]os.FileMode{
+								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
+							}, nil
+						},
+						StatusF: func(id string) (types.ContainerStatus, error) {
+							return types.ContainerStatus{
+								ID: "bar",
+							}, nil
+						},
+					},
+				},
+				config: types.ContainerConfig{
+					Mounts: []types.Mount{
+						{
+							Source: "/etc/",
+							Target: "/etc",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.Create(); err != nil {
+		t.Fatalf("create should succeed, got: %v", err)
+	}
+
+	if id := h.container.Status().ID; id != "bar" {
+		t.Fatalf("expected ID '%s', got '%s'", "bar", id)
+	}
+}
