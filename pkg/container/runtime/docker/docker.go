@@ -96,19 +96,26 @@ func (c *Config) getDockerClient() (*client.Client, error) {
 	return client.NewClientWithOpts(opts...)
 }
 
-// Start starts Docker container.
-func (d *docker) Create(config *types.ContainerConfig) (string, error) {
+// pullImageIfNotPresent pulls image if it's not already present on the host.
+func (d *docker) pullImageIfNotPresent(image string) error {
 	// Pull image to make sure it's available.
 	// TODO make it configurable?
-	id, err := d.imageID(config.Image)
+	id, err := d.imageID(image)
 	if err != nil {
-		return "", fmt.Errorf("failed checking for image presence: %w", err)
+		return fmt.Errorf("failed checking for image presence: %w", err)
 	}
 
-	if id == "" {
-		if err := d.pullImage(config.Image); err != nil {
-			return "", fmt.Errorf("failed pulling image: %w", err)
-		}
+	if id != "" {
+		return nil
+	}
+
+	return d.pullImage(image)
+}
+
+// Start starts Docker container.
+func (d *docker) Create(config *types.ContainerConfig) (string, error) {
+	if err := d.pullImageIfNotPresent(config.Image); err != nil {
+		return "", fmt.Errorf("failed pulling image: %w", err)
 	}
 
 	// TODO That should be validated at ContainerConfig level!
