@@ -10,7 +10,9 @@ import (
 // Config represents host configuration for direct communication.
 //
 // Using this struct will use local network and local filesystem.
-type Config struct{}
+type Config struct {
+	Dummy string
+}
 
 // direct is a initialized struct, which satisfies Transport interface.
 type direct struct{}
