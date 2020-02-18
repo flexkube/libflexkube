@@ -56,25 +56,27 @@ func (c *Containers) New() (ContainersInterface, error) {
 
 // Validate validates Containers struct and all structs used underneath.
 func (c *Containers) Validate() error {
-	if c == nil || (c.PreviousState == nil && c.DesiredState == nil) {
-		return fmt.Errorf("either current state or desired state must be defined")
+	var errors util.ValidateError
+
+	if c == nil {
+		errors = append(errors, fmt.Errorf("containers must be defined"))
+
+		return errors.Return()
 	}
 
-	previousState, err := c.PreviousState.New()
-	if err != nil {
-		return err
+	if (c.PreviousState == nil && c.DesiredState == nil) || (len(c.PreviousState) == 0 && len(c.DesiredState) == 0) {
+		errors = append(errors, fmt.Errorf("either current state or desired state must be defined"))
 	}
 
-	desiredState, err := c.DesiredState.New()
-	if err != nil {
-		return err
+	if _, err := c.PreviousState.New(); err != nil {
+		errors = append(errors, fmt.Errorf("validating previous state failed: %w", err))
 	}
 
-	if len(previousState.(containersState)) == 0 && len(desiredState.(containersState)) == 0 {
-		return fmt.Errorf("either current state or desired state should have containers defined")
+	if _, err := c.DesiredState.New(); err != nil {
+		errors = append(errors, fmt.Errorf("validating desired state failed: %w", err))
 	}
 
-	return nil
+	return errors.Return()
 }
 
 // CheckCurrentState checks the state of existing containers and updates their state.
