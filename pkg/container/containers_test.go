@@ -723,3 +723,20 @@ func TestEnsureConfigured(t *testing.T) {
 		t.Fatalf("should call Copy on container")
 	}
 }
+
+// selectRuntime()
+func TestSelectRuntime(t *testing.T) {
+	c := &container{
+		base: base{
+			runtimeConfig: &docker.Config{},
+		},
+	}
+
+	if err := c.selectRuntime(); err != nil {
+		t.Fatalf("selecting runtime should succeed, got: %v", err)
+	}
+
+	if c.base.runtime == nil {
+		t.Fatalf("selectRuntime should set container runtime")
+	}
+}
