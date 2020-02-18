@@ -126,7 +126,7 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 					},
 				},
 				status: types.ContainerStatus{
-					ID: "foo",
+					ID: foo,
 				},
 			},
 		},
@@ -159,7 +159,7 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 // removeConfigurationContainer()
 func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 	deleted := false
-	i := "foo"
+	i := foo
 
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
@@ -576,7 +576,7 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return "foo", nil
+							return foo, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -624,7 +624,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 
 							fail = true
 
-							return "foo", nil
+							return foo, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -668,7 +668,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return "foo", nil
+							return foo, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -716,7 +716,7 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return "foo", nil
+							return foo, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
