@@ -4,15 +4,19 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
 func TestToExported(t *testing.T) {
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			container: Container{
-				Config: types.ContainerConfig{
-					Name: "foo",
+			container: &container{
+				base: base{
+					config: types.ContainerConfig{
+						Name: "foo",
+					},
+					runtimeConfig: &docker.Config{},
 				},
 			},
 		},
@@ -23,6 +27,9 @@ func TestToExported(t *testing.T) {
 			Container: Container{
 				Config: types.ContainerConfig{
 					Name: "foo",
+				},
+				Runtime: RuntimeConfig{
+					Docker: &docker.Config{},
 				},
 			},
 		},

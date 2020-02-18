@@ -15,7 +15,7 @@ import (
 
 // Create()
 func TestDockerCreateNonExistingImage(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -25,18 +25,18 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	if _, err = n.Create(); err == nil {
-		t.Fatalf("Creating node with non-existing image should fail")
+	if _, err = c.Create(); err == nil {
+		t.Fatalf("Creating container with non-existing image should fail")
 	}
 }
 
 func TestDockerCreate(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -46,19 +46,19 @@ func TestDockerCreate(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	if _, err := n.Create(); err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+	if _, err := c.Create(); err != nil {
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 }
 
 // Status()
 func TestDockerStatus(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -68,23 +68,23 @@ func TestDockerStatus(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	ci, err := c.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if _, err := c.Status(); err != nil {
-		t.Fatalf("Checking node status should succeed, got: %v", err)
+	if _, err := ci.Status(); err != nil {
+		t.Fatalf("Checking container status should succeed, got: %v", err)
 	}
 }
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -94,31 +94,31 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	ci, err := c.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	c.(*containerInstance).status.ID = "nonexistent"
+	ci.(*containerInstance).status.ID = ""
 
-	status, err := c.Status()
+	status, err := ci.Status()
 	if err != nil {
-		t.Fatalf("Checking node status for non existing container should succeed")
+		t.Fatalf("Checking container status for non existing container should succeed")
 	}
 
-	if status != nil {
-		t.Fatalf("Node status for non existing container should be nil")
+	if status.ID != "" {
+		t.Fatalf("Container ID for non existing container should be empty")
 	}
 }
 
 // Start()
 func TestDockerStart(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -128,24 +128,24 @@ func TestDockerStart(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	ci, err := c.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := c.Start(); err != nil {
+	if err := ci.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
 }
 
 // Stop()
 func TestDockerStop(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -155,28 +155,28 @@ func TestDockerStop(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	ci, err := c.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := c.Start(); err != nil {
+	if err := ci.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
 
-	if err := c.Stop(); err != nil {
+	if err := ci.Stop(); err != nil {
 		t.Fatalf("Stopping container should succeed, got: %v", err)
 	}
 }
 
 // Delete()
 func TestDockerDelete(t *testing.T) {
-	node := &Container{
+	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -186,17 +186,17 @@ func TestDockerDelete(t *testing.T) {
 		},
 	}
 
-	n, err := New(node)
+	c, err := cc.New()
 	if err != nil {
-		t.Fatalf("Initializing node should succeed, got: %v", err)
+		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	c, err := n.Create()
+	ci, err := c.Create()
 	if err != nil {
-		t.Fatalf("Creating node should succeed, got: %v", err)
+		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := c.Delete(); err != nil {
+	if err := ci.Delete(); err != nil {
 		t.Fatalf("Removing container should succeed, got: %v", err)
 	}
 }

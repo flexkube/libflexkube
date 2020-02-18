@@ -11,18 +11,32 @@ import (
 
 // Interface represents container capabilities.
 type Interface interface {
-	GetRuntimeAddress() string
-	SetRuntimeAddress(string)
+	// Methods to instantiate Instance.
 	Create() (InstanceInterface, error)
 	FromStatus() (InstanceInterface, error)
+
+	// Helpers.
+	UpdateStatus() error
+	Start() error
+	Stop() error
+	Delete() error
+	Status() *types.ContainerStatus
+
+	// Getters.
+	Config() types.ContainerConfig
+	RuntimeConfig() runtime.Config
+	Runtime() runtime.Runtime
+
+	// Setters.
+	SetRuntime(runtime.Runtime)
 }
 
 // InstanceInterface represents containerInstance capabilities.
 type InstanceInterface interface {
-	Status() (*types.ContainerStatus, error)
+	Status() (types.ContainerStatus, error)
 	Read(srcPath []string) ([]*types.File, error)
 	Copy(files []*types.File) error
-	Stat(paths []string) (map[string]*os.FileMode, error)
+	Stat(paths []string) (map[string]os.FileMode, error)
 	Start() error
 	Stop() error
 	Delete() error
@@ -35,9 +49,9 @@ type InstanceInterface interface {
 type Container struct {
 	// Stores runtime configuration of the container.
 	Config types.ContainerConfig `json:"config"`
-	// Status of the container
-	Status *types.ContainerStatus `json:"status"`
-	// Runtime stores configuration for various container runtimes
+	// Status of the container.
+	Status types.ContainerStatus `json:"status"`
+	// Runtime stores configuration for various container runtimes.
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }
 
@@ -50,18 +64,14 @@ type RuntimeConfig struct {
 // container represents validated version of Container object, which contains all requires
 // information for instantiating (by calling Create()).
 type container struct {
-	// Contains common information between container and containerInstance
+	// Contains common information between container and containerInstance.
 	base
-	// Optional container status
-	status *types.ContainerStatus
 }
 
 // container represents created container. It guarantees that container status is initialised.
 type containerInstance struct {
 	// Contains common information between container and containerInstance
 	base
-	// Status of the container
-	status types.ContainerStatus
 }
 
 // base contains basic information about created and not created container.
@@ -71,11 +81,13 @@ type base struct {
 	// Container runtime which will be used to manage the container
 	runtime       runtime.Runtime
 	runtimeConfig runtime.Config
+
+	status types.ContainerStatus
 }
 
 // New creates new instance of container from Container and validates it's configuration
 // It also validates container runtime configuration.
-func New(c *Container) (Interface, error) {
+func (c *Container) New() (Interface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
@@ -84,8 +96,8 @@ func New(c *Container) (Interface, error) {
 		base{
 			config:        c.Config,
 			runtimeConfig: c.Runtime.Docker,
+			status:        c.Status,
 		},
-		c.Status,
 	}
 	if err := nc.selectRuntime(); err != nil {
 		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
@@ -94,7 +106,7 @@ func New(c *Container) (Interface, error) {
 	return nc, nil
 }
 
-// Validate validates container configuration
+// Validate validates container configuration.
 func (c *Container) Validate() error {
 	if c.Config.Name == "" {
 		return fmt.Errorf("name must be set")
@@ -112,21 +124,11 @@ func (c *Container) Validate() error {
 	return nil
 }
 
-// ToInstance returns containerInstance directly from Container
-func (c *Container) ToInstance() (InstanceInterface, error) {
-	container, err := New(c)
-	if err != nil {
-		return nil, err
-	}
-
-	return container.FromStatus()
-}
-
-// selectRuntime returns container runtime configured for container
+// selectRuntime returns container runtime configured for container.
 //
-// It returns error if container runtime configuration is invalid
+// It returns error if container runtime configuration is invalid.
 func (c *container) selectRuntime() error {
-	// TODO once we add more runtimes, if there is more than one defined, return an error here
+	// TODO once we add more runtimes, if there is more than one defined, return an error here.
 	r, err := c.runtimeConfig.New()
 	if err != nil {
 		return fmt.Errorf("selecting container runtime failed: %w", err)
@@ -137,19 +139,7 @@ func (c *container) selectRuntime() error {
 	return nil
 }
 
-// GetRuntimeAddress returns connection address for configured runtime. This can be used,
-// for example when connection needs to be proxied.
-func (c *container) GetRuntimeAddress() string {
-	return c.runtimeConfig.GetAddress()
-}
-
-// SetRuntimeAddress sets connection address for configured runtime. This can be used,
-// for example when connection needs to be proxied.
-func (c *container) SetRuntimeAddress(a string) {
-	c.runtimeConfig.SetAddress(a)
-}
-
-// Create creates container container from it's definition
+// Create creates container container from it's definition.
 func (c *container) Create() (InstanceInterface, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
@@ -158,101 +148,67 @@ func (c *container) Create() (InstanceInterface, error) {
 
 	return &containerInstance{
 		base{
-			config:        c.config,
-			runtime:       c.runtime,
-			runtimeConfig: c.runtimeConfig,
-		},
-		types.ContainerStatus{
-			ID: id,
+			config:  c.config,
+			runtime: c.runtime,
+			status: types.ContainerStatus{
+				ID: id,
+			},
 		},
 	}, nil
 }
 
-// FromStatus creates containerInstance from previously restored status
+// FromStatus creates containerInstance from stored status.
 func (c *container) FromStatus() (InstanceInterface, error) {
-	if c.status == nil {
-		return nil, fmt.Errorf("can't create container instance from empty status")
-	}
-
-	if c.status != nil && c.status.ID == "" {
+	if !c.status.Exists() {
 		return nil, fmt.Errorf("can't create container instance from status without id: %+v", c.status)
 	}
 
 	return &containerInstance{
-		base:   c.base,
-		status: *c.status,
+		base: c.base,
 	}, nil
 }
 
-// ReadState reads state of the container from container runtime and returns it to the user
-func (c *containerInstance) Status() (*types.ContainerStatus, error) {
-	status, err := c.runtime.Status(c.status.ID)
-	if err != nil {
-		return nil, fmt.Errorf("getting status for container '%s' failed: %w", c.config.Name, err)
-	}
-
-	return status, nil
+// Config returns container config.
+func (c *container) Config() types.ContainerConfig {
+	return c.config
 }
 
-// UpdateStatus updates status of exported Container struct. This function is primarily used
-// to reduce the boilerplate in helper functions, which allow to perform operations directly on
-// Container struct.
-func (c *containerInstance) updateStatus(container *Container) error {
-	s, err := c.Status()
+// Runtime returns container's configured runtime.
+func (c *container) RuntimeConfig() runtime.Config {
+	return c.runtimeConfig
+}
+
+func (c *container) UpdateStatus() error {
+	ci, err := c.FromStatus()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating container instance: %w", err)
 	}
 
-	container.Status = s
+	s, err := ci.Status()
+	if err != nil {
+		return fmt.Errorf("failed checking container status: %w", err)
+	}
+
+	c.status = s
 
 	return nil
 }
 
-// Read reads given path from the container and returns reader with TAR format with file content
-func (c *containerInstance) Read(srcPath []string) ([]*types.File, error) {
-	return c.runtime.Read(c.status.ID, srcPath)
+func (c *container) Status() *types.ContainerStatus {
+	return &c.status
 }
 
-// Copy takes output path and TAR reader as arguments and extracts this TAR archive into container
-func (c *containerInstance) Copy(files []*types.File) error {
-	return c.runtime.Copy(c.status.ID, files)
+func (c *container) SetRuntime(r runtime.Runtime) {
+	c.runtime = r
 }
 
-// Stat checks if given path exists on the container and if yes, returns information whether
-// it is file, or directory etc.
-func (c *containerInstance) Stat(paths []string) (map[string]*os.FileMode, error) {
-	return c.runtime.Stat(c.status.ID, paths)
+func (c *container) Runtime() runtime.Runtime {
+	return c.runtime
 }
 
-// Start starts the container container
-func (c *containerInstance) Start() error {
-	return c.runtime.Start(c.status.ID)
-}
-
-// Stop stops the container container
-func (c *containerInstance) Stop() error {
-	return c.runtime.Stop(c.status.ID)
-}
-
-// Delete removes container container
-func (c *containerInstance) Delete() error {
-	return c.runtime.Delete(c.status.ID)
-}
-
-// UpdateStatus reads container existing status and updates it by communicating with container daemon
-// This is a helper function, which simplifies calling containerInstance.Status() from Container.
-func (c *Container) UpdateStatus() error {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return err
-	}
-
-	return ci.(*containerInstance).updateStatus(c)
-}
-
-// Start starts existing Container and updates it's status
-func (c *Container) Start() error {
-	ci, err := c.ToInstance()
+// Start starts existing Container and updates it's status.
+func (c *container) Start() error {
+	ci, err := c.FromStatus()
 	if err != nil {
 		return err
 	}
@@ -261,12 +217,12 @@ func (c *Container) Start() error {
 		return err
 	}
 
-	return ci.(*containerInstance).updateStatus(c)
+	return c.UpdateStatus()
 }
 
-// Stop stops existing Container and updates it's status
-func (c *Container) Stop() error {
-	ci, err := c.ToInstance()
+// Stop stops existing Container and updates it's status.
+func (c *container) Stop() error {
+	ci, err := c.FromStatus()
 	if err != nil {
 		return err
 	}
@@ -275,27 +231,12 @@ func (c *Container) Stop() error {
 		return err
 	}
 
-	return ci.(*containerInstance).updateStatus(c)
+	return c.UpdateStatus()
 }
 
-// Create creates container and gets it's status
-func (c *Container) Create() error {
-	nc, err := New(c)
-	if err != nil {
-		return err
-	}
-
-	ci, err := nc.Create()
-	if err != nil {
-		return err
-	}
-
-	return ci.(*containerInstance).updateStatus(c)
-}
-
-// Delete removes container and removes it's status
-func (c *Container) Delete() error {
-	ci, err := c.ToInstance()
+// Delete removes container and removes it's status.
+func (c *container) Delete() error {
+	ci, err := c.FromStatus()
 	if err != nil {
 		return err
 	}
@@ -304,47 +245,43 @@ func (c *Container) Delete() error {
 		return err
 	}
 
-	c.Status = nil
+	c.Status().ID = ""
 
 	return nil
 }
 
-// Read takes file path as an argument and reads this file from the container
-func (c *Container) Read(srcPath []string) ([]*types.File, error) {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	return ci.Read(srcPath)
+// ReadState reads state of the container from container runtime and returns it to the user.
+func (c *containerInstance) Status() (types.ContainerStatus, error) {
+	return c.runtime.Status(c.status.ID)
 }
 
-// Copy creates a file in desired path in the container
-func (c *Container) Copy(files []*types.File) error {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return err
-	}
-
-	return ci.Copy(files)
+// Read reads given path from the container and returns reader with TAR format with file content.
+func (c *containerInstance) Read(srcPath []string) ([]*types.File, error) {
+	return c.runtime.Read(c.status.ID, srcPath)
 }
 
-// Stat checks if files exist in the container. It returns map of files mode for each requested file.
-func (c *Container) Stat(paths []string) (map[string]*os.FileMode, error) {
-	ci, err := c.ToInstance()
-	if err != nil {
-		return nil, err
-	}
-
-	return ci.Stat(paths)
+// Copy takes output path and TAR reader as arguments and extracts this TAR archive into container.
+func (c *containerInstance) Copy(files []*types.File) error {
+	return c.runtime.Copy(c.status.ID, files)
 }
 
-// Exists returns true, if the container has been created.
-func (c *Container) Exists() bool {
-	return c.Status != nil
+// Stat checks if given path exists on the container and if yes, returns information whether
+// it is file, or directory etc.
+func (c *containerInstance) Stat(paths []string) (map[string]os.FileMode, error) {
+	return c.runtime.Stat(c.status.ID, paths)
 }
 
-// IsRunning returns true, if container exists and it's running.
-func (c *Container) IsRunning() bool {
-	return c.Exists() && c.Status.Status == "running"
+// Start starts the container.
+func (c *containerInstance) Start() error {
+	return c.runtime.Start(c.status.ID)
+}
+
+// Stop stops the container.
+func (c *containerInstance) Stop() error {
+	return c.runtime.Stop(c.status.ID)
+}
+
+// Delete removes the container.
+func (c *containerInstance) Delete() error {
+	return c.runtime.Delete(c.status.ID)
 }

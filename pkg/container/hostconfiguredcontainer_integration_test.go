@@ -77,7 +77,7 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 		t.Fatalf("Checking host configured container status should succeed, got: %v", err)
 	}
 
-	s := hcc.(*hostConfiguredContainer).container.Status.Status
+	s := hcc.(*hostConfiguredContainer).container.Status().Status
 	if s != "running" {
 		t.Errorf("Host configured container should be running, got status %v", s)
 	}

@@ -1,13 +1,20 @@
 package container
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
+)
+
+const (
+	foo = "foo"
+	bar = "bar"
 )
 
 // New()
@@ -18,7 +25,7 @@ func TestContainersNew(t *testing.T) {
 func GetContainers(t *testing.T) ContainersInterface {
 	cc := &Containers{
 		DesiredState: ContainersState{
-			"foo": &HostConfiguredContainer{
+			foo: &HostConfiguredContainer{
 				Host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -27,7 +34,7 @@ func GetContainers(t *testing.T) ContainersInterface {
 						Docker: &docker.Config{},
 					},
 					Config: types.ContainerConfig{
-						Name:  "foo",
+						Name:  foo,
 						Image: "busybox:latest",
 					},
 				},
@@ -95,12 +102,13 @@ desiredState:
 	}
 }
 
+// filesToUpdate
 func TestFilesToUpdateEmpty(t *testing.T) {
-	expected := []string{"foo"}
+	expected := []string{foo}
 
 	d := hostConfiguredContainer{
 		configFiles: map[string]string{
-			"foo": "bar",
+			foo: bar,
 		},
 	}
 
@@ -109,6 +117,7 @@ func TestFilesToUpdateEmpty(t *testing.T) {
 	}
 }
 
+// Validate()
 func TestValidateEmpty(t *testing.T) {
 	cc := &Containers{}
 
@@ -139,7 +148,7 @@ func TestValidateNoContainers(t *testing.T) {
 func TestValidateBadDesiredContainers(t *testing.T) {
 	cc := &Containers{
 		DesiredState: ContainersState{
-			"foo": &HostConfiguredContainer{},
+			foo: &HostConfiguredContainer{},
 		},
 		PreviousState: ContainersState{},
 	}
@@ -153,7 +162,7 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 	cc := &Containers{
 		DesiredState: ContainersState{},
 		PreviousState: ContainersState{
-			"foo": &HostConfiguredContainer{},
+			foo: &HostConfiguredContainer{},
 		},
 	}
 
@@ -162,14 +171,15 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 	}
 }
 
+// isUpdatable()
 func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable("foo"); err == nil {
+	if err := c.isUpdatable(foo); err == nil {
 		t.Fatalf("Container without current state shouldn't be updatable.")
 	}
 }
@@ -177,11 +187,11 @@ func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 func TestIsUpdatableToBeDeleted(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable("foo"); err == nil {
+	if err := c.isUpdatable(foo); err == nil {
 		t.Fatalf("Container without desired state shouldn't be updatable.")
 	}
 }
@@ -189,26 +199,27 @@ func TestIsUpdatableToBeDeleted(t *testing.T) {
 func TestIsUpdatable(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable("foo"); err != nil {
+	if err := c.isUpdatable(foo); err != nil {
 		t.Fatalf("Container with current and desired state should be updatable, got: %v", err)
 	}
 }
 
+// diffHost()
 func TestDiffHostNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 	}
 
-	if _, err := c.diffHost("foo"); err == nil {
+	if _, err := c.diffHost(foo); err == nil {
 		t.Fatalf("Not updatable container shouldn't return diff")
 	}
 }
@@ -216,18 +227,18 @@ func TestDiffHostNotUpdatable(t *testing.T) {
 func TestDiffHostNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 	}
 
-	diff, err := c.diffHost("foo")
+	diff, err := c.diffHost(foo)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -240,20 +251,20 @@ func TestDiffHostNoDiff(t *testing.T) {
 func TestDiffHost(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 	}
 
-	diff, err := c.diffHost("foo")
+	diff, err := c.diffHost(foo)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -263,14 +274,15 @@ func TestDiffHost(t *testing.T) {
 	}
 }
 
+// diffContainer()
 func TestDiffContainerNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{},
+			foo: &hostConfiguredContainer{},
 		},
 	}
 
-	if _, err := c.diffContainer("foo"); err == nil {
+	if _, err := c.diffContainer(foo); err == nil {
 		t.Fatalf("Not updatable container shouldn't return diff")
 	}
 }
@@ -278,22 +290,26 @@ func TestDiffContainerNotUpdatable(t *testing.T) {
 func TestDiffContainerNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 	}
 
-	diff, err := c.diffContainer("foo")
+	diff, err := c.diffContainer(foo)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -306,24 +322,28 @@ func TestDiffContainerNoDiff(t *testing.T) {
 func TestDiffContainer(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{
-						Name: "foo",
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Name: foo,
+						},
 					},
 				},
 			},
 		},
 	}
 
-	diff, err := c.diffContainer("foo")
+	diff, err := c.diffContainer(foo)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -333,12 +353,13 @@ func TestDiffContainer(t *testing.T) {
 	}
 }
 
+// ensureRunning()
 func TestEnsureRunningNonExistent(t *testing.T) {
 	c := &containers{
 		currentState: containersState{},
 	}
 
-	if err := ensureRunning(c.currentState["bar"]); err == nil {
+	if err := ensureRunning(c.currentState[bar]); err == nil {
 		t.Fatalf("Ensuring that non existing container is running should fail")
 	}
 }
@@ -346,59 +367,187 @@ func TestEnsureRunningNonExistent(t *testing.T) {
 func TestEnsureRunning(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
-					Status: &types.ContainerStatus{
-						Status: "running",
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						status: types.ContainerStatus{
+							ID:     "existing",
+							Status: "running",
+						},
 					},
 				},
 			},
 		},
 	}
 
-	if err := ensureRunning(c.currentState["foo"]); err != nil {
+	if err := ensureRunning(c.currentState[foo]); err != nil {
 		t.Fatalf("Ensuring that running container is running should succeed, got: %v", err)
 	}
 }
 
-func TestEnsureExists(t *testing.T) {
+// ensureExists()
+func TestEnsureExistsAlreadyExists(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
-					Status: &types.ContainerStatus{
-						Status: "running",
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						status: types.ContainerStatus{
+							ID: "existing",
+						},
 					},
 				},
 			},
 		},
 	}
 
-	if err := c.ensureExists("foo"); err != nil {
+	if err := c.ensureExists(foo); err != nil {
 		t.Fatalf("Ensuring that existing container exists should succeed, got: %v", err)
 	}
 }
 
+func TestEnsureExistsFailCreate(t *testing.T) {
+	c := &containers{
+		currentState: containersState{},
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return "", fmt.Errorf("create fail")
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureExists(foo); err == nil {
+		t.Fatalf("Ensuring that new container exists should propagate create error")
+	}
+}
+
+func TestEnsureExistsFailStart(t *testing.T) {
+	c := &containers{
+		currentState: containersState{},
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StartF: func(id string) error {
+									return fmt.Errorf("start fail")
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureExists(foo); err == nil {
+		t.Fatalf("Ensuring that new container exists should fail")
+	}
+
+	if _, ok := c.currentState[foo]; !ok {
+		t.Fatalf("ensureExists should save state of created container even if starting failed")
+	}
+}
+
+func TestEnsureExist(t *testing.T) {
+	c := &containers{
+		currentState: containersState{},
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StartF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureExists(foo); err != nil {
+		t.Fatalf("Ensuring that new container exists should succeed, got: %v", err)
+	}
+
+	if _, ok := c.currentState[foo]; !ok {
+		t.Fatalf("ensureExists should save state of created container when creation succeeds")
+	}
+}
+
+// ensureHost()
 func TestEnsureHostNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
+			foo: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -406,38 +555,347 @@ func TestEnsureHostNoDiff(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureHost("foo"); err != nil {
+	if err := c.ensureHost(foo); err != nil {
 		t.Fatalf("Ensuring that container's host configuration is up to date should succeed, got: %v", err)
 	}
 }
 
-func TestEnsureContainerNoDiff(t *testing.T) {
+func TestEnsureHostFailStart(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{
+						Dummy: "foo",
+					},
+				},
+				container: &container{
+					base: base{
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								StartF: func(id string) error {
+									return fmt.Errorf("start fails")
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		currentState: containersState{
-			"foo": &hostConfiguredContainer{
-				container: Container{
-					Config: types.ContainerConfig{},
+			foo: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: foo,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: foo,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 
-	if err := c.ensureContainer("foo"); err != nil {
+	if err := c.ensureHost(foo); err == nil {
+		t.Fatalf("Ensuring that container's host configuration is up to date should fail")
+	}
+
+	if c.currentState[foo].container.Status().ID != bar {
+		t.Fatalf("ensure host should persist state changes even if process fails")
+	}
+}
+
+func TestEnsureHost(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{
+						Dummy: "foo",
+					},
+				},
+				container: &container{
+					base: base{
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								StartF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: foo,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: foo,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureHost(foo); err != nil {
+		t.Fatalf("Ensuring that container's host configuration is up to date should succeed, got: %v", err)
+	}
+
+	if c.currentState[foo].container.Status().ID != bar {
+		t.Fatalf("ensure host should persist state changes even if process fails")
+	}
+}
+
+// ensureContainer()
+func TestEnsureContainerNoDiff(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureContainer(foo); err != nil {
 		t.Fatalf("Ensuring that container configuration is up to date should succeed, got: %v", err)
+	}
+}
+
+func TestEnsureContainerFailStart(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: foo,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								StartF: func(id string) error {
+									return fmt.Errorf("start fails")
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: foo,
+						},
+						config: types.ContainerConfig{
+							Image: bar,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: foo,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureContainer(foo); err == nil {
+		t.Fatalf("Ensuring that container configuration is up to date should fail")
+	}
+
+	if c.currentState[foo].container.Status().ID != bar {
+		t.Fatalf("ensure container should persist state changes even if process fails")
+	}
+}
+
+func TestEnsureContainer(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: foo,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return foo, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: bar,
+									}, nil
+								},
+								StartF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: foo,
+						},
+						config: types.ContainerConfig{
+							Image: bar,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										ID: foo,
+									}, nil
+								},
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureContainer(foo); err != nil {
+		t.Fatalf("Ensuring that container configuration is up to date should succeed, got: %v", err)
+	}
+
+	if c.currentState[foo].container.Status().ID != bar {
+		t.Fatalf("ensure container should persist state changes even if process fails")
 	}
 }
 
 // recreate()
 func TestRecreateNonExistent(t *testing.T) {
 	c := &containers{}
-	if err := c.recreate("foo"); err == nil {
+	if err := c.recreate(foo); err == nil {
 		t.Fatalf("Recreating on empty containers should fail")
 	}
 }
@@ -447,5 +905,345 @@ func TestExecuteNoCurrentState(t *testing.T) {
 	c := &containers{}
 	if err := c.Execute(); err == nil {
 		t.Fatalf("Execute without current state should fail")
+	}
+}
+
+// hasUpdates()
+func TestHasUpdatesHost(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+				host: host.Host{},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates(foo)
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with host changes should indicate update")
+	}
+}
+
+func TestHasUpdatesConfig(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+				configFiles: map[string]string{
+					foo: foo,
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates(foo)
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with configuration files changes should indicate update")
+	}
+}
+
+func TestHasUpdatesContainer(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Name: foo,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates(foo)
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if !u {
+		t.Fatalf("Container with container configuration changes should indicate update")
+	}
+}
+
+func TestHasUpdatesNoUpdates(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+					},
+				},
+			},
+		},
+	}
+
+	u, err := c.hasUpdates(foo)
+	if err != nil {
+		t.Fatalf("Checking for updates should succeed, got: %v", err)
+	}
+
+	if u {
+		t.Fatalf("Container with no changes should indicate no changes")
+	}
+}
+
+// ensureConfigured()
+func TestEnsureConfiguredDisposable(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				configFiles: map[string]string{},
+			},
+		},
+	}
+
+	if err := c.ensureConfigured(foo); err != nil {
+		t.Fatalf("Ensure configured should succeed when container is going to be removed, got: %v", err)
+	}
+}
+
+func TestEnsureConfiguredNoUpdates(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				configFiles: map[string]string{},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				configFiles: map[string]string{},
+			},
+		},
+	}
+
+	if err := c.ensureConfigured(foo); err != nil {
+		t.Fatalf("Ensure configured should succeed, got: %v", err)
+	}
+}
+
+func TestEnsureConfigured(t *testing.T) {
+	called := false
+
+	f := foo
+	cf := map[string]string{
+		f: bar,
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: cf,
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+								CopyF: func(id string, files []*types.File) error {
+									if id != f {
+										t.Errorf("should copy to configuration container '%s', not to '%s'", f, id)
+									}
+
+									if len(files) != len(cf) {
+										t.Fatalf("should copy just one file")
+									}
+
+									if files[0].Content != bar {
+										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
+									}
+
+									called = true
+
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: map[string]string{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.ensureConfigured(f); err != nil {
+		t.Fatalf("Ensure configured should succeed, got: %v", err)
+	}
+
+	if !called {
+		t.Fatalf("should call Copy on container")
+	}
+}
+
+func TestEnsureConfiguredFreshState(t *testing.T) {
+	called := false
+
+	f := foo
+	cf := map[string]string{
+		f: bar,
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: cf,
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+								CopyF: func(id string, files []*types.File) error {
+									if id != f {
+										t.Errorf("should copy to configuration container '%s', not to '%s'", f, id)
+									}
+
+									if len(files) != len(cf) {
+										t.Fatalf("should copy just one file")
+									}
+
+									if files[0].Content != bar {
+										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
+									}
+
+									called = true
+
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{},
+	}
+
+	if err := c.ensureConfigured(f); err != nil {
+		t.Fatalf("Ensure configured should succeed, got: %v", err)
+	}
+
+	if !called {
+		t.Fatalf("should call Copy on container")
+	}
+}
+
+// selectRuntime()
+func TestSelectRuntime(t *testing.T) {
+	c := &container{
+		base: base{
+			runtimeConfig: &docker.Config{},
+		},
+	}
+
+	if err := c.selectRuntime(); err != nil {
+		t.Fatalf("selecting runtime should succeed, got: %v", err)
+	}
+
+	if c.base.runtime == nil {
+		t.Fatalf("selectRuntime should set container runtime")
 	}
 }
