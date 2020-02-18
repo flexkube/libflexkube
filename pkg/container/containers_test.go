@@ -14,6 +14,7 @@ import (
 
 const (
 	foo = "foo"
+	bar = "bar"
 )
 
 // New()
@@ -107,7 +108,7 @@ func TestFilesToUpdateEmpty(t *testing.T) {
 
 	d := hostConfiguredContainer{
 		configFiles: map[string]string{
-			foo: "bar",
+			foo: bar,
 		},
 	}
 
@@ -358,7 +359,7 @@ func TestEnsureRunningNonExistent(t *testing.T) {
 		currentState: containersState{},
 	}
 
-	if err := ensureRunning(c.currentState["bar"]); err == nil {
+	if err := ensureRunning(c.currentState[bar]); err == nil {
 		t.Fatalf("Ensuring that non existing container is running should fail")
 	}
 }
@@ -464,7 +465,7 @@ func TestEnsureExistsFailStart(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								DeleteF: func(id string) error {
@@ -509,7 +510,7 @@ func TestEnsureExist(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								DeleteF: func(id string) error {
@@ -581,7 +582,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								StartF: func(id string) error {
@@ -628,7 +629,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 		t.Fatalf("Ensuring that container's host configuration is up to date should fail")
 	}
 
-	if c.currentState[foo].container.Status().ID != "bar" {
+	if c.currentState[foo].container.Status().ID != bar {
 		t.Fatalf("ensure host should persist state changes even if process fails")
 	}
 }
@@ -655,7 +656,7 @@ func TestEnsureHost(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								StartF: func(id string) error {
@@ -702,7 +703,7 @@ func TestEnsureHost(t *testing.T) {
 		t.Fatalf("Ensuring that container's host configuration is up to date should succeed, got: %v", err)
 	}
 
-	if c.currentState[foo].container.Status().ID != "bar" {
+	if c.currentState[foo].container.Status().ID != bar {
 		t.Fatalf("ensure host should persist state changes even if process fails")
 	}
 }
@@ -758,7 +759,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								StartF: func(id string) error {
@@ -781,7 +782,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 							ID: foo,
 						},
 						config: types.ContainerConfig{
-							Image: "bar",
+							Image: bar,
 						},
 						runtimeConfig: &runtime.FakeConfig{
 							Runtime: &runtime.Fake{
@@ -808,7 +809,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 		t.Fatalf("Ensuring that container configuration is up to date should fail")
 	}
 
-	if c.currentState[foo].container.Status().ID != "bar" {
+	if c.currentState[foo].container.Status().ID != bar {
 		t.Fatalf("ensure container should persist state changes even if process fails")
 	}
 }
@@ -836,7 +837,7 @@ func TestEnsureContainer(t *testing.T) {
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{
-										ID: "bar",
+										ID: bar,
 									}, nil
 								},
 								StartF: func(id string) error {
@@ -859,7 +860,7 @@ func TestEnsureContainer(t *testing.T) {
 							ID: foo,
 						},
 						config: types.ContainerConfig{
-							Image: "bar",
+							Image: bar,
 						},
 						runtimeConfig: &runtime.FakeConfig{
 							Runtime: &runtime.Fake{
@@ -886,7 +887,7 @@ func TestEnsureContainer(t *testing.T) {
 		t.Fatalf("Ensuring that container configuration is up to date should succeed, got: %v", err)
 	}
 
-	if c.currentState[foo].container.Status().ID != "bar" {
+	if c.currentState[foo].container.Status().ID != bar {
 		t.Fatalf("ensure container should persist state changes even if process fails")
 	}
 }
@@ -1085,7 +1086,7 @@ func TestEnsureConfigured(t *testing.T) {
 
 	f := foo
 	cf := map[string]string{
-		f: "bar",
+		f: bar,
 	}
 
 	c := &containers{
@@ -1117,7 +1118,7 @@ func TestEnsureConfigured(t *testing.T) {
 										t.Fatalf("should copy just one file")
 									}
 
-									if files[0].Content != "bar" {
+									if files[0].Content != bar {
 										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
 									}
 
@@ -1172,7 +1173,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 
 	f := foo
 	cf := map[string]string{
-		f: "bar",
+		f: bar,
 	}
 
 	c := &containers{
@@ -1204,7 +1205,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 										t.Fatalf("should copy just one file")
 									}
 
-									if files[0].Content != "bar" {
+									if files[0].Content != bar {
 										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
 									}
 
