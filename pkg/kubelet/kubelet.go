@@ -125,10 +125,8 @@ func (k *Kubelet) Validate() error {
 	return errors.Return()
 }
 
-// ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
-func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	configFiles := make(map[string]string)
-
+// config return kubelet configuration file content in YAML format.
+func (k *kubelet) config() (string, error) {
 	config := &kubeletconfig.KubeletConfiguration{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "KubeletConfiguration",
@@ -172,18 +170,169 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 
 	kubelet, err := yaml.Marshal(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed serializing kubelet configuration: %w", err)
+		return "", fmt.Errorf("serializing to YAML failed: %w", err)
 	}
 
-	// kubelet.yaml file is a recommended way to configure the kubelet.
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = string(kubelet)
+	return string(kubelet), nil
+}
 
-	// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
-	// TODO Figure out how to put that in the struct up there, as when doing yaml.Marshal, it removes empty slice.
-	configFiles["/etc/kubernetes/kubelet/kubelet.yaml"] = fmt.Sprintf("%senforceNodeAllocatable: []\n", configFiles["/etc/kubernetes/kubelet/kubelet.yaml"])
+func (k *kubelet) configFiles() (map[string]string, error) {
+	config, err := k.config()
+	if err != nil {
+		return nil, fmt.Errorf("failed building kubelet configuration: %w", err)
+	}
 
-	configFiles["/etc/kubernetes/kubelet/bootstrap-kubeconfig"] = k.bootstrapKubeconfig
-	configFiles["/etc/kubernetes/kubelet/pki/ca.crt"] = k.kubernetesCACertificate
+	return map[string]string{
+		// kubelet.yaml file is a recommended way to configure the kubelet.
+		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
+		// TODO Figure out how to put that in the struct up there, as when doing yaml.Marshal, it removes empty slice.
+		"/etc/kubernetes/kubelet/kubelet.yaml":         fmt.Sprintf("%senforceNodeAllocatable: []\n", config),
+		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.bootstrapKubeconfig,
+		"/etc/kubernetes/kubelet/pki/ca.crt":           k.kubernetesCACertificate,
+	}, nil
+}
+
+// mounts returns kubelet's host mounts.
+func (k *kubelet) mounts() []containertypes.Mount {
+	return []containertypes.Mount{
+		{
+			// Kubelet is using this file to determine what OS it runs on and then reports that to API server
+			// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
+			// based on Debian Docker images.
+			Source: "/etc/os-release",
+			Target: "/etc/os-release",
+		},
+		{
+			// Kubelet will create kubeconfig file for itself from, so it needs to be able to write
+			// to /etc/kubernetes, as we want to use default paths when possible in the container.
+			// However, on the host, /etc/kubernetes may contain some other files, which shouldn't be
+			// visible on kubelet, like etcd pki, so we isolate and expose only ./kubelet subdirectory
+			// to the kubelet.
+			// TODO make sure if that actually make sense. If kubelet is hijacked, it perhaps has access to entire node
+			// anyway
+			Source: "/etc/kubernetes/kubelet/",
+			Target: "/etc/kubernetes/",
+		},
+		{
+			// Pass docker socket to kubelet container, so it can use it as a container runtime.
+			// TODO make it configurable
+			// TODO check what happens when Docker daemon gets restarted. Will kubelet be restarted
+			// then as well? Should we pass entire /run instead, so new socket gets propagated to container?
+			Source: "/run/docker.sock",
+			Target: "/var/run/docker.sock",
+		},
+		{
+			// Required when using CNI plugin for networking, as kubelet will verify, that network configuration
+			// has been deployed there before creating pods.
+			Source: "/etc/cni/net.d/",
+			Target: "/etc/cni/net.d",
+		},
+		{
+			// Mount host CNI binaries into the kubelet, so it can access it.
+			// Hyperkube image already ships some CNI binaries, so we shouldn't shadow them in the kubelet.
+			// Other CNI plugins may install CNI binaries in this directory on host, so kubelet should have
+			// access to both locations.
+			Source: "/opt/cni/bin/",
+			Target: "/host/opt/cni/bin",
+		},
+		{
+			// Required by kubelet when creating Docker containers. This is required, when using Docker as container
+			// runtime, as cAdvisor, which is integrated into kubelet will try to identify image read-write layer for
+			// container when creating a handler for monitoring. This is needed to report disk usage inside the container.
+			//
+			// It is also needed, as kubelet creates a symlink from Docker container's log file to /var/log/pods.
+			Source: "/var/lib/docker/",
+			Target: "/var/lib/docker",
+		},
+		{
+			// In there, kubelet persist generated certificates and information about pods. In case of a re-creation of
+			// kubelet containers, this information would get lost, so running pods would become orphans, which is not
+			// desired.
+			//
+			// Kubelet also mounts the pods mounts in there, so those directories must be shared with host (where actual
+			// Docker containers are created).
+			//
+			// "shared" propagation is needed, as those pods mounts should be visible for the kubelet as well, otherwise
+			// kubelet complains when trying to clean up pods volumes.
+			Source:      "/var/lib/kubelet/",
+			Target:      "/var/lib/kubelet",
+			Propagation: "shared",
+		},
+		{
+			// This is where kubelet stores information about the network configuration on the node when using 'kubenet'
+			// as network plugin, so it should be persisted.
+			//
+			// It is also used for caching network configuration for both 'kubenet' and CNI plugins.
+			Source: "/var/lib/cni/",
+			Target: "/var/lib/cni",
+		},
+		{
+			// For loading kernel modules for kubenet plugin.
+			Source: "/lib/modules/",
+			Target: "/lib/modules",
+		},
+		{
+			// In this directory, kubelet creates symlinks to container log files, so this directory should be visible
+			// also for other containers. For example for centralised logging, as this is the location, where logging
+			// agent expect to find pods logs.
+			Source: "/var/log/pods/",
+			Target: "/var/log/pods",
+		},
+		{
+			// For reading host cgroups, to get stats for docker.service cgroup etc.
+			// Without this, following error message occurs:
+			// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
+			// It seems you can't go any deeper with this mount, otherwise it's not working.
+			Source: "/sys/",
+			Target: "/sys",
+		},
+	}
+}
+
+func (k *kubelet) args() []string {
+	a := []string{
+		"kubelet",
+		// Tell kubelet to use config file.
+		"--config=/etc/kubernetes/kubelet.yaml",
+		// Specify kubeconfig file for kubelet. This enabled API server mode and
+		// specifies when kubelet will write kubeconfig file after TLS bootstrapping.
+		"--kubeconfig=/var/lib/kubelet/kubeconfig",
+		// kubeconfig with access token for TLS bootstrapping.
+		"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
+		// Set which network plugin to use.
+		fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
+		// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
+		"--redirect-container-streaming=false",
+		// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
+		// we specify it equal to address.
+		// TODO make it optional/configurable?
+		fmt.Sprintf("--node-ip=%s", k.address),
+		// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
+		fmt.Sprintf("--hostname-override=%s", k.name),
+		// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
+		// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
+		//
+		// TODO This flag should only be set if Docker is used as container runtime.
+		"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
+	}
+
+	if len(k.labels) > 0 {
+		a = append(a, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.labels, "=", ",")))
+	}
+
+	if len(k.taints) > 0 {
+		a = append(a, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.taints, "=:", ",")))
+	}
+
+	return a
+}
+
+// ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
+func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
+	configFiles, err := k.configFiles()
+	if err != nil {
+		return nil, fmt.Errorf("failed building config files map: %w", err)
+	}
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
@@ -204,133 +353,9 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 			NetworkMode: "host",
 			// Required for adding containers into correct network namespaces.
 			PidMode: "host",
-			Mounts: []containertypes.Mount{
-				{
-					// Kubelet is using this file to determine what OS it runs on and then reports that to API server
-					// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
-					// based on Debian Docker images.
-					Source: "/etc/os-release",
-					Target: "/etc/os-release",
-				},
-				{
-					// Kubelet will create kubeconfig file for itself from, so it needs to be able to write
-					// to /etc/kubernetes, as we want to use default paths when possible in the container.
-					// However, on the host, /etc/kubernetes may contain some other files, which shouldn't be
-					// visible on kubelet, like etcd pki, so we isolate and expose only ./kubelet subdirectory
-					// to the kubelet.
-					// TODO make sure if that actually make sense. If kubelet is hijacked, it perhaps has access to entire node
-					// anyway
-					Source: "/etc/kubernetes/kubelet/",
-					Target: "/etc/kubernetes/",
-				},
-				{
-					// Pass docker socket to kubelet container, so it can use it as a container runtime.
-					// TODO make it configurable
-					// TODO check what happens when Docker daemon gets restarted. Will kubelet be restarted
-					// then as well? Should we pass entire /run instead, so new socket gets propagated to container?
-					Source: "/run/docker.sock",
-					Target: "/var/run/docker.sock",
-				},
-				{
-					// Required when using CNI plugin for networking, as kubelet will verify, that network configuration
-					// has been deployed there before creating pods.
-					Source: "/etc/cni/net.d/",
-					Target: "/etc/cni/net.d",
-				},
-				{
-					// Mount host CNI binaries into the kubelet, so it can access it.
-					// Hyperkube image already ships some CNI binaries, so we shouldn't shadow them in the kubelet.
-					// Other CNI plugins may install CNI binaries in this directory on host, so kubelet should have
-					// access to both locations.
-					Source: "/opt/cni/bin/",
-					Target: "/host/opt/cni/bin",
-				},
-				{
-					// Required by kubelet when creating Docker containers. This is required, when using Docker as container
-					// runtime, as cAdvisor, which is integrated into kubelet will try to identify image read-write layer for
-					// container when creating a handler for monitoring. This is needed to report disk usage inside the container.
-					//
-					// It is also needed, as kubelet creates a symlink from Docker container's log file to /var/log/pods.
-					Source: "/var/lib/docker/",
-					Target: "/var/lib/docker",
-				},
-				{
-					// In there, kubelet persist generated certificates and information about pods. In case of a re-creation of
-					// kubelet containers, this information would get lost, so running pods would become orphans, which is not
-					// desired.
-					//
-					// Kubelet also mounts the pods mounts in there, so those directories must be shared with host (where actual
-					// Docker containers are created).
-					//
-					// "shared" propagation is needed, as those pods mounts should be visible for the kubelet as well, otherwise
-					// kubelet complains when trying to clean up pods volumes.
-					Source:      "/var/lib/kubelet/",
-					Target:      "/var/lib/kubelet",
-					Propagation: "shared",
-				},
-				{
-					// This is where kubelet stores information about the network configuration on the node when using 'kubenet'
-					// as network plugin, so it should be persisted.
-					//
-					// It is also used for caching network configuration for both 'kubenet' and CNI plugins.
-					Source: "/var/lib/cni/",
-					Target: "/var/lib/cni",
-				},
-				{
-					// For loading kernel modules for kubenet plugin.
-					Source: "/lib/modules/",
-					Target: "/lib/modules",
-				},
-				{
-					// In this directory, kubelet creates symlinks to container log files, so this directory should be visible
-					// also for other containers. For example for centralised logging, as this is the location, where logging
-					// agent expect to find pods logs.
-					Source: "/var/log/pods/",
-					Target: "/var/log/pods",
-				},
-				{
-					// For reading host cgroups, to get stats for docker.service cgroup etc.
-					// Without this, following error message occurs:
-					// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
-					// It seems you can't go any deeper with this mount, otherwise it's not working.
-					Source: "/sys/",
-					Target: "/sys",
-				},
-			},
-			Args: []string{
-				"kubelet",
-				// Tell kubelet to use config file.
-				"--config=/etc/kubernetes/kubelet.yaml",
-				// Specify kubeconfig file for kubelet. This enabled API server mode and
-				// specifies when kubelet will write kubeconfig file after TLS bootstrapping.
-				"--kubeconfig=/var/lib/kubelet/kubeconfig",
-				// kubeconfig with access token for TLS bootstrapping.
-				"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
-				// Set which network plugin to use.
-				fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
-				// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
-				"--redirect-container-streaming=false",
-				// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
-				// we specify it equal to address.
-				// TODO make it optional/configurable?
-				fmt.Sprintf("--node-ip=%s", k.address),
-				// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
-				fmt.Sprintf("--hostname-override=%s", k.name),
-				// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
-				// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
-				//
-				// TODO This flag should only be set if Docker is used as container runtime.
-				"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
-			},
+			Mounts:  k.mounts(),
+			Args:    k.args(),
 		},
-	}
-
-	if len(k.labels) > 0 {
-		c.Config.Args = append(c.Config.Args, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.labels, "=", ",")))
-	}
-
-	if len(k.taints) > 0 {
-		c.Config.Args = append(c.Config.Args, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.taints, "=:", ",")))
 	}
 
 	return &container.HostConfiguredContainer{
