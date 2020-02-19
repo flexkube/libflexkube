@@ -374,6 +374,57 @@ func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer)
 	return r, ensureRunning(&r)
 }
 
+// ensureNewContainer handles configuring and creating new containers.
+func (c *containers) ensureNewContainer(i string) error {
+	if err := c.ensureConfigured(i); err != nil {
+		return fmt.Errorf("failed configuring container %s: %w", i, err)
+	}
+
+	if err := c.ensureExists(i); err != nil {
+		return fmt.Errorf("failed creating new container %s: %w", i, err)
+	}
+
+	return nil
+}
+
+func (c *containers) ensureUpToDate(i string) error {
+	// Update containers on hosts.
+	// This can move containers between hosts, but NOT the data.
+	if err := c.ensureHost(i); err != nil {
+		return fmt.Errorf("failed updating host configuration of container %s: %w", i, err)
+	}
+
+	if err := c.ensureConfigured(i); err != nil {
+		return fmt.Errorf("failed updating configuration for container %s: %w", i, err)
+	}
+
+	if err := c.ensureContainer(i); err != nil {
+		return fmt.Errorf("failed updating container %s: %w", i, err)
+	}
+
+	return nil
+}
+
+// updateExistingContainer handles updating existing containers. It either removes them
+// if they are not needed anymore or makes sure that their configuration is up to date.
+func (c *containers) updateExistingContainers() error {
+	for i := range c.currentState {
+		if _, exists := c.desiredState[i]; !exists {
+			if err := c.currentState.RemoveContainer(i); err != nil {
+				return fmt.Errorf("failed removing old container: %w", err)
+			}
+
+			return nil
+		}
+
+		if err := c.ensureUpToDate(i); err != nil {
+			return fmt.Errorf("failed ensuring, that container %s is up to date: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
 // Execute checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
@@ -401,42 +452,14 @@ func (c *containers) Execute() error {
 	fmt.Println("Configuring and creating new containers")
 
 	for i := range c.desiredState {
-		if err := c.ensureConfigured(i); err != nil {
-			return fmt.Errorf("failed configuring container %s: %w", i, err)
-		}
-
-		if err := c.ensureExists(i); err != nil {
+		if err := c.ensureNewContainer(i); err != nil {
 			return fmt.Errorf("failed creating new container %s: %w", i, err)
 		}
 	}
 
 	fmt.Println("Updating existing containers")
 
-	for i := range c.currentState {
-		if _, exists := c.desiredState[i]; !exists {
-			if err := c.currentState.RemoveContainer(i); err != nil {
-				return fmt.Errorf("failed removing old container: %w", err)
-			}
-
-			continue
-		}
-
-		// Update containers on hosts.
-		// This can move containers between hosts, but NOT the data.
-		if err := c.ensureHost(i); err != nil {
-			return fmt.Errorf("failed updating host configuration of container %s: %w", i, err)
-		}
-
-		if err := c.ensureConfigured(i); err != nil {
-			return fmt.Errorf("failed updating configuration for container %s: %w", i, err)
-		}
-
-		if err := c.ensureContainer(i); err != nil {
-			return fmt.Errorf("failed updating container %s: %w", i, err)
-		}
-	}
-
-	return nil
+	return c.updateExistingContainers()
 }
 
 // FromYaml allows to restore containers state from YAML.
