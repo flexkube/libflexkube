@@ -25,59 +25,16 @@ func resourceControlplane() *schema.Resource {
 	}
 }
 
+const resourceControlplaneName = "Kubernetes controlplane"
+
 func resourceControlplaneCreate(d *schema.ResourceData, m interface{}) error {
-	c, err := controlplane.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
-	if err != nil {
-		return err
-	}
-
-	if err := c.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := c.Deploy(); err != nil {
-		return err
-	}
-
-	state, err := c.StateToYaml()
-	if err != nil {
-		return err
-	}
-
-	if err := d.Set("state", string(state)); err != nil {
-		return err
-	}
-
-	return resourceControlplaneRead(d, m)
+	return createResource(d, &controlplane.Controlplane{}, resourceControlplaneName)
 }
 
 func resourceControlplaneRead(d *schema.ResourceData, m interface{}) error {
-	c, err := controlplane.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
-	if err != nil {
-		return err
-	}
-
-	if err := c.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	state, err := c.StateToYaml()
-	if err != nil {
-		return err
-	}
-
-	if err := d.Set("state", string(state)); err != nil {
-		return err
-	}
-
-	result := sha256sum(state)
-	d.SetId(result)
-
-	return nil
+	return readResource(d, &controlplane.Controlplane{}, resourceControlplaneName)
 }
 
 func resourceControlplaneDelete(d *schema.ResourceData, m interface{}) error {
-	d.SetId("")
-
-	return nil
+	return deleteResource(d)
 }
