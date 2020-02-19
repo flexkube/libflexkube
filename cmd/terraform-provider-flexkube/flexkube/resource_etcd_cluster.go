@@ -25,59 +25,16 @@ func resourceEtcdCluster() *schema.Resource {
 	}
 }
 
+const resourceEtcdClusterName = "etcd cluster"
+
 func resourceEtcdClusterCreate(d *schema.ResourceData, m interface{}) error {
-	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
-	if err != nil {
-		return err
-	}
-
-	if err := c.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	if err := c.Deploy(); err != nil {
-		return err
-	}
-
-	state, err := c.StateToYaml()
-	if err != nil {
-		return err
-	}
-
-	if err := d.Set("state", string(state)); err != nil {
-		return err
-	}
-
-	return resourceEtcdClusterRead(d, m)
+	return createResource(d, &etcd.Cluster{}, resourceEtcdClusterName)
 }
 
 func resourceEtcdClusterRead(d *schema.ResourceData, m interface{}) error {
-	c, err := etcd.FromYaml([]byte(d.Get("state").(string) + d.Get("config").(string)))
-	if err != nil {
-		return err
-	}
-
-	if err := c.CheckCurrentState(); err != nil {
-		return err
-	}
-
-	state, err := c.StateToYaml()
-	if err != nil {
-		return err
-	}
-
-	if err := d.Set("state", string(state)); err != nil {
-		return err
-	}
-
-	result := sha256sum(state)
-	d.SetId(result)
-
-	return nil
+	return readResource(d, &etcd.Cluster{}, resourceEtcdClusterName)
 }
 
 func resourceEtcdClusterDelete(d *schema.ResourceData, m interface{}) error {
-	d.SetId("")
-
-	return nil
+	return deleteResource(d)
 }
