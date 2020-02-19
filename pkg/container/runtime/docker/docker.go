@@ -112,20 +112,16 @@ func (d *docker) pullImageIfNotPresent(image string) error {
 	return d.pullImage(image)
 }
 
-// Start starts Docker container.
-func (d *docker) Create(config *types.ContainerConfig) (string, error) {
-	if err := d.pullImageIfNotPresent(config.Image); err != nil {
-		return "", fmt.Errorf("failed pulling image: %w", err)
-	}
-
+// buildPorts converts container PortMap type to Docker port maps.
+func buildPorts(ports []types.PortMap) (nat.PortMap, nat.PortSet, error) {
 	// TODO That should be validated at ContainerConfig level!
 	portBindings := nat.PortMap{}
 	exposedPorts := nat.PortSet{}
 
-	for _, ip := range config.Ports {
+	for _, ip := range ports {
 		port, err := nat.NewPort(ip.Protocol, strconv.Itoa(ip.Port))
 		if err != nil {
-			return "", fmt.Errorf("failed mapping ports: %w", err)
+			return nil, nil, fmt.Errorf("failed mapping ports: %w", err)
 		}
 
 		if _, exists := portBindings[port]; !exists {
@@ -139,9 +135,14 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		exposedPorts[port] = struct{}{}
 	}
 
-	// TODO validate that
+	return portBindings, exposedPorts, nil
+}
+
+// mounts converts container Mount to Docker mount type.
+func mounts(m []types.Mount) []mount.Mount {
 	mounts := []mount.Mount{}
-	for _, m := range config.Mounts {
+
+	for _, m := range m {
 		mounts = append(mounts, mount.Mount{
 			Type:   "bind",
 			Source: m.Source,
@@ -153,6 +154,21 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		})
 	}
 
+	return mounts
+}
+
+// Start starts Docker container.
+func (d *docker) Create(config *types.ContainerConfig) (string, error) {
+	if err := d.pullImageIfNotPresent(config.Image); err != nil {
+		return "", fmt.Errorf("failed pulling image: %w", err)
+	}
+
+	// TODO That should be validated at ContainerConfig level!
+	portBindings, exposedPorts, err := buildPorts(config.Ports)
+	if err != nil {
+		return "", fmt.Errorf("failed building ports: %w", err)
+	}
+
 	// Just structs required for starting container.
 	dockerConfig := containertypes.Config{
 		Image:        config.Image,
@@ -161,7 +177,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		ExposedPorts: exposedPorts,
 	}
 	hostConfig := containertypes.HostConfig{
-		Mounts:       mounts,
+		Mounts:       mounts(config.Mounts),
 		PortBindings: portBindings,
 		Privileged:   config.Privileged,
 		NetworkMode:  containertypes.NetworkMode(config.NetworkMode),
