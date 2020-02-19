@@ -11,11 +11,11 @@ import (
 	"github.com/flexkube/libflexkube/internal/utiltest"
 )
 
-func TestPrivateKeyParse(t *testing.T) {
-	type Foo struct {
-		Bar PrivateKey `json:"bar"`
-	}
+type Foo struct {
+	Bar PrivateKey `json:"bar"`
+}
 
+func TestPrivateKeyParse(t *testing.T) {
 	cases := map[string]struct {
 		YAML  string
 		Error bool
@@ -54,5 +54,27 @@ func TestPrivateKeyParse(t *testing.T) {
 				t.Fatalf("Got error and still got some content")
 			}
 		})
+	}
+}
+
+func TestParsePrivateKeyPKCS1(t *testing.T) {
+	d := fmt.Sprintf("bar: |\n%s", util.Indent(strings.TrimSpace(utiltest.GeneratePKCS1PrivateKey(t)), "  "))
+
+	if err := yaml.Unmarshal([]byte(d), &Foo{}); err != nil {
+		t.Fatalf("Parsing valid PKCS1 private key should succeed, got: %v", err)
+	}
+}
+
+func TestParsePrivateKeyEC(t *testing.T) {
+	d := fmt.Sprintf("bar: |\n%s", util.Indent(strings.TrimSpace(utiltest.GenerateECPrivateKey(t)), "  "))
+
+	if err := yaml.Unmarshal([]byte(d), &Foo{}); err != nil {
+		t.Fatalf("Parsing valid EC private key should succeed, got: %v", err)
+	}
+}
+
+func TestParsePrivateKeyBad(t *testing.T) {
+	if err := parsePrivateKey([]byte("notpem")); err == nil {
+		t.Fatalf("parsing not PEM format should fail")
 	}
 }
