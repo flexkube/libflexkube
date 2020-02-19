@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
@@ -82,54 +83,56 @@ func (d *Config) New() (transport.Interface, error) {
 
 // Validate validates given configuration and returns on first encountered error
 func (d *Config) Validate() error {
+	var errors util.ValidateError
+
 	if d.Address == "" {
-		return fmt.Errorf("address must be set")
+		errors = append(errors, fmt.Errorf("address must be set"))
 	}
 
 	if d.User == "" {
-		return fmt.Errorf("user must be set")
+		errors = append(errors, fmt.Errorf("user must be set"))
 	}
 
 	if d.Password == "" && d.PrivateKey == "" {
-		return fmt.Errorf("either password or private key must be set for authentication")
+		errors = append(errors, fmt.Errorf("either password or private key must be set for authentication"))
 	}
 
 	if d.ConnectionTimeout == "" {
-		return fmt.Errorf("connection timeout must be set")
+		errors = append(errors, fmt.Errorf("connection timeout must be set"))
 	}
 
 	if d.RetryTimeout == "" {
-		return fmt.Errorf("retry timeout must be set")
+		errors = append(errors, fmt.Errorf("retry timeout must be set"))
 	}
 
 	if d.RetryInterval == "" {
-		return fmt.Errorf("retry interval must be set")
+		errors = append(errors, fmt.Errorf("retry interval must be set"))
 	}
 
 	if d.Port == 0 {
-		return fmt.Errorf("port must be set")
+		errors = append(errors, fmt.Errorf("port must be set"))
 	}
 
 	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {
-		return fmt.Errorf("unable to parse connection timeout: %w", err)
+		errors = append(errors, fmt.Errorf("unable to parse connection timeout: %w", err))
 	}
 
 	if _, err := time.ParseDuration(d.RetryTimeout); err != nil {
-		return fmt.Errorf("unable to parse retry timeout: %w", err)
+		errors = append(errors, fmt.Errorf("unable to parse retry timeout: %w", err))
 	}
 
 	if _, err := time.ParseDuration(d.RetryInterval); err != nil {
-		return fmt.Errorf("unable to parse retry interval: %w", err)
+		errors = append(errors, fmt.Errorf("unable to parse retry interval: %w", err))
 	}
 
 	if d.PrivateKey != "" {
 		if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); err != nil {
-			return fmt.Errorf("unable to parse private key: %w", err)
+			errors = append(errors, fmt.Errorf("unable to parse private key: %w", err))
 		}
 	}
 
-	return nil
+	return errors.Return()
 }
 
 func (d *ssh) Connect() (transport.Connected, error) {

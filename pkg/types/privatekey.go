@@ -24,22 +24,28 @@ func (c *PrivateKey) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to decode PEM format")
 	}
 
-	f := func() error {
-		*c = PrivateKey(p)
+	if err := parsePrivateKey(der.Bytes); err != nil {
+		return err
+	}
 
+	*c = PrivateKey(p)
+
+	return nil
+}
+
+// parsePrivateKey tries to parse various private key types and
+// returns error if none of them works.
+func parsePrivateKey(b []byte) error {
+	if _, err := x509.ParsePKCS8PrivateKey(b); err == nil {
 		return nil
 	}
 
-	if _, err := x509.ParsePKCS8PrivateKey(der.Bytes); err == nil {
-		return f()
+	if _, err := x509.ParsePKCS1PrivateKey(b); err == nil {
+		return nil
 	}
 
-	if _, err := x509.ParsePKCS1PrivateKey(der.Bytes); err == nil {
-		return f()
-	}
-
-	if _, err := x509.ParseECPrivateKey(der.Bytes); err == nil {
-		return f()
+	if _, err := x509.ParseECPrivateKey(b); err == nil {
+		return nil
 	}
 
 	return fmt.Errorf("unable to parse private key")
