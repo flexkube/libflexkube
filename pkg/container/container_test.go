@@ -271,7 +271,7 @@ func TestContainerStopBadState(t *testing.T) {
 	}
 
 	if err := c.Stop(); err == nil {
-		t.Fatalf("Stoping non-existing container should fail")
+		t.Fatalf("Stopping non-existing container should fail")
 	}
 }
 
@@ -291,7 +291,7 @@ func TestContainerStopRuntimeError(t *testing.T) {
 	}
 
 	if err := c.Stop(); err == nil {
-		t.Fatalf("Stoping container should fail when runtime error occurs")
+		t.Fatalf("Stopping container should fail when runtime error occurs")
 	}
 }
 
@@ -319,7 +319,7 @@ func TestContainerStop(t *testing.T) {
 	}
 
 	if err := c.Stop(); err != nil {
-		t.Fatalf("Stoping should succeed, got: %v", err)
+		t.Fatalf("Stopping should succeed, got: %v", err)
 	}
 
 	if diff := cmp.Diff(ns, c.status); diff != "" {
