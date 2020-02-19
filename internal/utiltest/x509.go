@@ -2,6 +2,8 @@ package utiltest
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -33,6 +35,44 @@ func GenerateX509Certificate(t *testing.T) string {
 // as string in PEM format.
 func GenerateRSAPrivateKey(t *testing.T) string {
 	return GeneratePKI(t).PrivateKey
+}
+
+// GeneratePKCS1PrivateKey generates RSA private key in PKCS1 format,
+// PEM encoded.
+func GeneratePKCS1PrivateKey(t *testing.T) string {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("Failed to generate RSA key: %v", err)
+	}
+
+	privBytes := x509.MarshalPKCS1PrivateKey(priv)
+
+	var key bytes.Buffer
+	if err := pem.Encode(&key, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes}); err != nil {
+		t.Fatalf("Failed to write data to key.pem: %s", err)
+	}
+
+	return key.String()
+}
+
+// GenerateECPrivateKey generates EC private key, PEM encoded.
+func GenerateECPrivateKey(t *testing.T) string {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("Failed generating ECDSA key: %v", err)
+	}
+
+	privBytes, err := x509.MarshalECPrivateKey(priv)
+	if err != nil {
+		t.Fatalf("Failed serializing EC private key: %v", err)
+	}
+
+	var key bytes.Buffer
+	if err := pem.Encode(&key, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privBytes}); err != nil {
+		t.Fatalf("Failed to write data to key.pem: %s", err)
+	}
+
+	return key.String()
 }
 
 // GeneratePKI generates PKI struct
