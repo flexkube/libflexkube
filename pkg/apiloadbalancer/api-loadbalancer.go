@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
@@ -18,22 +19,22 @@ import (
 
 // APILoadBalancer is a user-configurable representation of single instance of API load balancer
 type APILoadBalancer struct {
-	Image              string    `json:"image"`
-	Host               host.Host `json:"host"`
-	MetricsBindAddress string    `json:"metricsBindAddress"`
-	MetricsBindPort    int       `json:"metricsBindPort"`
-	Servers            []string  `json:"servers"`
-	BindPort           int       `json:"bindPort"`
+	Image          string    `json:"image"`
+	Host           host.Host `json:"host"`
+	Servers        []string  `json:"servers"`
+	Name           string    `json:"name"`
+	HostConfigPath string    `json:"hostConfigPath"`
+	BindAddress    string    `json:"bindAddress"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer
 type apiLoadBalancer struct {
-	image              string
-	host               host.Host
-	servers            []string
-	metricsBindAddress string
-	metricsBindPort    int
-	bindPort           int
+	image          string
+	host           host.Host
+	servers        []string
+	name           string
+	hostConfigPath string
+	bindAddress    string
 }
 
 func (a apiLoadBalancer) config() (string, error) {
@@ -47,23 +48,13 @@ defaults
   timeout server 50000ms
 
 frontend kube-apiserver
-  # TODO make it configurable
-  bind 0.0.0.0:{{ .BindPort }}
+  bind {{ .BindAddress }}
   default_backend kube-apiserver
 
 backend kube-apiserver
   {{- range $i, $s := .Servers }}
-  server {{ $i }} {{ $s }}:8443 check
+  server {{ $i }} {{ $s }} check
   {{- end }}
-
-frontend stats
-  bind 0.0.0.0:{{ .MetricsBindPort }}
-  mode http
-  option http-use-htx
-  http-request use-service prometheus-exporter if { path /metrics }
-  stats enable
-  stats uri /stats
-  stats refresh 10s
 `
 
 	t, err := template.New("haproxy.cfg").Parse(c)
@@ -74,20 +65,18 @@ frontend stats
 	var buf bytes.Buffer
 
 	d := struct {
-		BindPort        int
-		Servers         []string
-		MetricsBindPort int
+		Servers     []string
+		BindAddress string
 	}{
-		a.bindPort,
 		a.servers,
-		a.metricsBindPort,
+		a.bindAddress,
 	}
 
 	if err := t.Execute(&buf, d); err != nil {
 		return "", fmt.Errorf("executing template failed: %w", err)
 	}
 
-	return strings.TrimSpace(buf.String()), nil
+	return fmt.Sprintf("%s\n", strings.TrimSpace(buf.String())), nil
 }
 
 const (
@@ -113,22 +102,12 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 		},
 		Config: types.ContainerConfig{
 			// TODO make it configurable? And don't force user to use HAProxy
-			Name:  containerName,
-			Image: a.image,
-			Ports: []types.PortMap{
-				{
-					Protocol: "tcp",
-					Port:     a.bindPort,
-				},
-				{
-					Protocol: "tcp",
-					Port:     a.metricsBindPort,
-					IP:       a.metricsBindAddress,
-				},
-			},
+			Name:        a.name,
+			Image:       a.image,
+			NetworkMode: "host",
 			Mounts: []types.Mount{
 				{
-					Source: hostConfigPath,
+					Source: a.hostConfigPath,
 					Target: containerConfigPath,
 				},
 			},
@@ -138,7 +117,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 	return &container.HostConfiguredContainer{
 		Host: a.host,
 		ConfigFiles: map[string]string{
-			hostConfigPath: config,
+			a.hostConfigPath: config,
 		},
 		Container: c,
 	}, nil
@@ -154,25 +133,17 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 	}
 
 	na := &apiLoadBalancer{
-		image:              a.Image,
-		host:               a.Host,
-		servers:            a.Servers,
-		metricsBindAddress: a.MetricsBindAddress,
-		metricsBindPort:    a.MetricsBindPort,
-		bindPort:           a.BindPort,
+		image:          a.Image,
+		host:           a.Host,
+		servers:        a.Servers,
+		name:           util.PickString(a.Name, containerName),
+		hostConfigPath: util.PickString(a.HostConfigPath, hostConfigPath),
+		bindAddress:    a.BindAddress,
 	}
 
 	// Fill empty fields with default values
 	if na.image == "" {
 		na.image = defaults.HAProxyImage
-	}
-
-	if na.metricsBindPort == 0 {
-		na.metricsBindPort = 8080
-	}
-
-	if na.bindPort == 0 {
-		na.bindPort = 6443
 	}
 
 	return na, nil
@@ -183,10 +154,6 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 func (a *APILoadBalancer) Validate() error {
 	if len(a.Servers) == 0 {
 		return fmt.Errorf("at least one server must be set")
-	}
-
-	if a.MetricsBindAddress == "" {
-		return fmt.Errorf("field MetricsBindAddress must be set")
 	}
 
 	return nil

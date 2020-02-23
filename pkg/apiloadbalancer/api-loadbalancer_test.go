@@ -12,8 +12,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
-		Servers:            []string{"localhost:9090"},
-		MetricsBindAddress: "0.0.0.0:6443",
+		Servers: []string{"localhost:9090"},
 	}
 
 	k, err := kk.New()
@@ -28,5 +27,31 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 	if _, err := hcc.New(); err != nil {
 		t.Fatalf("should produce valid HostConfiguredContainer, got: %v", err)
+	}
+}
+
+// Validate()
+func TestValidateRequireServers(t *testing.T) {
+	kk := &APILoadBalancer{
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+
+	if err := kk.Validate(); err == nil {
+		t.Fatalf("Validate should require at least one server to be defined")
+	}
+}
+
+// New()
+func TestNewValidate(t *testing.T) {
+	kk := &APILoadBalancer{
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+
+	if _, err := kk.New(); err == nil {
+		t.Fatalf("New should validate configuration before creating object")
 	}
 }

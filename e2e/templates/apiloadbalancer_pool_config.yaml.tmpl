@@ -1,7 +1,7 @@
+bindAddress: 0.0.0.0:6443
 apiLoadBalancers:
 %{ for index, ssh_address in ssh_addresses ~}
-- metricsBindAddress: ${metrics_bind_addresses[index]}
-  host:
+- host:
       ssh:
           address: ${ssh_address}
 %{ endfor ~}
