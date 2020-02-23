@@ -20,7 +20,9 @@ type APILoadBalancers struct {
 	SSH              *ssh.Config       `json:"ssh,omitempty"`
 	Servers          []string          `json:"servers,omitempty"`
 	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty"`
-	BindPort         int               `json:"bindPort,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	HostConfigPath   string            `json:"hostConfigPath,omitempty"`
+	BindAddress      string            `json:"bindAddress,omitempty"`
 
 	// Serializable fields
 	State container.ContainersState `json:"state"`
@@ -36,10 +38,12 @@ type apiLoadBalancers struct {
 func (a *APILoadBalancers) propagateInstance(i *APILoadBalancer) {
 	i.Image = util.PickString(i.Image, a.Image)
 	i.Servers = util.PickStringSlice(i.Servers, a.Servers)
-	i.BindPort = util.PickInt(i.BindPort, a.BindPort)
 	i.Host = host.BuildConfig(i.Host, host.Host{
 		SSHConfig: a.SSH,
 	})
+	i.Name = util.PickString(i.Name, a.Name)
+	i.HostConfigPath = util.PickString(i.HostConfigPath, a.HostConfigPath)
+	i.BindAddress = util.PickString(i.BindAddress, a.BindAddress)
 }
 
 // New validates APILoadBalancers struct and fills all required fields in members with default values
