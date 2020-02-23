@@ -67,7 +67,7 @@ resource "libvirt_domain" "controller_machine" {
   count  = var.controllers_count
   name   = local.controller_names[count.index]
   vcpu   = 2
-  memory = 2048
+  memory = 4096
 
   disk {
     volume_id = libvirt_volume.controller-disk[count.index].id

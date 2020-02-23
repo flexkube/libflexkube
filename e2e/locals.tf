@@ -1,4 +1,4 @@
-resource "null_resource" "controller_ips" {
+resource "null_resource" "controllers" {
   count = var.controllers_count
 
   triggers = {
@@ -9,12 +9,13 @@ resource "null_resource" "controller_ips" {
 }
 
 locals {
-  controller_ips      = null_resource.controller_ips.*.triggers.ip
-  first_controller_ip = local.controller_ips[0]
-  controller_names    = null_resource.controller_ips.*.triggers.name
-  controller_cidrs    = null_resource.controller_ips.*.triggers.cidr
+  controller_ips   = null_resource.controllers.*.triggers.ip
+  controller_names = null_resource.controllers.*.triggers.name
+  controller_cidrs = null_resource.controllers.*.triggers.cidr
 
-  worker_ips = null_resource.workers.*.triggers.ip
+  first_controller_ip = local.controller_ips[0]
+
+  worker_ips   = null_resource.workers.*.triggers.ip
   worker_cidrs = null_resource.workers.*.triggers.cidr
   worker_names = null_resource.workers.*.triggers.name
 }
