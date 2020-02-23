@@ -246,9 +246,10 @@ func (d *docker) Copy(id string, files []*types.File) error {
 
 	for _, f := range files {
 		h := &tar.Header{
-			Name: f.Path,
-			Mode: f.Mode,
-			Size: int64(len(f.Content)),
+			Name:    f.Path,
+			Mode:    f.Mode,
+			Size:    int64(len(f.Content)),
+			ModTime: time.Now(),
 		}
 
 		if err := tw.WriteHeader(h); err != nil {
