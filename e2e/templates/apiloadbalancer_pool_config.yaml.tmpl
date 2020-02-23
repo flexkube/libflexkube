@@ -1,4 +1,6 @@
-bindAddress: 0.0.0.0:6443
+name: ${name}
+hostConfigPath: ${config_path}
+bindAddress: ${bind_address}
 apiLoadBalancers:
 %{ for index, ssh_address in ssh_addresses ~}
 - host:

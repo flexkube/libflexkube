@@ -30,11 +30,9 @@ kubeAPIServer:
     %{~ for etcd_server in etcd_servers ~}
     - ${etcd_server}
     %{~ endfor ~}
-    %{~ if replicas <= 1 ~}
-    bindAddress: 0.0.0.0
-    %{~ else ~}
-    securePort: 8443
-    %{~ endif ~}
+    bindAddress: ${api_bind_address}
+    advertiseAddress: ${api_server_address}
+    securePort: ${api_server_port}
 
 kubeControllerManager:
     flexVolumePluginDir: /var/lib/kubelet/volumeplugins
@@ -58,7 +56,7 @@ kubeScheduler:
             ${indent(12, trimspace(kube_scheduler_key))}
 
 apiServerAddress: ${api_server_address}
-apiServerPort: 6443
+apiServerPort: ${api_server_port}
 
 ssh:
     user: "core"

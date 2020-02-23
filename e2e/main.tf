@@ -56,12 +56,29 @@ locals {
     ssh_port           = var.node_ssh_port
   })
 
-  apiloadbalancer_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    metrics_bind_addresses = concat(local.controller_ips, local.worker_ips)
+  bootstrap_api_bind = "127.0.0.1"
+  api_port = 8443
+
+  node_load_balancer_address = "127.0.0.1:7443"
+
+  apiloadbalancer_nodes_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
     ssh_private_key        = file(var.ssh_private_key_path)
     ssh_addresses          = concat(local.controller_ips, local.worker_ips)
     ssh_port               = var.node_ssh_port
-    servers                = local.controller_ips
+    servers                = formatlist("%s:%d", local.controller_ips, local.api_port)
+    name                   = "api-loadbalancer-nodes"
+    config_path            = "/etc/haproxy/nodes.cfg"
+    bind_address           = local.node_load_balancer_address
+  })
+
+  apiloadbalancer_bootstrap_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
+    ssh_private_key        = file(var.ssh_private_key_path)
+    ssh_addresses          = [local.first_controller_ip]
+    ssh_port               = var.node_ssh_port
+    servers                = ["${local.bootstrap_api_bind}:${local.api_port}"]
+    name                   = "api-loadbalancer-bootstrap"
+    config_path            = "/etc/haproxy/bootstrap.cfg"
+    bind_address           = "${local.first_controller_ip}:${local.api_port}"
   })
 
   controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
@@ -90,7 +107,8 @@ locals {
     ssh_port                          = var.node_ssh_port
     ssh_private_key                   = file(var.ssh_private_key_path)
     root_ca_certificate               = module.root_pki.root_ca_cert
-    replicas                          = var.controllers_count
+    api_bind_address                  = local.bootstrap_api_bind
+    api_server_port                   = local.api_port
   })
 
   kube_apiserver_values = templatefile("./templates/kube-apiserver-values.yaml.tmpl", {
@@ -115,7 +133,7 @@ locals {
     kubernetes_ca_key           = module.kubernetes_pki.kubernetes_ca_key
     root_ca_certificate         = module.root_pki.root_ca_cert
     kubernetes_ca_certificate   = module.kubernetes_pki.kubernetes_ca_cert
-    api_servers                 = formatlist("%s:6443", local.controller_ips)
+    api_servers                 = formatlist("%s:%d", local.controller_ips, local.api_port)
     replicas                    = var.controllers_count
     podsCIDR                    = var.pod_cidr
   })
@@ -140,17 +158,34 @@ EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
-    server      = "https://${local.first_controller_ip}:6443"
+    server      = "https://${local.first_controller_ip}:${local.api_port}"
     ca_cert     = base64encode(module.kubernetes_pki.kubernetes_ca_cert)
     client_cert = base64encode(module.kubernetes_pki.kubernetes_admin_cert)
     client_key  = base64encode(module.kubernetes_pki.kubernetes_admin_key)
   })
 
-  bootstrap_kubeconfig = templatefile("./templates/bootstrap-kubeconfig.tmpl", {
-    address = var.controllers_count > 1 ? "localhost" : cidrhost(var.nodes_cidr, 2)
-  })
-
   network_plugin = var.network_plugin == "kubenet" ? "kubenet" : "cni"
+
+  bootstrap_kubeconfig = <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority: /etc/kubernetes/pki/ca.crt
+    server: https://${local.node_load_balancer_address}
+  name: bootstrap
+contexts:
+- context:
+    cluster: bootstrap
+    user: kubelet-bootstrap
+  name: bootstrap
+current-context: bootstrap
+preferences: {}
+users:
+- name: kubelet-bootstrap
+  user:
+    token: 07401b.f395accd246ae52d
+EOF
 
   kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
     kubelet_addresses            = local.controller_ips
@@ -190,7 +225,6 @@ EOF
     cgroup_driver                = local.cgroup_driver
   })
 
-  deploy_apiloadbalancer = var.controllers_count > 1 ? 1 : 0
   deploy_workers         = var.workers_count > 0 ? 1 : 0
 }
 
@@ -203,21 +237,18 @@ resource "flexkube_etcd_cluster" "etcd" {
   config = local.etcd_config
 }
 
-resource "flexkube_apiloadbalancer_pool" "controllers" {
-  count = local.deploy_apiloadbalancer
+resource "flexkube_apiloadbalancer_pool" "nodes" {
+  config = local.apiloadbalancer_nodes_config
+}
 
-  config = local.apiloadbalancer_config
-
-  depends_on = [
-    flexkube_etcd_cluster.etcd,
-  ]
+resource "flexkube_apiloadbalancer_pool" "bootstrap" {
+  config = local.apiloadbalancer_bootstrap_config
 }
 
 resource "flexkube_controlplane" "bootstrap" {
   config = local.controlplane_config
 
   depends_on = [
-    flexkube_apiloadbalancer_pool.controllers,
     flexkube_etcd_cluster.etcd,
   ]
 }
@@ -230,7 +261,9 @@ resource "flexkube_helm_release" "kube-apiserver" {
   values     = local.kube_apiserver_values
 
   depends_on = [
-    flexkube_controlplane.bootstrap
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.nodes,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -242,7 +275,7 @@ resource "flexkube_helm_release" "kubernetes" {
   values     = local.kubernetes_values
 
   depends_on = [
-    flexkube_helm_release.kube-apiserver
+    flexkube_helm_release.kube-apiserver,
   ]
 }
 
@@ -254,7 +287,7 @@ resource "flexkube_helm_release" "coredns" {
   values     = local.coredns_values
 
   depends_on = [
-    flexkube_helm_release.kubernetes
+    flexkube_helm_release.kubernetes,
   ]
 }
 
@@ -265,7 +298,7 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   name       = "kubelet-rubber-stamp"
 
   depends_on = [
-    flexkube_helm_release.kubernetes
+    flexkube_helm_release.kubernetes,
   ]
 }
 
@@ -279,7 +312,7 @@ resource "flexkube_helm_release" "calico" {
   values     = local.calico_values
 
   depends_on = [
-    flexkube_helm_release.kubernetes
+    flexkube_helm_release.kubernetes,
   ]
 }
 
@@ -287,8 +320,9 @@ resource "flexkube_kubelet_pool" "controller" {
   config = local.kubelet_pool_config
 
   depends_on = [
-    flexkube_apiloadbalancer_pool.controllers,
+    flexkube_apiloadbalancer_pool.nodes,
     flexkube_helm_release.kubernetes,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -298,7 +332,8 @@ resource "flexkube_kubelet_pool" "workers" {
   config = local.kubelet_worker_pool_config
 
   depends_on = [
-    flexkube_apiloadbalancer_pool.controllers,
+    flexkube_apiloadbalancer_pool.nodes,
     flexkube_helm_release.kubernetes,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
