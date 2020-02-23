@@ -299,6 +299,8 @@ func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
 			Path:    path.Join(ConfigMountpoint, p),
 			Content: content,
 			Mode:    configFileMode,
+			User:    m.container.Config().User,
+			Group:   m.container.Config().Group,
 		})
 	}
 

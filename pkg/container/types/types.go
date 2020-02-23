@@ -15,6 +15,8 @@ type ContainerConfig struct {
 	NetworkMode string    `json:"networkMode,omitempty"`
 	PidMode     string    `json:"pidMode,omitempty"`
 	IpcMode     string    `json:"ipcMode,omitempty"`
+	User        string    `json:"user,omitempty"`
+	Group       string    `json:"group,omitempty"`
 }
 
 // ContainerStatus stores status information received from the runtime
@@ -46,6 +48,8 @@ type File struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 	Mode    int64  `json:"mode"`
+	User    string `json:"uid"`
+	Group   string `json:"gid"`
 }
 
 func (s *ContainerStatus) Exists() bool {
