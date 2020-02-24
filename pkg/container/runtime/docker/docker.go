@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
@@ -169,12 +170,18 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		return "", fmt.Errorf("failed building ports: %w", err)
 	}
 
+	u := config.User
+	if config.Group != "" {
+		u = fmt.Sprintf("%s:%s", config.User, config.Group)
+	}
+
 	// Just structs required for starting container.
 	dockerConfig := containertypes.Config{
 		Image:        config.Image,
 		Cmd:          config.Args,
 		Entrypoint:   config.Entrypoint,
 		ExposedPorts: exposedPorts,
+		User:         u,
 	}
 	hostConfig := containertypes.HostConfig{
 		Mounts:       mounts(config.Mounts),
@@ -262,6 +269,18 @@ func filesToTar(files []*types.File) (io.Reader, error) {
 			ModTime: time.Now(),
 		}
 
+		if uid, err := strconv.Atoi(f.User); err == nil {
+			h.Uid = uid
+		} else {
+			h.Uname = f.User
+		}
+
+		if gid, err := strconv.Atoi(f.Group); err == nil {
+			h.Gid = gid
+		} else {
+			h.Gname = f.Group
+		}
+
 		if err := tw.WriteHeader(h); err != nil {
 			return nil, err
 		}
@@ -302,10 +321,14 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 			return nil, fmt.Errorf("failed reading from tar archive: %w", err)
 		}
 
-		files = append(files, &types.File{
+		f := &types.File{
+			User:    util.PickString(strconv.Itoa(header.Uid), header.Uname),
+			Group:   util.PickString(strconv.Itoa(header.Gid), header.Gname),
 			Content: buf.String(),
 			Mode:    header.Mode,
-		})
+		}
+
+		files = append(files, f)
 	}
 
 	return files, nil
@@ -333,8 +356,8 @@ func (d *docker) Stat(id string, paths []string) (map[string]os.FileMode, error)
 func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 	files := []*types.File{}
 
-	for _, f := range srcPaths {
-		rc, _, err := d.cli.CopyFromContainer(d.ctx, id, f)
+	for _, p := range srcPaths {
+		rc, _, err := d.cli.CopyFromContainer(d.ctx, id, p)
 		if err != nil && !client.IsErrNotFound(err) {
 			return nil, fmt.Errorf("failed copying from container: %w", err)
 		}
@@ -347,10 +370,10 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 
 		fs, err := tarToFiles(rc)
 		if err != nil {
-			return nil, fmt.Errorf("failed extracting file %s from archive: %v", f, err)
+			return nil, fmt.Errorf("failed extracting file %s from archive: %v", p, err)
 		}
 
-		fs[0].Path = f
+		fs[0].Path = p
 
 		files = append(files, fs[0])
 	}

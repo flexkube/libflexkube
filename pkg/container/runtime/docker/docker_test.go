@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/errdefs"
 	"github.com/google/go-cmp/cmp"
 
@@ -196,6 +199,8 @@ func TestRead(t *testing.T) {
 			Path:    p,
 			Content: "foo\n",
 			Mode:    defaultMode,
+			User:    "1000",
+			Group:   "1000",
 		},
 	}
 
@@ -267,6 +272,8 @@ func TestTarToFiles(t *testing.T) {
 		{
 			Content: "foo\n",
 			Mode:    defaultMode,
+			User:    "1000",
+			Group:   "1000",
 		},
 	}
 
@@ -277,10 +284,13 @@ func TestTarToFiles(t *testing.T) {
 
 // filesToTar()
 func TestFilesToTar(t *testing.T) {
+	tn := "test"
 	f := &types.File{
 		Content: "foo\n",
 		Mode:    defaultMode,
 		Path:    defaultPath,
+		User:    tn,
+		Group:   tn,
 	}
 
 	r, err := filesToTar([]*types.File{f})
@@ -306,4 +316,145 @@ func TestFilesToTar(t *testing.T) {
 	if h.ModTime.IsZero() {
 		t.Fatalf("Modification time in file should be set to current time")
 	}
+
+	if h.Uname != tn {
+		t.Fatalf("Expecter uname to be %s, got %s", tn, h.Uname)
+	}
+
+	if h.Gname != tn {
+		t.Fatalf("Expected gname to be %s, got %s", tn, h.Gname)
+	}
 }
+
+func TestFilesToTarNumericUserGroup(t *testing.T) {
+	tn := 1001
+	f := &types.File{
+		Content: "foo\n",
+		Mode:    defaultMode,
+		Path:    defaultPath,
+		User:    strconv.Itoa(tn),
+		Group:   strconv.Itoa(tn),
+	}
+
+	r, err := filesToTar([]*types.File{f})
+	if err != nil {
+		t.Fatalf("Packing files should succeed, got: %v", err)
+	}
+
+	tr := tar.NewReader(r)
+
+	h, err := tr.Next()
+	if err == io.EOF {
+		t.Fatalf("At least one file should be found in TAR archive")
+	}
+
+	if h.Uid != tn {
+		t.Fatalf("Expecter uid to be %d, got %d", tn, h.Uid)
+	}
+
+	if h.Gid != tn {
+		t.Fatalf("Expected gid to be %d, got %d", tn, h.Gid)
+	}
+}
+
+// Create()
+func TestCreatePullImageFail(t *testing.T) {
+	d := &docker{
+		ctx: context.Background(),
+		cli: &FakeClient{
+			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+				return []dockertypes.ImageSummary{}, fmt.Errorf("runtime error")
+			},
+		},
+	}
+
+	if _, err := d.Create(&types.ContainerConfig{}); err == nil {
+		t.Fatalf("Should fail when runtime error occurs")
+	}
+}
+
+func TestCreateBuildPortsFail(t *testing.T) {}
+
+func TestCreateSetUser(t *testing.T) {
+	c := &types.ContainerConfig{
+		User: "test",
+	}
+
+	d := &docker{
+		ctx: context.Background(),
+		cli: &FakeClient{
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+				if config.User != c.User {
+					t.Fatalf("configured user should be %s, got %s", c.User, config.User)
+				}
+
+				return containertypes.ContainerCreateCreatedBody{}, nil
+			},
+			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				return ioutil.NopCloser(strings.NewReader("")), nil
+			},
+			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+				return []dockertypes.ImageSummary{}, nil
+			},
+		},
+	}
+
+	if _, err := d.Create(c); err != nil {
+		t.Fatalf("Create should succeed, got: %v", err)
+	}
+}
+
+func TestCreateSetUserGroup(t *testing.T) {
+	c := &types.ContainerConfig{
+		User:  "test",
+		Group: "bar",
+	}
+
+	e := fmt.Sprintf("%s:%s", c.User, c.Group)
+
+	d := &docker{
+		ctx: context.Background(),
+		cli: &FakeClient{
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+				if config.User != e {
+					t.Fatalf("configured user should be %s, got %s", e, config.User)
+				}
+
+				return containertypes.ContainerCreateCreatedBody{}, nil
+			},
+			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				return ioutil.NopCloser(strings.NewReader("")), nil
+			},
+			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+				return []dockertypes.ImageSummary{}, nil
+			},
+		},
+	}
+
+	if _, err := d.Create(c); err != nil {
+		t.Fatalf("Create should succeed, got: %v", err)
+	}
+}
+
+func TestCreateRuntimeFail(t *testing.T) {
+	d := &docker{
+		ctx: context.Background(),
+		cli: &FakeClient{
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+				return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
+			},
+			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				return ioutil.NopCloser(strings.NewReader("")), nil
+			},
+			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+				return []dockertypes.ImageSummary{}, nil
+			},
+		},
+	}
+
+	if _, err := d.Create(&types.ContainerConfig{}); err == nil {
+		t.Fatalf("Should fail when runtime error occurs")
+	}
+}
+
+func TestCreate(t *testing.T) {}
