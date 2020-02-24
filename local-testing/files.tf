@@ -39,14 +39,12 @@ resource "local_file" "controlplane_state" {
 }
 
 resource "local_file" "apiloadbalancer_config" {
-  count             = local.deploy_apiloadbalancer
-  sensitive_content = local.apiloadbalancer_config
+  sensitive_content = local.apiloadbalancer_nodes_config
   filename          = "./resources/api-loadbalancers/config.yaml"
 }
 
 resource "local_file" "apiloadbalancer_state" {
-  count             = local.deploy_apiloadbalancer
-  sensitive_content = flexkube_apiloadbalancer_pool.controllers.0.state
+  sensitive_content = flexkube_apiloadbalancer_pool.nodes.state
   filename          = "./resources/api-loadbalancers/state.yaml"
 }
 

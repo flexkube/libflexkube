@@ -105,6 +105,8 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 			Name:        a.name,
 			Image:       a.image,
 			NetworkMode: "host",
+			// Run as unprivileged user.
+			User: "65534",
 			Mounts: []types.Mount{
 				{
 					Source: a.hostConfigPath,

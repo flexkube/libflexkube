@@ -28,6 +28,10 @@ func TestToHostConfiguredContainer(t *testing.T) {
 	if _, err := hcc.New(); err != nil {
 		t.Fatalf("should produce valid HostConfiguredContainer, got: %v", err)
 	}
+
+	if hcc.Container.Config.User == "" {
+		t.Fatalf("HostConfiguredContainer should have user set")
+	}
 }
 
 // Validate()
