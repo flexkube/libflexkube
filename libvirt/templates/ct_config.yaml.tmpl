@@ -10,6 +10,8 @@ systemd:
   units:
     - name: locksmithd.service
       mask: true
+    - name: update-engine.service
+      mask: true
     - name: docker.service
       enabled: true
     - name: systemd-timesyncd.service

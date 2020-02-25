@@ -61,6 +61,8 @@ EOF
     mkdir -p /etc/systemd/resolved.conf.d && echo "#{resolved_config}" | sudo tee /etc/systemd/resolved.conf.d/dns_servers.conf >/dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
+    sudo systemctl mask update-engine locksmithd
+    sudo systemctl stop update-engine locksmithd
     sudo systemctl start docker systemd-timesyncd iptables-store
     sudo systemctl restart systemd-networkd systemd-resolved
   EOF
