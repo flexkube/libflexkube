@@ -264,7 +264,7 @@ vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy
 .PHONY: vagrant-conformance-run
 vagrant-conformance-run:
 	# Make sure static controlplane is shut down.
-	$(VAGRANTCMD) ssh -c "docker stop kube-apiserver kube-scheduler kube-controller-manager"
+	$(VAGRANTCMD) ssh -c "docker stop kube-apiserver kube-scheduler kube-controller-manager api-loadbalancer-bootstrap"
 	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-conformance'"
 
 .PHONY: vagrant-conformance
