@@ -144,7 +144,7 @@ test-conformance-clean:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration $(GO_PACKAGES)
+	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration --timeout 10m $(GO_PACKAGES)
 
 .PHONY: update
 update:
