@@ -1,23 +1,25 @@
 storage:
   files:
-    - path: /etc/hostname
-      filesystem: root
-      mode: 0420
-      contents:
-        inline: |
-          ${hostname}
+  - path: /etc/hostname
+    filesystem: root
+    mode: 0420
+    contents:
+      inline: |
+        ${hostname}
 systemd:
   units:
-    - name: locksmithd.service
-      mask: true
-    - name: docker.service
-      enabled: true
-    - name: systemd-timesyncd.service
-      enabled: true
+  - name: locksmithd.service
+    mask: true
+  - name: update-engine.service
+    mask: true
+  - name: docker.service
+    enabled: true
+  - name: systemd-timesyncd.service
+    enabled: true
 passwd:
   users:
-    - name: core
-      ssh_authorized_keys:
+  - name: core
+    ssh_authorized_keys:
 %{ for key in core_public_keys ~}
-        - ${key}
+    - ${key}
 %{ endfor ~}
