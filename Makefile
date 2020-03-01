@@ -296,3 +296,7 @@ libvirt-download-providers:
 .PHONY: test-static
 test-static:
 	$(GORUN) honnef.co/go/tools/cmd/staticcheck $(GO_PACKAGES)
+
+.PHONY: terraform-fmt
+terraform-fmt:
+	for j in $$(for i in $$(find -name *.tf 2>/dev/null | grep -v .terraform); do dirname $$i; done | sort  | uniq); do terraform fmt -check $$j; done
