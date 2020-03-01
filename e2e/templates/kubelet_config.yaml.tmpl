@@ -1,5 +1,18 @@
 cgroupDriver: ${cgroup_driver}
 networkPlugin: ${network_plugin}
+%{ if network_plugin == "kubenet" }
+hairpinMode: promiscuous-bridge
+%{~ else ~}
+hairpinMode: hairpin-veth
+%{~ endif }
+volumePluginDir: /var/lib/kubelet/volumeplugins
+systemReserved:
+  cpu: 100m
+  memory: 500Mi
+kubeReserved:
+%{ for k, v in kube_reserved ~}
+  ${k}: '${v}'
+%{ endfor ~}
 kubelets:
 %{ for index, ssh_address in ssh_addresses ~}
 - address: ${kubelet_addresses[index]}

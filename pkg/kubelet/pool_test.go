@@ -15,6 +15,7 @@ ssh:
   retryTimeout: 1s
   retryInterval: 1s
 bootstrapKubeconfig: foo
+volumePluginDir: /var/lib/kubelet/volumeplugins
 kubelets:
 - networkPlugin: cni
 `

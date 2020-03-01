@@ -220,6 +220,11 @@ EOF
       "node-role.kubernetes.io/master" = "NoSchedule"
     }
     cgroup_driver = local.cgroup_driver
+    kube_reserved = {
+      // 100MB for kubelet and 200MB for etcd.
+      "memory" = "300Mi"
+      "cpu"    = "100m"
+    }
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
@@ -237,6 +242,10 @@ EOF
     privileged_labels            = {}
     privileged_labels_kubeconfig = ""
     cgroup_driver                = local.cgroup_driver
+    kube_reserved = {
+      "memory" = "100Mi"
+      "cpu"    = "100m"
+    }
   })
 
   deploy_workers = var.workers_count > 0 ? 1 : 0

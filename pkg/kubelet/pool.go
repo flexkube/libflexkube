@@ -28,6 +28,10 @@ type Pool struct {
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
 	CgroupDriver               string            `json:"cgroupDriver"`
 	NetworkPlugin              string            `json:"networkPlugin"`
+	SystemReserved             map[string]string `json:"systemReserved"`
+	KubeReserved               map[string]string `json:"kubeReserved"`
+	HairpinMode                string            `json:"hairpinMode"`
+	VolumePluginDir            string            `json:"volumePluginDir"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state"`
@@ -50,6 +54,10 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.Taints = util.PickStringMap(k.Taints, p.Taints)
 	k.CgroupDriver = util.PickString(k.CgroupDriver, p.CgroupDriver)
 	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin)
+	k.SystemReserved = util.PickStringMap(k.SystemReserved, p.SystemReserved)
+	k.KubeReserved = util.PickStringMap(k.KubeReserved, p.KubeReserved)
+	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode)
+	k.VolumePluginDir = util.PickString(k.VolumePluginDir, p.VolumePluginDir)
 
 	k.Host = host.BuildConfig(k.Host, host.Host{
 		SSHConfig: p.SSH,
