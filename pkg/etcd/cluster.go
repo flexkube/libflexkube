@@ -34,11 +34,8 @@ type Cluster struct {
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.
 type cluster struct {
-	image         string
-	ssh           *ssh.Config
-	caCertificate string
-	containers    container.Containers
-	members       map[string]*member
+	containers container.Containers
+	members    map[string]*member
 }
 
 // propagateMember fills given Member's empty fields with fields from Cluster.
@@ -76,9 +73,6 @@ func (c *Cluster) New() (types.Resource, error) {
 	}
 
 	cluster := &cluster{
-		image:         c.Image,
-		ssh:           c.SSH,
-		caCertificate: string(c.CACertificate),
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
