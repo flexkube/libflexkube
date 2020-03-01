@@ -33,6 +33,8 @@ type Kubelet struct {
 	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
 	CgroupDriver               string            `json:"cgroupDriver"`
 	NetworkPlugin              string            `json:"networkPlugin"`
+	SystemReserved             map[string]string `json:"systemReserved"`
+	KubeReserved               map[string]string `json:"kubeReserved"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -54,6 +56,8 @@ type kubelet struct {
 	privilegedLabelsKubeconfig string
 	cgroupDriver               string
 	networkPlugin              string
+	systemReserved             map[string]string
+	kubeReserved               map[string]string
 }
 
 // New validates Kubelet configuration and returns it's usable version.
@@ -78,6 +82,8 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
 		cgroupDriver:               k.CgroupDriver,
 		networkPlugin:              k.NetworkPlugin,
+		systemReserved:             k.SystemReserved,
+		kubeReserved:               k.KubeReserved,
 	}
 
 	if nk.image == "" {
@@ -158,6 +164,16 @@ func (k *kubelet) config() (string, error) {
 		// This defines where should pods cgroups be created, like /kubepods and /kubepods/burstable.
 		// Also when specified, it suppresses a lot message about it.
 		CgroupRoot: "/",
+
+		// Used for calculating node allocatable resources.
+		// If EnforceNodeAllocatable has 'system-reserved' set, those limits will be enforced on cgroup specified
+		// with SystemReservedCgroup.
+		SystemReserved: k.systemReserved,
+
+		// Used for calculating node allocatable resources.
+		// If EnforceNodeAllocatable has 'kube-reserved' set, those limits will be enforced on cgroup specified
+		// with KubeReservedCgroup.
+		KubeReserved: k.kubeReserved,
 
 		ClusterDNS: k.clusterDNSIPs,
 	}
