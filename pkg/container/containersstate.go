@@ -4,6 +4,11 @@ import (
 	"fmt"
 
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
+	"github.com/flexkube/libflexkube/pkg/container/types"
+)
+
+const (
+	StatusMissing = "gone"
 )
 
 // ContainersStateInterface exports constainersState capabilities.
@@ -46,6 +51,12 @@ func (s containersState) CheckState() error {
 	for _, hcc := range s {
 		if err := hcc.Status(); err != nil {
 			return err
+		}
+
+		if hcc.container.Status().ID == "" {
+			hcc.container.SetStatus(types.ContainerStatus{
+				Status: StatusMissing,
+			})
 		}
 
 		if err := hcc.ConfigurationStatus(); err != nil {
