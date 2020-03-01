@@ -136,9 +136,6 @@ func (k *kubelet) config() (string, error) {
 		RotateCertificates: true,
 		// Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates.
 		ServerTLSBootstrap: true,
-		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
-		// TODO This will be removed by yaml.Marshal, so we add it manually later.
-		EnforceNodeAllocatable: []string{},
 		// If Docker is configured to use systemd as a cgroup driver and Docker is used as container
 		// runtime, this needs to be set to match Docker.
 		// TODO pull that information dynamically based on what container runtime is configured.
@@ -186,9 +183,7 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 
 	return map[string]string{
 		// kubelet.yaml file is a recommended way to configure the kubelet.
-		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
-		// TODO Figure out how to put that in the struct up there, as when doing yaml.Marshal, it removes empty slice.
-		"/etc/kubernetes/kubelet/kubelet.yaml":         fmt.Sprintf("%senforceNodeAllocatable: []\n", config),
+		"/etc/kubernetes/kubelet/kubelet.yaml":         config,
 		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.bootstrapKubeconfig,
 		"/etc/kubernetes/kubelet/pki/ca.crt":           k.kubernetesCACertificate,
 	}, nil
