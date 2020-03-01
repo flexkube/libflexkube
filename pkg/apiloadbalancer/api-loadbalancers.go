@@ -30,8 +30,6 @@ type APILoadBalancers struct {
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers
 type apiLoadBalancers struct {
-	image      string
-	ssh        *ssh.Config
 	containers *container.Containers
 }
 
@@ -56,8 +54,6 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 	}
 
 	apiLoadBalancers := &apiLoadBalancers{
-		image: a.Image,
-		ssh:   a.SSH,
 		containers: &container.Containers{
 			PreviousState: a.State,
 			DesiredState:  make(container.ContainersState),
