@@ -57,28 +57,28 @@ locals {
   })
 
   bootstrap_api_bind = "127.0.0.1"
-  api_port = 8443
+  api_port           = 8443
 
   node_load_balancer_address = "127.0.0.1:7443"
 
   apiloadbalancer_nodes_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key        = file(var.ssh_private_key_path)
-    ssh_addresses          = concat(local.controller_ips, local.worker_ips)
-    ssh_port               = var.node_ssh_port
-    servers                = formatlist("%s:%d", local.controller_ips, local.api_port)
-    name                   = "api-loadbalancer-nodes"
-    config_path            = "/etc/haproxy/nodes.cfg"
-    bind_address           = local.node_load_balancer_address
+    ssh_private_key = file(var.ssh_private_key_path)
+    ssh_addresses   = concat(local.controller_ips, local.worker_ips)
+    ssh_port        = var.node_ssh_port
+    servers         = formatlist("%s:%d", local.controller_ips, local.api_port)
+    name            = "api-loadbalancer-nodes"
+    config_path     = "/etc/haproxy/nodes.cfg"
+    bind_address    = local.node_load_balancer_address
   })
 
   apiloadbalancer_bootstrap_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key        = file(var.ssh_private_key_path)
-    ssh_addresses          = [local.first_controller_ip]
-    ssh_port               = var.node_ssh_port
-    servers                = ["${local.bootstrap_api_bind}:${local.api_port}"]
-    name                   = "api-loadbalancer-bootstrap"
-    config_path            = "/etc/haproxy/bootstrap.cfg"
-    bind_address           = "${local.first_controller_ip}:${local.api_port}"
+    ssh_private_key = file(var.ssh_private_key_path)
+    ssh_addresses   = [local.first_controller_ip]
+    ssh_port        = var.node_ssh_port
+    servers         = ["${local.bootstrap_api_bind}:${local.api_port}"]
+    name            = "api-loadbalancer-bootstrap"
+    config_path     = "/etc/haproxy/bootstrap.cfg"
+    bind_address    = "${local.first_controller_ip}:${local.api_port}"
   })
 
   controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
@@ -156,6 +156,20 @@ podCIDR: ${var.pod_cidr}
 flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 EOF
 
+  metrics_server_values = <<EOF
+rbac:
+  pspEnabled: true
+args:
+- --kubelet-preferred-address-types=InternalIP
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+tolerations:
+- key: node-role.kubernetes.io/master
+  operator: Exists
+  effect: NoSchedule
+EOF
+
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
     server      = "https://${local.first_controller_ip}:${local.api_port}"
@@ -188,24 +202,24 @@ users:
 EOF
 
   kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses            = local.controller_ips
-    bootstrap_kubeconfig         = local.bootstrap_kubeconfig
-    ssh_private_key              = file(var.ssh_private_key_path)
-    ssh_addresses                = local.controller_ips
-    ssh_port                     = var.node_ssh_port
-    kubelet_pod_cidrs            = local.controller_cidrs
-    kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
-    kubelet_names                = local.controller_names
-    network_plugin               = local.network_plugin
-    labels                       = {}
-    privileged_labels            = {
+    kubelet_addresses         = local.controller_ips
+    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+    ssh_private_key           = file(var.ssh_private_key_path)
+    ssh_addresses             = local.controller_ips
+    ssh_port                  = var.node_ssh_port
+    kubelet_pod_cidrs         = local.controller_cidrs
+    kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+    kubelet_names             = local.controller_names
+    network_plugin            = local.network_plugin
+    labels                    = {}
+    privileged_labels = {
       "node-role.kubernetes.io/master" = ""
     }
     privileged_labels_kubeconfig = local.kubeconfig_admin
-    taints                       = {
+    taints = {
       "node-role.kubernetes.io/master" = "NoSchedule"
     }
-    cgroup_driver                = local.cgroup_driver
+    cgroup_driver = local.cgroup_driver
   })
 
   kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
@@ -225,7 +239,7 @@ EOF
     cgroup_driver                = local.cgroup_driver
   })
 
-  deploy_workers         = var.workers_count > 0 ? 1 : 0
+  deploy_workers = var.workers_count > 0 ? 1 : 0
 }
 
 resource "local_file" "kubeconfig" {
@@ -291,6 +305,18 @@ resource "flexkube_helm_release" "coredns" {
   ]
 }
 
+resource "flexkube_helm_release" "metrics-server" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = "stable/metrics-server"
+  name       = "metrics-server"
+  values     = local.metrics_server_values
+
+  depends_on = [
+    flexkube_helm_release.kubernetes,
+  ]
+}
+
 resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
@@ -303,7 +329,7 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
 }
 
 resource "flexkube_helm_release" "calico" {
-  count      = var.network_plugin == "calico" ? 1 : 0
+  count = var.network_plugin == "calico" ? 1 : 0
 
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
