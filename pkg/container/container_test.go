@@ -383,3 +383,26 @@ func TestContainerDelete(t *testing.T) {
 		t.Fatalf("Delete should remove ID from status")
 	}
 }
+
+// SetStatus()
+func TestContainerSetStatus(t *testing.T) {
+	c := &container{
+		base: base{
+			status: types.ContainerStatus{
+				ID:     "foo",
+				Status: "running",
+			},
+		},
+	}
+
+	e := types.ContainerStatus{
+		ID:     "bar",
+		Status: "boom",
+	}
+
+	c.SetStatus(e)
+
+	if diff := cmp.Diff(c.base.status, e); diff != "" {
+		t.Fatalf("Unexpected diff: %s", diff)
+	}
+}
