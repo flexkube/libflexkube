@@ -279,7 +279,7 @@ func (c *cluster) Deploy() error {
 		}
 	}
 
-	return c.containers.Execute()
+	return c.containers.Deploy()
 }
 
 // Containers implement types.Resource interface.

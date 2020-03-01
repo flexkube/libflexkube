@@ -232,7 +232,7 @@ func (c *controlplane) CheckCurrentState() error {
 
 // Deploy checks the status of the control plane and deploys configuration updates.
 func (c *controlplane) Deploy() error {
-	return c.containers.Execute()
+	return c.containers.Deploy()
 }
 
 // Containers implement types.Resource interface.

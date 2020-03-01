@@ -124,7 +124,7 @@ func (a *apiLoadBalancers) CheckCurrentState() error {
 // Deploy checks current status of deployed group of instances and updates them if there is some
 // configuration drift.
 func (a *apiLoadBalancers) Deploy() error {
-	return a.containers.Execute()
+	return a.containers.Deploy()
 }
 
 // Containers implement types.Resource interface.

@@ -74,7 +74,7 @@ func TestContainersCheckCurrentStateNew(t *testing.T) {
 func TestContainersCurrentStateToYAML(t *testing.T) {
 	c := GetContainers(t)
 
-	_, err := c.CurrentStateToYaml()
+	_, err := c.StateToYaml()
 	if err != nil {
 		t.Fatalf("Getting current state in YAML format should work, got: %v", err)
 	}
@@ -911,10 +911,10 @@ func TestRecreateNonExistent(t *testing.T) {
 	}
 }
 
-// Execute()
-func TestExecuteNoCurrentState(t *testing.T) {
+// Deploy()
+func TestDeployNoCurrentState(t *testing.T) {
 	c := &containers{}
-	if err := c.Execute(); err == nil {
+	if err := c.Deploy(); err == nil {
 		t.Fatalf("Execute without current state should fail")
 	}
 }

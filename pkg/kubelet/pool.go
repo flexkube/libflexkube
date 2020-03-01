@@ -145,7 +145,7 @@ func (p *pool) CheckCurrentState() error {
 
 // Deploy checks current status of the pool and deploy configuration changes.
 func (p *pool) Deploy() error {
-	return p.containers.Execute()
+	return p.containers.Deploy()
 }
 
 // Containers implement types.Resource interface.

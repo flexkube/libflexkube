@@ -13,10 +13,11 @@ import (
 // ContainersInterface represents capabilities of containers struct.
 type ContainersInterface interface {
 	CheckCurrentState() error
-	Execute() error
-	CurrentStateToYaml() ([]byte, error)
+	Deploy() error
+	StateToYaml() ([]byte, error)
 	ToExported() *Containers
 	DesiredState() ContainersState
+	Containers() ContainersInterface
 }
 
 // Containers allow to orchestrate and update multiple containers spread
@@ -117,7 +118,7 @@ func (c *Containers) Deploy() error {
 		return err
 	}
 
-	if err := containers.Execute(); err != nil {
+	if err := containers.Deploy(); err != nil {
 		return err
 	}
 
@@ -427,14 +428,14 @@ func (c *containers) updateExistingContainers() error {
 	return nil
 }
 
-// Execute checks for containers configuration drifts and tries to reach desired state.
+// Deploy checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
 // TODO add planning, so it is possible to inspect what will be done
 // TODO currently we only compare previous configuration with new configuration.
 // We should also read runtime parameters and confirm that everything is according
 // to the spec.
-func (c *containers) Execute() error {
+func (c *containers) Deploy() error {
 	if c.currentState == nil {
 		return fmt.Errorf("can't execute without knowing current state of the containers")
 	}
@@ -479,9 +480,9 @@ func FromYaml(c []byte) (ContainersInterface, error) {
 	return cl, nil
 }
 
-// CurrentStateToYaml dumps current state as previousState in exported format,
+// StateToYaml dumps current state as previousState in exported format,
 // which can be serialized and stored.
-func (c *containers) CurrentStateToYaml() ([]byte, error) {
+func (c *containers) StateToYaml() ([]byte, error) {
 	containers := &Containers{
 		PreviousState: c.previousState.Export(),
 	}
@@ -522,4 +523,9 @@ func (c *containers) DesiredState() ContainersState {
 	}
 
 	return d
+}
+
+// Containers implement types.Resource interface.
+func (c *containers) Containers() ContainersInterface {
+	return c
 }
