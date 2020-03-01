@@ -47,7 +47,7 @@ type Controlplane struct {
 
 // controlplane is executable version of Controlplane, with validated fields and calculated containers.
 type controlplane struct {
-	containers container.Containers
+	containers container.ContainersInterface
 }
 
 // propagateKubeconfig merges given client config with values stored in Controlplane.
@@ -126,12 +126,14 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
+	cc := &container.Containers{
+		PreviousState: c.State,
+	}
+
+	co, _ := cc.New()
+
 	controlplane := &controlplane{
-		shutdown: c.Shutdown,
-		containers: container.Containers{
-			PreviousState: c.State,
-			DesiredState:  make(container.ContainersState),
-		},
+		containers: co,
 	}
 
 	// If shutdown is requested, don't fill DesiredState to remove everything.
@@ -152,11 +154,15 @@ func (c *Controlplane) New() (types.Resource, error) {
 	ks, _ := c.KubeScheduler.New()
 	ksHcc, _ := ks.ToHostConfiguredContainer()
 
-	controlplane.containers.DesiredState = container.ContainersState{
+	cc.DesiredState = container.ContainersState{
 		"kube-apiserver":          kasHcc,
 		"kube-controller-manager": kcmHcc,
 		"kube-scheduler":          ksHcc,
 	}
+
+	co, _ = cc.New()
+
+	controlplane.containers = co
 
 	return controlplane, nil
 }
@@ -217,7 +223,7 @@ func FromYaml(c []byte) (types.Resource, error) {
 
 // StateToYaml allows to dump controlplane state to YAML, so it can be restored later.
 func (c *controlplane) StateToYaml() ([]byte, error) {
-	return yaml.Marshal(Controlplane{State: c.containers.PreviousState})
+	return yaml.Marshal(Controlplane{State: c.containers.ToExported().PreviousState})
 }
 
 func (c *controlplane) CheckCurrentState() error {
@@ -226,5 +232,5 @@ func (c *controlplane) CheckCurrentState() error {
 
 // Deploy checks the status of the control plane and deploys configuration updates.
 func (c *controlplane) Deploy() error {
-	return c.containers.Deploy()
+	return c.containers.Execute()
 }
