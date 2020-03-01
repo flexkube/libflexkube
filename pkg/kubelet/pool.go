@@ -39,7 +39,7 @@ type Pool struct {
 
 // pool is a validated version of Pool.
 type pool struct {
-	containers container.Containers
+	containers container.ContainersInterface
 }
 
 // propagateKubelet fills given kubelet with values from Pool object.
@@ -70,11 +70,9 @@ func (p *Pool) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate pool configuration: %w", err)
 	}
 
-	pool := &pool{
-		containers: container.Containers{
-			PreviousState: p.State,
-			DesiredState:  make(container.ContainersState),
-		},
+	cc := &container.Containers{
+		PreviousState: p.State,
+		DesiredState:  make(container.ContainersState),
 	}
 
 	for i := range p.Kubelets {
@@ -85,16 +83,25 @@ func (p *Pool) New() (types.Resource, error) {
 		kubelet, _ := k.New()
 		kubeletHcc, _ := kubelet.ToHostConfiguredContainer()
 
-		pool.containers.DesiredState[strconv.Itoa(i)] = kubeletHcc
+		cc.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
-	return pool, nil
+	c, _ := cc.New()
+
+	return &pool{
+		containers: c,
+	}, nil
 }
 
 // Validate validates Pool configuration.
 //
 // TODO add actual validation
 func (p *Pool) Validate() error {
+	cc := &container.Containers{
+		PreviousState: p.State,
+		DesiredState:  make(container.ContainersState),
+	}
+
 	for i := range p.Kubelets {
 		// Make a copy of Kubelet struct to avoid modifying original one.
 		k := p.Kubelets[i]
@@ -106,9 +113,16 @@ func (p *Pool) Validate() error {
 			return fmt.Errorf("failed to create kubelet object: %w", err)
 		}
 
-		if _, err := kubelet.ToHostConfiguredContainer(); err != nil {
+		hcc, err := kubelet.ToHostConfiguredContainer()
+		if err != nil {
 			return fmt.Errorf("failed to generate kubelet container configuration: %w", err)
 		}
+
+		cc.DesiredState[strconv.Itoa(i)] = hcc
+	}
+
+	if _, err := cc.New(); err != nil {
+		return fmt.Errorf("failed validating containers configuration: %w", err)
 	}
 
 	return nil
@@ -121,7 +135,7 @@ func FromYaml(c []byte) (types.Resource, error) {
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.
 func (p *pool) StateToYaml() ([]byte, error) {
-	return yaml.Marshal(Pool{State: p.containers.PreviousState})
+	return yaml.Marshal(Pool{State: p.containers.ToExported().PreviousState})
 }
 
 // CheckCurrentState refreshes state of configured instances.
@@ -131,5 +145,5 @@ func (p *pool) CheckCurrentState() error {
 
 // Deploy checks current status of the pool and deploy configuration changes.
 func (p *pool) Deploy() error {
-	return p.containers.Deploy()
+	return p.containers.Execute()
 }
