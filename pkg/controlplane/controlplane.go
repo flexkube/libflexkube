@@ -47,12 +47,6 @@ type Controlplane struct {
 
 // controlplane is executable version of Controlplane, with validated fields and calculated containers.
 type controlplane struct {
-	common           Common
-	ssh              *ssh.Config
-	apiServerAddress string
-	apiServerPort    int
-	shutdown         bool
-
 	containers container.Containers
 }
 
@@ -133,11 +127,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 	}
 
 	controlplane := &controlplane{
-		common:           c.Common,
-		ssh:              c.SSH,
-		apiServerAddress: c.APIServerAddress,
-		apiServerPort:    c.APIServerPort,
-		shutdown:         c.Shutdown,
+		shutdown: c.Shutdown,
 		containers: container.Containers{
 			PreviousState: c.State,
 			DesiredState:  make(container.ContainersState),
