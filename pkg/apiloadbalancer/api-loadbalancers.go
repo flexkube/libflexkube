@@ -126,3 +126,8 @@ func (a *apiLoadBalancers) CheckCurrentState() error {
 func (a *apiLoadBalancers) Deploy() error {
 	return a.containers.Execute()
 }
+
+// Containers implement types.Resource interface.
+func (a *apiLoadBalancers) Containers() container.ContainersInterface {
+	return a.containers
+}

@@ -52,6 +52,15 @@ func GetContainers(t *testing.T) ContainersInterface {
 	return c
 }
 
+// Containers()
+func TestContainersContainers(t *testing.T) {
+	c := &containers{}
+
+	if !reflect.DeepEqual(c, c.Containers()) {
+		t.Fatalf("Containers() should return self")
+	}
+}
+
 // CheckCurrentState()
 func TestContainersCheckCurrentStateNew(t *testing.T) {
 	c := GetContainers(t)

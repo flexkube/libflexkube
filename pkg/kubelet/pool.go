@@ -147,3 +147,8 @@ func (p *pool) CheckCurrentState() error {
 func (p *pool) Deploy() error {
 	return p.containers.Execute()
 }
+
+// Containers implement types.Resource interface.
+func (p *pool) Containers() container.ContainersInterface {
+	return p.containers
+}

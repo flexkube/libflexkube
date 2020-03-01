@@ -74,6 +74,10 @@ members:
 		t.Fatalf("Checking current state for empty cluster should work, got: %v", err)
 	}
 
+	if c := cluster.Containers(); c == nil {
+		t.Fatalf("Containers() should return valid ContainersInterface object")
+	}
+
 	if _, err := cluster.StateToYaml(); err != nil {
 		t.Fatalf("Dumping cluster state to YAML should work, got: %v", err)
 	}

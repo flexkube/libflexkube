@@ -60,3 +60,12 @@ func TestLoadBalancersDeploy(t *testing.T) {
 		t.Fatalf("Deploying in testing environment should fail")
 	}
 }
+
+// Containers()
+func TestLoadBalancersContainers(t *testing.T) {
+	p := GetLoadBalancers(t)
+
+	if c := p.Containers(); c == nil {
+		t.Fatalf("Containers() should return non-nil value")
+	}
+}

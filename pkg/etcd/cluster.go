@@ -281,3 +281,8 @@ func (c *cluster) Deploy() error {
 
 	return c.containers.Execute()
 }
+
+// Containers implement types.Resource interface.
+func (c *cluster) Containers() container.ContainersInterface {
+	return c.containers
+}

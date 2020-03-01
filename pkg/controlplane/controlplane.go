@@ -234,3 +234,8 @@ func (c *controlplane) CheckCurrentState() error {
 func (c *controlplane) Deploy() error {
 	return c.containers.Execute()
 }
+
+// Containers implement types.Resource interface.
+func (c *controlplane) Containers() container.ContainersInterface {
+	return c.containers
+}

@@ -51,6 +51,15 @@ func TestPoolCheckCurrentState(t *testing.T) {
 	}
 }
 
+// Containers()
+func TestPoolContainers(t *testing.T) {
+	p := GetPool(t)
+
+	if c := p.Containers(); c == nil {
+		t.Fatalf("Containers() should return non-nil value")
+	}
+}
+
 // Deploy()
 func TestPoolDeploy(t *testing.T) {
 	p := GetPool(t)

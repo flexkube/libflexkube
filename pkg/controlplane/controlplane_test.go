@@ -89,8 +89,13 @@ ssh:
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
 
-	if _, err := FromYaml(buf.Bytes()); err != nil {
+	co, err := FromYaml(buf.Bytes())
+	if err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
+	}
+
+	if cc := co.Containers(); cc == nil {
+		t.Fatalf("Containers() should return non-nil value")
 	}
 }
 
