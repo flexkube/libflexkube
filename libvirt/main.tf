@@ -81,9 +81,9 @@ resource "libvirt_domain" "controller_machine" {
   }
 
   network_interface {
-    network_id     = libvirt_network.network.id
-    hostname       = local.controller_names[count.index]
-    addresses      = [local.controller_ips[count.index]]
+    network_id = libvirt_network.network.id
+    hostname   = local.controller_names[count.index]
+    addresses  = [local.controller_ips[count.index]]
   }
 }
 
@@ -114,8 +114,8 @@ resource "libvirt_domain" "worker_machine" {
   }
 
   network_interface {
-    network_id     = libvirt_network.network.id
-    hostname       = local.worker_names[count.index]
-    addresses      = [local.worker_ips[count.index]]
+    network_id = libvirt_network.network.id
+    hostname   = local.worker_names[count.index]
+    addresses  = [local.worker_ips[count.index]]
   }
 }
