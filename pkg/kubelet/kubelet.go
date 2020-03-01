@@ -42,22 +42,7 @@ type Kubelet struct {
 
 // kubelet is a validated, executable version of Kubelet.
 type kubelet struct {
-	address                    string
-	image                      string
-	host                       host.Host
-	bootstrapKubeconfig        string
-	kubernetesCACertificate    string
-	clusterDNSIPs              []string
-	podCIDR                    string
-	name                       string
-	taints                     map[string]string
-	labels                     map[string]string
-	privilegedLabels           map[string]string
-	privilegedLabelsKubeconfig string
-	cgroupDriver               string
-	networkPlugin              string
-	systemReserved             map[string]string
-	kubeReserved               map[string]string
+	config Kubelet
 }
 
 // New validates Kubelet configuration and returns it's usable version.
@@ -68,26 +53,11 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 	}
 
 	nk := &kubelet{
-		image:                      k.Image,
-		address:                    k.Address,
-		host:                       k.Host,
-		bootstrapKubeconfig:        k.BootstrapKubeconfig,
-		kubernetesCACertificate:    k.KubernetesCACertificate,
-		clusterDNSIPs:              k.ClusterDNSIPs,
-		podCIDR:                    k.PodCIDR,
-		name:                       k.Name,
-		taints:                     k.Taints,
-		labels:                     k.Labels,
-		privilegedLabels:           k.PrivilegedLabels,
-		privilegedLabelsKubeconfig: k.PrivilegedLabelsKubeconfig,
-		cgroupDriver:               k.CgroupDriver,
-		networkPlugin:              k.NetworkPlugin,
-		systemReserved:             k.SystemReserved,
-		kubeReserved:               k.KubeReserved,
+		config: *k,
 	}
 
-	if nk.image == "" {
-		nk.image = defaults.KubernetesImage
+	if nk.config.Image == "" {
+		nk.config.Image = defaults.KubernetesImage
 	}
 
 	return nk, nil
@@ -132,7 +102,7 @@ func (k *Kubelet) Validate() error {
 }
 
 // config return kubelet configuration file content in YAML format.
-func (k *kubelet) config() (string, error) {
+func (k *kubelet) configFile() (string, error) {
 	config := &kubeletconfig.KubeletConfiguration{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "KubeletConfiguration",
@@ -145,9 +115,9 @@ func (k *kubelet) config() (string, error) {
 		// If Docker is configured to use systemd as a cgroup driver and Docker is used as container
 		// runtime, this needs to be set to match Docker.
 		// TODO pull that information dynamically based on what container runtime is configured.
-		CgroupDriver: k.cgroupDriver,
+		CgroupDriver: k.config.CgroupDriver,
 		// Address where kubelet should listen on.
-		Address: k.address,
+		Address: k.config.Address,
 		// Disable healht port for now, since we don't use it.
 		// TODO check how to use it and re-enable it.
 		HealthzPort: &[]int32{0}[0],
@@ -168,19 +138,19 @@ func (k *kubelet) config() (string, error) {
 		// Used for calculating node allocatable resources.
 		// If EnforceNodeAllocatable has 'system-reserved' set, those limits will be enforced on cgroup specified
 		// with SystemReservedCgroup.
-		SystemReserved: k.systemReserved,
+		SystemReserved: k.config.SystemReserved,
 
 		// Used for calculating node allocatable resources.
 		// If EnforceNodeAllocatable has 'kube-reserved' set, those limits will be enforced on cgroup specified
 		// with KubeReservedCgroup.
-		KubeReserved: k.kubeReserved,
+		KubeReserved: k.config.KubeReserved,
 
-		ClusterDNS: k.clusterDNSIPs,
+		ClusterDNS: k.config.ClusterDNSIPs,
 	}
 
-	if k.networkPlugin == "kubenet" {
+	if k.config.NetworkPlugin == "kubenet" {
 		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
-		config.PodCIDR = k.podCIDR
+		config.PodCIDR = k.config.PodCIDR
 	}
 
 	kubelet, err := yaml.Marshal(config)
@@ -192,7 +162,7 @@ func (k *kubelet) config() (string, error) {
 }
 
 func (k *kubelet) configFiles() (map[string]string, error) {
-	config, err := k.config()
+	config, err := k.configFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed building kubelet configuration: %w", err)
 	}
@@ -200,8 +170,8 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 	return map[string]string{
 		// kubelet.yaml file is a recommended way to configure the kubelet.
 		"/etc/kubernetes/kubelet/kubelet.yaml":         config,
-		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.bootstrapKubeconfig,
-		"/etc/kubernetes/kubelet/pki/ca.crt":           k.kubernetesCACertificate,
+		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.config.BootstrapKubeconfig,
+		"/etc/kubernetes/kubelet/pki/ca.crt":           k.config.KubernetesCACertificate,
 	}, nil
 }
 
@@ -319,15 +289,15 @@ func (k *kubelet) args() []string {
 		// kubeconfig with access token for TLS bootstrapping.
 		"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 		// Set which network plugin to use.
-		fmt.Sprintf("--network-plugin=%s", k.networkPlugin),
+		fmt.Sprintf("--network-plugin=%s", k.config.NetworkPlugin),
 		// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
 		"--redirect-container-streaming=false",
 		// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
 		// we specify it equal to address.
 		// TODO make it optional/configurable?
-		fmt.Sprintf("--node-ip=%s", k.address),
+		fmt.Sprintf("--node-ip=%s", k.config.Address),
 		// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
-		fmt.Sprintf("--hostname-override=%s", k.name),
+		fmt.Sprintf("--hostname-override=%s", k.config.Name),
 		// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
 		// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
 		//
@@ -335,12 +305,12 @@ func (k *kubelet) args() []string {
 		"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
 	}
 
-	if len(k.labels) > 0 {
-		a = append(a, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.labels, "=", ",")))
+	if len(k.config.Labels) > 0 {
+		a = append(a, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.config.Labels, "=", ",")))
 	}
 
-	if len(k.taints) > 0 {
-		a = append(a, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.taints, "=:", ",")))
+	if len(k.config.Taints) > 0 {
+		a = append(a, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.config.Taints, "=:", ",")))
 	}
 
 	return a
@@ -361,7 +331,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 		Config: containertypes.ContainerConfig{
 			// TODO make it configurable?
 			Name:  "kubelet",
-			Image: k.image,
+			Image: k.config.Image,
 			// When kubelet runs as a container, it should be privileged, so it can adjust it's OOM settings.
 			// Without this, you get following errors:
 			// failed to set "/proc/self/oom_score_adj" to "-999": write /proc/self/oom_score_adj: permission denied
@@ -378,7 +348,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 	}
 
 	return &container.HostConfiguredContainer{
-		Host:        k.host,
+		Host:        k.config.Host,
 		ConfigFiles: configFiles,
 		Container:   c,
 		Hooks:       k.getHooks(),
@@ -394,18 +364,18 @@ func (k *kubelet) getHooks() *container.Hooks {
 
 // applyPrivilegedLabels adds privileged labels to kubelet object using Kubernetes API.
 func (k *kubelet) applyPrivilegedLabels() error {
-	c, err := client.NewClient([]byte(k.privilegedLabelsKubeconfig))
+	c, err := client.NewClient([]byte(k.config.PrivilegedLabelsKubeconfig))
 	if err != nil {
 		return fmt.Errorf("failed creating kubernetes client: %w", err)
 	}
 
-	return c.LabelNode(k.name, k.privilegedLabels)
+	return c.LabelNode(k.config.Name, k.config.PrivilegedLabels)
 }
 
 // postStartHook defines actions which will be executed after new kubelet instance is created.
 func (k *kubelet) postStartHook() *container.Hook {
 	f := container.Hook(func() error {
-		if len(k.privilegedLabelsKubeconfig) > 0 {
+		if len(k.config.PrivilegedLabelsKubeconfig) > 0 {
 			if err := k.applyPrivilegedLabels(); err != nil {
 				return fmt.Errorf("failed applying privileged labels: %w", err)
 			}
