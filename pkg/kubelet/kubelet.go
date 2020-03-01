@@ -35,6 +35,7 @@ type Kubelet struct {
 	NetworkPlugin              string            `json:"networkPlugin"`
 	SystemReserved             map[string]string `json:"systemReserved"`
 	KubeReserved               map[string]string `json:"kubeReserved"`
+	HairpinMode                string            `json:"hairpinMode"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -146,6 +147,8 @@ func (k *kubelet) configFile() (string, error) {
 		KubeReserved: k.config.KubeReserved,
 
 		ClusterDNS: k.config.ClusterDNSIPs,
+
+		HairpinMode: k.config.HairpinMode,
 	}
 
 	if k.config.NetworkPlugin == "kubenet" {

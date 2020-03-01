@@ -30,6 +30,7 @@ type Pool struct {
 	NetworkPlugin              string            `json:"networkPlugin"`
 	SystemReserved             map[string]string `json:"systemReserved"`
 	KubeReserved               map[string]string `json:"kubeReserved"`
+	HairpinMode                string            `json:"hairpinMode"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state"`
@@ -54,6 +55,7 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin)
 	k.SystemReserved = util.PickStringMap(k.SystemReserved, p.SystemReserved)
 	k.KubeReserved = util.PickStringMap(k.KubeReserved, p.KubeReserved)
+	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode)
 
 	k.Host = host.BuildConfig(k.Host, host.Host{
 		SSHConfig: p.SSH,
