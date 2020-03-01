@@ -293,7 +293,6 @@ libvirt-download-providers:
 	test -f libvirt/terraform-provider-libvirt || (wget https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v0.6.1/terraform-provider-libvirt-0.6.1+git.1578064534.db13b678.Fedora_28.x86_64.tar.gz -O libvirt/provider.tar.gz && tar zxvf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-libvirt ./libvirt/)
 	test -f libvirt/terraform-provider-ct || (wget https://github.com/poseidon/terraform-provider-ct/releases/download/v0.4.0/terraform-provider-ct-v0.4.0-linux-amd64.tar.gz -O libvirt/provider.tar.gz && tar xzf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-ct-v0.4.0-linux-amd64/terraform-provider-ct ./libvirt/ && rmdir terraform-provider-ct-v0.4.0-linux-amd64)
 
-
 .PHONY: test-static
 test-static:
 	$(GORUN) honnef.co/go/tools/cmd/staticcheck $(GO_PACKAGES)
