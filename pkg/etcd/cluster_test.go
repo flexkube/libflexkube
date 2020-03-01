@@ -15,6 +15,8 @@ import (
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
 	"github.com/flexkube/libflexkube/pkg/container"
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
@@ -86,15 +88,6 @@ func TestNewValidateFail(t *testing.T) {
 	}
 }
 
-// CheckCurrentState()
-func TestCheckCurrentStateBadContainer(t *testing.T) {
-	c := &cluster{}
-
-	if err := c.CheckCurrentState(); err == nil {
-		t.Fatalf("Should fail on bad cluster object")
-	}
-}
-
 // Validate()
 func TestValidateValidateMembers(t *testing.T) {
 	config := &Cluster{
@@ -118,11 +111,7 @@ func TestExistingEndpointsNoEndpoints(t *testing.T) {
 
 func TestExistingEndpoints(t *testing.T) {
 	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
-		},
+		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
 				peerAddress: "1.1.1.1",
@@ -163,6 +152,38 @@ func TestFirstMember(t *testing.T) {
 	}
 }
 
+func getContainers(t *testing.T) container.ContainersInterface {
+	cc := &container.Containers{
+		PreviousState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
+		},
+	}
+
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	return co
+}
+
+func getFakeHostConfiguredContainer() *container.HostConfiguredContainer {
+	return &container.HostConfiguredContainer{
+		Container: container.Container{
+			Config: types.ContainerConfig{
+				Name:  "foo",
+				Image: "bar",
+			},
+			Runtime: container.RuntimeConfig{
+				Docker: docker.DefaultConfig(),
+			},
+		},
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+}
+
 // getClient()
 func TestGetClientEmptyCluster(t *testing.T) {
 	c := &cluster{}
@@ -173,6 +194,7 @@ func TestGetClientEmptyCluster(t *testing.T) {
 
 func TestGetClientForwardFail(t *testing.T) {
 	c := &cluster{
+		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
 				host: host.Host{
@@ -195,11 +217,7 @@ func TestGetClientForwardFail(t *testing.T) {
 
 func TestGetClient(t *testing.T) {
 	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
-		},
+		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
 				peerCertificate: "",
@@ -219,16 +237,23 @@ func TestGetClient(t *testing.T) {
 
 // membersToRemove()
 func TestMembersToRemove(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-				"bar": &container.HostConfiguredContainer{},
-			},
-			DesiredState: container.ContainersState{
-				"bar": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		PreviousState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
+			"bar": getFakeHostConfiguredContainer(),
 		},
+		DesiredState: container.ContainersState{
+			"bar": getFakeHostConfiguredContainer(),
+		},
+	}
+
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
 	}
 
 	e := []string{"foo"}
@@ -240,16 +265,23 @@ func TestMembersToRemove(t *testing.T) {
 
 // membersToAdd()
 func TestMembersToAdd(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"bar": &container.HostConfiguredContainer{},
-			},
-			DesiredState: container.ContainersState{
-				"bar": &container.HostConfiguredContainer{},
-				"foo": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		PreviousState: container.ContainersState{
+			"bar": getFakeHostConfiguredContainer(),
 		},
+		DesiredState: container.ContainersState{
+			"bar": getFakeHostConfiguredContainer(),
+			"foo": getFakeHostConfiguredContainer(),
+		},
+	}
+
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
 	}
 
 	e := []string{"foo"}
@@ -261,15 +293,22 @@ func TestMembersToAdd(t *testing.T) {
 
 // updateMembers()
 func TestUpdateMembersNoUpdates(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
-			DesiredState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		PreviousState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
 		},
+		DesiredState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
+		},
+	}
+
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
 		members: map[string]*member{
 			"foo": {
 				peerCertificate: "",
@@ -291,11 +330,7 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 
 func TestUpdateMembersRemoveMember(t *testing.T) {
 	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
-		},
+		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
 				name:            "foo",
@@ -332,12 +367,19 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 }
 
 func TestUpdateMembersAddMember(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			DesiredState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		DesiredState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
 		},
+	}
+
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
 		members: map[string]*member{
 			"foo": {
 				name:            "foo",
@@ -369,39 +411,53 @@ func TestUpdateMembersAddMember(t *testing.T) {
 
 // Deploy()
 func TestDeploy(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			DesiredState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		DesiredState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
 		},
-		members: map[string]*member{},
 	}
 
-	err := c.Deploy()
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
+		members:    map[string]*member{},
+	}
+
+	err = c.Deploy()
 	if err == nil {
 		t.Fatalf("Deploying bad containers should fail")
 	}
 
-	if !strings.Contains(err.Error(), "failed to validate containers configuration") {
-		t.Fatalf("Deploying new cluster should not trigger updateMembers and fail on container configuration, got: %v", err)
+	if !strings.Contains(err.Error(), "without knowing current state of the containers") {
+		t.Fatalf("Deploying new cluster should not trigger updateMembers and fail on deploying, got: %v", err)
 	}
 }
 
 func TestDeployUpdateMembers(t *testing.T) {
-	c := &cluster{
-		containers: container.Containers{
-			PreviousState: container.ContainersState{
-				"bar": &container.HostConfiguredContainer{},
-			},
-			DesiredState: container.ContainersState{
-				"foo": &container.HostConfiguredContainer{},
-			},
+	cc := &container.Containers{
+		PreviousState: container.ContainersState{
+			"bar": getFakeHostConfiguredContainer(),
 		},
-		members: map[string]*member{},
+		DesiredState: container.ContainersState{
+			"foo": getFakeHostConfiguredContainer(),
+		},
 	}
 
-	err := c.Deploy()
+	co, err := cc.New()
+	if err != nil {
+		t.Fatalf("Creating containers should succeed, got: %v", err)
+	}
+
+	c := &cluster{
+		containers: co,
+		members:    map[string]*member{},
+	}
+
+	err = c.Deploy()
 	if err == nil {
 		t.Fatalf("Deploying should trigger updateMembers and fail")
 	}
