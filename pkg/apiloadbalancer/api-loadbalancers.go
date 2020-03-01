@@ -30,7 +30,7 @@ type APILoadBalancers struct {
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers
 type apiLoadBalancers struct {
-	containers *container.Containers
+	containers container.ContainersInterface
 }
 
 func (a *APILoadBalancers) propagateInstance(i *APILoadBalancer) {
@@ -53,11 +53,9 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate API Load balancers configuration: %w", err)
 	}
 
-	apiLoadBalancers := &apiLoadBalancers{
-		containers: &container.Containers{
-			PreviousState: a.State,
-			DesiredState:  make(container.ContainersState),
-		},
+	cc := &container.Containers{
+		PreviousState: a.State,
+		DesiredState:  make(container.ContainersState),
 	}
 
 	for i, lb := range a.APILoadBalancers {
@@ -67,15 +65,24 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 		lbx, _ := lb.New()
 		lbxHcc, _ := lbx.ToHostConfiguredContainer()
 
-		apiLoadBalancers.containers.DesiredState[strconv.Itoa(i)] = lbxHcc
+		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
 	}
 
-	return apiLoadBalancers, nil
+	c, _ := cc.New()
+
+	return &apiLoadBalancers{
+		containers: c,
+	}, nil
 }
 
 // Validate validates APILoadBalancers struct.
 func (a *APILoadBalancers) Validate() error {
-	for _, lb := range a.APILoadBalancers {
+	cc := &container.Containers{
+		PreviousState: a.State,
+		DesiredState:  make(container.ContainersState),
+	}
+
+	for i, lb := range a.APILoadBalancers {
 		lb := lb
 		a.propagateInstance(&lb)
 
@@ -84,9 +91,16 @@ func (a *APILoadBalancers) Validate() error {
 			return fmt.Errorf("failed creating load balancer instance: %w", err)
 		}
 
-		if _, err := lbx.ToHostConfiguredContainer(); err != nil {
+		lbxHcc, err := lbx.ToHostConfiguredContainer()
+		if err != nil {
 			return fmt.Errorf("failed creating load balancer container configuration: %w", err)
 		}
+
+		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
+	}
+
+	if _, err := cc.New(); err != nil {
+		return fmt.Errorf("failed creating containers object: %w", err)
 	}
 
 	return nil
@@ -99,7 +113,7 @@ func FromYaml(c []byte) (types.Resource, error) {
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.
 func (a *apiLoadBalancers) StateToYaml() ([]byte, error) {
-	return yaml.Marshal(APILoadBalancers{State: a.containers.PreviousState})
+	return yaml.Marshal(APILoadBalancers{State: a.containers.ToExported().PreviousState})
 }
 
 // CheckCurrentState reads current state of the deployed resources.
@@ -110,5 +124,5 @@ func (a *apiLoadBalancers) CheckCurrentState() error {
 // Deploy checks current status of deployed group of instances and updates them if there is some
 // configuration drift.
 func (a *apiLoadBalancers) Deploy() error {
-	return a.containers.Deploy()
+	return a.containers.Execute()
 }
