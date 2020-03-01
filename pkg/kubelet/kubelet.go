@@ -136,9 +136,6 @@ func (k *kubelet) config() (string, error) {
 		RotateCertificates: true,
 		// Request HTTPS server certs from API as well, so kubelet does not generate self-signed certificates.
 		ServerTLSBootstrap: true,
-		// To address: "--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /"
-		// This disables QoS based cgroup hierarchy, which is important from resource management perspective.
-		CgroupsPerQOS: &[]bool{false}[0],
 		// When cgroupsPerQOS is false, enforceNodeAllocatable needs to be set explicitly to empty.
 		// TODO This will be removed by yaml.Marshal, so we add it manually later.
 		EnforceNodeAllocatable: []string{},
@@ -160,6 +157,11 @@ func (k *kubelet) config() (string, error) {
 				ClientCAFile: "/etc/kubernetes/pki/ca.crt",
 			},
 		},
+
+		// This defines where should pods cgroups be created, like /kubepods and /kubepods/burstable.
+		// Also when specified, it suppresses a lot message about it.
+		CgroupRoot: "/",
+
 		ClusterDNS: k.clusterDNSIPs,
 	}
 
