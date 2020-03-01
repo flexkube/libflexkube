@@ -286,6 +286,12 @@ func (k *kubelet) mounts() []containertypes.Mount {
 			Source: "/sys/",
 			Target: "/sys",
 		},
+		{
+			// As kubelet is adding some chains to the iptables, it should share the lock with the host,
+			// to avoid races with kube-proxy.
+			Source: "/run/xtables.lock",
+			Target: "/run/xtables.lock",
+		},
 	}
 }
 
