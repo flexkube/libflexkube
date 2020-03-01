@@ -120,6 +120,10 @@ func (s containersState) Export() ContainersState {
 			ConfigFiles: m.configFiles,
 			Hooks:       m.hooks,
 		}
+
+		if cs[i].ConfigFiles == nil {
+			cs[i].ConfigFiles = map[string]string{}
+		}
 	}
 
 	return cs

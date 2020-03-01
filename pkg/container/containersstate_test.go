@@ -2,7 +2,6 @@ package container
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -31,6 +30,7 @@ func TestToExported(t *testing.T) {
 
 	expected := ContainersState{
 		"foo": &HostConfiguredContainer{
+			ConfigFiles: map[string]string{},
 			Container: Container{
 				Config: types.ContainerConfig{
 					Name: "foo",
@@ -42,8 +42,8 @@ func TestToExported(t *testing.T) {
 		},
 	}
 
-	if r := c.Export(); !reflect.DeepEqual(r, expected) {
-		t.Fatalf("expected: %+v, got %+v", expected, r)
+	if diff := cmp.Diff(expected, c.Export()); diff != "" {
+		t.Fatalf("unexpected diff %s", diff)
 	}
 }
 
