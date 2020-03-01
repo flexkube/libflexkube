@@ -14,8 +14,9 @@ ssh:
   connectionTimeout: 1s
   retryTimeout: 1s
   retryInterval: 1s
+bindAddress: 0.0.0.0:6443
 apiLoadBalancers:
-- metricsBindAddress: 0.0.0.0:2222
+- {}
 servers:
 - localhost:6443
 `

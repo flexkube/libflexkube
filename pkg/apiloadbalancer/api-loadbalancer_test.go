@@ -12,7 +12,8 @@ func TestToHostConfiguredContainer(t *testing.T) {
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
-		Servers: []string{"localhost:9090"},
+		Servers:     []string{"localhost:9090"},
+		BindAddress: "0.0.0.0:6434",
 	}
 
 	k, err := kk.New()
@@ -37,6 +38,20 @@ func TestToHostConfiguredContainer(t *testing.T) {
 // Validate()
 func TestValidateRequireServers(t *testing.T) {
 	kk := &APILoadBalancer{
+		BindAddress: "0.0.0.0:6434",
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+
+	if err := kk.Validate(); err == nil {
+		t.Fatalf("Validate should require at least one server to be defined")
+	}
+}
+
+func TestValidateRequireBindAddress(t *testing.T) {
+	kk := &APILoadBalancer{
+		Servers: []string{"foo"},
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},

@@ -158,5 +158,9 @@ func (a *APILoadBalancer) Validate() error {
 		return fmt.Errorf("at least one server must be set")
 	}
 
+	if a.BindAddress == "" {
+		return fmt.Errorf("bindAddress can't be empty")
+	}
+
 	return nil
 }
