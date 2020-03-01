@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
 // ContainersInterface represents capabilities of containers struct.
@@ -15,6 +16,7 @@ type ContainersInterface interface {
 	Execute() error
 	CurrentStateToYaml() ([]byte, error)
 	ToExported() *Containers
+	DesiredState() ContainersState
 }
 
 // Containers allow to orchestrate and update multiple containers spread
@@ -493,4 +495,31 @@ func (c *containers) ToExported() *Containers {
 		PreviousState: c.previousState.Export(),
 		DesiredState:  c.desiredState.Export(),
 	}
+}
+
+// DesiredState returns desired state enhanced with current state, to highlight
+// important configuration changes from user perspective.
+func (c *containers) DesiredState() ContainersState {
+	d := c.desiredState.Export()
+
+	for h := range d {
+		// If container already exist, append it's ID to desired state to reduce the diff.
+		id := ""
+
+		cs, ok := c.previousState[h]
+		if ok && cs.container.Status().ID != "" {
+			id = cs.container.Status().ID
+		}
+
+		// Make sure, that desired state has correct status. Container should always be running
+		// and optionally, we also set the ID of already existing container. If there are changes
+		// to the container, it will get new ID anyway, but user does not care about this cahnge,
+		// so we can hide it this way from the diff.
+		d[h].Container.Status = types.ContainerStatus{
+			Status: "running",
+			ID:     id,
+		}
+	}
+
+	return d
 }
