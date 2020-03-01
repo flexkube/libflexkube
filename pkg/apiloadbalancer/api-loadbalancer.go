@@ -98,7 +98,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
-			Docker: &docker.Config{},
+			Docker: docker.DefaultConfig(),
 		},
 		Config: types.ContainerConfig{
 			// TODO make it configurable? And don't force user to use HAProxy
