@@ -156,6 +156,20 @@ podCIDR: ${var.pod_cidr}
 flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 EOF
 
+  metrics_server_values = <<EOF
+rbac:
+  pspEnabled: true
+args:
+- --kubelet-preferred-address-types=InternalIP
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+tolerations:
+- key: node-role.kubernetes.io/master
+  operator: Exists
+  effect: NoSchedule
+EOF
+
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
     server      = "https://${local.first_controller_ip}:${local.api_port}"
@@ -285,6 +299,18 @@ resource "flexkube_helm_release" "coredns" {
   chart      = "stable/coredns"
   name       = "coredns"
   values     = local.coredns_values
+
+  depends_on = [
+    flexkube_helm_release.kubernetes,
+  ]
+}
+
+resource "flexkube_helm_release" "metrics-server" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = "stable/metrics-server"
+  name       = "metrics-server"
+  values     = local.metrics_server_values
 
   depends_on = [
     flexkube_helm_release.kubernetes,
