@@ -11,6 +11,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 	kk := &Kubelet{
 		BootstrapKubeconfig: "foo",
 		NetworkPlugin:       "cni",
+		VolumePluginDir:     "/var/lib/kubelet/volumeplugins",
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},

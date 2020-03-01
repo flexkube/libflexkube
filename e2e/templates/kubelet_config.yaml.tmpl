@@ -5,6 +5,7 @@ hairpinMode: promiscuous-bridge
 %{~ else ~}
 hairpinMode: hairpin-veth
 %{~ endif }
+volumePluginDir: /var/lib/kubelet/volumeplugins
 systemReserved:
   cpu: 100m
   memory: 500Mi

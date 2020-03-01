@@ -36,6 +36,7 @@ type Kubelet struct {
 	SystemReserved             map[string]string `json:"systemReserved"`
 	KubeReserved               map[string]string `json:"kubeReserved"`
 	HairpinMode                string            `json:"hairpinMode"`
+	VolumePluginDir            string            `json:"volumePluginDir"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -72,6 +73,10 @@ func (k *Kubelet) Validate() error {
 
 	if k.BootstrapKubeconfig == "" {
 		errors = append(errors, fmt.Errorf("bootstrapKubeconfig can't be empty"))
+	}
+
+	if k.VolumePluginDir == "" {
+		errors = append(errors, fmt.Errorf("volumePluginDir can't be empty"))
 	}
 
 	if len(k.PrivilegedLabels) > 0 && k.PrivilegedLabelsKubeconfig == "" {
@@ -277,6 +282,10 @@ func (k *kubelet) mounts() []containertypes.Mount {
 			// to avoid races with kube-proxy.
 			Source: "/run/xtables.lock",
 			Target: "/run/xtables.lock",
+		},
+		{
+			Source: k.config.VolumePluginDir,
+			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
 	}
 }
