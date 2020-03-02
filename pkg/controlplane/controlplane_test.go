@@ -117,3 +117,12 @@ func TestCommonGetImageSpecified(t *testing.T) {
 		t.Fatalf("GetImage() should return specified image, if it's defined")
 	}
 }
+
+// New()
+func TestControlplaneNewValidate(t *testing.T) {
+	c := &Controlplane{}
+
+	if _, err := c.New(); err == nil {
+		t.Fatalf("New should validate controlplane configuration and fail on empty one")
+	}
+}
