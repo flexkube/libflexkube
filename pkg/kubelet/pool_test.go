@@ -66,7 +66,7 @@ func TestPoolCheckCurrentState(t *testing.T) {
 	p := GetPool(t)
 
 	if err := p.CheckCurrentState(); err != nil {
-		t.Fatalf("Dumping state to YAML should work, got: %v", err)
+		t.Fatalf("Checking current state of empty pool should work, got: %v", err)
 	}
 }
 
