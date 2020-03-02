@@ -97,6 +97,18 @@ ssh:
 	if cc := co.Containers(); cc == nil {
 		t.Fatalf("Containers() should return non-nil value")
 	}
+
+	if _, err := co.StateToYaml(); err != nil {
+		t.Fatalf("Dumping state to YAML should work, got: %v", err)
+	}
+
+	if err := co.CheckCurrentState(); err != nil {
+		t.Fatalf("Checking current state of empty controlplane should work, got: %v", err)
+	}
+
+	if err := co.Deploy(); err == nil {
+		t.Fatalf("Deploying in testing environment should fail")
+	}
 }
 
 // GetImage()
