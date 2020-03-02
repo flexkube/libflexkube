@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/container"
 )
 
 // Resource interface defines flexkube resource like kubelet pool or static controlplane.
@@ -11,6 +13,7 @@ type Resource interface {
 	StateToYaml() ([]byte, error)
 	CheckCurrentState() error
 	Deploy() error
+	Containers() container.ContainersInterface
 }
 
 type ResourceConfig interface {

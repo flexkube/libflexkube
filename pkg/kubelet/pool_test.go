@@ -28,6 +28,25 @@ kubelets:
 	return p
 }
 
+// New()
+func TestPoolNewValidate(t *testing.T) {
+	y := `
+ssh:
+  address: localhost
+  password: foo
+  connectionTimeout: 1s
+  retryTimeout: 1s
+  retryInterval: 1s
+volumePluginDir: /var/lib/kubelet/volumeplugins
+kubelets:
+- networkPlugin: cni
+`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("Creating pool from bad YAML should fail")
+	}
+}
+
 // FromYaml()
 func TestPoolFromYaml(t *testing.T) {
 	GetPool(t)
@@ -47,7 +66,16 @@ func TestPoolCheckCurrentState(t *testing.T) {
 	p := GetPool(t)
 
 	if err := p.CheckCurrentState(); err != nil {
-		t.Fatalf("Dumping state to YAML should work, got: %v", err)
+		t.Fatalf("Checking current state of empty pool should work, got: %v", err)
+	}
+}
+
+// Containers()
+func TestPoolContainers(t *testing.T) {
+	p := GetPool(t)
+
+	if c := p.Containers(); c == nil {
+		t.Fatalf("Containers() should return non-nil value")
 	}
 }
 

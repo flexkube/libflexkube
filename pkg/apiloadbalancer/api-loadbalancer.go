@@ -98,7 +98,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
-			Docker: &docker.Config{},
+			Docker: docker.DefaultConfig(),
 		},
 		Config: types.ContainerConfig{
 			// TODO make it configurable? And don't force user to use HAProxy
@@ -156,6 +156,10 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 func (a *APILoadBalancer) Validate() error {
 	if len(a.Servers) == 0 {
 		return fmt.Errorf("at least one server must be set")
+	}
+
+	if a.BindAddress == "" {
+		return fmt.Errorf("bindAddress can't be empty")
 	}
 
 	return nil

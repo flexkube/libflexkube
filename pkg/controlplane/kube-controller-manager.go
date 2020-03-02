@@ -50,7 +50,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
-			Docker: &docker.Config{},
+			Docker: docker.DefaultConfig(),
 		},
 		Config: containertypes.ContainerConfig{
 			Name:  "kube-controller-manager",

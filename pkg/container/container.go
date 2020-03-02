@@ -29,6 +29,7 @@ type Interface interface {
 
 	// Setters.
 	SetRuntime(runtime.Runtime)
+	SetStatus(types.ContainerStatus)
 }
 
 // InstanceInterface represents containerInstance capabilities.
@@ -200,6 +201,10 @@ func (c *container) Status() *types.ContainerStatus {
 
 func (c *container) SetRuntime(r runtime.Runtime) {
 	c.runtime = r
+}
+
+func (c *container) SetStatus(s types.ContainerStatus) {
+	c.status = s
 }
 
 func (c *container) Runtime() runtime.Runtime {

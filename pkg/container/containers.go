@@ -7,14 +7,17 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
 // ContainersInterface represents capabilities of containers struct.
 type ContainersInterface interface {
 	CheckCurrentState() error
-	Execute() error
-	CurrentStateToYaml() ([]byte, error)
+	Deploy() error
+	StateToYaml() ([]byte, error)
 	ToExported() *Containers
+	DesiredState() ContainersState
+	Containers() ContainersInterface
 }
 
 // Containers allow to orchestrate and update multiple containers spread
@@ -115,7 +118,7 @@ func (c *Containers) Deploy() error {
 		return err
 	}
 
-	if err := containers.Execute(); err != nil {
+	if err := containers.Deploy(); err != nil {
 		return err
 	}
 
@@ -425,14 +428,14 @@ func (c *containers) updateExistingContainers() error {
 	return nil
 }
 
-// Execute checks for containers configuration drifts and tries to reach desired state.
+// Deploy checks for containers configuration drifts and tries to reach desired state.
 //
 // TODO we should break down this function into smaller functions
 // TODO add planning, so it is possible to inspect what will be done
 // TODO currently we only compare previous configuration with new configuration.
 // We should also read runtime parameters and confirm that everything is according
 // to the spec.
-func (c *containers) Execute() error {
+func (c *containers) Deploy() error {
 	if c.currentState == nil {
 		return fmt.Errorf("can't execute without knowing current state of the containers")
 	}
@@ -477,9 +480,9 @@ func FromYaml(c []byte) (ContainersInterface, error) {
 	return cl, nil
 }
 
-// CurrentStateToYaml dumps current state as previousState in exported format,
+// StateToYaml dumps current state as previousState in exported format,
 // which can be serialized and stored.
-func (c *containers) CurrentStateToYaml() ([]byte, error) {
+func (c *containers) StateToYaml() ([]byte, error) {
 	containers := &Containers{
 		PreviousState: c.previousState.Export(),
 	}
@@ -493,4 +496,36 @@ func (c *containers) ToExported() *Containers {
 		PreviousState: c.previousState.Export(),
 		DesiredState:  c.desiredState.Export(),
 	}
+}
+
+// DesiredState returns desired state enhanced with current state, to highlight
+// important configuration changes from user perspective.
+func (c *containers) DesiredState() ContainersState {
+	d := c.desiredState.Export()
+
+	for h := range d {
+		// If container already exist, append it's ID to desired state to reduce the diff.
+		id := ""
+
+		cs, ok := c.previousState[h]
+		if ok && cs.container.Status().ID != "" {
+			id = cs.container.Status().ID
+		}
+
+		// Make sure, that desired state has correct status. Container should always be running
+		// and optionally, we also set the ID of already existing container. If there are changes
+		// to the container, it will get new ID anyway, but user does not care about this cahnge,
+		// so we can hide it this way from the diff.
+		d[h].Container.Status = types.ContainerStatus{
+			Status: "running",
+			ID:     id,
+		}
+	}
+
+	return d
+}
+
+// Containers implement types.Resource interface.
+func (c *containers) Containers() ContainersInterface {
+	return c
 }

@@ -2,6 +2,7 @@ package kubelet
 
 import (
 	"fmt"
+	"path/filepath"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
@@ -284,7 +285,7 @@ func (k *kubelet) mounts() []containertypes.Mount {
 			Target: "/run/xtables.lock",
 		},
 		{
-			Source: k.config.VolumePluginDir,
+			Source: fmt.Sprintf("%s/", filepath.Join(k.config.VolumePluginDir)),
 			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
 	}
@@ -338,7 +339,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
-			Docker: &docker.Config{},
+			Docker: docker.DefaultConfig(),
 		},
 		Config: containertypes.ContainerConfig{
 			// TODO make it configurable?

@@ -431,3 +431,10 @@ func (d *docker) pullImage(image string) error {
 
 	return nil
 }
+
+// DefaultConfig returns Docker's runtime default configuration.
+func DefaultConfig() *Config {
+	return &Config{
+		Host: client.DefaultDockerHost,
+	}
+}

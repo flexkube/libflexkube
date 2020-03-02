@@ -34,11 +34,8 @@ type Cluster struct {
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.
 type cluster struct {
-	image         string
-	ssh           *ssh.Config
-	caCertificate string
-	containers    container.Containers
-	members       map[string]*member
+	containers container.ContainersInterface
+	members    map[string]*member
 }
 
 // propagateMember fills given Member's empty fields with fields from Cluster.
@@ -75,14 +72,12 @@ func (c *Cluster) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
 	}
 
+	cc := container.Containers{
+		PreviousState: c.State,
+		DesiredState:  make(container.ContainersState),
+	}
+
 	cluster := &cluster{
-		image:         c.Image,
-		ssh:           c.SSH,
-		caCertificate: string(c.CACertificate),
-		containers: container.Containers{
-			PreviousState: c.State,
-			DesiredState:  make(container.ContainersState),
-		},
 		members: map[string]*member{},
 	}
 
@@ -93,10 +88,14 @@ func (c *Cluster) New() (types.Resource, error) {
 		mem, _ := m.New()
 		hcc, _ := mem.ToHostConfiguredContainer()
 
-		cluster.containers.DesiredState[n] = hcc
+		cc.DesiredState[n] = hcc
 
 		cluster.members[n] = mem.(*member)
 	}
+
+	co, _ := cc.New()
+
+	cluster.containers = co
 
 	return cluster, nil
 }
@@ -109,13 +108,34 @@ func (c *Cluster) Validate() error {
 
 	var errors util.ValidateError
 
+	cc := container.Containers{
+		PreviousState: c.State,
+		DesiredState:  make(container.ContainersState),
+	}
+
 	for n, m := range c.Members {
 		m := m
 		c.propagateMember(n, &m)
 
-		if _, err := m.New(); err != nil {
+		mem, err := m.New()
+		if err != nil {
 			errors = append(errors, fmt.Errorf("failed to validate member '%s': %w", n, err))
+
+			continue
 		}
+
+		hcc, err := mem.ToHostConfiguredContainer()
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to validate member '%s' container: %w", n, err))
+
+			continue
+		}
+
+		cc.DesiredState[n] = hcc
+	}
+
+	if _, err := cc.New(); err != nil {
+		errors = append(errors, fmt.Errorf("failed validating containers object: %w", err))
 	}
 
 	return errors.Return()
@@ -128,7 +148,7 @@ func FromYaml(c []byte) (types.Resource, error) {
 
 // StateToYaml allows to dump cluster state to YAML, so it can be restored later.
 func (c *cluster) StateToYaml() ([]byte, error) {
-	return yaml.Marshal(Cluster{State: c.containers.PreviousState})
+	return yaml.Marshal(Cluster{State: c.containers.ToExported().PreviousState})
 }
 
 // CheckCurrentState refreshes current state of the cluster.
@@ -145,7 +165,7 @@ func (c *cluster) getExistingEndpoints() []string {
 	endpoints := []string{}
 
 	for i, m := range c.members {
-		if _, ok := c.containers.PreviousState[i]; !ok {
+		if _, ok := c.containers.ToExported().PreviousState[i]; !ok {
 			continue
 		}
 
@@ -194,8 +214,10 @@ type etcdClient interface {
 func (c *cluster) membersToRemove() []string {
 	m := []string{}
 
-	for i := range c.containers.PreviousState {
-		if _, ok := c.containers.DesiredState[i]; !ok {
+	e := c.containers.ToExported()
+
+	for i := range e.PreviousState {
+		if _, ok := e.DesiredState[i]; !ok {
 			m = append(m, i)
 		}
 	}
@@ -206,8 +228,10 @@ func (c *cluster) membersToRemove() []string {
 func (c *cluster) membersToAdd() []string {
 	m := []string{}
 
-	for i := range c.containers.DesiredState {
-		if _, ok := c.containers.PreviousState[i]; !ok {
+	e := c.containers.ToExported()
+
+	for i := range e.DesiredState {
+		if _, ok := e.PreviousState[i]; !ok {
 			m = append(m, i)
 		}
 	}
@@ -238,8 +262,10 @@ func (c *cluster) updateMembers(cli etcdClient) error {
 
 // Deploy refreshes current state of the cluster and deploys detected changes.
 func (c *cluster) Deploy() error {
+	e := c.containers.ToExported()
+
 	// If we create new cluster or destroy entire cluster, just start deploying.
-	if len(c.containers.PreviousState) != 0 && len(c.containers.DesiredState) != 0 {
+	if len(e.PreviousState) != 0 && len(e.DesiredState) != 0 {
 		// Build client, so we can pass it around.
 		cli, err := c.getClient()
 		if err != nil {
@@ -254,4 +280,9 @@ func (c *cluster) Deploy() error {
 	}
 
 	return c.containers.Deploy()
+}
+
+// Containers implement types.Resource interface.
+func (c *cluster) Containers() container.ContainersInterface {
+	return c.containers
 }

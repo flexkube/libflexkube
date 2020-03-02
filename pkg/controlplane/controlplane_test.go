@@ -89,8 +89,25 @@ ssh:
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
 
-	if _, err := FromYaml(buf.Bytes()); err != nil {
+	co, err := FromYaml(buf.Bytes())
+	if err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
+	}
+
+	if cc := co.Containers(); cc == nil {
+		t.Fatalf("Containers() should return non-nil value")
+	}
+
+	if _, err := co.StateToYaml(); err != nil {
+		t.Fatalf("Dumping state to YAML should work, got: %v", err)
+	}
+
+	if err := co.CheckCurrentState(); err != nil {
+		t.Fatalf("Checking current state of empty controlplane should work, got: %v", err)
+	}
+
+	if err := co.Deploy(); err == nil {
+		t.Fatalf("Deploying in testing environment should fail")
 	}
 }
 
@@ -110,5 +127,14 @@ func TestCommonGetImageSpecified(t *testing.T) {
 
 	if a := c.GetImage(); a != i {
 		t.Fatalf("GetImage() should return specified image, if it's defined")
+	}
+}
+
+// New()
+func TestControlplaneNewValidate(t *testing.T) {
+	c := &Controlplane{}
+
+	if _, err := c.New(); err == nil {
+		t.Fatalf("New should validate controlplane configuration and fail on empty one")
 	}
 }

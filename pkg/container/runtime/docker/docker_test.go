@@ -15,6 +15,7 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 	"github.com/google/go-cmp/cmp"
 
@@ -458,3 +459,10 @@ func TestCreateRuntimeFail(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {}
+
+// DefaultConfig()
+func TestDefaultConfig(t *testing.T) {
+	if DefaultConfig().Host != client.DefaultDockerHost {
+		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, DefaultConfig().Host)
+	}
+}

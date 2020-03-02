@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/flexkube/libflexkube/pkg/container/runtime"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
@@ -50,6 +52,15 @@ func GetContainers(t *testing.T) ContainersInterface {
 	return c
 }
 
+// Containers()
+func TestContainersContainers(t *testing.T) {
+	c := &containers{}
+
+	if !reflect.DeepEqual(c, c.Containers()) {
+		t.Fatalf("Containers() should return self")
+	}
+}
+
 // CheckCurrentState()
 func TestContainersCheckCurrentStateNew(t *testing.T) {
 	c := GetContainers(t)
@@ -63,7 +74,7 @@ func TestContainersCheckCurrentStateNew(t *testing.T) {
 func TestContainersCurrentStateToYAML(t *testing.T) {
 	c := GetContainers(t)
 
-	_, err := c.CurrentStateToYaml()
+	_, err := c.StateToYaml()
 	if err != nil {
 		t.Fatalf("Getting current state in YAML format should work, got: %v", err)
 	}
@@ -900,10 +911,10 @@ func TestRecreateNonExistent(t *testing.T) {
 	}
 }
 
-// Execute()
-func TestExecuteNoCurrentState(t *testing.T) {
+// Deploy()
+func TestDeployNoCurrentState(t *testing.T) {
 	c := &containers{}
-	if err := c.Execute(); err == nil {
+	if err := c.Deploy(); err == nil {
 		t.Fatalf("Execute without current state should fail")
 	}
 }
@@ -1245,5 +1256,115 @@ func TestSelectRuntime(t *testing.T) {
 
 	if c.base.runtime == nil {
 		t.Fatalf("selectRuntime should set container runtime")
+	}
+}
+
+// DesiredState
+func TestContainersDesiredStateEmpty(t *testing.T) {
+	c := &containers{}
+
+	e := ContainersState{}
+
+	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+		t.Fatalf("Unexpected diff: %s", diff)
+	}
+}
+
+func TestContainersDesiredStateOldID(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: "a",
+						},
+						runtimeConfig: docker.DefaultConfig(),
+					},
+				},
+			},
+		},
+		previousState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: "b",
+						},
+						runtimeConfig: docker.DefaultConfig(),
+						status: types.ContainerStatus{
+							Status: "running",
+							ID:     "foo",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	e := ContainersState{
+		foo: {
+			Container: Container{
+				Config: types.ContainerConfig{Image: "a"},
+				Status: types.ContainerStatus{ID: "foo", Status: "running"},
+				Runtime: RuntimeConfig{
+					Docker: docker.DefaultConfig(),
+				},
+			},
+			ConfigFiles: map[string]string{},
+		},
+	}
+
+	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+		t.Fatalf("Unexpected diff: %s", diff)
+	}
+}
+
+func TestContainersDesiredStateStatusRunning(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: "a",
+						},
+						runtimeConfig: docker.DefaultConfig(),
+					},
+				},
+			},
+		},
+		previousState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: "a",
+						},
+						runtimeConfig: docker.DefaultConfig(),
+						status: types.ContainerStatus{
+							Status: StatusMissing,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	e := ContainersState{
+		foo: {
+			Container: Container{
+				Config: types.ContainerConfig{Image: "a"},
+				Status: types.ContainerStatus{Status: "running"},
+				Runtime: RuntimeConfig{
+					Docker: docker.DefaultConfig(),
+				},
+			},
+			ConfigFiles: map[string]string{},
+		},
+	}
+
+	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }

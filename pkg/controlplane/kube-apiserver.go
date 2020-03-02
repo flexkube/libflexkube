@@ -161,7 +161,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 		Container: container.Container{
 			// TODO this is weird. This sets docker as default runtime config
 			Runtime: container.RuntimeConfig{
-				Docker: &docker.Config{},
+				Docker: docker.DefaultConfig(),
 			},
 			Config: containertypes.ContainerConfig{
 				Name:  containerName,

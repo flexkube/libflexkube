@@ -14,8 +14,9 @@ ssh:
   connectionTimeout: 1s
   retryTimeout: 1s
   retryInterval: 1s
+bindAddress: 0.0.0.0:6443
 apiLoadBalancers:
-- metricsBindAddress: 0.0.0.0:2222
+- {}
 servers:
 - localhost:6443
 `
@@ -26,6 +27,25 @@ servers:
 	}
 
 	return p
+}
+
+// New()
+func TestLoadBalancersNewValidate(t *testing.T) {
+	y := `
+ssh:
+  address: localhost
+  password: foo
+  connectionTimeout: 1s
+  retryTimeout: 1s
+  retryInterval: 1s
+bindAddress: 0.0.0.0:6443
+apiLoadBalancers:
+- {}
+`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("Creating load balancers from bad YAML should fail")
+	}
 }
 
 // FromYaml()
@@ -57,5 +77,14 @@ func TestLoadBalancersDeploy(t *testing.T) {
 
 	if err := p.Deploy(); err == nil {
 		t.Fatalf("Deploying in testing environment should fail")
+	}
+}
+
+// Containers()
+func TestLoadBalancersContainers(t *testing.T) {
+	p := GetLoadBalancers(t)
+
+	if c := p.Containers(); c == nil {
+		t.Fatalf("Containers() should return non-nil value")
 	}
 }
