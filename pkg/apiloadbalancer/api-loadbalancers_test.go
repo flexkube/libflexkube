@@ -29,6 +29,25 @@ servers:
 	return p
 }
 
+// New()
+func TestLoadBalancersNewValidate(t *testing.T) {
+	y := `
+ssh:
+  address: localhost
+  password: foo
+  connectionTimeout: 1s
+  retryTimeout: 1s
+  retryInterval: 1s
+bindAddress: 0.0.0.0:6443
+apiLoadBalancers:
+- {}
+`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("Creating load balancers from bad YAML should fail")
+	}
+}
+
 // FromYaml()
 func TestLoadBalancersFromYaml(t *testing.T) {
 	GetLoadBalancers(t)
