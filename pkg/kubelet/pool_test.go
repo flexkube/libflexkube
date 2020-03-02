@@ -28,6 +28,25 @@ kubelets:
 	return p
 }
 
+// New()
+func TestPoolNewValidate(t *testing.T) {
+	y := `
+ssh:
+  address: localhost
+  password: foo
+  connectionTimeout: 1s
+  retryTimeout: 1s
+  retryInterval: 1s
+volumePluginDir: /var/lib/kubelet/volumeplugins
+kubelets:
+- networkPlugin: cni
+`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("Creating pool from bad YAML should fail")
+	}
+}
+
 // FromYaml()
 func TestPoolFromYaml(t *testing.T) {
 	GetPool(t)
