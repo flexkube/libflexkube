@@ -753,3 +753,30 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 		t.Fatalf("expected ID '%s', got '%s'", "bar", id)
 	}
 }
+
+// updateConfigurationStatus()
+func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) {
+	h := &hostConfiguredContainer{
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base{
+				runtimeConfig: &runtime.FakeConfig{
+					Runtime: &runtime.Fake{
+						CreateF: func(config *types.ContainerConfig) (string, error) {
+							return foo, nil
+						},
+						DeleteF: func(id string) error {
+							return nil
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.updateConfigurationStatus(); err != nil {
+		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
+	}
+}
