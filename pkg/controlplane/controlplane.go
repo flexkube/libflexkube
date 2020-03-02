@@ -198,7 +198,7 @@ func (c *Controlplane) Validate() error {
 
 	// If there were any errors while creating objects, it's not safe to proceed.
 	if len(errors) > 0 {
-		return errors
+		return errors.Return()
 	}
 
 	if _, err := kas.ToHostConfiguredContainer(); err != nil {
