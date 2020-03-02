@@ -89,9 +89,6 @@ EOF
         # Read content of Vagrant SSH private key.
         ssh_private_key = File.read(ENV['HOME'] + "/.vagrant.d/insecure_private_key")
 
-        # Forward kube-apiserver port to host.
-        config.vm.network "forwarded_port", guest: 8443, host: 8443
-
         # Primary node provisioning.
         config.vm.provision "shell", inline: <<-EOF
           set -e
