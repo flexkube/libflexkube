@@ -38,7 +38,7 @@ type Config struct {
 // dockerClient is a wrapper interface over
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
-type dockerClient interface {
+type dockerClient interface { //nolint:dupl
 	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
