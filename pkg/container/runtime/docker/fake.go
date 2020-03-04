@@ -11,7 +11,7 @@ import (
 )
 
 // FakeClient is a mock of Docker client.
-type FakeClient struct {
+type FakeClient struct { //nolint:dupl
 	ContainerCreateF   func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 	ContainerStartF    func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStopF     func(ctx context.Context, container string, timeout *time.Duration) error
