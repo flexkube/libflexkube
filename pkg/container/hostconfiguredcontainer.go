@@ -208,8 +208,6 @@ func (m *hostConfiguredContainer) removeConfigurationContainer() error {
 // updateConfigurationStatus overrides configFiles field with current content of configuration files.
 // If configuration file is missing, the entry is removed from the map.
 func (m *hostConfiguredContainer) updateConfigurationStatus() error {
-	m.configFiles = map[string]string{}
-
 	// If there is no config files configured, don't do anything.
 	if len(m.configFiles) == 0 {
 		return nil
@@ -232,6 +230,8 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 	if err != nil {
 		return fmt.Errorf("failed to read configuration status: %w", err)
 	}
+
+	m.configFiles = map[string]string{}
 
 	for _, f := range f {
 		m.configFiles[paths[f.Path]] = f.Content

@@ -780,3 +780,114 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
 	}
 }
+
+func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.T) {
+	h := &hostConfiguredContainer{
+		configFiles: map[string]string{
+			"/foo": "bar",
+		},
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		configContainer: &containerInstance{
+			base{
+				runtime: &runtime.Fake{
+					CreateF: func(config *types.ContainerConfig) (string, error) {
+						return foo, nil
+					},
+					DeleteF: func(id string) error {
+						return nil
+					},
+					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
+						if diff := cmp.Diff(srcPath, []string{path.Join(ConfigMountpoint, "/foo")}); diff != "" {
+							t.Fatalf("Unexpected srcPath: %s", diff)
+						}
+
+						return []*types.File{}, nil
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.updateConfigurationStatus(); err != nil {
+		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
+	}
+
+	if diff := cmp.Diff(h.configFiles, map[string]string{}); diff != "" {
+		t.Fatalf("Updating configuration status should reset configFiles map if no files were found, got: %s", diff)
+	}
+}
+
+func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T) {
+	h := &hostConfiguredContainer{
+		configFiles: map[string]string{
+			"/foo": "bar",
+		},
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		configContainer: &containerInstance{
+			base{
+				runtime: &runtime.Fake{
+					CreateF: func(config *types.ContainerConfig) (string, error) {
+						return foo, nil
+					},
+					DeleteF: func(id string) error {
+						return nil
+					},
+					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
+						return []*types.File{
+							{
+								Path:    path.Join(ConfigMountpoint, "/foo"),
+								Content: "doh",
+							},
+						}, nil
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.updateConfigurationStatus(); err != nil {
+		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
+	}
+
+	e := map[string]string{
+		"/foo": "doh",
+	}
+
+	if diff := cmp.Diff(h.configFiles, e); diff != "" {
+		t.Fatalf("Updating configuration status should update content of the file with one returned by runtime: %s", diff)
+	}
+}
+
+func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *testing.T) {
+	h := &hostConfiguredContainer{
+		configFiles: map[string]string{
+			"/foo": "bar",
+		},
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		configContainer: &containerInstance{
+			base{
+				runtime: &runtime.Fake{
+					CreateF: func(config *types.ContainerConfig) (string, error) {
+						return foo, nil
+					},
+					DeleteF: func(id string) error {
+						return nil
+					},
+					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
+						return []*types.File{}, fmt.Errorf("error")
+					},
+				},
+			},
+		},
+	}
+
+	if err := h.updateConfigurationStatus(); err == nil {
+		t.Fatalf("Updating configuration status should return error when runtime read fails")
+	}
+}

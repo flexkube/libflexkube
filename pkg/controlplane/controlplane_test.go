@@ -67,6 +67,9 @@ ssh:
   address: 127.0.0.1
   port: 2222
   password: "foo"
+  connectionTimeout: 1ms
+  retryTimeout: 1ms
+  retryInterval: 1ms
 `
 	pki := utiltest.GeneratePKI(t)
 
