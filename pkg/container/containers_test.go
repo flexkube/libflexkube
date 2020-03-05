@@ -364,6 +364,42 @@ func TestDiffContainer(t *testing.T) {
 	}
 }
 
+func TestDiffContainerRuntimeConfig(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config:        types.ContainerConfig{},
+						runtimeConfig: &docker.Config{},
+					},
+				},
+			},
+		},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{},
+						runtimeConfig: &docker.Config{
+							Host: "foo",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	diff, err := c.diffContainer(foo)
+	if err != nil {
+		t.Fatalf("Updatable container should return diff, got: %v", err)
+	}
+
+	if diff == "" {
+		t.Fatalf("Container with runtime config updates should return diff")
+	}
+}
+
 // ensureRunning()
 func TestEnsureRunningNonExistent(t *testing.T) {
 	c := &containers{

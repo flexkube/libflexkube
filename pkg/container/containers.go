@@ -308,7 +308,10 @@ func (c *containers) diffContainer(n string) (string, error) {
 		return "", fmt.Errorf("can't diff container: %w", err)
 	}
 
-	return cmp.Diff(c.currentState[n].container.Config(), c.desiredState[n].container.Config()), nil
+	cd := cmp.Diff(c.currentState[n].container.Config(), c.desiredState[n].container.Config())
+	rcd := cmp.Diff(c.currentState[n].container.RuntimeConfig(), c.desiredState[n].container.RuntimeConfig())
+
+	return cd + rcd, nil
 }
 
 // ensureContainer makes sure container configuration is up to date.
