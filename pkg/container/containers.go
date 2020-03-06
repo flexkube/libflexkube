@@ -420,7 +420,7 @@ func (c *containers) updateExistingContainers() error {
 				return fmt.Errorf("failed removing old container: %w", err)
 			}
 
-			return nil
+			continue
 		}
 
 		if err := c.ensureUpToDate(i); err != nil {

@@ -1404,3 +1404,80 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }
+
+// updateExistingContainers()
+func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
+	c := &containers{
+		desiredState: containersState{},
+		currentState: containersState{
+			foo: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							Status: "running",
+							ID:     "foo",
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										Status: "running",
+										ID:     "foo",
+									}, nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+			bar: &hostConfiguredContainer{
+				hooks: &Hooks{},
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							Status: "running",
+							ID:     "bar",
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								DeleteF: func(id string) error {
+									return nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{
+										Status: "running",
+										ID:     "bar",
+									}, nil
+								},
+								StopF: func(id string) error {
+									return nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.updateExistingContainers(); err != nil {
+		t.Fatalf("Updating existing containers should succeed, got: %v", err)
+	}
+
+	if len(c.desiredState) != len(c.currentState) {
+		t.Fatalf("All containers from current state should be removed")
+	}
+}
