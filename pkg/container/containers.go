@@ -2,6 +2,7 @@ package container
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
@@ -176,24 +177,27 @@ func (c *containers) ensureConfigured(n string) error {
 
 	r := c.currentState[n]
 
-	// Even if configure failed, try updating current state with the progress.
-	defer func() {
-		// If current state does not exist, simply replace it with desired state.
-		if r == nil {
-			c.currentState[n] = d
-			r = d
-		}
-
-		// Update current state config files map.
-		r.configFiles = d.configFiles
-	}()
-
 	f := filesToUpdate(*d, r)
 	if len(f) == 0 {
 		return nil
 	}
 
-	return d.Configure(f)
+	err := d.Configure(f)
+
+	if err != nil && reflect.DeepEqual(f, filesToUpdate(*d, r)) {
+		return err
+	}
+
+	// If current state does not exist, simply replace it with desired state.
+	if r == nil {
+		c.currentState[n] = d
+		r = d
+	}
+
+	// Update current state config files map.
+	r.configFiles = d.configFiles
+
+	return err
 }
 
 // ensureRunning makes sure that given container is running.
@@ -219,22 +223,28 @@ func (c *containers) ensureExists(n string) error {
 
 	d := c.desiredState[n]
 
+	err := c.desiredState.CreateAndStart(n)
+
+	// Container creation failed and it does not exist, meaning state is clean.
+	if err != nil && !d.container.Status().Exists() {
+		return err
+	}
+
 	// Even if CreateAndStart failed, update current state. This makes the process more robust,
 	// for example when creation succeeded (so container ID got assigned), but starting failed (as
 	// for example requested port is already in use), so on the next run, engine won't try to create
 	// the container again (as that would fail, because container of the same name already exists).
-	defer func() {
-		// If current state does not exist, simply replace it with desired state.
-		if r == nil {
-			c.currentState[n] = d
-			r = d
-		}
 
-		// After new container is created, add it to current state, so it can be returned to the user.
-		*r.container.Status() = *d.container.Status()
-	}()
+	// If current state does not exist, simply replace it with desired state.
+	if r == nil {
+		c.currentState[n] = d
+		r = d
+	}
 
-	return c.desiredState.CreateAndStart(n)
+	// After new container is created, add it to current state, so it can be returned to the user.
+	*r.container.Status() = *d.container.Status()
+
+	return err
 }
 
 // isUpdatable determines if given container can be updated.
