@@ -1,6 +1,6 @@
 package transport
 
-// Transport should be valid object, which is ready to open connection.
+// Interface Transport should be a valid object, which is ready to open connection.
 type Interface interface {
 	Connect() (Connected, error)
 }

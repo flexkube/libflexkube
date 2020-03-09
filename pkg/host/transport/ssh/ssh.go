@@ -73,8 +73,7 @@ func (d *Config) New() (transport.Interface, error) {
 		s.auth = append(s.auth, gossh.Password(d.Password))
 	}
 
-	if d.PrivateKey != "" {
-		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey))
+	if signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" {
 		s.auth = append(s.auth, gossh.PublicKeys(signer))
 	}
 
@@ -97,18 +96,6 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("either password or private key must be set for authentication"))
 	}
 
-	if d.ConnectionTimeout == "" {
-		errors = append(errors, fmt.Errorf("connection timeout must be set"))
-	}
-
-	if d.RetryTimeout == "" {
-		errors = append(errors, fmt.Errorf("retry timeout must be set"))
-	}
-
-	if d.RetryInterval == "" {
-		errors = append(errors, fmt.Errorf("retry interval must be set"))
-	}
-
 	if d.Port == 0 {
 		errors = append(errors, fmt.Errorf("port must be set"))
 	}
@@ -126,10 +113,8 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("unable to parse retry interval: %w", err))
 	}
 
-	if d.PrivateKey != "" {
-		if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); err != nil {
-			errors = append(errors, fmt.Errorf("unable to parse private key: %w", err))
-		}
+	if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" && err != nil {
+		errors = append(errors, fmt.Errorf("unable to parse private key: %w", err))
 	}
 
 	return errors.Return()

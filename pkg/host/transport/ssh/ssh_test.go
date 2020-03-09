@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -19,6 +20,7 @@ import (
 const (
 	expectedMessage  = "foo"
 	expectedResponse = "bar"
+	authMethods      = 1
 )
 
 func TestNew(t *testing.T) {
@@ -37,6 +39,48 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestNewSetPassword(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		Password:          "foo",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+	}
+
+	s, err := c.New()
+	if err != nil {
+		t.Fatalf("creating new SSH object should succeed, got: %s", err)
+	}
+
+	if len(s.(*ssh).auth) != authMethods {
+		t.Fatalf("when Password field is set, object should include one auth method")
+	}
+}
+
+func TestNewSetPrivateKey(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+		PrivateKey:        generateRSAPrivateKey(t),
+	}
+
+	s, err := c.New()
+	if err != nil {
+		t.Fatalf("creating new SSH object should succeed, got: %s", err)
+	}
+
+	if len(s.(*ssh).auth) != authMethods {
+		t.Fatalf("when PrivateKey field is set, object should include one auth method")
+	}
+}
+
 func TestNewValidate(t *testing.T) {
 	c := &Config{}
 	if _, err := c.New(); err == nil {
@@ -44,6 +88,7 @@ func TestNewValidate(t *testing.T) {
 	}
 }
 
+// Validate()
 func TestValidateRequireAddress(t *testing.T) {
 	c := &Config{
 		User:              "root",
@@ -53,8 +98,22 @@ func TestValidateRequireAddress(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require address field")
+	}
+}
+
+func TestValidateRequireAuth(t *testing.T) {
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+	}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("validating SSH configuration should require either password or private key")
 	}
 }
 
@@ -67,7 +126,7 @@ func TestValidateRequireUser(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require user field")
 	}
 }
@@ -81,7 +140,7 @@ func TestValidateRequireAuthMethod(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require at least one authentication method")
 	}
 }
@@ -95,7 +154,7 @@ func TestValidateRequireConnectionTimeout(t *testing.T) {
 		RetryInterval: "1s",
 		Port:          Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require connection timeout field")
 	}
 }
@@ -109,7 +168,7 @@ func TestValidateRequireRetryTimeout(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require retry timeout field")
 	}
 }
@@ -123,7 +182,7 @@ func TestValidateRequireRetryInterval(t *testing.T) {
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require retry interval field")
 	}
 }
@@ -137,7 +196,7 @@ func TestValidateRequirePort(t *testing.T) {
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require port field")
 	}
 }
@@ -147,12 +206,12 @@ func TestValidateParseConnectionTimeout(t *testing.T) {
 		Address:           "localhost",
 		User:              "root",
 		Password:          "foo",
-		ConnectionTimeout: "30",
+		ConnectionTimeout: "doh",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should parse connection timeout")
 	}
 }
@@ -163,11 +222,11 @@ func TestValidateParseRetryTimeout(t *testing.T) {
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
-		RetryTimeout:      "60",
+		RetryTimeout:      "doh",
 		RetryInterval:     "1s",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should parse retry timeout")
 	}
 }
@@ -179,10 +238,10 @@ func TestValidateParseRetryInterval(t *testing.T) {
 		Password:          "foo",
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
-		RetryInterval:     "1",
+		RetryInterval:     "doh",
 		Port:              Port,
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should parse retry interval")
 	}
 }
@@ -197,7 +256,7 @@ func TestValidateParsePrivateKey(t *testing.T) {
 		Port:              Port,
 		PrivateKey:        "foo",
 	}
-	if _, err := c.New(); err == nil {
+	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should parse private key")
 	}
 }
@@ -567,5 +626,23 @@ func TestForwardUnixSocket(t *testing.T) {
 
 	if _, err := d.ForwardUnixSocket("unix:///foo"); err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
+	}
+}
+
+func TestForwardUnixSocketEnsureUnique(t *testing.T) {
+	d := newConnected("localhost:80", nil).(*sshConnected)
+
+	a, err := d.ForwardUnixSocket("unix:///foo")
+	if err != nil {
+		t.Fatalf("forwarding unix socket should succeed, got: %v", err)
+	}
+
+	b, err := d.ForwardUnixSocket("unix:///foo")
+	if err != nil {
+		t.Fatalf("forwarding 2nd random unix socket should succeed, got: %v", err)
+	}
+
+	if diff := cmp.Diff(a, b); diff == "" {
+		t.Fatalf("forwarded random unix sockets should differ")
 	}
 }

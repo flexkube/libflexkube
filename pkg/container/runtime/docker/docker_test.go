@@ -27,8 +27,14 @@ func TestNewClient(t *testing.T) {
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
 	c := &Config{}
-	if _, err := c.New(); err != nil {
+
+	d, err := c.New()
+	if err != nil {
 		t.Errorf("Creating new docker client should work, got: %s", err)
+	}
+
+	if d.(*docker).cli == nil {
+		t.Fatalf("New should set docker cli field")
 	}
 }
 
@@ -464,5 +470,33 @@ func TestCreate(t *testing.T) {}
 func TestDefaultConfig(t *testing.T) {
 	if DefaultConfig().Host != client.DefaultDockerHost {
 		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, DefaultConfig().Host)
+	}
+}
+
+// GetAddress()
+func TestGetAddressNilConfig(t *testing.T) {
+	var c *Config
+
+	if a := c.GetAddress(); a != client.DefaultDockerHost {
+		t.Fatalf("expected %q, got %q", client.DefaultDockerHost, a)
+	}
+}
+
+func TestGetAddressEmptyConfig(t *testing.T) {
+	c := &Config{}
+
+	if a := c.GetAddress(); a != client.DefaultDockerHost {
+		t.Fatalf("expected %q, got %q", client.DefaultDockerHost, a)
+	}
+}
+
+func TestGetAddress(t *testing.T) {
+	f := "foo"
+	c := &Config{
+		Host: f,
+	}
+
+	if a := c.GetAddress(); a != f {
+		t.Fatalf("expected %q, got %q", f, a)
 	}
 }

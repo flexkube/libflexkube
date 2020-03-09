@@ -59,19 +59,23 @@ func (f Fake) Stat(id string, paths []string) (map[string]os.FileMode, error) {
 	return f.StatF(id, paths)
 }
 
+// FakeConfig is a Fake runtime configuration struct.
 type FakeConfig struct {
 	Runtime Runtime
 	Address string
 }
 
+// GetAddress implements runtime.Config interface.
 func (c FakeConfig) GetAddress() string {
 	return c.Address
 }
 
+// SetAddress implements runtime.Config interface.
 func (c FakeConfig) SetAddress(a string) {
 	c.Address = a
 }
 
+// New implements runtime.Config interface.
 func (c FakeConfig) New() (Runtime, error) {
 	if c.Runtime == nil {
 		return nil, fmt.Errorf("no runtime defined")

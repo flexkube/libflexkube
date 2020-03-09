@@ -52,10 +52,13 @@ type File struct {
 	Group   string `json:"gid"`
 }
 
+// Exists controls, how container existence is determined based on ContainerStatus.
+// If state has no ID set, it means that container does not exist.
 func (s *ContainerStatus) Exists() bool {
 	return s.ID != ""
 }
 
+// Running determines if container is running, based on ContainerStatus.
 func (s *ContainerStatus) Running() bool {
 	return s.Exists() && s.Status == "running"
 }

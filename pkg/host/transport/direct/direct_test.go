@@ -18,6 +18,14 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestValidate(t *testing.T) {
+	d := &Config{}
+
+	if err := d.Validate(); err != nil {
+		t.Fatalf("validation should always pass, got: %v", err)
+	}
+}
+
 func TestForwardUnixSocket(t *testing.T) {
 	d := &direct{}
 	p := "/foo"

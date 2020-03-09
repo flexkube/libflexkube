@@ -99,6 +99,10 @@ test-integration: build-test
 test-cover: build-test
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
+.PHONY: test-mutate
+test-mutate: install-go-mutesting
+	go-mutesting $(GO_PACKAGES)
+
 .PHONY: cover-browse
 cover-browse:
 	go tool cover -html=$(PROFILEFILE)
@@ -145,6 +149,7 @@ test-conformance-clean:
 .PHONY: lint
 lint:
 	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration --timeout 10m $(GO_PACKAGES)
+	golint $(GO_PACKAGES)
 
 .PHONY: update
 update:
@@ -191,13 +196,20 @@ cover-upload: codecov
 install-golangci-lint:
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
 
+.PHONY: install-golint
+install-golint:
+	GO111MODULE=off go get golang.org/x/lint/golint
+
 .PHONY: install-cc-test-reporter
 install-cc-test-reporter:
 	curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > $(BIN_PATH)/cc-test-reporter
 	chmod +x $(BIN_PATH)/cc-test-reporter
 
 .PHONY: install-ci
-install-ci: install-golangci-lint install-cc-test-reporter
+install-ci: install-golangci-lint install-golint install-cc-test-reporter
+
+.PHONY: install-go-mutesting
+	GO111MODULE=off go get github.com/AntonStoeckl/go-mutesting/cmd/go-mutesting
 
 .PHONY: vagrant-up
 vagrant-up:

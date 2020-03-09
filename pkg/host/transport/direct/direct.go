@@ -11,7 +11,8 @@ import (
 //
 // Using this struct will use local network and local filesystem.
 type Config struct {
-	Dummy string
+	// Dummy field is only user for testing.
+	Dummy string `json:"-"`
 }
 
 // direct is a initialized struct, which satisfies Transport interface.
@@ -19,10 +20,6 @@ type direct struct{}
 
 // New may in the future validate direct configuration.
 func (c *Config) New() (transport.Interface, error) {
-	if err := c.Validate(); err != nil {
-		return nil, fmt.Errorf("direct host validation failed: %w", err)
-	}
-
 	return &direct{}, nil
 }
 

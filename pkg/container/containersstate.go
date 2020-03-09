@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	// StatusMissing is a value, which is set to ContainerStatus.Status field,
+	// if stored container ID is not found.
 	StatusMissing = "gone"
 )
 
