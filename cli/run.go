@@ -11,10 +11,14 @@ import (
 )
 
 const (
+	// ExitError is returned by Run(), if any error occurs.
 	ExitError = 1
-	ExitOK    = 0
+	// ExitOK is successful return code from Run().
+	ExitOK = 0
 )
 
+// Run is a generic function, which runs Flexkube CLI tools. If any error occurs,
+// non-zero exit code is returned.
 func Run(rc types.ResourceConfig) int {
 	// Read files.
 	f, err := readFiles()
