@@ -61,26 +61,6 @@ locals {
 
   node_load_balancer_address = "127.0.0.1:7443"
 
-  apiloadbalancer_nodes_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key = file(var.ssh_private_key_path)
-    ssh_addresses   = concat(local.controller_ips, local.worker_ips)
-    ssh_port        = var.node_ssh_port
-    servers         = formatlist("%s:%d", local.controller_ips, local.api_port)
-    name            = "api-loadbalancer-nodes"
-    config_path     = "/etc/haproxy/nodes.cfg"
-    bind_address    = local.node_load_balancer_address
-  })
-
-  apiloadbalancer_bootstrap_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key = file(var.ssh_private_key_path)
-    ssh_addresses   = [local.first_controller_ip]
-    ssh_port        = var.node_ssh_port
-    servers         = ["${local.bootstrap_api_bind}:${local.api_port}"]
-    name            = "api-loadbalancer-bootstrap"
-    config_path     = "/etc/haproxy/bootstrap.cfg"
-    bind_address    = "${local.first_controller_ip}:${local.api_port}"
-  })
-
   controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
     kubernetes_ca_certificate         = module.kubernetes_pki.kubernetes_ca_cert
     kubernetes_ca_key                 = module.kubernetes_pki.kubernetes_ca_key
@@ -261,11 +241,49 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 
 resource "flexkube_apiloadbalancer_pool" "nodes" {
-  config = local.apiloadbalancer_nodes_config
+  name             = "api-loadbalancer-nodes"
+  host_config_path = "/etc/haproxy/nodes.cfg"
+  bind_address     = local.node_load_balancer_address
+  servers          = formatlist("%s:%d", local.controller_ips, local.api_port)
+
+  ssh {
+    private_key = file(var.ssh_private_key_path)
+    port        = var.node_ssh_port
+    user        = "core"
+  }
+
+  dynamic "api_load_balancer" {
+    for_each = concat(local.controller_ips, local.worker_ips)
+
+    content {
+      host {
+        ssh {
+          address = api_load_balancer.value
+        }
+      }
+    }
+  }
 }
 
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
-  config = local.apiloadbalancer_bootstrap_config
+  name             = "api-loadbalancer-bootstrap"
+  host_config_path = "/etc/haproxy/bootstrap.cfg"
+  bind_address     = "${local.first_controller_ip}:${local.api_port}"
+  servers          = ["${local.bootstrap_api_bind}:${local.api_port}"]
+
+  ssh {
+    private_key = file(var.ssh_private_key_path)
+    port        = var.node_ssh_port
+    user        = "core"
+  }
+
+  api_load_balancer {
+    host {
+      ssh {
+        address = local.first_controller_ip
+      }
+    }
+  }
 }
 
 resource "flexkube_controlplane" "bootstrap" {

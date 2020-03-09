@@ -1,4 +1,4 @@
-package flexkube
+package flexkube //nolint:dupl
 
 import (
 	"regexp"
