@@ -99,6 +99,10 @@ test-integration: build-test
 test-cover: build-test
 	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
+.PHONY: test-mutate
+test-mutate: install-go-mutesting
+	go-mutesting $(GO_PACKAGES)
+
 .PHONY: cover-browse
 cover-browse:
 	go tool cover -html=$(PROFILEFILE)
@@ -198,6 +202,9 @@ install-cc-test-reporter:
 
 .PHONY: install-ci
 install-ci: install-golangci-lint install-cc-test-reporter
+
+.PHONY: install-go-mutesting
+	GO111MODULE=off go get github.com/AntonStoeckl/go-mutesting/cmd/go-mutesting
 
 .PHONY: vagrant-up
 vagrant-up:
