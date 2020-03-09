@@ -20,19 +20,19 @@ import (
 
 // Member represents single etcd member
 type Member struct {
-	Name              string            `json:"name"`
-	Image             string            `json:"image"`
-	Host              host.Host         `json:"host"`
-	CACertificate     types.Certificate `json:"caCertificate"`
-	PeerCertificate   types.Certificate `json:"peerCertificate"`
-	PeerKey           types.PrivateKey  `json:"peerKey"`
-	PeerAddress       string            `json:"peerAddress"`
-	InitialCluster    string            `json:"initialCluster"`
-	PeerCertAllowedCN string            `json:"peerCertAllowedCN"`
-	ServerCertificate types.Certificate `json:"serverCertificate"`
-	ServerKey         types.PrivateKey  `json:"serverKey"`
-	ServerAddress     string            `json:"serverAddress"`
-	NewCluster        bool              `json:"newCluster"`
+	Name              string            `json:"name,omitempty"`
+	Image             string            `json:"image,omitempty"`
+	Host              host.Host         `json:"host,omitempty"`
+	CACertificate     types.Certificate `json:"caCertificate,omitempty"`
+	PeerCertificate   types.Certificate `json:"peerCertificate,omitempty"`
+	PeerKey           types.PrivateKey  `json:"peerKey,omitempty"`
+	PeerAddress       string            `json:"peerAddress,omitempty"`
+	InitialCluster    string            `json:"initialCluster,omitempty"`
+	PeerCertAllowedCN string            `json:"peerCertAllowedCN,omitempty"`
+	ServerCertificate types.Certificate `json:"serverCertificate,omitempty"`
+	ServerKey         types.PrivateKey  `json:"serverKey,omitempty"`
+	ServerAddress     string            `json:"serverAddress,omitempty"`
+	NewCluster        bool              `json:"newCluster,omitempty"`
 }
 
 // member is a validated, executable version of Member

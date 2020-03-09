@@ -51,7 +51,7 @@ type Container struct {
 	// Stores runtime configuration of the container.
 	Config types.ContainerConfig `json:"config"`
 	// Status of the container.
-	Status types.ContainerStatus `json:"status"`
+	Status types.ContainerStatus `json:"status,omitempty"`
 	// Runtime stores configuration for various container runtimes.
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }

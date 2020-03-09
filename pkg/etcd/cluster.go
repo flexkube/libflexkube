@@ -30,7 +30,7 @@ type Cluster struct {
 	Members       map[string]Member `json:"members,omitempty"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state"`
+	State container.ContainersState `json:"state,omitempty"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.

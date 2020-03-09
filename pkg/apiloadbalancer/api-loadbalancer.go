@@ -19,12 +19,12 @@ import (
 
 // APILoadBalancer is a user-configurable representation of single instance of API load balancer
 type APILoadBalancer struct {
-	Image          string    `json:"image"`
-	Host           host.Host `json:"host"`
-	Servers        []string  `json:"servers"`
-	Name           string    `json:"name"`
-	HostConfigPath string    `json:"hostConfigPath"`
-	BindAddress    string    `json:"bindAddress"`
+	Image          string    `json:"image,omitempty"`
+	Host           host.Host `json:"host,omitempty"`
+	Servers        []string  `json:"servers,omitempty"`
+	Name           string    `json:"name,omitempty"`
+	HostConfigPath string    `json:"hostConfigPath,omitempty"`
+	BindAddress    string    `json:"bindAddress,omitempty"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer
