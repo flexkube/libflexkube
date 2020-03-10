@@ -491,6 +491,10 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 	if err := c.ensureExists(foo); err == nil {
 		t.Fatalf("Ensuring that new container exists should propagate create error")
 	}
+
+	if len(c.currentState) != 0 {
+		t.Fatalf("If creation failed, current state should not be updated")
+	}
 }
 
 func TestEnsureExistsFailStart(t *testing.T) {
@@ -1275,6 +1279,54 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 
 	if !called {
 		t.Fatalf("should call Copy on container")
+	}
+}
+
+func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
+	f := foo
+
+	cf := map[string]string{
+		f: bar,
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			f: &hostConfiguredContainer{
+				configFiles: cf,
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: f,
+						},
+						runtimeConfig: &runtime.FakeConfig{
+							Runtime: &runtime.Fake{
+								CreateF: func(config *types.ContainerConfig) (string, error) {
+									return f, nil
+								},
+								StatusF: func(id string) (types.ContainerStatus, error) {
+									return types.ContainerStatus{}, nil
+								},
+								CopyF: func(id string, files []*types.File) error {
+									return fmt.Errorf("fail")
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		currentState: containersState{},
+	}
+
+	if err := c.ensureConfigured(f); err == nil {
+		t.Fatalf("Ensure configured should fail")
+	}
+
+	if len(c.currentState) != 0 {
+		t.Fatalf("If no files has been updated, current state should not be set")
 	}
 }
 
