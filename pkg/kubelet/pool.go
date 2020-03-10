@@ -1,3 +1,5 @@
+// Package kubelet implements logic needed for creating and managing kubelet instances
+// running as containers.
 package kubelet
 
 import (

@@ -326,7 +326,6 @@ func TestRemoveMemberFail(t *testing.T) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
-	defer f.Close()
 
 	m := &member{
 		name: "foo",
@@ -334,6 +333,10 @@ func TestRemoveMemberFail(t *testing.T) {
 
 	if err := m.remove(f); err == nil {
 		t.Fatalf("Removing member should check for removal errors")
+	}
+
+	if err := f.Close(); err != nil {
+		t.Logf("failed closing etcd client: %v", err)
 	}
 }
 

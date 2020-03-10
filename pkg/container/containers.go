@@ -1,3 +1,5 @@
+// Package container allows to run and manage multiple containers across multiple hosts,
+// by talking directly to the container runtime on local or remote hosts.
 package container
 
 import (

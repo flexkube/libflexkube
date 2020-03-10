@@ -1,3 +1,4 @@
+// Package defaults provides default values used across the library.
 package defaults
 
 const (

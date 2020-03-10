@@ -82,7 +82,6 @@ func TestConnectAndForward(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to listen on address '%s':%v", addr, err)
 	}
-	defer localSock.Close()
 
 	h := &hostConfiguredContainer{
 		host: host.Host{
@@ -97,6 +96,10 @@ func TestConnectAndForward(t *testing.T) {
 
 	if s == "" {
 		t.Fatalf("Returned forwarded address shouldn't be empty")
+	}
+
+	if err := localSock.Close(); err != nil {
+		t.Logf("failed to close local socket listener: %v", err)
 	}
 }
 

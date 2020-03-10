@@ -1,3 +1,5 @@
+// Package host collects all transport interface implementations and provides an
+// unified configuration interface for these.
 package host
 
 import (

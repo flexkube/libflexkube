@@ -1,3 +1,5 @@
+// Package ssh is a transport.Interface implementation, which forwards
+// given addresses over specified SSH host.
 package ssh
 
 import (
@@ -187,7 +189,11 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 // handleClient is responsible for copying incoming and outgoing data going
 // through the forwarded connection
 func handleClient(client net.Conn, remote io.ReadWriter) {
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			fmt.Printf("failed closing client connection: %v", err)
+		}
+	}()
 
 	chDone := make(chan bool)
 
@@ -214,7 +220,11 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 //
 // TODO should we do some error handling here?
 func forwardConnection(l net.Listener, connection dialer, remoteAddress string, connectionType string) {
-	defer l.Close()
+	defer func() {
+		if err := l.Close(); err != nil {
+			fmt.Printf("failed closing listener: %v", err)
+		}
+	}()
 
 	for {
 		// Accept connection from the client.

@@ -1,3 +1,4 @@
+// Package transport provides interfaces for forwarding connections.
 package transport
 
 // Interface Transport should be a valid object, which is ready to open connection.

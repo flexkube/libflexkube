@@ -1,3 +1,5 @@
+// Package controlplane contains implementation of CLI tool for
+// managing static Kubernetes controlplanes.
 package controlplane
 
 import (

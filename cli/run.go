@@ -1,3 +1,5 @@
+// Package cli contains generic implementation of CLI tools build around
+// types.Resource interface.
 package cli
 
 import (
@@ -58,6 +60,10 @@ func readYamlFile(file string) ([]byte, error) {
 		return []byte(""), nil
 	}
 
+	// The function is not exported and all parameters to this function
+	// are static.
+	//
+	// #nosec G304
 	c, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err

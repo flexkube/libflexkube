@@ -1,3 +1,5 @@
+// Package etcdcluster contains implementation of CLI tool for
+// managing etcd clusters.
 package etcdcluster
 
 import (

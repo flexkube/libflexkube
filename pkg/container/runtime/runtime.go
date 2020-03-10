@@ -1,3 +1,5 @@
+// Package runtime provides interfaces describing container runtimes
+// in generic way and their functionality.
 package runtime
 
 import (

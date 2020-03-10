@@ -143,11 +143,9 @@ func runServer(t *testing.T, expectedMessage string, response string) {
 		t.Fail()
 	}
 
-	defer l.Close()
-
 	// We may SSH into host as unprivileged user, so make sure we are allowed to access the
 	// socket file.
-	if err := os.Chmod(testServerAddr, 0777); err != nil {
+	if err := os.Chmod(testServerAddr, 0600); err != nil {
 		fmt.Printf("socket chmod should succeed, got: %v\n", err)
 		t.Fail()
 	}
@@ -157,8 +155,6 @@ func runServer(t *testing.T, expectedMessage string, response string) {
 		fmt.Printf("accepting connection should succeed, got: %v\n", err)
 		t.Fail()
 	}
-
-	defer conn.Close()
 
 	buf := make([]byte, 1024)
 
@@ -176,5 +172,13 @@ func runServer(t *testing.T, expectedMessage string, response string) {
 	if _, err := conn.Write([]byte(response)); err != nil {
 		fmt.Printf("writing response should succeed, got: %v\n", err)
 		t.Fail()
+	}
+
+	if err := conn.Close(); err != nil {
+		t.Logf("failed closing connection: %v", err)
+	}
+
+	if err := l.Close(); err != nil {
+		t.Logf("failed closing local listener: %v", err)
 	}
 }

@@ -1,3 +1,4 @@
+// Package release allows to manage helm releases.
 package release
 
 import (
