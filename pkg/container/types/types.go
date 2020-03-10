@@ -1,7 +1,6 @@
+// Package types contains types used for managing the containers. They are put in separate package
+// to avoid cyclic dependencies while importing.
 package types
-
-// To avoid cyclic dependencies between container, runtime and runtime implementation packages,
-// we put container-related types in separated package.
 
 // ContainerConfig stores runtime-agnostic information how to run the container
 type ContainerConfig struct {

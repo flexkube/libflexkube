@@ -1,3 +1,4 @@
+// Package etcd allows to create and manage etcd clusters.
 package etcd
 
 import (
@@ -272,10 +273,12 @@ func (c *cluster) Deploy() error {
 			return fmt.Errorf("failed getting etcd client: %w", err)
 		}
 
-		defer cli.Close()
-
 		if err := c.updateMembers(cli); err != nil {
 			return fmt.Errorf("failed to update members before deploying: %w", err)
+		}
+
+		if err := cli.Close(); err != nil {
+			return fmt.Errorf("failed to close etcd client: %w", err)
 		}
 	}
 

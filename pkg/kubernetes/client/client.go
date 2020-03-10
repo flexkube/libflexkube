@@ -1,3 +1,4 @@
+// Package client ships helper functions for building and using Kubernetes client.
 package client
 
 import (

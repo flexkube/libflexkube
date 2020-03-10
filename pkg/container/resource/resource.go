@@ -1,3 +1,5 @@
+// Package resource stores a wrapper over container.Containers, which implements
+// types.Resource interface. It is stored in separate package to avoid cyclic imports.
 package resource
 
 import (

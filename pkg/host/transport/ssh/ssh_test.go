@@ -475,7 +475,9 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 		t.Fatalf("unable to listen on random TCP port: %v", err)
 	}
 
-	l.Close()
+	if err := l.Close(); err != nil {
+		t.Logf("failed to close listener: %v", err)
+	}
 
 	r, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

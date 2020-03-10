@@ -1,3 +1,5 @@
+// Package containerrunner contains implementation of CLI tool for
+// creating any managing any containers.
 package containerrunner
 
 import (

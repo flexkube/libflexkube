@@ -1,3 +1,5 @@
+// Package docker implements runtime.Interface and runtime.Config interfaces
+// by talking to Docker API.
 package docker
 
 import (
@@ -366,11 +368,14 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 		if rc == nil {
 			continue
 		}
-		defer rc.Close()
 
 		fs, err := tarToFiles(rc)
 		if err != nil {
 			return nil, fmt.Errorf("failed extracting file %s from archive: %v", p, err)
+		}
+
+		if err := rc.Close(); err != nil {
+			return nil, fmt.Errorf("failed closing file: %w", err)
 		}
 
 		fs[0].Path = p
@@ -423,13 +428,11 @@ func (d *docker) pullImage(image string) error {
 		return fmt.Errorf("pulling image failed: %w", err)
 	}
 
-	defer out.Close()
-
 	if _, err := io.Copy(ioutil.Discard, out); err != nil {
 		return fmt.Errorf("failed to discard pulling messages: %w", err)
 	}
 
-	return nil
+	return out.Close()
 }
 
 // DefaultConfig returns Docker's runtime default configuration.

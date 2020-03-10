@@ -1,3 +1,5 @@
+// Package apiloadbalancer allows to create and manage kube-apiserver load balancer
+// containers.
 package apiloadbalancer
 
 import (

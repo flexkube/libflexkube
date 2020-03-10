@@ -1,3 +1,5 @@
+// Package controlplane allows to create and manage static Kubernetes controlplane running
+// in containers.
 package controlplane
 
 import (

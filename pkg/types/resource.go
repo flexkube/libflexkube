@@ -1,3 +1,5 @@
+// Package types provides reusable structs and interfaces used across libflexkube, which
+// can also be used by external projects.
 package types
 
 import (

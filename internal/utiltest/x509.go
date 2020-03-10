@@ -1,3 +1,5 @@
+// Package utiltest provides testing helpers, for generating valid mock data like
+// X509 certificates etc.
 package utiltest
 
 import (

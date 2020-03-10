@@ -1,3 +1,5 @@
+// Package apiloadbalancers contains implementation of CLI tool for
+// managing kube-apiserver load balancers.
 package apiloadbalancers
 
 import (

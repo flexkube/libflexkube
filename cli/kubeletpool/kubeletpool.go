@@ -1,3 +1,5 @@
+// Package kubeletpool contains implementation of CLI tool for
+// managing kubelet instances.
 package kubeletpool
 
 import (

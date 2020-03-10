@@ -1,3 +1,4 @@
+// Package flexkube implements Terraform provider for libflexkube.
 package flexkube
 
 import (

@@ -1,3 +1,5 @@
+// Package direct is a transport.Interface implementation, which simply
+// forwards given addresses "as is", without any modifications.
 package direct
 
 import (
