@@ -19,12 +19,12 @@ resource "local_file" "calico_values" {
 }
 
 resource "local_file" "etcd_config" {
-  sensitive_content = local.etcd_config
+  sensitive_content = flexkube_etcd_cluster.etcd.config_yaml
   filename          = "./resources/etcd-cluster/config.yaml"
 }
 
 resource "local_file" "etcd_state" {
-  sensitive_content = flexkube_etcd_cluster.etcd.state
+  sensitive_content = flexkube_etcd_cluster.etcd.state_yaml
   filename          = "./resources/etcd-cluster/state.yaml"
 }
 

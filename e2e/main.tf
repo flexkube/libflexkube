@@ -42,20 +42,6 @@ module "kubernetes_pki" {
 locals {
   cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
 
-  etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
-    peer_ssh_addresses = local.controller_ips
-    peer_ips           = module.etcd_pki.etcd_peer_ips
-    peer_names         = module.etcd_pki.etcd_peer_names
-    peer_ca            = module.etcd_pki.etcd_ca_cert
-    peer_certs         = module.etcd_pki.etcd_peer_certs
-    peer_keys          = module.etcd_pki.etcd_peer_keys
-    server_certs       = module.etcd_pki.etcd_server_certs
-    server_keys        = module.etcd_pki.etcd_server_keys
-    server_ips         = local.controller_ips
-    ssh_private_key    = file(var.ssh_private_key_path)
-    ssh_port           = var.node_ssh_port
-  })
-
   bootstrap_api_bind = "127.0.0.1"
   api_port           = 8443
 
@@ -229,6 +215,8 @@ EOF
   })
 
   deploy_workers = var.workers_count > 0 ? 1 : 0
+
+  ssh_private_key = file(var.ssh_private_key_path)
 }
 
 resource "local_file" "kubeconfig" {
@@ -237,7 +225,33 @@ resource "local_file" "kubeconfig" {
 }
 
 resource "flexkube_etcd_cluster" "etcd" {
-  config = local.etcd_config
+  ssh {
+    user        = "core"
+    port        = var.node_ssh_port
+    private_key = local.ssh_private_key
+  }
+
+  ca_certificate = module.etcd_pki.etcd_ca_cert
+
+  dynamic "member" {
+    for_each = module.etcd_pki.etcd_peer_ips
+
+    content {
+      name               = module.etcd_pki.etcd_peer_names[member.key]
+      peer_certificate   = module.etcd_pki.etcd_peer_certs[member.key]
+      peer_key           = module.etcd_pki.etcd_peer_keys[member.key]
+      server_certificate = module.etcd_pki.etcd_server_certs[member.key]
+      server_key         = module.etcd_pki.etcd_server_keys[member.key]
+      peer_address       = module.etcd_pki.etcd_peer_ips[member.key]
+      server_address     = local.controller_ips[member.key]
+
+      host {
+        ssh {
+          address = local.controller_ips[member.key]
+        }
+      }
+    }
+  }
 }
 
 resource "flexkube_apiloadbalancer_pool" "nodes" {

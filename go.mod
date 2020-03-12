@@ -54,6 +54,7 @@ require (
 	github.com/prometheus/client_golang v1.4.0 // indirect
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/terraform-providers/terraform-provider-tls v1.2.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20171017195756-830351dc03c6 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
@@ -84,6 +85,7 @@ replace (
 	github.com/deislabs/oras => github.com/deislabs/oras v0.7.0
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	github.com/terraform-providers/terraform-provider-tls => github.com/terraform-providers/terraform-provider-tls v1.2.1-0.20190925211901-afd9e9546f57
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 	k8s.io/client-go => k8s.io/client-go v0.17.0
 	rsc.io/letsencrypt => github.com/dmcgowan/letsencrypt v0.0.0-20160928181947-1847a81d2087
