@@ -16,7 +16,55 @@ func TestContainerMarshal(t *testing.T) {
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
-		Status: types.ContainerStatus{},
+	}
+
+	var s []string
+
+	e := []interface{}{
+		map[string]interface{}{
+			"config": []interface{}{
+				map[string]interface{}{
+					"name":         "",
+					"image":        "",
+					"privileged":   false,
+					"args":         s,
+					"entrypoint":   s,
+					"port":         []interface{}{},
+					"mount":        []interface{}{},
+					"network_mode": "",
+					"pid_mode":     "",
+					"ipc_mode":     "",
+					"user":         "",
+					"group":        "",
+				},
+			},
+			"runtime": []interface{}{
+				map[string]interface{}{
+					"docker": []interface{}{
+						map[string]interface{}{
+							"host": "unix:///var/run/docker.sock",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if diff := cmp.Diff(containerMarshal(c), e); diff != "" {
+		t.Errorf("Unexpected diff:\n%s", diff)
+	}
+}
+
+func TestContainerMarshalWithStatus(t *testing.T) {
+	c := container.Container{
+		Config: types.ContainerConfig{},
+		Runtime: container.RuntimeConfig{
+			Docker: docker.DefaultConfig(),
+		},
+		Status: types.ContainerStatus{
+			ID:     "foo",
+			Status: "running",
+		},
 	}
 
 	var s []string
@@ -41,8 +89,8 @@ func TestContainerMarshal(t *testing.T) {
 			},
 			"status": []interface{}{
 				map[string]interface{}{
-					"id":     "",
-					"status": "",
+					"id":     "foo",
+					"status": "running",
 				},
 			},
 			"runtime": []interface{}{

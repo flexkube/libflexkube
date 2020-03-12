@@ -20,7 +20,6 @@ func TestContainersStateMarshal(t *testing.T) {
 				Runtime: container.RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
-				Status: types.ContainerStatus{},
 			},
 			ConfigFiles: map[string]string{
 				"/foo": "bar",
@@ -62,12 +61,6 @@ func TestContainersStateMarshal(t *testing.T) {
 							"ipc_mode":     "",
 							"user":         "",
 							"group":        "",
-						},
-					},
-					"status": []interface{}{
-						map[string]interface{}{
-							"id":     "",
-							"status": "",
 						},
 					},
 					"runtime": []interface{}{

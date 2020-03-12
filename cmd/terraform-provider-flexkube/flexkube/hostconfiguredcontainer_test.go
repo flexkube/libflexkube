@@ -61,12 +61,6 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 						"group":        "",
 					},
 				},
-				"status": []interface{}{
-					map[string]interface{}{
-						"id":     "",
-						"status": "",
-					},
-				},
 				"runtime": []interface{}{
 					map[string]interface{}{
 						"docker": []interface{}{
