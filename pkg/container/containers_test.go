@@ -3,6 +3,7 @@ package container
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -1531,5 +1532,81 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 
 	if len(c.desiredState) != len(c.currentState) {
 		t.Fatalf("All containers from current state should be removed")
+	}
+}
+
+// ensureCurrentContainer()
+func TestEnsureCurrentContainer(t *testing.T) {
+	hcc := hostConfiguredContainer{
+		hooks: &Hooks{},
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base: base{
+				status: types.ContainerStatus{
+					Status: "stopped",
+					ID:     "foo",
+				},
+				runtimeConfig: &docker.Config{
+					Host: "unix:///nonexistent",
+				},
+			},
+		},
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			foo: &hcc,
+		},
+		currentState: containersState{
+			foo: &hcc,
+		},
+	}
+
+	_, err := c.ensureCurrentContainer(foo, hcc)
+	if err == nil {
+		t.Fatalf("ensure stopped container should try to start the container and fail")
+	}
+
+	if !strings.Contains(err.Error(), "Is the docker daemon running?") {
+		t.Fatalf("ensuring stopped container should fail to contact non existing runtime, got: %v", err)
+	}
+}
+
+func TestEnsureCurrentContainerNonExisting(t *testing.T) {
+	hcc := hostConfiguredContainer{
+		hooks: &Hooks{},
+		host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		container: &container{
+			base: base{
+				status: types.ContainerStatus{
+					Status: "",
+					ID:     "",
+				},
+				runtimeConfig: &docker.Config{
+					Host: "unix:///nonexistent",
+				},
+			},
+		},
+	}
+
+	c := &containers{
+		desiredState: containersState{
+			foo: &hcc,
+		},
+		currentState: containersState{
+			foo: &hcc,
+		},
+	}
+
+	if _, err := c.ensureCurrentContainer(foo, hcc); err != nil {
+		t.Fatalf("ensure stopped container should not fail on non-existing container, got: %v", err)
+	}
+
+	if len(c.currentState) > 0 {
+		t.Fatalf("ensuring removed container should remove it from current state to trigger creation")
 	}
 }
