@@ -127,12 +127,7 @@ func hostConfiguredContainerMarshaled() []interface{} {
 func TestHostConfiguredContainerUnmarshal(t *testing.T) {
 	c := container.HostConfiguredContainer{
 		Container: container.Container{
-			Config: types.ContainerConfig{
-				Args:       []string{},
-				Entrypoint: []string{},
-				Ports:      []types.PortMap{},
-				Mounts:     []types.Mount{},
-			},
+			Config: types.ContainerConfig{},
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
