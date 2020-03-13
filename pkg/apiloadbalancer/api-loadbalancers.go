@@ -27,7 +27,7 @@ type APILoadBalancers struct {
 	BindAddress      string            `json:"bindAddress,omitempty"`
 
 	// Serializable fields
-	State container.ContainersState `json:"state"`
+	State container.ContainersState `json:"state,omitempty"`
 }
 
 // apiLoadBalancers is validated and executable version of APILoadBalancers

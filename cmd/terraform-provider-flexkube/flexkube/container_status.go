@@ -15,10 +15,10 @@ func containerStatusMarshal(s types.ContainerStatus) interface{} {
 	}
 }
 
-func containerStatusUnmarshal(i interface{}) types.ContainerStatus {
+func containerStatusUnmarshal(i interface{}) *types.ContainerStatus {
 	j := i.(map[string]interface{})
 
-	return types.ContainerStatus{
+	return &types.ContainerStatus{
 		ID:     j["id"].(string),
 		Status: j["status"].(string),
 	}

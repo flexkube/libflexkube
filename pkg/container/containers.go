@@ -369,27 +369,32 @@ func (c *containers) hasUpdates(n string) (bool, error) {
 }
 
 func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer) (hostConfiguredContainer, error) {
-	// Container is gone, remove it from current state, so it will be scheduled for recreation.
-	if !r.container.Status().Exists() {
-		delete(c.currentState, n)
-
-		return r, nil
-	}
+	// Gather facts about the container..
+	exists := r.container.Status().Exists()
+	_, isDesired := c.desiredState[n]
+	hasUpdates := false
 
 	if err := c.isUpdatable(n); err == nil {
+		// If container is updatable, check if it has any updates pending.
 		u, err := c.hasUpdates(n)
 		if err != nil {
 			return r, fmt.Errorf("failed checking if container has pending updates: %w", err)
 		}
 
-		// Don't start existing host if they are going to be updated anyway.
-		// If host is wrongly configured, starting won't help anyway.
-		if u {
-			return r, nil
-		}
+		hasUpdates = u
 	}
 
-	return r, ensureRunning(&r)
+	// Container is gone, remove it from current state, so it will be scheduled for recreation.
+	if !exists {
+		delete(c.currentState, n)
+	}
+
+	// If container exist, is desired or has no pending updates, make sure it's running.
+	if exists && isDesired && !hasUpdates {
+		return r, ensureRunning(&r)
+	}
+
+	return r, nil
 }
 
 // ensureNewContainer handles configuring and creating new containers.
@@ -529,9 +534,9 @@ func (c *containers) DesiredState() ContainersState {
 
 		// Make sure, that desired state has correct status. Container should always be running
 		// and optionally, we also set the ID of already existing container. If there are changes
-		// to the container, it will get new ID anyway, but user does not care about this cahnge,
+		// to the container, it will get new ID anyway, but user does not care about this change,
 		// so we can hide it this way from the diff.
-		d[h].Container.Status = types.ContainerStatus{
+		d[h].Container.Status = &types.ContainerStatus{
 			Status: "running",
 			ID:     id,
 		}

@@ -30,7 +30,7 @@ type Cluster struct {
 	Members       map[string]Member `json:"members,omitempty"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state"`
+	State container.ContainersState `json:"state,omitempty"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.
@@ -45,8 +45,8 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	peerCertAllowedCNArr := []string{}
 
 	for n, m := range c.Members {
-		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", fmt.Sprintf("etcd-%s", n), m.PeerAddress))
-		peerCertAllowedCNArr = append(peerCertAllowedCNArr, fmt.Sprintf("etcd-%s", n))
+		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", util.PickString(m.Name, fmt.Sprintf("etcd-%s", n)), m.PeerAddress))
+		peerCertAllowedCNArr = append(peerCertAllowedCNArr, util.PickString(m.Name, fmt.Sprintf("etcd-%s", n)))
 	}
 
 	sort.Strings(initialClusterArr)

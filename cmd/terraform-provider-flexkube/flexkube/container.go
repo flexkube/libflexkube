@@ -8,13 +8,16 @@ import (
 )
 
 func containerMarshal(c container.Container) interface{} {
-	return []interface{}{
-		map[string]interface{}{
-			"config":  containerConfigMarshal(c.Config),
-			"status":  containerStatusMarshal(c.Status),
-			"runtime": runtimeMarshal(c.Runtime),
-		},
+	m := map[string]interface{}{
+		"config":  containerConfigMarshal(c.Config),
+		"runtime": runtimeMarshal(c.Runtime),
 	}
+
+	if c.Status != nil {
+		m["status"] = containerStatusMarshal(*c.Status)
+	}
+
+	return []interface{}{m}
 }
 
 func containerUnmarshal(i interface{}) container.Container {

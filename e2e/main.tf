@@ -42,44 +42,10 @@ module "kubernetes_pki" {
 locals {
   cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
 
-  etcd_config = templatefile("./templates/etcd_config.yaml.tmpl", {
-    peer_ssh_addresses = local.controller_ips
-    peer_ips           = module.etcd_pki.etcd_peer_ips
-    peer_names         = module.etcd_pki.etcd_peer_names
-    peer_ca            = module.etcd_pki.etcd_ca_cert
-    peer_certs         = module.etcd_pki.etcd_peer_certs
-    peer_keys          = module.etcd_pki.etcd_peer_keys
-    server_certs       = module.etcd_pki.etcd_server_certs
-    server_keys        = module.etcd_pki.etcd_server_keys
-    server_ips         = local.controller_ips
-    ssh_private_key    = file(var.ssh_private_key_path)
-    ssh_port           = var.node_ssh_port
-  })
-
   bootstrap_api_bind = "127.0.0.1"
   api_port           = 8443
 
   node_load_balancer_address = "127.0.0.1:7443"
-
-  apiloadbalancer_nodes_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key = file(var.ssh_private_key_path)
-    ssh_addresses   = concat(local.controller_ips, local.worker_ips)
-    ssh_port        = var.node_ssh_port
-    servers         = formatlist("%s:%d", local.controller_ips, local.api_port)
-    name            = "api-loadbalancer-nodes"
-    config_path     = "/etc/haproxy/nodes.cfg"
-    bind_address    = local.node_load_balancer_address
-  })
-
-  apiloadbalancer_bootstrap_config = templatefile("./templates/apiloadbalancer_pool_config.yaml.tmpl", {
-    ssh_private_key = file(var.ssh_private_key_path)
-    ssh_addresses   = [local.first_controller_ip]
-    ssh_port        = var.node_ssh_port
-    servers         = ["${local.bootstrap_api_bind}:${local.api_port}"]
-    name            = "api-loadbalancer-bootstrap"
-    config_path     = "/etc/haproxy/bootstrap.cfg"
-    bind_address    = "${local.first_controller_ip}:${local.api_port}"
-  })
 
   controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
     kubernetes_ca_certificate         = module.kubernetes_pki.kubernetes_ca_cert
@@ -249,6 +215,8 @@ EOF
   })
 
   deploy_workers = var.workers_count > 0 ? 1 : 0
+
+  ssh_private_key = file(var.ssh_private_key_path)
 }
 
 resource "local_file" "kubeconfig" {
@@ -257,15 +225,79 @@ resource "local_file" "kubeconfig" {
 }
 
 resource "flexkube_etcd_cluster" "etcd" {
-  config = local.etcd_config
+  ssh {
+    user        = "core"
+    port        = var.node_ssh_port
+    private_key = local.ssh_private_key
+  }
+
+  ca_certificate = module.etcd_pki.etcd_ca_cert
+
+  dynamic "member" {
+    for_each = module.etcd_pki.etcd_peer_ips
+
+    content {
+      name               = module.etcd_pki.etcd_peer_names[member.key]
+      peer_certificate   = module.etcd_pki.etcd_peer_certs[member.key]
+      peer_key           = module.etcd_pki.etcd_peer_keys[member.key]
+      server_certificate = module.etcd_pki.etcd_server_certs[member.key]
+      server_key         = module.etcd_pki.etcd_server_keys[member.key]
+      peer_address       = module.etcd_pki.etcd_peer_ips[member.key]
+      server_address     = local.controller_ips[member.key]
+
+      host {
+        ssh {
+          address = local.controller_ips[member.key]
+        }
+      }
+    }
+  }
 }
 
 resource "flexkube_apiloadbalancer_pool" "nodes" {
-  config = local.apiloadbalancer_nodes_config
+  name             = "api-loadbalancer-nodes"
+  host_config_path = "/etc/haproxy/nodes.cfg"
+  bind_address     = local.node_load_balancer_address
+  servers          = formatlist("%s:%d", local.controller_ips, local.api_port)
+
+  ssh {
+    private_key = file(var.ssh_private_key_path)
+    port        = var.node_ssh_port
+    user        = "core"
+  }
+
+  dynamic "api_load_balancer" {
+    for_each = concat(local.controller_ips, local.worker_ips)
+
+    content {
+      host {
+        ssh {
+          address = api_load_balancer.value
+        }
+      }
+    }
+  }
 }
 
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
-  config = local.apiloadbalancer_bootstrap_config
+  name             = "api-loadbalancer-bootstrap"
+  host_config_path = "/etc/haproxy/bootstrap.cfg"
+  bind_address     = "${local.first_controller_ip}:${local.api_port}"
+  servers          = ["${local.bootstrap_api_bind}:${local.api_port}"]
+
+  ssh {
+    private_key = file(var.ssh_private_key_path)
+    port        = var.node_ssh_port
+    user        = "core"
+  }
+
+  api_load_balancer {
+    host {
+      ssh {
+        address = local.first_controller_ip
+      }
+    }
+  }
 }
 
 resource "flexkube_controlplane" "bootstrap" {

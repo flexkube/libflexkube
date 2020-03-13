@@ -23,19 +23,21 @@ func mountsMarshal(c []types.Mount) []interface{} {
 func mountsUnmarshal(i interface{}) []types.Mount {
 	j := i.([]interface{})
 
-	p := []types.Mount{}
+	// Don't preallocate, as then the diff shows diff between
+	// nil and empty slice.
+	var m []types.Mount //nolint:prealloc
 
 	for _, v := range j {
 		l := v.(map[string]interface{})
 
-		p = append(p, types.Mount{
+		m = append(m, types.Mount{
 			Source:      l["source"].(string),
 			Target:      l["target"].(string),
 			Propagation: l["propagation"].(string),
 		})
 	}
 
-	return p
+	return m
 }
 
 func mountsSchema(computed bool) *schema.Schema {

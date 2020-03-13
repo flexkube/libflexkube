@@ -18,13 +18,13 @@ import (
 
 // Config represents SSH transport configuration
 type Config struct {
-	Address           string `json:"address"`
-	Port              int    `json:"port"`
-	User              string `json:"user"`
+	Address           string `json:"address,omitempty"`
+	Port              int    `json:"port,omitempty"`
+	User              string `json:"user,omitempty"`
 	Password          string `json:"password,omitempty"`
-	ConnectionTimeout string `json:"connectionTimeout"`
-	RetryTimeout      string `json:"retryTimeout"`
-	RetryInterval     string `json:"retryInterval"`
+	ConnectionTimeout string `json:"connectionTimeout,omitempty"`
+	RetryTimeout      string `json:"retryTimeout,omitempty"`
+	RetryInterval     string `json:"retryInterval,omitempty"`
 	PrivateKey        string `json:"privateKey,omitempty"`
 }
 

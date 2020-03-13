@@ -20,7 +20,6 @@ func TestContainersStateMarshal(t *testing.T) {
 				Runtime: container.RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
-				Status: types.ContainerStatus{},
 			},
 			ConfigFiles: map[string]string{
 				"/foo": "bar",
@@ -64,12 +63,6 @@ func TestContainersStateMarshal(t *testing.T) {
 							"group":        "",
 						},
 					},
-					"status": []interface{}{
-						map[string]interface{}{
-							"id":     "",
-							"status": "",
-						},
-					},
 					"runtime": []interface{}{
 						map[string]interface{}{
 							"docker": []interface{}{
@@ -93,16 +86,10 @@ func TestContainersStateUnmarshal(t *testing.T) {
 	c := container.ContainersState{
 		"foo": &container.HostConfiguredContainer{
 			Container: container.Container{
-				Config: types.ContainerConfig{
-					Args:       []string{},
-					Entrypoint: []string{},
-					Ports:      []types.PortMap{},
-					Mounts:     []types.Mount{},
-				},
+				Config: types.ContainerConfig{},
 				Runtime: container.RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
-				Status: types.ContainerStatus{},
 			},
 			ConfigFiles: map[string]string{
 				"/foo": "bar",

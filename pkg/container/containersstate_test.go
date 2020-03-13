@@ -113,3 +113,163 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 		t.Fatalf("Non existing container should have status '%s', got: %s", StatusMissing, c["foo"].container.Status().Status)
 	}
 }
+
+// RemoveContainer()
+func TestRemoveContainerDontStopStopped(t *testing.T) { //nolint:dupl
+	c := containersState{
+		"foo": &hostConfiguredContainer{
+			hooks: &Hooks{},
+			host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			container: &container{
+				base: base{
+					status: types.ContainerStatus{
+						Status: "stopped",
+						ID:     "foo",
+					},
+					runtimeConfig: &runtime.FakeConfig{
+						Runtime: &runtime.Fake{
+							DeleteF: func(id string) error {
+								return nil
+							},
+							StatusF: func(id string) (types.ContainerStatus, error) {
+								return types.ContainerStatus{
+									Status: "stopped",
+									ID:     "foo",
+								}, nil
+							},
+							StopF: func(id string) error {
+								return fmt.Errorf("stopping failed")
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.RemoveContainer("foo"); err != nil {
+		t.Fatalf("removing stopped container shouldn't try to stop it again")
+	}
+}
+
+func TestRemoveContainerDontRemoveMissing(t *testing.T) {
+	c := containersState{
+		"foo": &hostConfiguredContainer{
+			hooks: &Hooks{},
+			host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			container: &container{
+				base: base{
+					status: types.ContainerStatus{
+						Status: "gone",
+						ID:     "",
+					},
+					runtimeConfig: &runtime.FakeConfig{
+						Runtime: &runtime.Fake{
+							DeleteF: func(id string) error {
+								return fmt.Errorf("deleting failed")
+							},
+							StopF: func(id string) error {
+								return nil
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.RemoveContainer("foo"); err != nil {
+		t.Fatalf("removing missing container shouldn't try to remove it again, got: %v", err)
+	}
+}
+
+func TestRemoveContainerPropagateStopError(t *testing.T) { //nolint:dupl
+	c := containersState{
+		"foo": &hostConfiguredContainer{
+			hooks: &Hooks{},
+			host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			container: &container{
+				base: base{
+					status: types.ContainerStatus{
+						Status: "running",
+						ID:     "foo",
+					},
+					runtimeConfig: &runtime.FakeConfig{
+						Runtime: &runtime.Fake{
+							DeleteF: func(id string) error {
+								return nil
+							},
+							StatusF: func(id string) (types.ContainerStatus, error) {
+								return types.ContainerStatus{
+									Status: "running",
+									ID:     "foo",
+								}, nil
+							},
+							StopF: func(id string) error {
+								return fmt.Errorf("stopping failed")
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.RemoveContainer("foo"); err == nil {
+		t.Fatalf("removing stopped container should propagate stop error")
+	}
+}
+
+func TestRemoveContainerPropagateDeleteError(t *testing.T) {
+	c := containersState{
+		"foo": &hostConfiguredContainer{
+			hooks: &Hooks{},
+			host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			container: &container{
+				base: base{
+					status: types.ContainerStatus{
+						Status: "running",
+						ID:     "foo",
+					},
+					runtimeConfig: &runtime.FakeConfig{
+						Runtime: &runtime.Fake{
+							DeleteF: func(id string) error {
+								return fmt.Errorf("deleting failed")
+							},
+							StatusF: func(id string) (types.ContainerStatus, error) {
+								return types.ContainerStatus{
+									Status: "running",
+									ID:     "foo",
+								}, nil
+							},
+							StopF: func(id string) error {
+								return nil
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := c.RemoveContainer("foo"); err == nil {
+		t.Fatalf("removing stopped container should propagate delete error")
+	}
+}
+
+// createAndStart()
+func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
+	c := containersState{}
+
+	if err := c.CreateAndStart("foo"); err == nil {
+		t.Fatalf("creating and starting non existing container should give error")
+	}
+}

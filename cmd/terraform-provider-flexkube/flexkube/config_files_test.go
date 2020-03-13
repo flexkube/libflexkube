@@ -34,6 +34,18 @@ func TestConfigFilesMarshalSensitive(t *testing.T) {
 	}
 }
 
+func TestConfigFilesMarshalSkipEmpty(t *testing.T) {
+	f := map[string]string{
+		"/foo": "",
+	}
+
+	e := map[string]interface{}{}
+
+	if diff := cmp.Diff(configFilesMarshal(f, true), e); diff != "" {
+		t.Fatalf("Unexpected diff: %s", diff)
+	}
+}
+
 func TestConfigFilesUnmarshal(t *testing.T) {
 	i := map[string]interface{}{
 		"/foo": "bar",

@@ -9,7 +9,7 @@ import (
 
 // Containers is a wrapper over container.Containers, which implemens type.Resource.
 type Containers struct {
-	PreviousState container.ContainersState `json:"previousState,omitempty"`
+	PreviousState container.ContainersState `json:"state,omitempty"`
 	DesiredState  container.ContainersState `json:"desiredState,omitempty"`
 }
 

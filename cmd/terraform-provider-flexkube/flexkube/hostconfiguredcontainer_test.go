@@ -19,7 +19,6 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
-			Status: types.ContainerStatus{},
 		},
 		ConfigFiles: map[string]string{
 			"/foo": "bar",
@@ -59,12 +58,6 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 						"ipc_mode":     "",
 						"user":         "",
 						"group":        "",
-					},
-				},
-				"status": []interface{}{
-					map[string]interface{}{
-						"id":     "",
-						"status": "",
 					},
 				},
 				"runtime": []interface{}{
@@ -117,12 +110,6 @@ func hostConfiguredContainerMarshaled() []interface{} {
 							"group":        "",
 						},
 					},
-					"status": []interface{}{
-						map[string]interface{}{
-							"id":     "",
-							"status": "",
-						},
-					},
 					"runtime": []interface{}{
 						map[string]interface{}{
 							"docker": []interface{}{
@@ -140,16 +127,10 @@ func hostConfiguredContainerMarshaled() []interface{} {
 func TestHostConfiguredContainerUnmarshal(t *testing.T) {
 	c := container.HostConfiguredContainer{
 		Container: container.Container{
-			Config: types.ContainerConfig{
-				Args:       []string{},
-				Entrypoint: []string{},
-				Ports:      []types.PortMap{},
-				Mounts:     []types.Mount{},
-			},
+			Config: types.ContainerConfig{},
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
-			Status: types.ContainerStatus{},
 		},
 		ConfigFiles: map[string]string{
 			"/foo": "bar",

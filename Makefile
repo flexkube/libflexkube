@@ -4,7 +4,7 @@ LD_FLAGS="-extldflags '-static'"
 
 # Go parameters
 GOCMD=env GO111MODULE=on go
-GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe -v
+GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GORUN=$(GOCMD) run

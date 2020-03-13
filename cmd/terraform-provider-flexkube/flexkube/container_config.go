@@ -28,22 +28,10 @@ func containerConfigMarshal(c types.ContainerConfig) interface{} {
 func containerConfigUnmarshal(i interface{}) types.ContainerConfig {
 	j := i.(map[string]interface{})
 
-	args := []string{}
-	for _, v := range j["args"].([]interface{}) {
-		args = append(args, v.(string))
-	}
-
-	entrypoint := []string{}
-	for _, v := range j["entrypoint"].([]interface{}) {
-		entrypoint = append(entrypoint, v.(string))
-	}
-
-	return types.ContainerConfig{
+	cc := types.ContainerConfig{
 		Name:        j["name"].(string),
 		Image:       j["image"].(string),
 		Privileged:  j["privileged"].(bool),
-		Args:        args,
-		Entrypoint:  entrypoint,
 		Ports:       portMapUnmarshal(j["port"]),
 		Mounts:      mountsUnmarshal(j["mount"]),
 		NetworkMode: j["network_mode"].(string),
@@ -52,6 +40,16 @@ func containerConfigUnmarshal(i interface{}) types.ContainerConfig {
 		User:        j["user"].(string),
 		Group:       j["group"].(string),
 	}
+
+	for _, v := range j["args"].([]interface{}) {
+		cc.Args = append(cc.Args, v.(string))
+	}
+
+	for _, v := range j["entrypoint"].([]interface{}) {
+		cc.Entrypoint = append(cc.Entrypoint, v.(string))
+	}
+
+	return cc
 }
 
 func containerConfigSchema(computed bool) *schema.Schema {

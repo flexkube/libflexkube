@@ -75,12 +75,16 @@ func (s containersState) RemoveContainer(containerName string) error {
 		return fmt.Errorf("can't remove non-existing container")
 	}
 
-	if err := s[containerName].Stop(); err != nil {
-		return fmt.Errorf("failed stopping container: %w", err)
+	if s[containerName].container.Status().Running() {
+		if err := s[containerName].Stop(); err != nil {
+			return fmt.Errorf("failed stopping container: %w", err)
+		}
 	}
 
-	if err := s[containerName].Delete(); err != nil {
-		return fmt.Errorf("failed removing container: %w", err)
+	if s[containerName].container.Status().Exists() {
+		if err := s[containerName].Delete(); err != nil {
+			return fmt.Errorf("failed removing container: %w", err)
+		}
 	}
 
 	delete(s, containerName)
@@ -110,10 +114,9 @@ func (s containersState) Export() ContainersState {
 	cs := ContainersState{}
 
 	for i, m := range s {
-		cs[i] = &HostConfiguredContainer{
+		h := &HostConfiguredContainer{
 			Container: Container{
 				Config: m.container.Config(),
-				Status: *m.container.Status(),
 				Runtime: RuntimeConfig{
 					Docker: m.container.RuntimeConfig().(*docker.Config),
 				},
@@ -123,9 +126,15 @@ func (s containersState) Export() ContainersState {
 			Hooks:       m.hooks,
 		}
 
-		if cs[i].ConfigFiles == nil {
-			cs[i].ConfigFiles = map[string]string{}
+		if s := m.container.Status(); s.ID != "" && s.Status != "" {
+			h.Container.Status = s
 		}
+
+		if h.ConfigFiles == nil {
+			h.ConfigFiles = map[string]string{}
+		}
+
+		cs[i] = h
 	}
 
 	return cs
