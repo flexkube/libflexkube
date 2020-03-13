@@ -529,7 +529,7 @@ func (c *containers) DesiredState() ContainersState {
 
 		// Make sure, that desired state has correct status. Container should always be running
 		// and optionally, we also set the ID of already existing container. If there are changes
-		// to the container, it will get new ID anyway, but user does not care about this cahnge,
+		// to the container, it will get new ID anyway, but user does not care about this change,
 		// so we can hide it this way from the diff.
 		d[h].Container.Status = types.ContainerStatus{
 			Status: "running",
