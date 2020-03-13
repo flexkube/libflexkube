@@ -22,8 +22,8 @@ type ContainerConfig struct {
 // TODO this should cover all fields which are defined in ContainerConfig,
 // so we can read and compare if actual configuration matches our expectations.
 type ContainerStatus struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID     string `json:"id,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 
 // PortMap is basically a github.com/docker/go-connections/nat.PortMap

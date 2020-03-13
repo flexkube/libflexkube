@@ -19,7 +19,6 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
-			Status: types.ContainerStatus{},
 		},
 		ConfigFiles: map[string]string{
 			"/foo": "bar",
@@ -111,12 +110,6 @@ func hostConfiguredContainerMarshaled() []interface{} {
 							"group":        "",
 						},
 					},
-					"status": []interface{}{
-						map[string]interface{}{
-							"id":     "",
-							"status": "",
-						},
-					},
 					"runtime": []interface{}{
 						map[string]interface{}{
 							"docker": []interface{}{
@@ -143,7 +136,6 @@ func TestHostConfiguredContainerUnmarshal(t *testing.T) {
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
-			Status: types.ContainerStatus{},
 		},
 		ConfigFiles: map[string]string{
 			"/foo": "bar",

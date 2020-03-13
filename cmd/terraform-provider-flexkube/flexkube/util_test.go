@@ -45,7 +45,7 @@ func TestResourceDeleteRuntimeFail(t *testing.T) {
 					Name:  "foo",
 					Image: "busybox:latest",
 				},
-				Status: types.ContainerStatus{
+				Status: &types.ContainerStatus{
 					ID:     "foo",
 					Status: "running",
 				},
@@ -135,7 +135,7 @@ func TestNewResourceFailRefresh(t *testing.T) {
 						Name:  "foo",
 						Image: "busybox:latest",
 					},
-					Status: types.ContainerStatus{
+					Status: &types.ContainerStatus{
 						ID:     "foo",
 						Status: "running",
 					},

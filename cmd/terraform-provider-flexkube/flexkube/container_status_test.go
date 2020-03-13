@@ -26,7 +26,7 @@ func TestContainerStatusMarshal(t *testing.T) {
 }
 
 func TestContainerStatusUnmarshal(t *testing.T) {
-	cs := types.ContainerStatus{
+	cs := &types.ContainerStatus{
 		ID:     "foo",
 		Status: "running",
 	}

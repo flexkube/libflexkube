@@ -95,7 +95,6 @@ func TestContainersStateUnmarshal(t *testing.T) {
 				Runtime: container.RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
-				Status: types.ContainerStatus{},
 			},
 			ConfigFiles: map[string]string{
 				"/foo": "bar",

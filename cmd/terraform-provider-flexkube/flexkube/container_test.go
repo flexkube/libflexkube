@@ -61,7 +61,7 @@ func TestContainerMarshalWithStatus(t *testing.T) {
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
-		Status: types.ContainerStatus{
+		Status: &types.ContainerStatus{
 			ID:     "foo",
 			Status: "running",
 		},
@@ -121,7 +121,7 @@ func TestContainerUnmarshal(t *testing.T) {
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
-		Status: types.ContainerStatus{
+		Status: &types.ContainerStatus{
 			ID:     "foo",
 			Status: "running",
 		},

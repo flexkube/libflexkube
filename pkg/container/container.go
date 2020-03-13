@@ -51,7 +51,7 @@ type Container struct {
 	// Stores runtime configuration of the container.
 	Config types.ContainerConfig `json:"config"`
 	// Status of the container.
-	Status types.ContainerStatus `json:"status,omitempty"`
+	Status *types.ContainerStatus `json:"status,omitempty"`
 	// Runtime stores configuration for various container runtimes.
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
 }
@@ -97,9 +97,13 @@ func (c *Container) New() (Interface, error) {
 		base{
 			config:        c.Config,
 			runtimeConfig: c.Runtime.Docker,
-			status:        c.Status,
 		},
 	}
+
+	if c.Status != nil {
+		nc.base.status = *c.Status
+	}
+
 	if err := nc.selectRuntime(); err != nil {
 		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
 	}

@@ -13,8 +13,8 @@ func containerMarshal(c container.Container) interface{} {
 		"runtime": runtimeMarshal(c.Runtime),
 	}
 
-	if c.Status.ID != "" || c.Status.Status != "" {
-		m["status"] = containerStatusMarshal(c.Status)
+	if c.Status != nil {
+		m["status"] = containerStatusMarshal(*c.Status)
 	}
 
 	return []interface{}{m}

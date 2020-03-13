@@ -1394,7 +1394,7 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 		foo: {
 			Container: Container{
 				Config: types.ContainerConfig{Image: "a"},
-				Status: types.ContainerStatus{ID: "foo", Status: "running"},
+				Status: &types.ContainerStatus{ID: "foo", Status: "running"},
 				Runtime: RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
@@ -1443,7 +1443,7 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 		foo: {
 			Container: Container{
 				Config: types.ContainerConfig{Image: "a"},
-				Status: types.ContainerStatus{Status: "running"},
+				Status: &types.ContainerStatus{Status: "running"},
 				Runtime: RuntimeConfig{
 					Docker: docker.DefaultConfig(),
 				},
