@@ -53,11 +53,10 @@ func sensitiveString(computed bool) *schema.Schema {
 	}
 }
 
-func requiredSensitiveString(computed bool) *schema.Schema {
+func requiredSensitiveString() *schema.Schema {
 	return &schema.Schema{
 		Type:      schema.TypeString,
 		Required:  true,
-		Computed:  computed,
 		Sensitive: true,
 	}
 }
@@ -66,6 +65,17 @@ func optionalStringList(computed bool) *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Optional: true,
+		Computed: computed,
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	}
+}
+
+func requiredStringList(computed bool) *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Required: true,
 		Computed: computed,
 		Elem: &schema.Schema{
 			Type: schema.TypeString,

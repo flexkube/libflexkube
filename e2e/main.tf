@@ -47,36 +47,6 @@ locals {
 
   node_load_balancer_address = "127.0.0.1:7443"
 
-  controlplane_config = templatefile("./templates/controlplane_config.yaml.tmpl", {
-    kubernetes_ca_certificate         = module.kubernetes_pki.kubernetes_ca_cert
-    kubernetes_ca_key                 = module.kubernetes_pki.kubernetes_ca_key
-    kubernetes_api_server_certificate = module.kubernetes_pki.kubernetes_api_server_cert
-    kubernetes_api_server_key         = module.kubernetes_pki.kubernetes_api_server_key
-    service_account_public_key        = module.kubernetes_pki.service_account_public_key
-    service_account_private_key       = module.kubernetes_pki.service_account_private_key
-    front_proxy_ca_certificate        = module.kubernetes_pki.kubernetes_front_proxy_ca_cert
-    front_proxy_certificate           = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_cert
-    front_proxy_key                   = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_key
-    kubelet_client_certificate        = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
-    kubelet_client_key                = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
-    kube_controller_manager_cert      = module.kubernetes_pki.kube_controller_manager_cert
-    kube_controller_manager_key       = module.kubernetes_pki.kube_controller_manager_key
-    kube_scheduler_cert               = module.kubernetes_pki.kube_scheduler_cert
-    kube_scheduler_key                = module.kubernetes_pki.kube_scheduler_key
-    root_ca_certificate               = module.root_pki.root_ca_cert
-    etcd_ca_certificate               = module.etcd_pki.etcd_ca_cert
-    etcd_client_certificate           = module.etcd_pki.client_certs[0]
-    etcd_client_key                   = module.etcd_pki.client_keys[0]
-    api_server_address                = local.first_controller_ip
-    etcd_servers                      = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
-    ssh_address                       = local.first_controller_ip
-    ssh_port                          = var.node_ssh_port
-    ssh_private_key                   = file(var.ssh_private_key_path)
-    root_ca_certificate               = module.root_pki.root_ca_cert
-    api_bind_address                  = local.bootstrap_api_bind
-    api_server_port                   = local.api_port
-  })
-
   kube_apiserver_values = templatefile("./templates/kube-apiserver-values.yaml.tmpl", {
     server_key                     = module.kubernetes_pki.kubernetes_api_server_key
     server_certificate             = module.kubernetes_pki.kubernetes_api_server_cert
@@ -301,7 +271,57 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 resource "flexkube_controlplane" "bootstrap" {
-  config = local.controlplane_config
+  common {
+    kubernetes_ca_certificate  = module.kubernetes_pki.kubernetes_ca_cert
+    front_proxy_ca_certificate = module.kubernetes_pki.kubernetes_front_proxy_ca_cert
+  }
+
+  kube_apiserver {
+    api_server_certificate     = module.kubernetes_pki.kubernetes_api_server_cert
+    api_server_key             = module.kubernetes_pki.kubernetes_api_server_key
+    front_proxy_certificate    = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_cert
+    front_proxy_key            = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_key
+    kubelet_client_certificate = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
+    kubelet_client_key         = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
+    service_account_public_key = module.kubernetes_pki.service_account_public_key
+    etcd_ca_certificate        = module.etcd_pki.etcd_ca_cert
+    etcd_client_certificate    = module.etcd_pki.client_certs[0]
+    etcd_client_key            = module.etcd_pki.client_keys[0]
+    service_cidr               = "11.0.0.0/24"
+    etcd_servers               = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
+    bind_address               = local.bootstrap_api_bind
+    advertise_address          = local.first_controller_ip
+    secure_port                = local.api_port
+  }
+
+  kube_controller_manager {
+    flex_volume_plugin_dir      = "/var/lib/kubelet/volumeplugins"
+    kubernetes_ca_key           = module.kubernetes_pki.kubernetes_ca_key
+    service_account_private_key = module.kubernetes_pki.service_account_private_key
+    root_ca_certificate         = module.root_pki.root_ca_cert
+
+    kubeconfig {
+      client_certificate = module.kubernetes_pki.kube_controller_manager_cert
+      client_key         = module.kubernetes_pki.kube_controller_manager_key
+    }
+  }
+
+  kube_scheduler {
+    kubeconfig {
+      client_certificate = module.kubernetes_pki.kube_scheduler_cert
+      client_key         = module.kubernetes_pki.kube_scheduler_key
+    }
+  }
+
+  api_server_address = local.first_controller_ip
+  api_server_port    = local.api_port
+
+  ssh {
+    user        = "core"
+    address     = local.first_controller_ip
+    port        = var.node_ssh_port
+    private_key = file(var.ssh_private_key_path)
+  }
 
   depends_on = [
     flexkube_etcd_cluster.etcd,
