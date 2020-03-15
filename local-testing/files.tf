@@ -29,12 +29,12 @@ resource "local_file" "etcd_state" {
 }
 
 resource "local_file" "controlplane_config" {
-  sensitive_content = local.controlplane_config
+  sensitive_content = flexkube_controlplane.bootstrap.config_yaml
   filename          = "./resources/controlplane/config.yaml"
 }
 
 resource "local_file" "controlplane_state" {
-  sensitive_content = flexkube_controlplane.bootstrap.state
+  sensitive_content = flexkube_controlplane.bootstrap.state_yaml
   filename          = "./resources/controlplane/state.yaml"
 }
 

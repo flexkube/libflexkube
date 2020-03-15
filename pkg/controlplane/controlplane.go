@@ -18,9 +18,9 @@ import (
 
 // Common struct contains fields, which are common between all controlplane components.
 type Common struct {
-	Image                   string            `json:"image"`
-	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate"`
-	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate"`
+	Image                   string            `json:"image,omitempty"`
+	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate,omitempty"`
+	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate,omitempty"`
 }
 
 // GetImage returns either image defined in common config or Kubernetes default image.
@@ -33,15 +33,14 @@ type Controlplane struct {
 	// User-configurable fields.
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
-	Common                Common                `json:"common"`
-	SSH                   *ssh.Config           `json:"ssh"`
-	APIServerAddress      string                `json:"apiServerAddress"`
-	APIServerPort         int                   `json:"apiServerPort"`
-	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer"`
-	KubeControllerManager KubeControllerManager `json:"kubeControllerManager"`
-	KubeScheduler         KubeScheduler         `json:"kubeScheduler"`
-
-	Shutdown bool `json:"shutdown"`
+	Common                Common                `json:"common,omitempty"`
+	SSH                   *ssh.Config           `json:"ssh,omitempty"`
+	APIServerAddress      string                `json:"apiServerAddress,omitempty"`
+	APIServerPort         int                   `json:"apiServerPort,omitempty"`
+	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty"`
+	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty"`
+	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty"`
+	Hosts                 []host.Host           `json:"hosts,omitempty"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state"`
@@ -136,11 +135,6 @@ func (c *Controlplane) New() (types.Resource, error) {
 
 	controlplane := &controlplane{
 		containers: co,
-	}
-
-	// If shutdown is requested, don't fill DesiredState to remove everything.
-	if c.Shutdown {
-		return controlplane, nil
 	}
 
 	// Make sure all values are filled.

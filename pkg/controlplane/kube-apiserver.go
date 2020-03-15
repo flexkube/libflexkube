@@ -93,13 +93,14 @@ func (k *kubeAPIServer) configFiles() map[string]string {
 		etcdKeyfile:               k.etcdClientKey,
 	}
 
+	r := map[string]string{}
+
 	// Append base path to map.
 	for k, v := range m {
-		m[path.Join(hostConfigPath, k)] = v
-		delete(m, v)
+		r[path.Join(hostConfigPath, k)] = v
 	}
 
-	return m
+	return r
 }
 
 // args returns kube-apiserver set of flags.

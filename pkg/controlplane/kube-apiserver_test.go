@@ -1,6 +1,7 @@
 package controlplane
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/flexkube/libflexkube/internal/utiltest"
@@ -157,5 +158,52 @@ func TestKubeAPIServerValidate(t *testing.T) {
 				t.Errorf("Didn't expect error, got: %v", err)
 			}
 		})
+	}
+}
+
+func TestKubeAPIServerConfigFiles(t *testing.T) {
+	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
+	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
+
+	hostConfig := host.Host{
+		DirectConfig: &direct.Config{},
+	}
+
+	common := Common{
+		KubernetesCACertificate: cert,
+		FrontProxyCACertificate: cert,
+	}
+
+	c := &KubeAPIServer{
+		Common:                   common,
+		APIServerCertificate:     cert,
+		APIServerKey:             privateKey,
+		ServiceAccountPublicKey:  nonEmptyString,
+		BindAddress:              nonEmptyString,
+		AdvertiseAddress:         nonEmptyString,
+		EtcdServers:              []string{nonEmptyString},
+		ServiceCIDR:              nonEmptyString,
+		SecurePort:               securePort,
+		FrontProxyCertificate:    cert,
+		FrontProxyKey:            privateKey,
+		KubeletClientKey:         privateKey,
+		EtcdCACertificate:        cert,
+		EtcdClientCertificate:    cert,
+		EtcdClientKey:            privateKey,
+		Host:                     hostConfig,
+		KubeletClientCertificate: cert,
+	}
+
+	ki, err := c.New()
+	if err != nil {
+		t.Fatalf("kubeAPIServer object should be created, got: %v", err)
+	}
+
+	k := ki.(*kubeAPIServer)
+
+	for k := range k.configFiles() {
+		if !strings.Contains(k, hostConfigPath) {
+			t.Fatalf("all config files paths should contain %s, got: %s", hostConfigPath, k)
+		}
 	}
 }

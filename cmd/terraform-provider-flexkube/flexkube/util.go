@@ -53,11 +53,10 @@ func sensitiveString(computed bool) *schema.Schema {
 	}
 }
 
-func requiredSensitiveString(computed bool) *schema.Schema {
+func requiredSensitiveString() *schema.Schema {
 	return &schema.Schema{
 		Type:      schema.TypeString,
 		Required:  true,
-		Computed:  computed,
 		Sensitive: true,
 	}
 }
@@ -66,6 +65,17 @@ func optionalStringList(computed bool) *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Optional: true,
+		Computed: computed,
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+		},
+	}
+}
+
+func requiredStringList(computed bool) *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Required: true,
 		Computed: computed,
 		Elem: &schema.Schema{
 			Type: schema.TypeString,
@@ -231,7 +241,7 @@ func newResource(c types.ResourceConfig, refresh bool) (types.Resource, error) {
 	// Validate the configuration.
 	r, err := c.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed creating containers configuration: %w", err)
+		return nil, fmt.Errorf("failed creating resource: %w", err)
 	}
 
 	if !refresh {
@@ -356,7 +366,10 @@ func resourceDiff(uf unmarshalF) func(d *schema.ResourceDiff, m interface{}) err
 	return func(d *schema.ResourceDiff, m interface{}) error {
 		cy, r, states, err := prepareDiff(d, uf)
 		if err != nil {
-			return fmt.Errorf("failed preparing diff: %w", err)
+			// If the configuration has not been fully populated yet, some of required fields might be empty, so validation
+			// and initialiation will fail, so just don't do anything if that happens.
+			// TODO: do proper error checking here.
+			return nil
 		}
 
 		setNew := map[string]interface{}{
