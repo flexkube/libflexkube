@@ -123,7 +123,6 @@ func (s containersState) Export() ContainersState {
 			},
 			Host:        m.host,
 			ConfigFiles: m.configFiles,
-			Hooks:       m.hooks,
 		}
 
 		if s := m.container.Status(); s.ID != "" && s.Status != "" {

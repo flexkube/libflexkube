@@ -18,25 +18,25 @@ import (
 // Pool represents group of kubelet instances and their configuration.
 type Pool struct {
 	// User-configurable fields.
-	Image                      string            `json:"image"`
-	SSH                        *ssh.Config       `json:"ssh"`
-	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig"`
-	Kubelets                   []Kubelet         `json:"kubelets"`
-	KubernetesCACertificate    string            `json:"kubernetesCACertificate"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs"`
-	Taints                     map[string]string `json:"taints"`
-	Labels                     map[string]string `json:"labels"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
-	CgroupDriver               string            `json:"cgroupDriver"`
-	NetworkPlugin              string            `json:"networkPlugin"`
-	SystemReserved             map[string]string `json:"systemReserved"`
-	KubeReserved               map[string]string `json:"kubeReserved"`
-	HairpinMode                string            `json:"hairpinMode"`
-	VolumePluginDir            string            `json:"volumePluginDir"`
+	Image                      string            `json:"image,omitempty"`
+	SSH                        *ssh.Config       `json:"ssh,omitempty"`
+	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig,omitempty"`
+	Kubelets                   []Kubelet         `json:"kubelets,omitempty"`
+	KubernetesCACertificate    types.Certificate `json:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs,omitempty"`
+	Taints                     map[string]string `json:"taints,omitempty"`
+	Labels                     map[string]string `json:"labels,omitempty"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels,omitempty"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig,omitempty"`
+	CgroupDriver               string            `json:"cgroupDriver,omitempty"`
+	NetworkPlugin              string            `json:"networkPlugin,omitempty"`
+	SystemReserved             map[string]string `json:"systemReserved,omitempty"`
+	KubeReserved               map[string]string `json:"kubeReserved,omitempty"`
+	HairpinMode                string            `json:"hairpinMode,omitempty"`
+	VolumePluginDir            string            `json:"volumePluginDir,omitempty"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state"`
+	State container.ContainersState `json:"state,omitempty"`
 }
 
 // pool is a validated version of Pool.
@@ -48,7 +48,7 @@ type pool struct {
 func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.Image = util.PickString(k.Image, p.Image)
 	k.BootstrapKubeconfig = util.PickString(k.BootstrapKubeconfig, p.BootstrapKubeconfig)
-	k.KubernetesCACertificate = util.PickString(k.KubernetesCACertificate, p.KubernetesCACertificate)
+	k.KubernetesCACertificate = types.Certificate(util.PickString(string(k.KubernetesCACertificate), string(p.KubernetesCACertificate)))
 	k.ClusterDNSIPs = util.PickStringSlice(k.ClusterDNSIPs, p.ClusterDNSIPs)
 	k.Labels = util.PickStringMap(k.Labels, p.Labels)
 	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)

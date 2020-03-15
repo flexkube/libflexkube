@@ -137,53 +137,6 @@ users:
     token: 07401b.f395accd246ae52d
 EOF
 
-  kubelet_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses         = local.controller_ips
-    bootstrap_kubeconfig      = local.bootstrap_kubeconfig
-    ssh_private_key           = file(var.ssh_private_key_path)
-    ssh_addresses             = local.controller_ips
-    ssh_port                  = var.node_ssh_port
-    kubelet_pod_cidrs         = local.controller_cidrs
-    kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
-    kubelet_names             = local.controller_names
-    network_plugin            = local.network_plugin
-    labels                    = {}
-    privileged_labels = {
-      "node-role.kubernetes.io/master" = ""
-    }
-    privileged_labels_kubeconfig = local.kubeconfig_admin
-    taints = {
-      "node-role.kubernetes.io/master" = "NoSchedule"
-    }
-    cgroup_driver = local.cgroup_driver
-    kube_reserved = {
-      // 100MB for kubelet and 200MB for etcd.
-      "memory" = "300Mi"
-      "cpu"    = "100m"
-    }
-  })
-
-  kubelet_worker_pool_config = templatefile("./templates/kubelet_config.yaml.tmpl", {
-    kubelet_addresses            = local.worker_ips
-    bootstrap_kubeconfig         = local.bootstrap_kubeconfig
-    ssh_private_key              = file(var.ssh_private_key_path)
-    ssh_addresses                = local.worker_ips
-    ssh_port                     = var.node_ssh_port
-    kubelet_pod_cidrs            = local.worker_cidrs
-    kubernetes_ca_certificate    = module.kubernetes_pki.kubernetes_ca_cert
-    kubelet_names                = local.worker_names
-    network_plugin               = local.network_plugin
-    labels                       = {}
-    taints                       = {}
-    privileged_labels            = {}
-    privileged_labels_kubeconfig = ""
-    cgroup_driver                = local.cgroup_driver
-    kube_reserved = {
-      "memory" = "100Mi"
-      "cpu"    = "100m"
-    }
-  })
-
   deploy_workers = var.workers_count > 0 ? 1 : 0
 
   ssh_private_key = file(var.ssh_private_key_path)
@@ -231,7 +184,7 @@ resource "flexkube_apiloadbalancer_pool" "nodes" {
   servers          = formatlist("%s:%d", local.controller_ips, local.api_port)
 
   ssh {
-    private_key = file(var.ssh_private_key_path)
+    private_key = local.ssh_private_key
     port        = var.node_ssh_port
     user        = "core"
   }
@@ -256,7 +209,7 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   servers          = ["${local.bootstrap_api_bind}:${local.api_port}"]
 
   ssh {
-    private_key = file(var.ssh_private_key_path)
+    private_key = local.ssh_private_key
     port        = var.node_ssh_port
     user        = "core"
   }
@@ -320,7 +273,7 @@ resource "flexkube_controlplane" "bootstrap" {
     user        = "core"
     address     = local.first_controller_ip
     port        = var.node_ssh_port
-    private_key = file(var.ssh_private_key_path)
+    private_key = local.ssh_private_key
   }
 
   depends_on = [
@@ -404,7 +357,59 @@ resource "flexkube_helm_release" "calico" {
 }
 
 resource "flexkube_kubelet_pool" "controller" {
-  config = local.kubelet_pool_config
+  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  cgroup_driver             = local.cgroup_driver
+  network_plugin            = local.network_plugin
+  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+  hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
+  volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
+  cluster_dns_ips = [
+    "11.0.0.10"
+  ]
+
+  system_reserved = {
+    "cpu"    = "100m"
+    "memory" = "500Mi"
+  }
+
+  kube_reserved = {
+    // 100MB for kubelet and 200MB for etcd.
+    "memory" = "300Mi"
+    "cpu"    = "100m"
+  }
+
+  privileged_labels = {
+    "node-role.kubernetes.io/master" = ""
+  }
+
+  privileged_labels_kubeconfig = local.kubeconfig_admin
+
+  taints = {
+    "node-role.kubernetes.io/master" = "NoSchedule"
+  }
+
+  ssh {
+    user        = "core"
+    port        = var.node_ssh_port
+    private_key = local.ssh_private_key
+  }
+
+  dynamic "kubelet" {
+    for_each = local.controller_ips
+
+    content {
+      name     = local.controller_names[kubelet.key]
+      pod_cidr = local.network_plugin == "kubenet" ? local.controller_cidrs[kubelet.key] : ""
+
+      address = local.controller_ips[kubelet.key]
+
+      host {
+        ssh {
+          address = kubelet.value
+        }
+      }
+    }
+  }
 
   depends_on = [
     flexkube_apiloadbalancer_pool.nodes,
@@ -416,7 +421,49 @@ resource "flexkube_kubelet_pool" "controller" {
 resource "flexkube_kubelet_pool" "workers" {
   count = local.deploy_workers
 
-  config = local.kubelet_worker_pool_config
+  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  cgroup_driver             = local.cgroup_driver
+  network_plugin            = local.network_plugin
+  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
+  hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
+  volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
+  cluster_dns_ips = [
+    "11.0.0.10"
+  ]
+
+  system_reserved = {
+    "cpu"    = "100m"
+    "memory" = "500Mi"
+  }
+
+  kube_reserved = {
+    // 100MB for kubelet and 200MB for etcd.
+    "memory" = "300Mi"
+    "cpu"    = "100m"
+  }
+
+  ssh {
+    user        = "core"
+    port        = var.node_ssh_port
+    private_key = local.ssh_private_key
+  }
+
+  dynamic "kubelet" {
+    for_each = local.worker_ips
+
+    content {
+      name     = local.worker_names[kubelet.key]
+      pod_cidr = local.network_plugin == "kubenet" ? local.worker_cidrs[kubelet.key] : ""
+
+      address = local.worker_ips[kubelet.key]
+
+      host {
+        ssh {
+          address = kubelet.value
+        }
+      }
+    }
+  }
 
   depends_on = [
     flexkube_apiloadbalancer_pool.nodes,

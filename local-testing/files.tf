@@ -49,11 +49,11 @@ resource "local_file" "apiloadbalancer_state" {
 }
 
 resource "local_file" "kubelet_pool_config" {
-  sensitive_content = local.kubelet_pool_config
+  sensitive_content = flexkube_kubelet_pool.controller.config_yaml
   filename          = "./resources/kubelet-pool/config.yaml"
 }
 
 resource "local_file" "kubelet_pool_state" {
-  sensitive_content = flexkube_kubelet_pool.controller.state
+  sensitive_content = flexkube_kubelet_pool.controller.state_yaml
   filename          = "./resources/kubelet-pool/state.yaml"
 }
