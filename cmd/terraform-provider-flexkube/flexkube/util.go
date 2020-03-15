@@ -241,7 +241,7 @@ func newResource(c types.ResourceConfig, refresh bool) (types.Resource, error) {
 	// Validate the configuration.
 	r, err := c.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed creating containers configuration: %w", err)
+		return nil, fmt.Errorf("failed creating resource: %w", err)
 	}
 
 	if !refresh {
