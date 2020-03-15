@@ -15,29 +15,30 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 // Kubelet represents single kubelet instance.
 type Kubelet struct {
-	Address             string    `json:"address"`
-	Image               string    `json:"image"`
-	Host                host.Host `json:"host"`
-	BootstrapKubeconfig string    `json:"bootstrapKubeconfig"`
+	Address             string    `json:"address,omitempty"`
+	Image               string    `json:"image,omitempty"`
+	Host                host.Host `json:"host,omitempty"`
+	BootstrapKubeconfig string    `json:"bootstrapKubeconfig,omitempty"`
 	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
-	KubernetesCACertificate    string            `json:"kubernetesCACertificate"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs"`
-	Name                       string            `json:"name"`
-	Taints                     map[string]string `json:"taints"`
-	Labels                     map[string]string `json:"labels"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig"`
-	CgroupDriver               string            `json:"cgroupDriver"`
-	NetworkPlugin              string            `json:"networkPlugin"`
-	SystemReserved             map[string]string `json:"systemReserved"`
-	KubeReserved               map[string]string `json:"kubeReserved"`
-	HairpinMode                string            `json:"hairpinMode"`
-	VolumePluginDir            string            `json:"volumePluginDir"`
+	KubernetesCACertificate    types.Certificate `json:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs              []string          `json:"clusterDNSIPs,omitempty"`
+	Name                       string            `json:"name,omitempty"`
+	Taints                     map[string]string `json:"taints,omitempty"`
+	Labels                     map[string]string `json:"labels,omitempty"`
+	PrivilegedLabels           map[string]string `json:"privilegedLabels,omitempty"`
+	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig,omitempty"`
+	CgroupDriver               string            `json:"cgroupDriver,omitempty"`
+	NetworkPlugin              string            `json:"networkPlugin,omitempty"`
+	SystemReserved             map[string]string `json:"systemReserved,omitempty"`
+	KubeReserved               map[string]string `json:"kubeReserved,omitempty"`
+	HairpinMode                string            `json:"hairpinMode,omitempty"`
+	VolumePluginDir            string            `json:"volumePluginDir,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -72,6 +73,19 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 func (k *Kubelet) Validate() error {
 	var errors util.ValidateError
 
+	b, err := yaml.Marshal(k)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to validate: %w", err))
+	}
+
+	if err := yaml.Unmarshal(b, &k); err != nil {
+		errors = append(errors, fmt.Errorf("validation failed: %w", err))
+	}
+
+	if k.KubernetesCACertificate == "" {
+		errors = append(errors, fmt.Errorf("kubernetesCACertificate can't be empty"))
+	}
+
 	if k.BootstrapKubeconfig == "" {
 		errors = append(errors, fmt.Errorf("bootstrapKubeconfig can't be empty"))
 	}
@@ -86,6 +100,10 @@ func (k *Kubelet) Validate() error {
 
 	if k.PrivilegedLabelsKubeconfig != "" && len(k.PrivilegedLabels) == 0 {
 		errors = append(errors, fmt.Errorf("privilegedLabelsKubeconfig specified, but no privilegedLabels requested"))
+	}
+
+	if k.Name == "" {
+		errors = append(errors, fmt.Errorf("name can't be empty"))
 	}
 
 	switch k.NetworkPlugin {
@@ -180,7 +198,7 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 		// kubelet.yaml file is a recommended way to configure the kubelet.
 		"/etc/kubernetes/kubelet/kubelet.yaml":         config,
 		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.config.BootstrapKubeconfig,
-		"/etc/kubernetes/kubelet/pki/ca.crt":           k.config.KubernetesCACertificate,
+		"/etc/kubernetes/kubelet/pki/ca.crt":           string(k.config.KubernetesCACertificate),
 	}, nil
 }
 

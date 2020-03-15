@@ -1,8 +1,13 @@
 package kubelet
 
 import (
+	"bytes"
+	"strings"
 	"testing"
+	"text/template"
 
+	"github.com/flexkube/libflexkube/internal/util"
+	"github.com/flexkube/libflexkube/internal/utiltest"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -16,11 +21,21 @@ ssh:
   retryInterval: 1s
 bootstrapKubeconfig: foo
 volumePluginDir: /var/lib/kubelet/volumeplugins
+kubernetesCACertificate: |
+  {{.}}
 kubelets:
 - networkPlugin: cni
+  name: foo
 `
 
-	p, err := FromYaml([]byte(y))
+	var buf bytes.Buffer
+
+	tpl := template.Must(template.New("c").Parse(y))
+	if err := tpl.Execute(&buf, strings.TrimSpace(util.Indent(utiltest.GenerateX509Certificate(t), "  "))); err != nil {
+		t.Fatalf("Failed to generate config from template: %v", err)
+	}
+
+	p, err := FromYaml(buf.Bytes())
 	if err != nil {
 		t.Fatalf("Creating pool from YAML should succeed, got: %v", err)
 	}
@@ -40,6 +55,7 @@ ssh:
 volumePluginDir: /var/lib/kubelet/volumeplugins
 kubelets:
 - networkPlugin: cni
+  name: foo
 `
 
 	if _, err := FromYaml([]byte(y)); err == nil {
