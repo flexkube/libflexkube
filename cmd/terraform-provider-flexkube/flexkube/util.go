@@ -492,3 +492,35 @@ func configYaml(d getter, uf unmarshalF) (string, error) {
 
 	return string(b), nil
 }
+
+func stringMapUnmarshal(i interface{}) map[string]string {
+	r := map[string]string{}
+
+	if i == nil {
+		return r
+	}
+
+	j := i.(map[string]interface{})
+
+	for k, v := range j {
+		r[k] = v.(string)
+	}
+
+	return r
+}
+
+func stringListUnmarshal(i interface{}) []string {
+	r := []string{}
+
+	if i == nil {
+		return r
+	}
+
+	j := i.([]interface{})
+
+	for _, v := range j {
+		r = append(r, v.(string))
+	}
+
+	return r
+}
