@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 // Release is an interface representing helm release.
@@ -57,6 +58,7 @@ type release struct {
 	namespace    string
 	version      string
 	chart        string
+	client       client.Client
 }
 
 // New validates release configuration and builts installable version of it
@@ -79,6 +81,9 @@ func (r *Config) New() (Release, error) {
 
 	values, _ := r.parseValues()
 
+	// This is safe, because we call newClients() in Validate().
+	c, _ := client.NewClient([]byte(r.Kubeconfig))
+
 	release := &release{
 		actionConfig: actionConfig,
 		settings:     settings,
@@ -87,6 +92,7 @@ func (r *Config) New() (Release, error) {
 		namespace:    r.Namespace,
 		version:      r.Version,
 		chart:        r.Chart,
+		client:       c,
 	}
 
 	return release, nil
@@ -141,6 +147,10 @@ func (r *release) ValidateChart() error {
 
 // Install installs configured chart as release. Equivalent of 'helm install'.
 func (r *release) Install() error {
+	if err := r.client.PingWait(); err != nil {
+		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
+	}
+
 	client := r.installClient()
 
 	chart, err := r.loadChart()
@@ -158,6 +168,10 @@ func (r *release) Install() error {
 
 // Upgrade upgrades already existing release. Equivalent of 'helm upgrade'.
 func (r *release) Upgrade() error {
+	if err := r.client.PingWait(); err != nil {
+		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
+	}
+
 	client := r.upgradeClient()
 
 	chart, err := r.loadChart()
@@ -189,6 +203,10 @@ func (r *release) InstallOrUpgrade() error {
 
 // Exists checks if configured release exists.
 func (r *release) Exists() (bool, error) {
+	if err := r.client.PingWait(); err != nil {
+		return false, fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
+	}
+
 	histClient := action.NewHistory(r.actionConfig)
 	histClient.Max = 1
 
