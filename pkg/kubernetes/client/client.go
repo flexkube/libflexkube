@@ -26,6 +26,7 @@ type Client interface {
 	CheckNodeExists(name string) func() (bool, error)
 	WaitForNode(name string) error
 	LabelNode(name string, labels map[string]string) error
+	PingWait() error
 }
 
 type client struct {
@@ -41,6 +42,30 @@ func NewClient(kubeconfig []byte) (Client, error) {
 	}
 
 	return &client{c}, nil
+}
+
+// PingWait waits for Kubernetes API to become available.
+func (c *client) PingWait() error {
+	return wait.PollImmediate(PollInterval, RetryTimeout, c.Ping)
+}
+
+// Ping checks availability of Kubernetes API by fetching all Roles in kube-system namespace.
+// We use Roles, as helm client sometimes fails, even if API is already available,
+// saying that this type of object is not recognized.
+func (c *client) Ping() (bool, error) {
+	if _, err := c.RbacV1().Roles("").List(metav1.ListOptions{}); err != nil {
+		return false, nil
+	}
+
+	if _, err := c.AppsV1().Deployments("").List(metav1.ListOptions{}); err != nil {
+		return false, nil
+	}
+
+	if _, err := c.PolicyV1beta1().PodSecurityPolicies().List(metav1.ListOptions{}); err != nil {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // CheckNodeExists checks if given node object exists.
