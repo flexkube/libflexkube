@@ -5,6 +5,26 @@
 
 [![Build Status](https://travis-ci.org/flexkube/libflexkube.svg?branch=master)](https://travis-ci.org/flexkube/libflexkube) [![Maintainability](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/maintainability)](https://codeclimate.com/github/flexkube/libflexkube/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/5840c3fe0a9bc77aef08/test_coverage)](https://codeclimate.com/github/flexkube/libflexkube/test_coverage) [![codecov](https://codecov.io/gh/flexkube/libflexkube/branch/master/graph/badge.svg)](https://codecov.io/gh/flexkube/libflexkube) [![GoDoc](https://godoc.org/github.com/flexkube/libflexkube?status.svg)](https://godoc.org/github.com/flexkube/libflexkube) [![Go Report Card](https://goreportcard.com/badge/github.com/flexkube/libflexkube)](https://goreportcard.com/report/github.com/flexkube/libflexkube)
 
+## Table of contents
+
+- [Introduction](#introduction)
+- [Features](#features)
+- [Requirements](#requirements)
+- [User tools](#user-tools)
+  * [CLI binaries](#cli-binaries)
+  * [Terraform provider](#terraform-provider)
+- [Example usage](#example-usage)
+  * [Deploying over SSH](#deploying-over-ssh)
+- [Supported container runtimes](#supported-container-runtimes)
+- [Supported transport protocols](#supported-transport-protocols)
+- [Managing certificates](#managing-certificates)
+- [Getting started](#getting-started)
+- [Current known issues and limitations](#current-known-issues-and-limitations)
+- [Testing](#testing)
+- [Helm charts](#helm-charts)
+- [Contributing](#contributing)
+- [Status of the project](#status-of-the-project)
+
 ## Introduction
 
 libflexkube is a go library, which implements the logic required for deploying self-hosted Kubernetes cluster.
@@ -175,57 +195,7 @@ In the future go package might be added to manage them, to avoid having Terrafor
 
 ## Getting started
 
-### Deploying etcd cluster
-
-First thing required for Kubernetes cluster is etcd cluster. It can be deployed using [cmd/etcd-cluster](cmd/etcd-cluster) binary. Please refer to [pkg/etcd/cluster.go#L18](pkg/etcd/cluster.go#L18) and [pkg/etcd/member.go#L15](pkg/etcd/member.go#L15) for required configuration.
-
-### Deploying API Load Balancer (Optional)
-
-If you plan to have more than one control plane node, it is recommended to use the API Load Balancer, which will take care of HA on the client side, as currently `Kubelet` is not able to handle multiple API servers. It can be deployed using [cmd/api-loadbalancers](cmd/api-loadbalancers).
-
-Configuration reference:
-- [pkg/apiloadbalancer/api-loadbalancers.go#L16](pkg/apiloadbalancer/api-loadbalancers.go#L16)
-- [pkg/apiloadbalancer/api-loadbalancer.go#L16](pkg/apiloadbalancer/api-loadbalancer.go#L16)
-
-### Bootstrap control plane
-
-Kubernetes static Control Plane is required to kick off the self-hosted control plane. It consist of minimal set of processes:
-- kube-apiserver
-- kube-controller-manager
-- kube-scheduler
-
-All those 3 containers can be created using [cmd/controlplane](cmd/controlplane) binary. The available parameters are described here: [pkg/controlplane/controlplane.go#L18](pkg/controlplane/controlplane.go#L18).
-
-### Installing self-hosted Kubernetes Control Plane
-
-Once bootstrap (static) control plane is running and functional, self-hosted version of it should be installed on top of that, to ensure better survivability and graceful updates.
-
-Recommended way of doing that is using [kube-apiserver-helm-chart](https://github.com/flexkube/kube-apiserver-helm-chart) and [kubernetes-helm-chart](https://github.com/flexkube/kubernetes-helm-chart).
-
-There are 2 helm charts for the controlplane, as [version-skew-policy/#supported-component-upgrade-order](https://kubernetes.io/docs/setup/release/version-skew-policy/#supported-component-upgrade-order) recommends, that `kube-apiserver` should be upgraded first, then remaining components of the control plane and helm currently does not support such ordering.
-
-The helm charts can be installed using one of the following methods:
-- using `helm` CLI (while helm 2.x could somehow work, we strongly recomment using helm 3.x, as this one does not require Tiller process to be running, so it can be used on static control plane straight away)
-- using [cmd/helm-release](cmd/helm-release), which gives minimal interface to create helm 3 release on the cluster
-- using `flexkube_helm_release` Terraform resource (as at the time of writing, [terraform-provider-helm](https://github.com/terraform-providers/terraform-provider-helm) does not support helm 3 yet. Upstream issue: https://github.com/terraform-providers/terraform-provider-helm/issues/299)
-
-### Deploying kubelet pools
-
-Even though the self-hosted control plane can be installed, it won't be running without any nodes registered in the cluster. In order to get nodes in the cluster, `kubelet`s needs to be deployed.
-
-This can be done using [cmd/kubelet-pool](cmd/kubelet-pool), which deploys kubelet containers with the same configuration to multiple nodes. If you need kubelets with different configurations, please create multiple pools.
-
-The configuration reference can be found in [pkg/kubelet/pool.go#L18](pkg/kubelet/pool.go#L18).
-
-NOTE: kubelet pool have `serverTLSBootstrap: true` option enabled, so their serving certificates (for HTTPS communication coming from from kube-apiserver) will be requested from the cluster. Currently, such certificates are not automatically approved, so it is recommended to use [kubelet-rubber-stamp](https://github.com/kontena/kubelet-rubber-stamp) to automate approval process. It can be deployed using [kubelet-rubber-stamp](https://github.com/flexkube/kubelet-rubber-stamp-helm-chart) helm chart.
-
-### Shutting down static control plane
-
-Once the charts are installed and their pods are running, it is recommended to shut down static control plane, to prevent relying on it, as it won't receive the updates when helm charts configuration is updated.
-
-This can be done in 2 ways:
-- By running `docker stop kube-apiserver kube-scheduler kube-controller-manager` on the bootstrap host.
-- By adding `shutdown: true` to `controlplane` resource and re-applying it. Please note that this will remove static containers as well.
+To get stated, see [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
 
 ## Current known issues and limitations
 
@@ -247,155 +217,7 @@ And features, which are not yet implemented:
 
 ## Testing
 
-### Unit tests
-
-Unit tests can be executed by running the following command:
-```sh
-make test
-```
-
-If you want to only run tests for specific package, you can add `GO_PACKAGES` variable to the `make` command. For example, to run tests only in `pkg/host/transport/ssh/` directory, execute the following command:
-```sh
-make test GO_PACKAGES=./pkg/host/transport/ssh/...
-```
-
-### Integration tests
-
-As this library interacts a lot with other systems, in addition to unit tests, there are also integration tests defined, which has extra environmental requirements, like Docker daemon running or SSH server available.
-To make running such tests easier, there is a `Vagrantfile` available, which spawns [Flatcar Container Linux](https://www.flatcar-linux.org/) virtual machine, where all further tests can be executed. Currently the only tested provider
-for Vagrant is VirtualBox.
-
-In order to run integration tests in virtual environment, execute the following command:
-```sh
-make vagrant-integration
-```
-
-This will spawn the virtual machine, copy source code into it, build Docker container required for testing and run the integration tests. This target is idempotent and when run multiple times, it will use cached test results and Docker images, so subsequent runs should be much faster, which allows to modify tests on host machines and re-run them in testing environment.
-
-This target also allows you to override `GO_PACKAGES` to only run specific integration tests.
-
-In the repository, integration tests files has `*_integration_test.go` suffix and they use `integration` Go build tag to be excluded from regular testing. All tests, which has some environment requirements should be specified as integration tests, to keep unit tests minimal and always runnable, for example in the CI environment.
-
-To debug issues with integration tests, following command can be executed to spawn the shell in Docker container running on testing virtual machine:
-```sh
-make vagrant-integration-shell
-```
-
-### E2E tests
-
-In addition to integration tests, this repository has also defined E2E tests, which tests overrall functionality of the library. As integration tests, they are also executed inside the virtual machine.
-
-E2E tests can be executed using following command:
-```sh
-make vagrant-e2e-run
-```
-
-This command will create testing virtual machine, compile Flexkube Terraform provider inside it and then use Terraform to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the `e2e` directory, which allows further inspection.
-
-If you don't have `kubectl` available on host, following command can be executed to spawn shell in E2E container on virtual machine, which contains additional tools like `kubectl` or `helm` binaries and comes with `kubeconfig` predefined, to ease up testing:
-```sh
-make vagrant-e2e-shell
-```
-
-If you just want to run E2E tests and clean everything up afterwards, run the following command:
-```sh
-make vagrant-e2e
-```
-
-### Conformance tests
-
-To run conformance tests in the environment provided by `Vagrantfile`, run the following command:
-```
-make vagrant-conformance
-```
-
-The command will deploy E2E environment and then run conformance tests in there.
-
-The test should take a bit more than an hour to finish.
-
-By default, after scheduling the conformance tests, the command will start showing the logs of the tests. One can then use CTRL-C to stop showing the logs, as tests will be running in the background and the command is idempotent.
-
-Once tests are complete, the command should will the test results and archive file with the report will be copied into project's root directory, which can be then submitted to [k8s-conformance](https://github.com/cncf/k8s-conformance) repository.
-
-### Local tests
-
-For testing standalone resources, e.g. just `etcd-cluster`, [local-testing](./local-testing) directory can be used, which will use the code from [e2e](./e2e) directory to create a cluster and then will dump all configuration and state files to separate directories, when tools from [cmd](./cmd) directory can be used directly. That allows to skip many sync steps, which speeds up the overall process, making development easier.
-
-#### Target host
-
-##### VirtualBox
-
-By default, local testing is configured to deploy to virtual machine managed by [Vagrantfile](./Vagrantfile), which can be brought up using the following command:
-```sh
-make vagrant-up
-```
-
-However, if you like to test on some other machine, you can override the following parameters, by creating `local-testing/variables.auto.tfvars` file:
-- `ssh_private_key_path` - To provide your own private SSH key.
-- `node_internal_ip` - This should be set to your target host IP, which will be used by cluster components.
-- `node_ssh_port` - Target host SSH port.
-- `node_address` - Target host SSH address and where `kube-apiserver` will be listening for client requests.
-
-##### Libvirt
-
-In addition to VirtualBox, also KVM with libvirt can be used to spawn local environment. The environment is managed with Terraform, so Terraform binary is required. To set it up, use the following command:
-```sh
-make libvirt-apply
-```
-
-The command will download Flatcar QEMU image and required Terraform providers. On subsequent runs, those steps will be skipped. After that, libvirt network, pools and machines will be created.
-
-#### Requirements
-
-Local testing runs compilation and Terraform locally, so both `go` and `terraform` binaries needs to be available.
-
-If testing using virtual machine, `vagrant` is required to set it up.
-
-If testing with Helm CLI, `helm` binary is needed.
-
-#### Helm charts development
-
-In addition to resources config files, also `values.yaml` files for all chart releases are dumped to the `local-testing/values` directory. This allows to also make developing the helm charts easier.
-
-##### Via Helm CLI
-
-To update the chart using `helm` binary, run following command:
-```sh
-helm upgrade --install -n kube-system -f ./local-testing/values/kubernetes.yaml kubernetes <path to cloned chart source>
-```
-
-##### Via Terraform
-
-Charts can also be tested using Terraform. This can be done by creating `local-testing/variables.auto.tfvars` file, with following example content:
-```
-kube_apiserver_helm_chart_source = "<local path with cloned kube-apiserver chart>"
-```
-
-Then run the following command to deploy updated chart:
-```sh
-make test-local-apply
-```
-
-#### Terraform modules development
-
-Local testing is also handy for testing changes to Terraform modules like [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki).
-
-To test changes, modify [local-testing/main.tf](./local-testing/main.tf) file and change the source of the desired module to point to your copy. Then run the following command:
-```sh
-make test-local-apply
-```
-
-### Cleaning up
-
-After finished testing, following command can be executed to clean up testing virtual machine:
-```sh
-make vagrant-destroy
-```
-
-If you want to also remove all artifacts from the repository, like built binaries, coverage files etc, run the following command:
-```sh
-make clean
-```
+To see how to run tests during development, see [TESTING.md](docs/TESTING.md).
 
 ## Helm charts
 
