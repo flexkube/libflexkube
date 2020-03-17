@@ -201,17 +201,14 @@ To get stated, see [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
 
 Currently, there are several things, which are either missing or broken. Here is the list of known problems:
 - gracefully replacing CA certificates (if private key does not change, it should work, but has not been tested)
-- adding/removing etcd members
 - no checkpointer for pods/apiserver. If static kube-apiserver container is stopped and node reboots, single node cluster will not come back.
 
 And features, which are not yet implemented:
-- pod security policies for for control plane pods
 - network policies for kube-system namespace
 - caching port forwarding
 - using SSH agent for authentication
 - bastion host(s) support for SSH
 - parallel deployments across hosts
-- showing diff to the user (planning what will be done)
 - removal of config files, created data and containers
 - automatic shutdown/start of bootstrap control plane
 
