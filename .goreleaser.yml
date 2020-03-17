@@ -1,0 +1,23 @@
+builds:
+- env:
+  - CGO_ENABLED=0
+  ldflags:
+  - -extldflags '-static'
+  flags:
+  - -buildmode=exe
+  goarch:
+  - amd64
+  goos:
+  - linux
+  - darwin
+  main: ./cmd/terraform-provider-flexkube
+  binary: terraform-provider-flexkube_{{.Tag}}_x4
+
+project_name: terraform-provider-flexkube
+
+changelog:
+  skip: true
+
+release:
+  draft: true
+  prerelease: true
