@@ -104,6 +104,9 @@ tolerations:
 - key: node-role.kubernetes.io/master
   operator: Exists
   effect: NoSchedule
+resources:
+  requests:
+    memory: 20Mi
 EOF
 
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
