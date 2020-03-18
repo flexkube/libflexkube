@@ -36,22 +36,22 @@ resource "libvirt_network" "network" {
   }
 }
 
-data "ct_config" "ignition" {
-  count = var.controllers_count + var.workers_count
+data "ct_config" "controller" {
+  count = var.controllers_count
 
   content = templatefile("./templates/ct_config.yaml.tmpl", {
     core_public_keys = var.core_public_keys
-    hostname         = concat(local.controller_names, local.worker_names)[count.index]
+    hostname         = local.controller_names[count.index]
   })
 }
 
-resource "libvirt_ignition" "ignition" {
-  count = var.controllers_count + var.workers_count
+resource "libvirt_ignition" "controller" {
+  count = var.controllers_count
 
-  name = "flexkube-ignition-${count.index}"
+  name = "flexkube-ignition-controller-${count.index}"
   pool = libvirt_pool.pool.name
 
-  content = data.ct_config.ignition[count.index].rendered
+  content = data.ct_config.controller[count.index].rendered
 }
 
 resource "libvirt_volume" "controller-disk" {
@@ -74,7 +74,7 @@ resource "libvirt_domain" "controller_machine" {
   }
 
   fw_cfg_name     = "opt/org.flatcar-linux/config"
-  coreos_ignition = libvirt_ignition.ignition[count.index].id
+  coreos_ignition = libvirt_ignition.controller[count.index].id
 
   graphics {
     listen_type = "address"
@@ -96,6 +96,24 @@ resource "libvirt_volume" "worker-disk" {
   format         = "qcow2"
 }
 
+data "ct_config" "worker" {
+  count = var.workers_count
+
+  content = templatefile("./templates/ct_config.yaml.tmpl", {
+    core_public_keys = var.core_public_keys
+    hostname         = local.worker_names[count.index]
+  })
+}
+
+resource "libvirt_ignition" "worker" {
+  count = var.workers_count
+
+  name = "flexkube-ignition-worker-${count.index}"
+  pool = libvirt_pool.pool.name
+
+  content = data.ct_config.worker[count.index].rendered
+}
+
 resource "libvirt_domain" "worker_machine" {
   count  = var.workers_count
   name   = local.worker_names[count.index]
@@ -107,7 +125,7 @@ resource "libvirt_domain" "worker_machine" {
   }
 
   fw_cfg_name     = "opt/org.flatcar-linux/config"
-  coreos_ignition = libvirt_ignition.ignition[count.index].id
+  coreos_ignition = libvirt_ignition.worker[count.index].id
 
   graphics {
     listen_type = "address"
