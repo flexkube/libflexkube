@@ -21,3 +21,9 @@ changelog:
 release:
   draft: true
   prerelease: true
+  github:
+    owner: flexkube
+    name: libflexkube
+
+signs:
+- artifacts: all
