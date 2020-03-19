@@ -25,7 +25,7 @@ resource "null_resource" "workers" {
 
   triggers = {
     name = format("worker%02d", count.index + 1)
-    ip   = cidrhost(var.nodes_cidr, count.index + 2 + var.controllers_count)
-    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2 + var.controllers_count)
+    ip   = cidrhost(var.nodes_cidr, count.index + 2 + 10)
+    cidr = cidrsubnet(var.pod_cidr, 8, count.index + 2 + 10)
   }
 }

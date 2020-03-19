@@ -112,7 +112,7 @@ EOF
   (1..workers).each do |i|
     config.vm.define vm_name = "worker%02d" % i do |config|
       config.vm.hostname = vm_name
-      config.vm.network "private_network", ip: nodes_cidr + (i+1+controllers).to_s
+      config.vm.network "private_network", ip: nodes_cidr + (i+1+10).to_s
 
       # Provisioning.
       config.vm.provision "shell", inline: <<-EOF
