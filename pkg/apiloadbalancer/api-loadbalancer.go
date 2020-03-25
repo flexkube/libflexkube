@@ -57,10 +57,7 @@ backend kube-apiserver
   {{- end }}
 `
 
-	t, err := template.New("haproxy.cfg").Parse(c)
-	if err != nil {
-		return "", fmt.Errorf("template parsing failed: %w", err)
-	}
+	t := template.Must(template.New("haproxy.cfg").Parse(c))
 
 	var buf bytes.Buffer
 
