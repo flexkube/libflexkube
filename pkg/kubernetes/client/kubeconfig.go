@@ -107,10 +107,7 @@ contexts:
 
 	var buf bytes.Buffer
 
-	tpl, err := template.New("t").Parse(t)
-	if err != nil {
-		return "", fmt.Errorf("failed parsing template: %w", err)
-	}
+	tpl := template.Must(template.New("t").Parse(t))
 
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed executing template: %w", err)
