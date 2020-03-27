@@ -223,12 +223,7 @@ func resourceCreate(uf unmarshalF) func(d *schema.ResourceData, m interface{}) e
 		// created.
 		// If the ID is already set, then also don't update it, as there is no need for that.
 		if d.IsNewResource() && len(c.Containers().ToExported().PreviousState) != 0 {
-			state, err := c.StateToYaml()
-			if err != nil {
-				return fmt.Errorf("failed serializing resource state to YAML: %w", err)
-			}
-
-			d.SetId(sha256sum(state))
+			d.SetId(sha256sum([]byte(cmp.Diff(nil, uf(d, true)))))
 		}
 
 		return saveState(d, c.Containers().ToExported().PreviousState, uf, deployErr)
