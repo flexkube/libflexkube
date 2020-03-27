@@ -70,7 +70,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Docker: docker.DefaultConfig(),
 		},
 		Config: containertypes.ContainerConfig{
-			Name:       m.name,
+			Name:       fmt.Sprintf("etcd-%s", m.name),
 			Image:      m.image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
 			Mounts: []containertypes.Mount{
@@ -216,7 +216,7 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	}
 
 	for _, v := range resp.Members {
-		if v.Name == fmt.Sprintf("etcd-%s", m.name) {
+		if v.Name == m.name {
 			return v.ID, nil
 		}
 

@@ -192,7 +192,7 @@ func TestGetIDByName(t *testing.T) {
 	}
 
 	m := &member{
-		name: "foo",
+		name: "etcd-foo",
 	}
 
 	id, err := m.getID(f)
@@ -211,7 +211,7 @@ func TestGetIDByPeerURL(t *testing.T) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
-						Name:     "etcd-foo",
+						Name:     "foo",
 						ID:       testID,
 						PeerURLs: []string{"https://foo:2380"},
 					},
@@ -315,7 +315,7 @@ func TestRemoveMemberFail(t *testing.T) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
-						Name:     "etcd-foo",
+						Name:     "foo",
 						ID:       testID,
 						PeerURLs: []string{"foo"},
 					},
