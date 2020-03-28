@@ -42,7 +42,8 @@ func kubeControllerManagerUnmarshal(i interface{}) controlplane.KubeControllerMa
 	}
 
 	if v, ok := j["host"]; ok && len(v.([]interface{})) == 1 {
-		c.Host = hostUnmarshal(v.([]interface{})[0])
+		h := hostUnmarshal(v.([]interface{})[0])
+		c.Host = &h
 	}
 
 	if v, ok := j["kubeconfig"]; ok && len(v.([]interface{})) == 1 {

@@ -17,8 +17,8 @@ import (
 
 // KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
-	Common                   Common            `json:"common"`
-	Host                     host.Host         `json:"host"`
+	Common                   *Common           `json:"common,omitempty"`
+	Host                     *host.Host        `json:"host,omitempty"`
 	APIServerCertificate     types.Certificate `json:"apiServerCertificate"`
 	APIServerKey             types.PrivateKey  `json:"apiServerKey"`
 	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey"`
@@ -188,13 +188,21 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 
 // New validates KubeAPIServer configuration and populates default for some fields, if they are empty
 func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
+	if k.Common == nil {
+		k.Common = &Common{}
+	}
+
+	if k.Host == nil {
+		k.Host = &host.Host{}
+	}
+
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
 	}
 
 	return &kubeAPIServer{
-		common:                   k.Common,
-		host:                     k.Host,
+		common:                   *k.Common,
+		host:                     *k.Host,
 		apiServerCertificate:     string(k.APIServerCertificate),
 		apiServerKey:             string(k.APIServerKey),
 		serviceAccountPublicKey:  k.ServiceAccountPublicKey,
@@ -232,8 +240,10 @@ func (k *KubeAPIServer) Validate() error {
 		errors = append(errors, fmt.Errorf("at least one etcd server must be defined"))
 	}
 
-	if err := k.Host.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
+	if k.Host != nil {
+		if err := k.Host.Validate(); err != nil {
+			errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
+		}
 	}
 
 	return errors.Return()

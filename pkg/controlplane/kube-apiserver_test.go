@@ -23,7 +23,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
 	kas := &KubeAPIServer{
-		Common: Common{
+		Common: &Common{
 			KubernetesCACertificate: cert,
 			FrontProxyCACertificate: cert,
 		},
@@ -42,7 +42,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 		EtcdCACertificate:        cert,
 		EtcdClientCertificate:    cert,
 		EtcdClientKey:            privateKey,
-		Host: host.Host{
+		Host: &host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
@@ -70,11 +70,11 @@ func TestKubeAPIServerValidate(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	common := Common{
+	common := &Common{
 		KubernetesCACertificate: cert,
 		FrontProxyCACertificate: cert,
 	}
@@ -165,11 +165,11 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	common := Common{
+	common := &Common{
 		KubernetesCACertificate: cert,
 		FrontProxyCACertificate: cert,
 	}

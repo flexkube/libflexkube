@@ -14,7 +14,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 	pki := utiltest.GeneratePKI(t)
 
 	ks := &KubeScheduler{
-		Common: Common{
+		Common: &Common{
 			FrontProxyCACertificate: types.Certificate(pki.Certificate),
 		},
 		Kubeconfig: client.Config{
@@ -23,7 +23,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 			ClientCertificate: types.Certificate(pki.Certificate),
 			ClientKey:         types.PrivateKey(pki.PrivateKey),
 		},
-		Host: host.Host{
+		Host: &host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}

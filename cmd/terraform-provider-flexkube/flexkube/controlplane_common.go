@@ -17,8 +17,8 @@ func controlplaneCommonSchema() *schema.Schema {
 	})
 }
 
-func controlplaneCommonUnmarshal(i interface{}) controlplane.Common {
-	c := controlplane.Common{}
+func controlplaneCommonUnmarshal(i interface{}) *controlplane.Common {
+	c := &controlplane.Common{}
 
 	// If optional block is not defined, return empty struct.
 	if i == nil {

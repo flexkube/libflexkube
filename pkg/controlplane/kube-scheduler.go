@@ -12,8 +12,8 @@ import (
 
 // KubeScheduler represents kube-scheduler configuration data
 type KubeScheduler struct {
-	Common     Common        `json:"common"`
-	Host       host.Host     `json:"host"`
+	Common     *Common       `json:"common,omitempty"`
+	Host       *host.Host    `json:"host,omitempty"`
 	Kubeconfig client.Config `json:"kubeconfig"`
 }
 
@@ -77,6 +77,14 @@ clientConnection:
 
 // New validates KubeScheduler struct and returns it's usable version
 func (k *KubeScheduler) New() (container.ResourceInstance, error) {
+	if k.Common == nil {
+		k.Common = &Common{}
+	}
+
+	if k.Host == nil {
+		k.Host = &host.Host{}
+	}
+
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Scheduler configuration: %w", err)
 	}
@@ -85,8 +93,8 @@ func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 	kubeconfig, _ := k.Kubeconfig.ToYAMLString()
 
 	return &kubeScheduler{
-		common:     k.Common,
-		host:       k.Host,
+		common:     *k.Common,
+		host:       *k.Host,
 		kubeconfig: kubeconfig,
 	}, nil
 }
@@ -97,8 +105,10 @@ func (k *KubeScheduler) Validate() error {
 		return fmt.Errorf("invalid kubeconfig: %w", err)
 	}
 
-	if err := k.Host.Validate(); err != nil {
-		return fmt.Errorf("host config validation failed: %w", err)
+	if k.Host != nil {
+		if err := k.Host.Validate(); err != nil {
+			return fmt.Errorf("host config validation failed: %w", err)
+		}
 	}
 
 	return nil

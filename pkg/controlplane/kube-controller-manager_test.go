@@ -11,7 +11,7 @@ import (
 )
 
 func TestKubeControllerManagerValidate(t *testing.T) {
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
@@ -79,7 +79,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Kubeconfig:               kubeconfig,
-				Host:                     host.Host{},
+				Host:                     &host.Host{},
 			},
 			Error: true,
 		},
@@ -113,7 +113,7 @@ func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
 		KubernetesCAKey:          types.PrivateKey(pki.PrivateKey),
 		ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 		RootCACertificate:        types.Certificate(pki.Certificate),
-		Host: host.Host{
+		Host: &host.Host{
 			DirectConfig: &direct.Config{},
 		},
 		Kubeconfig: client.Config{
