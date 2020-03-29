@@ -45,14 +45,17 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	peerCertAllowedCNArr := []string{}
 
 	for n, m := range c.Members {
-		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", util.PickString(m.Name, fmt.Sprintf("etcd-%s", n)), m.PeerAddress))
-		peerCertAllowedCNArr = append(peerCertAllowedCNArr, util.PickString(m.Name, fmt.Sprintf("etcd-%s", n)))
+		// If member has no name defined explicitly, use key passed as argument.
+		name := util.PickString(m.Name, n)
+
+		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", name, m.PeerAddress))
+		peerCertAllowedCNArr = append(peerCertAllowedCNArr, name)
 	}
 
 	sort.Strings(initialClusterArr)
 	sort.Strings(peerCertAllowedCNArr)
 
-	m.Name = util.PickString(m.Name, fmt.Sprintf("etcd-%s", i))
+	m.Name = util.PickString(m.Name, i)
 	m.Image = util.PickString(m.Image, c.Image)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))

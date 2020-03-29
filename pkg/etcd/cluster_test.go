@@ -353,7 +353,7 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
-						Name:     "etcd-foo",
+						Name:     "foo",
 						ID:       testID,
 						PeerURLs: []string{"foo"},
 					},

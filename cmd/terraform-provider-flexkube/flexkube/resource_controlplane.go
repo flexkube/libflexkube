@@ -1,7 +1,12 @@
 package flexkube
 
 import (
+	"fmt"
+	"reflect"
+	"unsafe"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
 	"github.com/flexkube/libflexkube/pkg/controlplane"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -13,7 +18,7 @@ func resourceControlplane() *schema.Resource {
 		Read:          resourceRead(controlplaneUnmarshal),
 		Delete:        resourceDelete(controlplaneUnmarshal, "hosts"),
 		Update:        resourceCreate(controlplaneUnmarshal),
-		CustomizeDiff: resourceDiff(controlplaneUnmarshal),
+		CustomizeDiff: controlplaneDiff,
 		Schema: withCommonFields(map[string]*schema.Schema{
 			"ssh":                     sshSchema(false),
 			"api_server_address":      optionalString(false),
@@ -24,6 +29,33 @@ func resourceControlplane() *schema.Resource {
 			"kube_controller_manager": kubeControllerManagerSchema(),
 		}),
 	}
+}
+
+// controlplaneDiff is a workaround for Terraform issue, where it doesn't mark map fields
+// as newComputed, when they are updated using SetNew.
+// It's also a workaround, that if generated certificate changes, Terraform provides it as an empty string
+// which means, we cannot create new controlplane object to update the configuration fields etc, which
+// all results in inconsistent plan. To allow at least adding and removing members, we simply override the
+// "state" field diff for the user by simply setting it to NewComputed, as we cannot go down deeper.
+//
+// See issues:
+// - https://github.com/hashicorp/terraform-plugin-sdk/issues/371
+// - https://github.com/flexkube/libflexkube/issues/48
+func controlplaneDiff(d *schema.ResourceDiff, m interface{}) error {
+	rd := reflect.ValueOf(d).Elem()
+	rdiff := rd.FieldByName("diff")
+	diff := reflect.NewAt(rdiff.Type(), unsafe.Pointer(rdiff.UnsafeAddr())).Elem().Interface().(*terraform.InstanceDiff) // #nosec G103
+
+	if len(diff.Attributes) > 0 {
+		keys := []string{"state", "config_yaml", "state_sensitive", "state_yaml"}
+		for _, k := range keys {
+			if err := d.SetNewComputed(k); err != nil {
+				return fmt.Errorf("failed setting new computed for field %q: %w", k, err)
+			}
+		}
+	}
+
+	return resourceDiff(controlplaneUnmarshal)(d, m)
 }
 
 func controlplaneUnmarshal(d getter, includeState bool) types.ResourceConfig {

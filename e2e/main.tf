@@ -440,8 +440,7 @@ resource "flexkube_kubelet_pool" "workers" {
   }
 
   kube_reserved = {
-    // 100MB for kubelet and 200MB for etcd.
-    "memory" = "300Mi"
+    "memory" = "100Mi"
     "cpu"    = "100m"
   }
 

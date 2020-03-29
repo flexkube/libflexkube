@@ -8,11 +8,7 @@ func configFilesMarshal(c map[string]string, sensitive bool) interface{} {
 	i := map[string]interface{}{}
 
 	for k, v := range c {
-		if v == "" {
-			continue
-		}
-
-		if !sensitive {
+		if !sensitive || v == "" {
 			i[k] = v
 
 			continue
