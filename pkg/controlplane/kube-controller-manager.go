@@ -135,14 +135,13 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 }
 
 // Validate validates KubeControllerManager configuration.
-//
-// TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
-	if k.Host != nil {
-		if err := k.Host.Validate(); err != nil {
-			return fmt.Errorf("host config validation failed: %w", err)
-		}
+	v := validator{
+		Common:     k.Common,
+		Host:       k.Host,
+		Kubeconfig: k.Kubeconfig,
+		YAML:       k,
 	}
 
-	return nil
+	return v.validate(true)
 }

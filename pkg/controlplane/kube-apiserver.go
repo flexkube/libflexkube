@@ -5,8 +5,6 @@ import (
 	"path"
 	"strings"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -227,23 +225,18 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 func (k *KubeAPIServer) Validate() error {
 	var errors util.ValidateError
 
-	b, err := yaml.Marshal(k)
-	if err != nil {
-		return append(errors, fmt.Errorf("failed to validate: %w", err))
+	v := validator{
+		Common: k.Common,
+		Host:   k.Host,
+		YAML:   k,
 	}
 
-	if err := yaml.Unmarshal(b, &k); err != nil {
-		return append(errors, fmt.Errorf("validation failed: %w", err))
+	if err := v.validate(false); err != nil {
+		errors = append(errors, err)
 	}
 
 	if len(k.EtcdServers) == 0 {
 		errors = append(errors, fmt.Errorf("at least one etcd server must be defined"))
-	}
-
-	if k.Host != nil {
-		if err := k.Host.Validate(); err != nil {
-			errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
-		}
 	}
 
 	return errors.Return()

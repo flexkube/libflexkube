@@ -101,15 +101,12 @@ func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 
 // Validate validates kube-scheduler configuration.
 func (k *KubeScheduler) Validate() error {
-	if _, err := k.Kubeconfig.ToYAMLString(); err != nil {
-		return fmt.Errorf("invalid kubeconfig: %w", err)
+	v := validator{
+		Common:     k.Common,
+		Host:       k.Host,
+		Kubeconfig: k.Kubeconfig,
+		YAML:       k,
 	}
 
-	if k.Host != nil {
-		if err := k.Host.Validate(); err != nil {
-			return fmt.Errorf("host config validation failed: %w", err)
-		}
-	}
-
-	return nil
+	return v.validate(true)
 }
