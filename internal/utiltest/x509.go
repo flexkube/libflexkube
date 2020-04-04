@@ -11,6 +11,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -77,18 +78,24 @@ func GenerateECPrivateKey(t *testing.T) string {
 	return key.String()
 }
 
-// GeneratePKI generates PKI struct
+// GeneratePKI generates PKI struct.
 func GeneratePKI(t *testing.T) *PKI {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	p, err := GeneratePKIErr()
 	if err != nil {
-		t.Fatalf("Failed to generate RSA key: %v", err)
+		t.Fatalf("failed generating fake PKI: %v", err)
 	}
 
+	return p
+}
+
+// generateX509Certificate generates X.509 certificate in DER format using given RSA private key.
+func generateX509Certificate(priv *rsa.PrivateKey) ([]byte, error) {
+	// Generate serial number for X.509 certificate.
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		t.Fatalf("Failed to generate serial number: %v", err)
+		return nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	template := x509.Certificate{
@@ -104,28 +111,48 @@ func GeneratePKI(t *testing.T) *PKI {
 		BasicConstraintsValid: true,
 	}
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
-	if err != nil {
-		t.Fatalf("Failed to create certificate: %v", err)
-	}
+	// Create X.509 certificate in DER format.
+	return x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+}
 
+// encodePKI converts RSA private key and X.509 certificate in DER format into PKI struct.
+func encodePKI(priv *rsa.PrivateKey, pub []byte) (*PKI, error) {
+	// Encode private certificate into PEM format.
 	var cert bytes.Buffer
-	if err := pem.Encode(&cert, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		t.Fatalf("Failed to write data to cert.pem: %s", err)
+	if err := pem.Encode(&cert, &pem.Block{Type: "CERTIFICATE", Bytes: pub}); err != nil {
+		return nil, fmt.Errorf("failed to write data to cert.pem: %w", err)
 	}
 
+	// Convert RSA private key into PKCS8 DER format.
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		t.Fatalf("Unable to marshal private key: %v", err)
+		return nil, fmt.Errorf("unable to marshal private key: %w", err)
 	}
 
+	// Convert private key from PKCS8 DER format to PEM format.
 	var key bytes.Buffer
 	if err := pem.Encode(&key, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		t.Fatalf("Failed to write data to key.pem: %s", err)
+		return nil, fmt.Errorf("failed to write data to key.pem: %w", err)
 	}
 
 	return &PKI{
 		Certificate: cert.String(),
 		PrivateKey:  key.String(),
+	}, nil
+}
+
+// GeneratePKIErr generates fake PKI X.509 key pair sutiable for tests.
+func GeneratePKIErr() (*PKI, error) {
+	// Generate RSA private key.
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate RSA key: %w", err)
 	}
+
+	derBytes, err := generateX509Certificate(priv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create X.509 certificate: %w", err)
+	}
+
+	return encodePKI(priv, derBytes)
 }
