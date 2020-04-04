@@ -8,13 +8,13 @@ func configFilesMarshal(c map[string]string, sensitive bool) interface{} {
 	i := map[string]interface{}{}
 
 	for k, v := range c {
-		if !sensitive || v == "" {
-			i[k] = v
+		if sensitive && v != "" {
+			i[k] = sha256sum([]byte(v))
 
 			continue
 		}
 
-		i[k] = sha256sum([]byte(v))
+		i[k] = v
 	}
 
 	return i

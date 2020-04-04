@@ -14,8 +14,8 @@ import (
 
 // Config is a simplified version of kubeconfig.
 type Config struct {
-	Server            string            `json:"server"`
-	CACertificate     types.Certificate `json:"caCertificate"`
+	Server            string            `json:"server,omitempty"`
+	CACertificate     types.Certificate `json:"caCertificate,omitempty"`
 	ClientCertificate types.Certificate `json:"clientCertificate"`
 	ClientKey         types.PrivateKey  `json:"clientKey"`
 }
@@ -107,10 +107,7 @@ contexts:
 
 	var buf bytes.Buffer
 
-	tpl, err := template.New("t").Parse(t)
-	if err != nil {
-		return "", fmt.Errorf("failed parsing template: %w", err)
-	}
+	tpl := template.Must(template.New("t").Parse(t))
 
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed executing template: %w", err)

@@ -5,8 +5,6 @@ import (
 	"path"
 	"strings"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -17,8 +15,8 @@ import (
 
 // KubeAPIServer represents kube-apiserver container configuration
 type KubeAPIServer struct {
-	Common                   Common            `json:"common"`
-	Host                     host.Host         `json:"host"`
+	Common                   *Common           `json:"common,omitempty"`
+	Host                     *host.Host        `json:"host,omitempty"`
 	APIServerCertificate     types.Certificate `json:"apiServerCertificate"`
 	APIServerKey             types.PrivateKey  `json:"apiServerKey"`
 	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey"`
@@ -188,13 +186,21 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 
 // New validates KubeAPIServer configuration and populates default for some fields, if they are empty
 func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
+	if k.Common == nil {
+		k.Common = &Common{}
+	}
+
+	if k.Host == nil {
+		k.Host = &host.Host{}
+	}
+
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
 	}
 
 	return &kubeAPIServer{
-		common:                   k.Common,
-		host:                     k.Host,
+		common:                   *k.Common,
+		host:                     *k.Host,
 		apiServerCertificate:     string(k.APIServerCertificate),
 		apiServerKey:             string(k.APIServerKey),
 		serviceAccountPublicKey:  k.ServiceAccountPublicKey,
@@ -219,21 +225,18 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 func (k *KubeAPIServer) Validate() error {
 	var errors util.ValidateError
 
-	b, err := yaml.Marshal(k)
-	if err != nil {
-		return append(errors, fmt.Errorf("failed to validate: %w", err))
+	v := validator{
+		Common: k.Common,
+		Host:   k.Host,
+		YAML:   k,
 	}
 
-	if err := yaml.Unmarshal(b, &k); err != nil {
-		return append(errors, fmt.Errorf("validation failed: %w", err))
+	if err := v.validate(false); err != nil {
+		errors = append(errors, err)
 	}
 
 	if len(k.EtcdServers) == 0 {
 		errors = append(errors, fmt.Errorf("at least one etcd server must be defined"))
-	}
-
-	if err := k.Host.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
 	}
 
 	return errors.Return()

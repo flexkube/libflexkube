@@ -11,7 +11,7 @@ import (
 )
 
 func TestKubeControllerManagerValidate(t *testing.T) {
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
@@ -24,6 +24,11 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 		ClientKey:         types.PrivateKey(pki.PrivateKey),
 	}
 
+	common := &Common{
+		KubernetesCACertificate: types.Certificate(pki.Certificate),
+		FrontProxyCACertificate: types.Certificate(pki.Certificate),
+	}
+
 	cases := map[string]struct {
 		Config *KubeControllerManager
 		Error  bool
@@ -34,6 +39,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Host:                     hostConfig,
+				Common:                   common,
 			},
 			Error: true,
 		},
@@ -43,6 +49,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Host:                     hostConfig,
 				Kubeconfig:               kubeconfig,
+				Common:                   common,
 			},
 			Error: true,
 		},
@@ -52,6 +59,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				RootCACertificate: types.Certificate(pki.Certificate),
 				Host:              hostConfig,
 				Kubeconfig:        kubeconfig,
+				Common:            common,
 			},
 			Error: true,
 		},
@@ -61,6 +69,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 				Host:                     hostConfig,
 				Kubeconfig:               kubeconfig,
+				Common:                   common,
 			},
 			Error: true,
 		},
@@ -70,6 +79,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Kubeconfig:               kubeconfig,
+				Common:                   common,
 			},
 			Error: true,
 		},
@@ -79,7 +89,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Kubeconfig:               kubeconfig,
-				Host:                     host.Host{},
+				Host:                     &host.Host{},
 			},
 			Error: true,
 		},
@@ -90,6 +100,7 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 				RootCACertificate:        types.Certificate(pki.Certificate),
 				Host:                     hostConfig,
 				Kubeconfig:               kubeconfig,
+				Common:                   common,
 			},
 			Error: false,
 		},
@@ -99,8 +110,13 @@ func TestKubeControllerManagerValidate(t *testing.T) {
 		c := c
 
 		t.Run(n, func(t *testing.T) {
-			if err := c.Config.Validate(); !c.Error && err != nil {
-				t.Errorf("Didn't expect error, got: %v", err)
+			err := c.Config.Validate()
+			if !c.Error && err != nil {
+				t.Errorf("didn't expect error, got: %v", err)
+			}
+
+			if c.Error && err == nil {
+				t.Errorf("expected error")
 			}
 		})
 	}
@@ -113,7 +129,7 @@ func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
 		KubernetesCAKey:          types.PrivateKey(pki.PrivateKey),
 		ServiceAccountPrivateKey: types.PrivateKey(pki.PrivateKey),
 		RootCACertificate:        types.Certificate(pki.Certificate),
-		Host: host.Host{
+		Host: &host.Host{
 			DirectConfig: &direct.Config{},
 		},
 		Kubeconfig: client.Config{
@@ -140,5 +156,19 @@ func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
 
 	if hcc.Container.Config.Image == "" {
 		t.Fatalf("New() should set default image if it's not present")
+	}
+}
+
+// New()
+func TestKubeControllerManagerNewEmptyHost(t *testing.T) {
+	ks := &KubeControllerManager{}
+
+	k, err := ks.New()
+	if err == nil {
+		t.Errorf("attempting to create kube-scheduler from empty config should fail")
+	}
+
+	if k != nil {
+		t.Fatalf("failed attempt of creating kube-scheduler shouls not return kube-scheduler object")
 	}
 }

@@ -43,9 +43,8 @@ defaults
   # Do TLS passthrough
   mode tcp
   # Required values for both frontend and backend
-  timeout connect 5000ms
-  timeout client 50000ms
-  timeout server 50000ms
+  timeout connect 5s
+  timeout tunnel 21d
 
 frontend kube-apiserver
   bind {{ .BindAddress }}
@@ -57,10 +56,7 @@ backend kube-apiserver
   {{- end }}
 `
 
-	t, err := template.New("haproxy.cfg").Parse(c)
-	if err != nil {
-		return "", fmt.Errorf("template parsing failed: %w", err)
-	}
+	t := template.Must(template.New("haproxy.cfg").Parse(c))
 
 	var buf bytes.Buffer
 

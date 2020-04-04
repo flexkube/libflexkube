@@ -13,8 +13,8 @@ import (
 
 // KubeControllerManager represents kube-controller-manager container configuration.
 type KubeControllerManager struct {
-	Common                   Common            `json:"common"`
-	Host                     host.Host         `json:"host"`
+	Common                   *Common           `json:"common,omitempty"`
+	Host                     *host.Host        `json:"host,omitempty"`
 	Kubeconfig               client.Config     `json:"kubeconfig"`
 	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey"`
 	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey"`
@@ -106,6 +106,14 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 
 // New validates KubeControllerManager and returns usable kubeControllerManager.
 func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
+	if k.Common == nil {
+		k.Common = &Common{}
+	}
+
+	if k.Host == nil {
+		k.Host = &host.Host{}
+	}
+
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
 	}
@@ -114,8 +122,8 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 	kubeconfig, _ := k.Kubeconfig.ToYAMLString()
 
 	nk := &kubeControllerManager{
-		common:                   k.Common,
-		host:                     k.Host,
+		common:                   *k.Common,
+		host:                     *k.Host,
 		kubernetesCAKey:          string(k.KubernetesCAKey),
 		serviceAccountPrivateKey: string(k.ServiceAccountPrivateKey),
 		rootCACertificate:        string(k.RootCACertificate),
@@ -127,12 +135,13 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 }
 
 // Validate validates KubeControllerManager configuration.
-//
-// TODO add validation of certificates if specified
 func (k *KubeControllerManager) Validate() error {
-	if err := k.Host.Validate(); err != nil {
-		return fmt.Errorf("host config validation failed: %w", err)
+	v := validator{
+		Common:     k.Common,
+		Host:       k.Host,
+		Kubeconfig: k.Kubeconfig,
+		YAML:       k,
 	}
 
-	return nil
+	return v.validate(true)
 }

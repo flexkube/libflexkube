@@ -65,7 +65,8 @@ func controlplaneUnmarshal(d getter, includeState bool) types.ResourceConfig {
 	}
 
 	if includeState {
-		c.State = getState(d)
+		s := getState(d)
+		c.State = &s
 	}
 
 	if d, ok := d.GetOk("ssh"); ok && len(d.([]interface{})) == 1 {

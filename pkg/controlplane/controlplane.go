@@ -33,7 +33,7 @@ type Controlplane struct {
 	// User-configurable fields.
 	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
 	// should be defined directly there.
-	Common                Common                `json:"common,omitempty"`
+	Common                *Common               `json:"common,omitempty"`
 	SSH                   *ssh.Config           `json:"ssh,omitempty"`
 	APIServerAddress      string                `json:"apiServerAddress,omitempty"`
 	APIServerPort         int                   `json:"apiServerPort,omitempty"`
@@ -43,7 +43,7 @@ type Controlplane struct {
 	Hosts                 []host.Host           `json:"hosts,omitempty"`
 
 	// Serializable fields.
-	State container.ContainersState `json:"state"`
+	State *container.ContainersState `json:"state,omitempty"`
 }
 
 // controlplane is executable version of Controlplane, with validated fields and calculated containers.
@@ -63,15 +63,29 @@ func (c *Controlplane) propagateKubeconfig(d *client.Config) {
 
 // propagateHost merges given host configuration with values stored in Controlplane.
 // Values in given host config has priority over ones from the Controlplane.
-func (c *Controlplane) propagateHost(h host.Host) host.Host {
-	return host.BuildConfig(h, host.Host{
+func (c *Controlplane) propagateHost(h *host.Host) *host.Host {
+	if h == nil {
+		h = &host.Host{}
+	}
+
+	nh := host.BuildConfig(*h, host.Host{
 		SSHConfig: c.SSH,
 	})
+
+	return &nh
 }
 
 // propagateCommon merges given common configuration with values stored in Controlplane.
 // Values in given common configuration has priority over ones from the Controlplane.
 func (c *Controlplane) propagateCommon(co *Common) {
+	if co == nil {
+		co = &Common{}
+	}
+
+	if c.Common == nil {
+		c.Common = &Common{}
+	}
+
 	co.Image = util.PickString(co.Image, c.Common.Image)
 	co.KubernetesCACertificate = types.Certificate(util.PickString(string(co.KubernetesCACertificate), string(c.Common.KubernetesCACertificate)))
 	co.FrontProxyCACertificate = types.Certificate(util.PickString(string(co.FrontProxyCACertificate), string(c.Common.FrontProxyCACertificate)))
@@ -83,7 +97,7 @@ func (c *Controlplane) buildKubeScheduler() {
 
 	c.propagateKubeconfig(&k.Kubeconfig)
 
-	c.propagateCommon(&k.Common)
+	c.propagateCommon(k.Common)
 
 	k.Host = c.propagateHost(k.Host)
 }
@@ -94,7 +108,7 @@ func (c *Controlplane) buildKubeControllerManager() {
 
 	c.propagateKubeconfig(&k.Kubeconfig)
 
-	c.propagateCommon(&k.Common)
+	c.propagateCommon(k.Common)
 
 	k.Host = c.propagateHost(k.Host)
 }
@@ -115,7 +129,7 @@ func (c *Controlplane) buildKubeAPIServer() {
 		k.SecurePort = c.APIServerPort
 	}
 
-	c.propagateCommon(&k.Common)
+	c.propagateCommon(k.Common)
 
 	k.Host = c.propagateHost(k.Host)
 }
@@ -127,8 +141,13 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
+	s := c.State
+	if s == nil {
+		s = &container.ContainersState{}
+	}
+
 	cc := &container.Containers{
-		PreviousState: c.State,
+		PreviousState: *s,
 	}
 
 	co, _ := cc.New()
@@ -219,7 +238,7 @@ func FromYaml(c []byte) (types.Resource, error) {
 
 // StateToYaml allows to dump controlplane state to YAML, so it can be restored later.
 func (c *controlplane) StateToYaml() ([]byte, error) {
-	return yaml.Marshal(Controlplane{State: c.containers.ToExported().PreviousState})
+	return yaml.Marshal(Controlplane{State: &c.containers.ToExported().PreviousState})
 }
 
 func (c *controlplane) CheckCurrentState() error {

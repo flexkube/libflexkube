@@ -23,7 +23,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
 	kas := &KubeAPIServer{
-		Common: Common{
+		Common: &Common{
 			KubernetesCACertificate: cert,
 			FrontProxyCACertificate: cert,
 		},
@@ -42,7 +42,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 		EtcdCACertificate:        cert,
 		EtcdClientCertificate:    cert,
 		EtcdClientKey:            privateKey,
-		Host: host.Host{
+		Host: &host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
@@ -66,15 +66,16 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
+// Validate()
 func TestKubeAPIServerValidate(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	common := Common{
+	common := &Common{
 		KubernetesCACertificate: cert,
 		FrontProxyCACertificate: cert,
 	}
@@ -126,6 +127,50 @@ func TestKubeAPIServerValidate(t *testing.T) {
 			},
 			Error: true,
 		},
+		"require at least one etcd server": {
+			Config: &KubeAPIServer{
+				Common:                   common,
+				APIServerCertificate:     cert,
+				APIServerKey:             privateKey,
+				ServiceAccountPublicKey:  nonEmptyString,
+				BindAddress:              nonEmptyString,
+				AdvertiseAddress:         nonEmptyString,
+				EtcdServers:              []string{},
+				ServiceCIDR:              nonEmptyString,
+				SecurePort:               securePort,
+				FrontProxyCertificate:    cert,
+				FrontProxyKey:            privateKey,
+				KubeletClientKey:         privateKey,
+				EtcdCACertificate:        cert,
+				EtcdClientCertificate:    cert,
+				EtcdClientKey:            privateKey,
+				Host:                     hostConfig,
+				KubeletClientCertificate: cert,
+			},
+			Error: true,
+		},
+		"validate host": {
+			Config: &KubeAPIServer{
+				Common:                   common,
+				APIServerCertificate:     cert,
+				APIServerKey:             privateKey,
+				ServiceAccountPublicKey:  nonEmptyString,
+				BindAddress:              nonEmptyString,
+				AdvertiseAddress:         nonEmptyString,
+				EtcdServers:              []string{nonEmptyString},
+				ServiceCIDR:              nonEmptyString,
+				SecurePort:               securePort,
+				FrontProxyCertificate:    cert,
+				FrontProxyKey:            privateKey,
+				KubeletClientKey:         privateKey,
+				EtcdCACertificate:        cert,
+				EtcdClientCertificate:    cert,
+				EtcdClientKey:            privateKey,
+				Host:                     &host.Host{},
+				KubeletClientCertificate: cert,
+			},
+			Error: true,
+		},
 		"valid": {
 			Config: &KubeAPIServer{
 				Common:                   common,
@@ -154,8 +199,13 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		c := c
 
 		t.Run(n, func(t *testing.T) {
-			if err := c.Config.Validate(); !c.Error && err != nil {
-				t.Errorf("Didn't expect error, got: %v", err)
+			err := c.Config.Validate()
+			if !c.Error && err != nil {
+				t.Errorf("didn't expect error, got: %v", err)
+			}
+
+			if c.Error && err == nil {
+				t.Errorf("expected error")
 			}
 		})
 	}
@@ -165,11 +215,11 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
-	hostConfig := host.Host{
+	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	common := Common{
+	common := &Common{
 		KubernetesCACertificate: cert,
 		FrontProxyCACertificate: cert,
 	}
@@ -205,5 +255,19 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 		if !strings.Contains(k, hostConfigPath) {
 			t.Fatalf("all config files paths should contain %s, got: %s", hostConfigPath, k)
 		}
+	}
+}
+
+// New()
+func TestKubeAPIServerNewEmptyHost(t *testing.T) {
+	c := &KubeAPIServer{}
+
+	k, err := c.New()
+	if err == nil {
+		t.Errorf("New on empty config should return error")
+	}
+
+	if k != nil {
+		t.Errorf("New should not return kube-apiserver object in case of error")
 	}
 }

@@ -180,9 +180,9 @@ resource "flexkube_etcd_cluster" "etcd" {
   }
 }
 
-resource "flexkube_apiloadbalancer_pool" "nodes" {
-  name             = "api-loadbalancer-nodes"
-  host_config_path = "/etc/haproxy/nodes.cfg"
+resource "flexkube_apiloadbalancer_pool" "controllers" {
+  name             = "api-loadbalancer-controllers"
+  host_config_path = "/etc/haproxy/controllers.cfg"
   bind_address     = local.node_load_balancer_address
   servers          = formatlist("%s:%d", local.controller_ips, local.api_port)
 
@@ -193,7 +193,7 @@ resource "flexkube_apiloadbalancer_pool" "nodes" {
   }
 
   dynamic "api_load_balancer" {
-    for_each = concat(local.controller_ips, local.worker_ips)
+    for_each = local.controller_ips
 
     content {
       host {
@@ -293,7 +293,6 @@ resource "flexkube_helm_release" "kube-apiserver" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.nodes,
     flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
@@ -306,7 +305,8 @@ resource "flexkube_helm_release" "kubernetes" {
   values     = local.kubernetes_values
 
   depends_on = [
-    flexkube_helm_release.kube-apiserver,
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -318,7 +318,8 @@ resource "flexkube_helm_release" "coredns" {
   values     = local.coredns_values
 
   depends_on = [
-    flexkube_helm_release.kubernetes,
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -330,7 +331,8 @@ resource "flexkube_helm_release" "metrics-server" {
   values     = local.metrics_server_values
 
   depends_on = [
-    flexkube_helm_release.kubernetes,
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -341,7 +343,8 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   name       = "kubelet-rubber-stamp"
 
   depends_on = [
-    flexkube_helm_release.kubernetes,
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -355,7 +358,8 @@ resource "flexkube_helm_release" "calico" {
   values     = local.calico_values
 
   depends_on = [
-    flexkube_helm_release.kubernetes,
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -415,10 +419,37 @@ resource "flexkube_kubelet_pool" "controller" {
   }
 
   depends_on = [
-    flexkube_apiloadbalancer_pool.nodes,
+    flexkube_apiloadbalancer_pool.controllers,
     flexkube_helm_release.kubernetes,
     flexkube_apiloadbalancer_pool.bootstrap,
   ]
+}
+
+resource "flexkube_apiloadbalancer_pool" "workers" {
+  count = local.deploy_workers
+
+  name             = "api-loadbalancer-workers"
+  host_config_path = "/etc/haproxy/workers.cfg"
+  bind_address     = local.node_load_balancer_address
+  servers          = formatlist("%s:%d", local.controller_ips, local.api_port)
+
+  ssh {
+    private_key = local.ssh_private_key
+    port        = var.node_ssh_port
+    user        = "core"
+  }
+
+  dynamic "api_load_balancer" {
+    for_each = local.worker_ips
+
+    content {
+      host {
+        ssh {
+          address = api_load_balancer.value
+        }
+      }
+    }
+  }
 }
 
 resource "flexkube_kubelet_pool" "workers" {
@@ -468,7 +499,7 @@ resource "flexkube_kubelet_pool" "workers" {
   }
 
   depends_on = [
-    flexkube_apiloadbalancer_pool.nodes,
+    flexkube_apiloadbalancer_pool.workers,
     flexkube_helm_release.kubernetes,
     flexkube_apiloadbalancer_pool.bootstrap,
   ]
