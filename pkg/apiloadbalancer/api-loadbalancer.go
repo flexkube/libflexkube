@@ -43,9 +43,8 @@ defaults
   # Do TLS passthrough
   mode tcp
   # Required values for both frontend and backend
-  timeout connect 5000ms
-  timeout client 50000ms
-  timeout server 50000ms
+  timeout connect 5s
+  timeout tunnel 21d
 
 frontend kube-apiserver
   bind {{ .BindAddress }}
