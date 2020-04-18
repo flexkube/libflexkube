@@ -16,7 +16,7 @@ func resourceControlplane() *schema.Resource {
 	return &schema.Resource{
 		Create:        resourceCreate(controlplaneUnmarshal),
 		Read:          resourceRead(controlplaneUnmarshal),
-		Delete:        resourceDelete(controlplaneUnmarshal, "hosts"),
+		Delete:        controlplaneDestroy,
 		Update:        resourceCreate(controlplaneUnmarshal),
 		CustomizeDiff: controlplaneDiff,
 		Schema: withCommonFields(map[string]*schema.Schema{
@@ -90,4 +90,34 @@ func controlplaneUnmarshal(d getter, includeState bool) types.ResourceConfig {
 	}
 
 	return c
+}
+
+func controlplaneDestroy(d *schema.ResourceData, m interface{}) error {
+	c := controlplaneUnmarshal(d, true)
+
+	// TODO Perhaps ResourceConfig should support generic destroying?
+	c.(*controlplane.Controlplane).Destroy = true
+
+	// Validate the configuration.
+	r, err := c.New()
+	if err != nil {
+		return fmt.Errorf("failed creating resource: %w", err)
+	}
+
+	// Get current state of the containers.
+	if err := r.CheckCurrentState(); err != nil {
+		return fmt.Errorf("failed checking current state: %w", err)
+	}
+
+	// Deploy changes.
+	deployErr := r.Deploy()
+
+	// If deployment succeeded, we are done.
+	if deployErr == nil {
+		d.SetId("")
+
+		return nil
+	}
+
+	return saveState(d, r.Containers().ToExported().PreviousState, controlplaneUnmarshal, deployErr)
 }
