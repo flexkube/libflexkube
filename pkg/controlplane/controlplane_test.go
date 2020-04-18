@@ -10,7 +10,7 @@ import (
 	"github.com/flexkube/libflexkube/internal/utiltest"
 )
 
-func TestControlplaneFromYaml(t *testing.T) {
+func controlplaneYAML(t *testing.T) string {
 	c := `
 common:
   kubernetesCACertificate: |
@@ -92,7 +92,11 @@ ssh:
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
 
-	co, err := FromYaml(buf.Bytes())
+	return buf.String()
+}
+
+func TestControlplaneFromYaml(t *testing.T) {
+	co, err := FromYaml([]byte(controlplaneYAML(t)))
 	if err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
 	}
@@ -139,5 +143,53 @@ func TestControlplaneNewValidate(t *testing.T) {
 
 	if _, err := c.New(); err == nil {
 		t.Fatalf("New should validate controlplane configuration and fail on empty one")
+	}
+}
+
+func TestControlplaneDestroyNoState(t *testing.T) {
+	y := controlplaneYAML(t)
+
+	y += `destroy: true`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("creating controlplane config to destroy without state should fail")
+	}
+}
+
+func TestControlplaneDestroyValidateState(t *testing.T) {
+	y := controlplaneYAML(t)
+
+	y += `destroy: true
+state:
+  foo: {}
+`
+
+	if _, err := FromYaml([]byte(y)); err == nil {
+		t.Fatalf("creating controlplane config to destroy with invalid state should fail")
+	}
+}
+
+func TestControlplaneDestroyValidState(t *testing.T) {
+	y := controlplaneYAML(t)
+
+	y += `destroy: true
+state:
+  foo:
+    host:
+      direct: {}
+    container:
+      runtime:
+        docker:
+          host: unix:///nonexistent
+      config:
+        name: foo
+        image: busybox
+      status:
+        id: foo
+        status: running
+`
+
+	if _, err := FromYaml([]byte(y)); err != nil {
+		t.Fatalf("creating controlplane config to destroy with valid state should succeed, got: %v", err)
 	}
 }
