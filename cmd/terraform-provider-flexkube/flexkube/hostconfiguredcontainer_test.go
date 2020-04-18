@@ -124,6 +124,7 @@ func hostConfiguredContainerMarshaled() []interface{} {
 		},
 	}
 }
+
 func TestHostConfiguredContainerUnmarshal(t *testing.T) {
 	c := container.HostConfiguredContainer{
 		Container: container.Container{

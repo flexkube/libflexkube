@@ -87,7 +87,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			},
 			NetworkMode: "host",
 			Args: []string{
-				//TODO Add descriptions explaining why we need each line.
+				// TODO Add descriptions explaining why we need each line.
 				// Default value 'capnslog' for logger is deprecated and prints warning now.
 				"--logger=zap", // Available only from 3.4.x
 				// Since we are in container, listen on all interfaces

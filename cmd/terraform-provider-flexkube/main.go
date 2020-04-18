@@ -8,5 +8,6 @@ import (
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: flexkube.Provider})
+		ProviderFunc: flexkube.Provider,
+	})
 }

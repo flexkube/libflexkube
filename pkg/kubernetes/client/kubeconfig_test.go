@@ -131,6 +131,7 @@ func TestToYAMLStringNew(t *testing.T) {
 		})
 	}
 }
+
 func TestToYAMLStringValidate(t *testing.T) {
 	pki := utiltest.GeneratePKI(t)
 
