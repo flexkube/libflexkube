@@ -28,7 +28,7 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 		},
 	}
 
-	var s []string
+	var s []interface{}
 
 	e := map[string]interface{}{
 		"name": "foo",

@@ -30,7 +30,7 @@ func TestContainersStateMarshal(t *testing.T) {
 		},
 	}
 
-	var s []string
+	var s []interface{}
 
 	e := []interface{}{
 		map[string]interface{}{
