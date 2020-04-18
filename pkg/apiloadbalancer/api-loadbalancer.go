@@ -44,6 +44,9 @@ defaults
   mode tcp
   # Required values for both frontend and backend
   timeout connect 5s
+  timeout client 30s
+  timeout client-fin 30s
+  timeout server 30s
   timeout tunnel 21d
 
 frontend kube-apiserver
