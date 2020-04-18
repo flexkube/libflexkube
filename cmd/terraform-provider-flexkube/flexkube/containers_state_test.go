@@ -83,7 +83,7 @@ func TestContainersStateMarshal(t *testing.T) {
 }
 
 func TestContainersStateUnmarshal(t *testing.T) {
-	c := container.ContainersState{
+	c := &container.ContainersState{
 		"foo": &container.HostConfiguredContainer{
 			Container: container.Container{
 				Config: types.ContainerConfig{},

@@ -64,9 +64,8 @@ func controlplaneUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		APIServerPort:    d.Get("api_server_port").(int),
 	}
 
-	if includeState {
-		s := getState(d)
-		c.State = &s
+	if s := getState(d); includeState && s != nil {
+		c.State = s
 	}
 
 	if d, ok := d.GetOk("ssh"); ok && len(d.([]interface{})) == 1 {

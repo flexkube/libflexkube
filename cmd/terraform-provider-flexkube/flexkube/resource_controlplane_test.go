@@ -540,3 +540,51 @@ func TestControlplaneDestroy(t *testing.T) {
 		t.Fatalf("destroying should fail for unreachable runtime, got: %v", err)
 	}
 }
+
+func TestControlplaneDestroyValidateConfiguration(t *testing.T) {
+	// Prepare some fake state.
+	cs := container.ContainersState{
+		"foo": &container.HostConfiguredContainer{
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			Container: container.Container{
+				Runtime: container.RuntimeConfig{
+					Docker: &docker.Config{
+						Host: "unix:///nonexistent",
+					},
+				},
+				Config: types.ContainerConfig{
+					Name:  "foo",
+					Image: "busybox:latest",
+				},
+				Status: &types.ContainerStatus{
+					ID:     "foo",
+					Status: "running",
+				},
+			},
+		},
+	}
+
+	s := map[string]interface{}{
+		stateSensitiveSchemaKey: containersStateMarshal(cs, false),
+	}
+
+	r := resourceControlplane()
+	d := schema.TestResourceDataRaw(t, r.Schema, s)
+
+	// Mark newly created object as created, so it's state is persisted.
+	d.SetId("foo")
+
+	// Create new ResourceData from the state, so it's persisted and there is no diff included.
+	dn := r.Data(d.State())
+
+	err := controlplaneDestroy(dn, nil)
+	if err == nil {
+		t.Fatalf("destroying with unreachable container runtime should fail")
+	}
+
+	if !strings.Contains(err.Error(), "failed to validate controlplane configuration") {
+		t.Fatalf("destroying should fail for unreachable runtime, got: %v", err)
+	}
+}

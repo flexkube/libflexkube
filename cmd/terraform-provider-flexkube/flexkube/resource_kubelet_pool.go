@@ -74,8 +74,8 @@ func kubeletPoolUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		KubeReserved:               stringMapUnmarshal(d.Get("kube_reserved")),
 	}
 
-	if includeState {
-		c.State = getState(d)
+	if s := getState(d); includeState && s != nil {
+		c.State = *s
 	}
 
 	if d, ok := d.GetOk("ssh"); ok && len(d.([]interface{})) == 1 {

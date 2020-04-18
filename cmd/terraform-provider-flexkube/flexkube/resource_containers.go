@@ -23,12 +23,14 @@ func resourceContainers() *schema.Resource {
 }
 
 func containersUnmarshal(d getter, includeState bool) types.ResourceConfig {
-	c := &resource.Containers{
-		DesiredState: containersStateUnmarshal(d.Get("container")),
+	c := &resource.Containers{}
+
+	if cs := containersStateUnmarshal(d.Get("container")); cs != nil {
+		c.DesiredState = *cs
 	}
 
-	if includeState {
-		c.PreviousState = getState(d)
+	if s := getState(d); includeState && s != nil {
+		c.PreviousState = *s
 	}
 
 	return c

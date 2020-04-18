@@ -46,8 +46,8 @@ func apiLoadBalancersUnmarshal(d getter, includeState bool) types.ResourceConfig
 		BindAddress:      d.Get("bind_address").(string),
 	}
 
-	if includeState {
-		cc.State = getState(d)
+	if s := getState(d); includeState && s != nil {
+		cc.State = *s
 	}
 
 	if d, ok := d.GetOk("ssh"); ok && len(d.([]interface{})) == 1 {

@@ -176,7 +176,7 @@ func withCommonFields(s map[string]*schema.Schema) map[string]*schema.Schema {
 	return s
 }
 
-func getState(d getter) container.ContainersState {
+func getState(d getter) *container.ContainersState {
 	ss, _ := d.GetChange(stateSensitiveSchemaKey)
 
 	return containersStateUnmarshal(ss)
