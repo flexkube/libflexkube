@@ -17,7 +17,7 @@ import (
 // saveState()
 func TestSaveStateBadScheme(t *testing.T) {
 	r := resourceContainers()
-	delete(r.Schema, "state_yaml")
+	delete(r.Schema, stateYAMLSchemaKey)
 
 	d := r.Data(&terraform.InstanceState{})
 
@@ -65,7 +65,7 @@ func TestResourceDeleteRuntimeFail(t *testing.T) {
 
 func TestResourceDeleteEmpty(t *testing.T) {
 	r := resourceContainers()
-	r.Delete = resourceDelete(containersUnmarshal, "state_sensitive")
+	r.Delete = resourceDelete(containersUnmarshal, stateSensitiveSchemaKey)
 
 	s := container.ContainersState{
 		"foo": &container.HostConfiguredContainer{
@@ -87,7 +87,7 @@ func TestResourceDeleteEmpty(t *testing.T) {
 	}
 
 	d := r.Data(&terraform.InstanceState{})
-	if err := d.Set("state_sensitive", containersStateMarshal(container.ContainersState{}, false)); err != nil {
+	if err := d.Set(stateSensitiveSchemaKey, containersStateMarshal(container.ContainersState{}, false)); err != nil {
 		t.Fatalf("Failed writing: %v", err)
 	}
 
