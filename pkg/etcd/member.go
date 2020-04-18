@@ -62,6 +62,40 @@ func (m *member) configFiles() map[string]string {
 	}
 }
 
+// args returns flags which will be set to the container.
+func (m *member) args() []string {
+	return []string{
+		// TODO Add descriptions explaining why we need each line.
+		// Default value 'capnslog' for logger is deprecated and prints warning now.
+		"--logger=zap", // Available only from 3.4.x
+		// Since we are in container, listen on all interfaces
+		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
+		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
+		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
+		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
+		fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
+		fmt.Sprintf("--name=%s", m.name),
+		"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
+		"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
+		"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
+		"--peer-client-cert-auth",
+		"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
+		"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
+		"--key-file=/etc/kubernetes/pki/etcd/server.key",
+		fmt.Sprintf("--data-dir=/%s.etcd", m.name),
+		// To get rid of warning with default configuration.
+		// ttl parameter support has been added in 3.4.x
+		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
+		// This is set by typhoon, seems like extra safety knob
+		"--strict-reconfig-check",
+		// TODO enable metrics
+		// Enable TLS authentication with certificate CN field.
+		// See https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/authentication.md#using-tls-common-name
+		// for more details.
+		"--client-cert-auth=true",
+	}
+}
+
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
 func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	c := container.Container{
@@ -86,36 +120,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 				},
 			},
 			NetworkMode: "host",
-			Args: []string{
-				// TODO Add descriptions explaining why we need each line.
-				// Default value 'capnslog' for logger is deprecated and prints warning now.
-				"--logger=zap", // Available only from 3.4.x
-				// Since we are in container, listen on all interfaces
-				fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
-				fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
-				fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
-				fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
-				fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
-				fmt.Sprintf("--name=%s", m.name),
-				"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
-				"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
-				"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
-				"--peer-client-cert-auth",
-				"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
-				"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
-				"--key-file=/etc/kubernetes/pki/etcd/server.key",
-				fmt.Sprintf("--data-dir=/%s.etcd", m.name),
-				// To get rid of warning with default configuration.
-				// ttl parameter support has been added in 3.4.x
-				"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
-				// This is set by typhoon, seems like extra safety knob
-				"--strict-reconfig-check",
-				// TODO enable metrics
-				// Enable TLS authentication with certificate CN field.
-				// See https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/authentication.md#using-tls-common-name
-				// for more details.
-				"--client-cert-auth=true",
-			},
+			Args:        m.args(),
 		},
 	}
 
