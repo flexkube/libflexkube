@@ -57,3 +57,78 @@ resource "local_file" "kubelet_pool_state" {
   sensitive_content = flexkube_kubelet_pool.controller.state_yaml
   filename          = "./resources/kubelet-pool/state.yaml"
 }
+
+resource "local_file" "etcd_ca_certificate" {
+  content  = module.etcd_pki.etcd_ca_cert
+  filename = "./resources/etcd-cluster/ca.pem"
+}
+
+resource "local_file" "etcd_root_user_certificate" {
+  content  = module.etcd_pki.client_certs[0]
+  filename = "./resources/etcd-cluster/client.pem"
+}
+
+resource "local_file" "etcd_root_user_private_key" {
+  sensitive_content = module.etcd_pki.client_keys[0]
+  filename          = "./resources/etcd-cluster/client.key"
+}
+
+resource "local_file" "etcd_prometheus_user_certificate" {
+  content  = module.etcd_pki.client_certs[2]
+  filename = "./resources/etcd-cluster/prometheus_client.pem"
+}
+
+resource "local_file" "etcd_prometheus_user_private_key" {
+  sensitive_content = module.etcd_pki.client_keys[2]
+  filename          = "./resources/etcd-cluster/prometheus_client.key"
+}
+
+resource "local_file" "etcd_environment" {
+  filename = "./resources/etcd-cluster/environment.sh"
+  content  = <<EOF
+#!/bin/bash
+export ETCDCTL_API=3
+export ETCDCTL_CACERT=${abspath(local_file.etcd_ca_certificate.filename)}
+export ETCDCTL_CERT=${abspath(local_file.etcd_root_user_certificate.filename)}
+export ETCDCTL_KEY=${abspath(local_file.etcd_root_user_private_key.filename)}
+export ETCDCTL_ENDPOINTS=${join(",", formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips))}
+EOF
+
+  depends_on = [
+    flexkube_etcd_cluster.etcd,
+  ]
+}
+
+resource "local_file" "etcd_prometheus_environment" {
+  filename = "./resources/etcd-cluster/prometheus-environment.sh"
+  content  = <<EOF
+#!/bin/bash
+export ETCDCTL_API=3
+export ETCDCTL_CACERT=${abspath(local_file.etcd_ca_certificate.filename)}
+export ETCDCTL_CERT=${abspath(local_file.etcd_prometheus_user_certificate.filename)}
+export ETCDCTL_KEY=${abspath(local_file.etcd_prometheus_user_private_key.filename)}
+export ETCDCTL_ENDPOINTS=${join(",", formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips))}
+EOF
+
+  depends_on = [
+    flexkube_etcd_cluster.etcd,
+  ]
+}
+
+resource "local_file" "etcd_enable_rbac" {
+  filename = "./resources/etcd-cluster/enable-rbac.sh"
+  content  = <<EOF
+#!/bin/bash
+etcdctl user add --no-password=true root
+etcdctl role add root
+etcdctl user grant-role root root
+etcdctl auth enable
+etcdctl user add --no-password=true kube-apiserver
+etcdctl role add kube-apiserver
+etcdctl role grant-permission kube-apiserver readwrite --prefix=true /
+etcdctl user grant-role kube-apiserver kube-apiserver
+# Until https://github.com/etcd-io/etcd/issues/8458 is resolved.
+etcdctl user grant-role kube-apiserver root
+etcdctl user add --no-password=true prometheus
+EOF
+}
