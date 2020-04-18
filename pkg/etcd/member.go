@@ -111,6 +111,10 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 				// This is set by typhoon, seems like extra safety knob
 				"--strict-reconfig-check",
 				// TODO enable metrics
+				// Enable TLS authentication with certificate CN field.
+				// See https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/authentication.md#using-tls-common-name
+				// for more details.
+				"--client-cert-auth=true",
 			},
 		},
 	}
