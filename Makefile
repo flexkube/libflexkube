@@ -204,6 +204,7 @@ install-cc-test-reporter:
 install-ci: install-golangci-lint install-cc-test-reporter
 
 .PHONY: install-go-mutesting
+install-go-mutesting:
 	GO111MODULE=off go get github.com/AntonStoeckl/go-mutesting/cmd/go-mutesting
 
 .PHONY: vagrant-up
