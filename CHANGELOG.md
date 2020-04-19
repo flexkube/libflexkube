@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - libvirt as local testing environment (#34)
 - Project logo and Certified Kubernetes logo (#36)
 - Enabled NodeRestriction admission plugin (#35)
-- Added support for specifing user and group when running containers (#57)
+- Added support for specifying user and group when running containers (#57)
 - Self-hosted and bootstrap kube-apiserver instances can now run in parallel, by adding a HAProxy load balancer
   in front of them, which use SO_REUSEPORT socket option. This also allows to do graceful upgrades of self-hosted
   kube-apiserver pod, as more than 1 instance can run in parallel on a single controller node. This prevents self-hosted
@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terraform provider now can correctly destroy all the resources (#78, #82)
 - Improved idempotency of both CLI tools and Terraform provider. Now if any action fails, all already build state
   will be persisted, so once configuration or external conditions are fixed, user can proceed with the deployment (#42)
-- Splitted README.md into smaller documents and added ToC for all of them (#87)
+- Split README.md into smaller documents and added ToC for all of them (#87)
 - Updated default Kubernetes version to 1.17.4
 - Improved overall unit test coverage
 - Improved quality of unit tests for some packages with mutation testing
@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When creating configuration files with Docker, they will have correct modification time now (#55)
 - Trigger container updates when runtime configuration changes (#70)
-- Removing containes will now properly remove all of them, not just first one (#75)
+- Removing containers will now properly remove all of them, not just first one (#75)
 - Before doing actions on Helm releases, we will now make sure that API is reachable and ready. That fixes
   flaky cluster deployments (#84)
 - Etcd cluster now properly handles members with specified manual names
