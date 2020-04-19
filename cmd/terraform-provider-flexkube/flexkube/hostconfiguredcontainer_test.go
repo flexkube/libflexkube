@@ -28,7 +28,7 @@ func TestHostConfiguredContainerMarshal(t *testing.T) {
 		},
 	}
 
-	var s []string
+	var s []interface{}
 
 	e := map[string]interface{}{
 		"name": "foo",
@@ -124,6 +124,7 @@ func hostConfiguredContainerMarshaled() []interface{} {
 		},
 	}
 }
+
 func TestHostConfiguredContainerUnmarshal(t *testing.T) {
 	c := container.HostConfiguredContainer{
 		Container: container.Container{

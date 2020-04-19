@@ -2,11 +2,20 @@ package flexkube //nolint:dupl
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-tls/tls"
+
+	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/container"
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
+	"github.com/flexkube/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
 func TestControlplanePlanOnly(t *testing.T) {
@@ -429,4 +438,153 @@ resource "flexkube_controlplane" "bootstrap" {
 			},
 		},
 	})
+}
+
+func TestControlplaneDestroy(t *testing.T) {
+	pki := utiltest.GeneratePKI(t)
+
+	// Prepare some fake state.
+	cs := container.ContainersState{
+		"foo": &container.HostConfiguredContainer{
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			Container: container.Container{
+				Runtime: container.RuntimeConfig{
+					Docker: &docker.Config{
+						Host: "unix:///nonexistent",
+					},
+				},
+				Config: types.ContainerConfig{
+					Name:  "foo",
+					Image: "busybox:latest",
+				},
+				Status: &types.ContainerStatus{
+					ID:     "foo",
+					Status: "running",
+				},
+			},
+		},
+	}
+
+	s := map[string]interface{}{
+		stateSensitiveSchemaKey: containersStateMarshal(cs, false),
+		"common": []interface{}{
+			map[string]interface{}{
+				"kubernetes_ca_certificate":  pki.Certificate,
+				"front_proxy_ca_certificate": pki.Certificate,
+			},
+		},
+		"kube_apiserver": []interface{}{
+			map[string]interface{}{
+				"api_server_certificate":     pki.Certificate,
+				"api_server_key":             pki.PrivateKey,
+				"front_proxy_certificate":    pki.Certificate,
+				"front_proxy_key":            pki.PrivateKey,
+				"kubelet_client_certificate": pki.Certificate,
+				"kubelet_client_key":         pki.PrivateKey,
+				"service_account_public_key": "foo",
+				"service_cidr":               "11.0.0.0/24",
+				"etcd_ca_certificate":        pki.Certificate,
+				"etcd_client_certificate":    pki.Certificate,
+				"etcd_client_key":            pki.PrivateKey,
+				"etcd_servers": []interface{}{
+					"foo",
+				},
+				"bind_address":      "0.0.0.0",
+				"advertise_address": "1.1.1.1",
+			},
+		},
+		"kube_controller_manager": []interface{}{
+			map[string]interface{}{
+				"kubernetes_ca_key":           pki.PrivateKey,
+				"service_account_private_key": pki.PrivateKey,
+				"kubeconfig": []interface{}{
+					map[string]interface{}{
+						"client_certificate": pki.Certificate,
+						"client_key":         pki.PrivateKey,
+					},
+				},
+				"root_ca_certificate": pki.Certificate,
+			},
+		},
+		"api_server_address": "1.1.1.1",
+		"api_server_port":    1, //nolint:gomnd
+		"kube_scheduler": []interface{}{
+			map[string]interface{}{
+				"kubeconfig": []interface{}{
+					map[string]interface{}{
+						"client_certificate": pki.Certificate,
+						"client_key":         pki.PrivateKey,
+					},
+				},
+			},
+		},
+	}
+
+	r := resourceControlplane()
+	d := schema.TestResourceDataRaw(t, r.Schema, s)
+
+	// Mark newly created object as created, so it's state is persisted.
+	d.SetId("foo")
+
+	// Create new ResourceData from the state, so it's persisted and there is no diff included.
+	dn := r.Data(d.State())
+
+	err := controlplaneDestroy(dn, nil)
+	if err == nil {
+		t.Fatalf("destroying with unreachable container runtime should fail")
+	}
+
+	if !strings.Contains(err.Error(), "Is the docker daemon running") {
+		t.Fatalf("destroying should fail for unreachable runtime, got: %v", err)
+	}
+}
+
+func TestControlplaneDestroyValidateConfiguration(t *testing.T) {
+	// Prepare some fake state.
+	cs := container.ContainersState{
+		"foo": &container.HostConfiguredContainer{
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
+			Container: container.Container{
+				Runtime: container.RuntimeConfig{
+					Docker: &docker.Config{
+						Host: "unix:///nonexistent",
+					},
+				},
+				Config: types.ContainerConfig{
+					Name:  "foo",
+					Image: "busybox:latest",
+				},
+				Status: &types.ContainerStatus{
+					ID:     "foo",
+					Status: "running",
+				},
+			},
+		},
+	}
+
+	s := map[string]interface{}{
+		stateSensitiveSchemaKey: containersStateMarshal(cs, false),
+	}
+
+	r := resourceControlplane()
+	d := schema.TestResourceDataRaw(t, r.Schema, s)
+
+	// Mark newly created object as created, so it's state is persisted.
+	d.SetId("foo")
+
+	// Create new ResourceData from the state, so it's persisted and there is no diff included.
+	dn := r.Data(d.State())
+
+	err := controlplaneDestroy(dn, nil)
+	if err == nil {
+		t.Fatalf("destroying with unreachable container runtime should fail")
+	}
+
+	if !strings.Contains(err.Error(), "failed to validate controlplane configuration") {
+		t.Fatalf("destroying should fail for unreachable runtime, got: %v", err)
+	}
 }

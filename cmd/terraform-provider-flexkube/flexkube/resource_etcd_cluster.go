@@ -30,8 +30,8 @@ func etcdClusterUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		Members:       membersUnmarshal(d.Get("member")),
 	}
 
-	if includeState {
-		c.State = getState(d)
+	if s := getState(d); includeState && s != nil {
+		c.State = *s
 	}
 
 	if d, ok := d.GetOk("ssh"); ok && len(d.([]interface{})) == 1 {

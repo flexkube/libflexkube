@@ -41,6 +41,7 @@ type Controlplane struct {
 	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty"`
 	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty"`
 	Hosts                 []host.Host           `json:"hosts,omitempty"`
+	Destroy               bool                  `json:"destroy,omitempty"`
 
 	// Serializable fields.
 	State *container.ContainersState `json:"state,omitempty"`
@@ -141,19 +142,21 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
-	s := c.State
-	if s == nil {
-		s = &container.ContainersState{}
+	controlplane := &controlplane{}
+
+	cc := &container.Containers{}
+
+	if c.State != nil {
+		cc.PreviousState = *c.State
+
+		co, _ := cc.New()
+
+		controlplane.containers = co
 	}
 
-	cc := &container.Containers{
-		PreviousState: *s,
-	}
-
-	co, _ := cc.New()
-
-	controlplane := &controlplane{
-		containers: co,
+	// If shutdown is requested, don't fill DesiredState to remove everything.
+	if c.Destroy {
+		return controlplane, nil
 	}
 
 	// Make sure all values are filled.
@@ -175,7 +178,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 		"kube-scheduler":          ksHcc,
 	}
 
-	co, _ = cc.New()
+	co, _ := cc.New()
 
 	controlplane.containers = co
 
@@ -195,6 +198,20 @@ func (c *Controlplane) Validate() error {
 	c.buildComponents()
 
 	var errors util.ValidateError
+
+	if c.Destroy && c.State == nil {
+		errors = append(errors, fmt.Errorf("can't destroy non-existent controlplane"))
+	}
+
+	cc := &container.Containers{}
+
+	if c.State != nil {
+		cc.PreviousState = *c.State
+
+		if _, err := cc.New(); err != nil {
+			errors = append(errors, fmt.Errorf("unable to create containers state: %w", err))
+		}
+	}
 
 	kas, err := c.KubeAPIServer.New()
 	if err != nil {
@@ -216,16 +233,29 @@ func (c *Controlplane) Validate() error {
 		return errors.Return()
 	}
 
-	if _, err := kas.ToHostConfiguredContainer(); err != nil {
+	kasHcc, err := kas.ToHostConfiguredContainer()
+	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to build kube-apiserver container configuration: %w", err))
 	}
 
-	if _, err := kcm.ToHostConfiguredContainer(); err != nil {
+	kcmHcc, err := kcm.ToHostConfiguredContainer()
+	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to build kube-controller-manager container configuration: %w", err))
 	}
 
-	if _, err := ks.ToHostConfiguredContainer(); err != nil {
+	ksHcc, err := ks.ToHostConfiguredContainer()
+	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to build kube-scheduler container configuration: %w", err))
+	}
+
+	cc.DesiredState = container.ContainersState{
+		"kube-apiserver":          kasHcc,
+		"kube-controller-manager": kcmHcc,
+		"kube-scheduler":          ksHcc,
+	}
+
+	if _, err = cc.New(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to generate containers configuration: %w", err))
 	}
 
 	return errors.Return()

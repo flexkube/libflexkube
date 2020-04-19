@@ -18,7 +18,7 @@ func TestContainerMarshal(t *testing.T) {
 		},
 	}
 
-	var s []string
+	var s []interface{}
 
 	e := []interface{}{
 		map[string]interface{}{
@@ -67,7 +67,7 @@ func TestContainerMarshalWithStatus(t *testing.T) {
 		},
 	}
 
-	var s []string
+	var s []interface{}
 
 	e := []interface{}{
 		map[string]interface{}{

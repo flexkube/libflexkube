@@ -21,11 +21,14 @@ func hostConfiguredContainerUnmarshal(i interface{}) (string, *container.HostCon
 	j := i.(map[string]interface{})
 
 	h := &container.HostConfiguredContainer{
-		Container:   containerUnmarshal(j["container"].([]interface{})[0]),
 		ConfigFiles: configFilesUnmarshal(j["config_files"]),
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
+	}
+
+	if v, ok := j["container"]; ok && len(v.([]interface{})) == 1 {
+		h.Container = containerUnmarshal(v.([]interface{})[0])
 	}
 
 	if v, ok := j["host"]; ok && len(v.([]interface{})) == 1 {

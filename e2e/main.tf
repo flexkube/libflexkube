@@ -21,7 +21,11 @@ module "etcd_pki" {
   server_ips   = local.controller_ips
   server_names = local.controller_names
 
-  client_cns = ["kube-apiserver-etcd-client"]
+  client_cns = [
+    "root",
+    "kube-apiserver",
+    "prometheus",
+  ]
 
   organization = "example"
 }
@@ -58,8 +62,8 @@ locals {
     kubelet_client_certificate     = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
     kubelet_client_key             = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
     etcd_ca_certificate            = module.etcd_pki.etcd_ca_cert
-    etcd_client_certificate        = module.etcd_pki.client_certs[0]
-    etcd_client_key                = module.etcd_pki.client_keys[0]
+    etcd_client_certificate        = module.etcd_pki.client_certs[1]
+    etcd_client_key                = module.etcd_pki.client_keys[1]
     etcd_servers                   = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
     replicas                       = var.controllers_count
   })
@@ -241,8 +245,8 @@ resource "flexkube_controlplane" "bootstrap" {
     kubelet_client_key         = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
     service_account_public_key = module.kubernetes_pki.service_account_public_key
     etcd_ca_certificate        = module.etcd_pki.etcd_ca_cert
-    etcd_client_certificate    = module.etcd_pki.client_certs[0]
-    etcd_client_key            = module.etcd_pki.client_keys[0]
+    etcd_client_certificate    = module.etcd_pki.client_certs[1]
+    etcd_client_key            = module.etcd_pki.client_keys[1]
     service_cidr               = "11.0.0.0/24"
     etcd_servers               = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
     bind_address               = local.bootstrap_api_bind

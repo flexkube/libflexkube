@@ -5,8 +5,10 @@ import (
 	"testing"
 )
 
-const expectedValueString = "foo"
-const expectedValueInt = 10
+const (
+	expectedValueString = "foo"
+	expectedValueInt    = 10
+)
 
 func TestPickStringLast(t *testing.T) {
 	if v := PickString("", "", expectedValueString); v != expectedValueString {

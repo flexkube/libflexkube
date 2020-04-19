@@ -4,9 +4,13 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-tls/tls"
+
+	"github.com/flexkube/libflexkube/pkg/etcd"
 )
 
 func TestEtcdClusterPlanOnly(t *testing.T) {
@@ -190,4 +194,29 @@ resource "flexkube_etcd_cluster" "etcd" {
 			},
 		},
 	})
+}
+
+func TestEtcdClusterUnmarshalIncludeState(t *testing.T) {
+	s := map[string]interface{}{
+		"state_sensitive": []interface{}{
+			map[string]interface{}{
+				"foo": []interface{}{},
+			},
+		},
+	}
+
+	r := resourceEtcdCluster()
+	d := schema.TestResourceDataRaw(t, r.Schema, s)
+
+	// Mark newly created object as created, so it's state is persisted.
+	d.SetId("foo")
+
+	// Create new ResourceData from the state, so it's persisted and there is no diff included.
+	dn := r.Data(d.State())
+
+	rc := etcdClusterUnmarshal(dn, true)
+
+	if rc.(*etcd.Cluster).State == nil {
+		t.Fatalf("state should be unmarshaled, got: %v", cmp.Diff(nil, rc))
+	}
 }

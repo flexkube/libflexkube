@@ -127,11 +127,11 @@ test-e2e: test-e2e-run test-e2e-destroy
 
 .PHONY: test-local
 test-local:
-	cd local-testing/resources/$(TEST_LOCAL) && go run ../../../cmd/$(TEST_LOCAL)/main.go
+	cd local-testing/resources/$(TEST_LOCAL) && $(GORUN) ../../../cmd/$(TEST_LOCAL)/main.go
 
 .PHONY: test-local-apply
 test-local-apply:
-	cd cmd/terraform-provider-flexkube && go build -o ../../local-testing/terraform-provider-flexkube
+	cd cmd/terraform-provider-flexkube && $(GOBUILD) -o ../../local-testing/terraform-provider-flexkube
 	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: test-conformance
@@ -204,6 +204,7 @@ install-cc-test-reporter:
 install-ci: install-golangci-lint install-cc-test-reporter
 
 .PHONY: install-go-mutesting
+install-go-mutesting:
 	GO111MODULE=off go get github.com/AntonStoeckl/go-mutesting/cmd/go-mutesting
 
 .PHONY: vagrant-up

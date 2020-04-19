@@ -43,8 +43,8 @@ func TestContainerConfigMarshal(t *testing.T) {
 			"name":       "foo",
 			"image":      "bar",
 			"privileged": true,
-			"args":       []string{"foo"},
-			"entrypoint": []string{"bar"},
+			"args":       []interface{}{"foo"},
+			"entrypoint": []interface{}{"bar"},
 			"port": []interface{}{
 				map[string]interface{}{
 					"ip":       "127.0.0.1",

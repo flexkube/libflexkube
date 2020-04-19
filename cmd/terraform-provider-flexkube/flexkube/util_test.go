@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
 	"github.com/flexkube/libflexkube/pkg/container"
@@ -17,7 +18,7 @@ import (
 // saveState()
 func TestSaveStateBadScheme(t *testing.T) {
 	r := resourceContainers()
-	delete(r.Schema, "state_yaml")
+	delete(r.Schema, stateYAMLSchemaKey)
 
 	d := r.Data(&terraform.InstanceState{})
 
@@ -28,8 +29,10 @@ func TestSaveStateBadScheme(t *testing.T) {
 
 // resourceDelete()
 func TestResourceDeleteRuntimeFail(t *testing.T) {
+	// Get the resource object we will work on.
 	r := resourceContainers()
 
+	// Prepare some fake state.
 	s := container.ContainersState{
 		"foo": &container.HostConfiguredContainer{
 			Host: host.Host{
@@ -53,19 +56,29 @@ func TestResourceDeleteRuntimeFail(t *testing.T) {
 		},
 	}
 
-	d := r.Data(&terraform.InstanceState{})
-	if err := d.Set("state_sensitive", containersStateMarshal(s, false)); err != nil {
-		t.Fatalf("Failed writing: %v", err)
+	// Create raw configuration to crate ResourceData object.
+	raw := map[string]interface{}{
+		stateSensitiveSchemaKey: containersStateMarshal(s, false),
 	}
 
-	if err := r.Delete(d, nil); err == nil {
-		t.Fatalf("destroying should fail for unreachable runtime")
+	// Create ResourceData object.
+	d := schema.TestResourceDataRaw(t, r.Schema, raw)
+
+	// Mark newly created object as created, so it's state is persisted.
+	d.SetId("foo")
+
+	// Create new ResourceData from the state, so it's persisted and there is no diff included.
+	dn := r.Data(d.State())
+
+	// Finally, try to call Delete.
+	if err := r.Delete(dn, nil); err == nil {
+		t.Fatalf("destroying should fail with unreachable runtime")
 	}
 }
 
 func TestResourceDeleteEmpty(t *testing.T) {
 	r := resourceContainers()
-	r.Delete = resourceDelete(containersUnmarshal, "state_sensitive")
+	r.Delete = resourceDelete(containersUnmarshal, stateSensitiveSchemaKey)
 
 	s := container.ContainersState{
 		"foo": &container.HostConfiguredContainer{
@@ -87,7 +100,7 @@ func TestResourceDeleteEmpty(t *testing.T) {
 	}
 
 	d := r.Data(&terraform.InstanceState{})
-	if err := d.Set("state_sensitive", containersStateMarshal(container.ContainersState{}, false)); err != nil {
+	if err := d.Set(stateSensitiveSchemaKey, containersStateMarshal(container.ContainersState{}, false)); err != nil {
 		t.Fatalf("Failed writing: %v", err)
 	}
 

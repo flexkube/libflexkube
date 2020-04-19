@@ -6,8 +6,12 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container"
 )
 
-func containersStateUnmarshal(i interface{}) container.ContainersState {
+func containersStateUnmarshal(i interface{}) *container.ContainersState {
 	hccs := i.([]interface{})
+
+	if len(hccs) == 0 {
+		return nil
+	}
 
 	cs := container.ContainersState{}
 
@@ -16,7 +20,7 @@ func containersStateUnmarshal(i interface{}) container.ContainersState {
 		cs[n] = h
 	}
 
-	return cs
+	return &cs
 }
 
 func containersStateMarshal(c container.ContainersState, sensitive bool) []interface{} {
@@ -28,7 +32,7 @@ func containersStateMarshal(c container.ContainersState, sensitive bool) []inter
 
 	sort.Strings(names)
 
-	r := []interface{}{}
+	var r []interface{} //nolint:prealloc
 
 	for _, n := range names {
 		r = append(r, hostConfiguredContainerMarshal(n, *c[n], sensitive))

@@ -44,6 +44,9 @@ defaults
   mode tcp
   # Required values for both frontend and backend
   timeout connect 5s
+  timeout client 30s
+  timeout client-fin 30s
+  timeout server 30s
   timeout tunnel 21d
 
 frontend kube-apiserver
@@ -51,8 +54,9 @@ frontend kube-apiserver
   default_backend kube-apiserver
 
 backend kube-apiserver
+  option httpchk GET /healthz HTTP/1.1\r\nHost:\ kube-apiserver
   {{- range $i, $s := .Servers }}
-  server {{ $i }} {{ $s }} check
+  server {{ $i }} {{ $s }} verify none check check-ssl
   {{- end }}
 `
 
