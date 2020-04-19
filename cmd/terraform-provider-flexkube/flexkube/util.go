@@ -307,7 +307,7 @@ func resourceDiff(uf unmarshalF) func(d *schema.ResourceDiff, m interface{}) err
 		cy, r, states, err := prepareDiff(d, uf)
 		if err != nil {
 			// If the configuration has not been fully populated yet, some of required fields might be empty, so validation
-			// and initialiation will fail, so just don't do anything if that happens.
+			// and initialization will fail, so just don't do anything if that happens.
 			// TODO: do proper error checking here.
 			return nil
 		}

@@ -57,7 +57,7 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 	}
 
 	if k != nil {
-		t.Fatalf("failed attempt of creating kube-scheduler shouls not return kube-scheduler object")
+		t.Fatalf("failed attempt of creating kube-scheduler should not return kube-scheduler object")
 	}
 }
 
