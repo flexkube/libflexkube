@@ -21,11 +21,19 @@ ssh:
   retryInterval: 1s
 bootstrapKubeconfig: foo
 volumePluginDir: /var/lib/kubelet/volumeplugins
+extraMounts:
+- source: /foo/
+  target: /bar
 kubernetesCACertificate: |
   {{.}}
 kubelets:
 - networkPlugin: cni
   name: foo
+- networkPlugin: cni
+  name: bar
+  extraMounts:
+  - source: /doh/
+    target: /tmp
 `
 
 	var buf bytes.Buffer
@@ -101,5 +109,37 @@ func TestPoolDeploy(t *testing.T) {
 
 	if err := p.Deploy(); err == nil {
 		t.Fatalf("Deploying in testing environment should fail")
+	}
+}
+
+func TestPoolPropagateExtraMounts(t *testing.T) {
+	p := GetPool(t).(*pool)
+
+	found := false
+
+	for _, v := range p.containers.DesiredState()["0"].Container.Config.Mounts {
+		if v.Source == "/foo/" && v.Target == "/bar" {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("kubelet foo should have propagated extra mount")
+	}
+
+	found = false
+
+	for _, v := range p.containers.DesiredState()["1"].Container.Config.Mounts {
+		if v.Source == "/doh/" && v.Target == "/tmp" {
+			found = true
+		}
+
+		if v.Source == "/foo/" && v.Target == "/bar" {
+			t.Errorf("kubelet doh should not have propagated mounts")
+		}
+	}
+
+	if !found {
+		t.Fatalf("kubelet doh should have directly configured extra mount")
 	}
 }

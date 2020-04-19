@@ -10,6 +10,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -18,22 +19,23 @@ import (
 // Pool represents group of kubelet instances and their configuration.
 type Pool struct {
 	// User-configurable fields.
-	Image                      string            `json:"image,omitempty"`
-	SSH                        *ssh.Config       `json:"ssh,omitempty"`
-	BootstrapKubeconfig        string            `json:"bootstrapKubeconfig,omitempty"`
-	Kubelets                   []Kubelet         `json:"kubelets,omitempty"`
-	KubernetesCACertificate    types.Certificate `json:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs,omitempty"`
-	Taints                     map[string]string `json:"taints,omitempty"`
-	Labels                     map[string]string `json:"labels,omitempty"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels,omitempty"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig,omitempty"`
-	CgroupDriver               string            `json:"cgroupDriver,omitempty"`
-	NetworkPlugin              string            `json:"networkPlugin,omitempty"`
-	SystemReserved             map[string]string `json:"systemReserved,omitempty"`
-	KubeReserved               map[string]string `json:"kubeReserved,omitempty"`
-	HairpinMode                string            `json:"hairpinMode,omitempty"`
-	VolumePluginDir            string            `json:"volumePluginDir,omitempty"`
+	Image                      string                 `json:"image,omitempty"`
+	SSH                        *ssh.Config            `json:"ssh,omitempty"`
+	BootstrapKubeconfig        string                 `json:"bootstrapKubeconfig,omitempty"`
+	Kubelets                   []Kubelet              `json:"kubelets,omitempty"`
+	KubernetesCACertificate    types.Certificate      `json:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs              []string               `json:"clusterDNSIPs,omitempty"`
+	Taints                     map[string]string      `json:"taints,omitempty"`
+	Labels                     map[string]string      `json:"labels,omitempty"`
+	PrivilegedLabels           map[string]string      `json:"privilegedLabels,omitempty"`
+	PrivilegedLabelsKubeconfig string                 `json:"privilegedLabelsKubeconfig,omitempty"`
+	CgroupDriver               string                 `json:"cgroupDriver,omitempty"`
+	NetworkPlugin              string                 `json:"networkPlugin,omitempty"`
+	SystemReserved             map[string]string      `json:"systemReserved,omitempty"`
+	KubeReserved               map[string]string      `json:"kubeReserved,omitempty"`
+	HairpinMode                string                 `json:"hairpinMode,omitempty"`
+	VolumePluginDir            string                 `json:"volumePluginDir,omitempty"`
+	ExtraMounts                []containertypes.Mount `json:"extraMounts,omitempty"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state,omitempty"`
@@ -60,6 +62,10 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.KubeReserved = util.PickStringMap(k.KubeReserved, p.KubeReserved)
 	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode)
 	k.VolumePluginDir = util.PickString(k.VolumePluginDir, p.VolumePluginDir)
+
+	if len(k.ExtraMounts) == 0 {
+		k.ExtraMounts = p.ExtraMounts
+	}
 
 	k.Host = host.BuildConfig(k.Host, host.Host{
 		SSHConfig: p.SSH,

@@ -21,11 +21,15 @@ func mountsMarshal(c []types.Mount) []interface{} {
 }
 
 func mountsUnmarshal(i interface{}) []types.Mount {
-	j := i.([]interface{})
-
 	// Don't preallocate, as then the diff shows diff between
 	// nil and empty slice.
 	var m []types.Mount //nolint:prealloc
+
+	if i == nil {
+		return m
+	}
+
+	j := i.([]interface{})
 
 	for _, v := range j {
 		l := v.(map[string]interface{})
