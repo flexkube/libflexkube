@@ -36,6 +36,7 @@ func kubeletsUnmarshal(i interface{}) []kubelet.Kubelet {
 			PrivilegedLabels:           stringMapUnmarshal(t["privileged_labels"]),
 			SystemReserved:             stringMapUnmarshal(t["system_reserved"]),
 			KubeReserved:               stringMapUnmarshal(t["kube_reserved"]),
+			ExtraMounts:                mountsUnmarshal(t["mount"]),
 		}
 
 		if v, ok := t["host"]; ok && len(v.([]interface{})) == 1 {
@@ -90,6 +91,7 @@ func kubeletSchema() *schema.Schema {
 				"hairpin_mode":      optionalString(false),
 				"volume_plugin_dir": optionalString(false),
 				"pod_cidr":          optionalString(false),
+				"extra_mount":       mountsSchema(false),
 			},
 		}
 	})

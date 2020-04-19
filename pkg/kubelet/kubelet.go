@@ -26,19 +26,20 @@ type Kubelet struct {
 	BootstrapKubeconfig string    `json:"bootstrapKubeconfig,omitempty"`
 	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
-	KubernetesCACertificate    types.Certificate `json:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs              []string          `json:"clusterDNSIPs,omitempty"`
-	Name                       string            `json:"name,omitempty"`
-	Taints                     map[string]string `json:"taints,omitempty"`
-	Labels                     map[string]string `json:"labels,omitempty"`
-	PrivilegedLabels           map[string]string `json:"privilegedLabels,omitempty"`
-	PrivilegedLabelsKubeconfig string            `json:"privilegedLabelsKubeconfig,omitempty"`
-	CgroupDriver               string            `json:"cgroupDriver,omitempty"`
-	NetworkPlugin              string            `json:"networkPlugin,omitempty"`
-	SystemReserved             map[string]string `json:"systemReserved,omitempty"`
-	KubeReserved               map[string]string `json:"kubeReserved,omitempty"`
-	HairpinMode                string            `json:"hairpinMode,omitempty"`
-	VolumePluginDir            string            `json:"volumePluginDir,omitempty"`
+	KubernetesCACertificate    types.Certificate      `json:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs              []string               `json:"clusterDNSIPs,omitempty"`
+	Name                       string                 `json:"name,omitempty"`
+	Taints                     map[string]string      `json:"taints,omitempty"`
+	Labels                     map[string]string      `json:"labels,omitempty"`
+	PrivilegedLabels           map[string]string      `json:"privilegedLabels,omitempty"`
+	PrivilegedLabelsKubeconfig string                 `json:"privilegedLabelsKubeconfig,omitempty"`
+	CgroupDriver               string                 `json:"cgroupDriver,omitempty"`
+	NetworkPlugin              string                 `json:"networkPlugin,omitempty"`
+	SystemReserved             map[string]string      `json:"systemReserved,omitempty"`
+	KubeReserved               map[string]string      `json:"kubeReserved,omitempty"`
+	HairpinMode                string                 `json:"hairpinMode,omitempty"`
+	VolumePluginDir            string                 `json:"volumePluginDir,omitempty"`
+	ExtraMounts                []containertypes.Mount `json:"extraMounts,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -204,7 +205,7 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 
 // mounts returns kubelet's host mounts.
 func (k *kubelet) mounts() []containertypes.Mount {
-	return []containertypes.Mount{
+	return append([]containertypes.Mount{
 		{
 			// Kubelet is using this file to determine what OS it runs on and then reports that to API server
 			// If we remove that, kubelet reports as Debian, since by the time of writing, hyperkube images are
@@ -306,7 +307,7 @@ func (k *kubelet) mounts() []containertypes.Mount {
 			Source: fmt.Sprintf("%s/", filepath.Join(k.config.VolumePluginDir)),
 			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
-	}
+	}, k.config.ExtraMounts...)
 }
 
 func (k *kubelet) args() []string {
