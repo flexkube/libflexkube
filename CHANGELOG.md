@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2020-04-19
+
+### Added
+
+- It is now possible to configure extra mounts for kubelet container via extraMounts/extra_mount parameters
+- etcd is now ready for enabling RBAC
+- local-testing environment now generates script for enabling etcd RBAC
+
+### Fixed
+
+- HAProxy now use HTTPS for probing kube-apiserver to avoid extensive logging of TLS handshake errors
+- HAProxy configuration no longer generates warnings
+- Fixed destroying flexkube_controlplane resource
+- It is now possible to add and remove nodes in local-testing environment
+
+### Changed
+
+- Default Kubernetes version is now 1.18.2
+- Default HAProxy version is now 2.1.4
+- Default etcd version is now 3.4.7
+- Improved validation rules of controlplane. Now state from previous deployments will be validated as well.
+
+
 ## [0.2.1] - 2020-03-30
 
 ### Fixed
