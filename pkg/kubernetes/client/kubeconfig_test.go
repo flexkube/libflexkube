@@ -44,7 +44,7 @@ clientKey: |
 	return kubeconfig
 }
 
-// ToYAMLString()
+// ToYAMLString() tests.
 func TestUnmarshal(t *testing.T) {
 	if kubeconfig := GetKubeconfig(t); kubeconfig == "" {
 		t.Fatalf("Generated kubeconfig shouldn't be empty")
@@ -146,7 +146,7 @@ func TestToYAMLStringValidate(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidate(t *testing.T) {
 	cases := []struct {
 		f   func(*Config)

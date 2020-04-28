@@ -29,7 +29,7 @@ servers:
 	return p
 }
 
-// New()
+// New() tests.
 func TestLoadBalancersNewValidate(t *testing.T) {
 	y := `
 ssh:
@@ -48,12 +48,12 @@ apiLoadBalancers:
 	}
 }
 
-// FromYaml()
+// FromYaml() tests.
 func TestLoadBalancersFromYaml(t *testing.T) {
 	GetLoadBalancers(t)
 }
 
-// StateToYaml()
+// StateToYaml() tests.
 func TestLoadBalancersStateToYAML(t *testing.T) {
 	p := GetLoadBalancers(t)
 
@@ -62,7 +62,7 @@ func TestLoadBalancersStateToYAML(t *testing.T) {
 	}
 }
 
-// CheckCurrentState()
+// CheckCurrentState() tests.
 func TestLoadBalancersCheckCurrentState(t *testing.T) {
 	p := GetLoadBalancers(t)
 
@@ -71,7 +71,7 @@ func TestLoadBalancersCheckCurrentState(t *testing.T) {
 	}
 }
 
-// Deploy()
+// Deploy() tests.
 func TestLoadBalancersDeploy(t *testing.T) {
 	p := GetLoadBalancers(t)
 
@@ -80,7 +80,7 @@ func TestLoadBalancersDeploy(t *testing.T) {
 	}
 }
 
-// Containers()
+// Containers() tests.
 func TestLoadBalancersContainers(t *testing.T) {
 	p := GetLoadBalancers(t)
 

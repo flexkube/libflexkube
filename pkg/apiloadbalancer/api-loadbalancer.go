@@ -17,7 +17,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 )
 
-// APILoadBalancer is a user-configurable representation of single instance of API load balancer
+// APILoadBalancer is a user-configurable representation of single instance of API load balancer.
 type APILoadBalancer struct {
 	Image          string    `json:"image,omitempty"`
 	Host           host.Host `json:"host,omitempty"`
@@ -27,7 +27,7 @@ type APILoadBalancer struct {
 	BindAddress    string    `json:"bindAddress,omitempty"`
 }
 
-// apiLoadBalancer is validated and executable version of APILoadBalancer
+// apiLoadBalancer is validated and executable version of APILoadBalancer.
 type apiLoadBalancer struct {
 	image          string
 	host           host.Host
@@ -86,9 +86,9 @@ const (
 )
 
 // ToHostConfiguredContainer takes configuration stored in the struct and converts it to HostConfiguredContainer
-// which can be then added to Containers struct and executed
+// which can be then added to Containers struct and executed.
 //
-// TODO ToHostConfiguredContainer should become an interface, since we use this pattern in all packages
+// TODO: ToHostConfiguredContainer should become an interface, since we use this pattern in all packages.
 func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	config, err := a.config()
 	if err != nil {
@@ -96,12 +96,12 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 	}
 
 	c := container.Container{
-		// TODO this is weird. This sets docker as default runtime config
+		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
 		Config: types.ContainerConfig{
-			// TODO make it configurable? And don't force user to use HAProxy
+			// TODO: Make it configurable? And don't force user to use HAProxy.
 			Name:        a.name,
 			Image:       a.image,
 			NetworkMode: "host",
@@ -128,7 +128,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 // New validates APILoadBalancer configuration and fills it with default options
 // If configuration is wrong, error is returned.
 //
-// TODO I think we shouldn't fill the default values here. Maybe do it one level up?
+// TODO: I think we shouldn't fill the default values here. Maybe do it one level up?
 func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 	if err := a.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate API Load balancer configuration: %w", err)
@@ -143,7 +143,7 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 		bindAddress:    a.BindAddress,
 	}
 
-	// Fill empty fields with default values
+	// Fill empty fields with default values.
 	if na.image == "" {
 		na.image = defaults.HAProxyImage
 	}

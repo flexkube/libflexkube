@@ -9,12 +9,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Getter implements k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface
+// Getter implements k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 type Getter struct {
 	c clientcmd.ClientConfig
 }
 
-// ToRESTMapper is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface
+// ToRESTMapper is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 func (c *Getter) ToRESTMapper() (meta.RESTMapper, error) {
 	d, err := c.ToDiscoveryClient()
 	if err != nil {
@@ -27,7 +27,7 @@ func (c *Getter) ToRESTMapper() (meta.RESTMapper, error) {
 	return expander, nil
 }
 
-// ToDiscoveryClient is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface
+// ToDiscoveryClient is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 func (c *Getter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	cc, err := c.ToRESTConfig()
 	if err != nil {
@@ -42,12 +42,12 @@ func (c *Getter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error)
 	return memory.NewMemCacheClient(d), nil
 }
 
-// ToRawKubeConfigLoader is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface
+// ToRawKubeConfigLoader is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 func (c *Getter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	return c.c
 }
 
-// ToRESTConfig is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface
+// ToRESTConfig is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 func (c *Getter) ToRESTConfig() (*rest.Config, error) {
 	return c.c.ClientConfig()
 }

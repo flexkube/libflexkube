@@ -10,21 +10,21 @@ import (
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
-// KubeScheduler represents kube-scheduler configuration data
+// KubeScheduler represents kube-scheduler configuration data.
 type KubeScheduler struct {
 	Common     *Common       `json:"common,omitempty"`
 	Host       *host.Host    `json:"host,omitempty"`
 	Kubeconfig client.Config `json:"kubeconfig"`
 }
 
-// kubeScheduler is validated and usable version of KubeScheduler
+// kubeScheduler is validated and usable version of KubeScheduler.
 type kubeScheduler struct {
 	common     Common
 	host       host.Host
 	kubeconfig string
 }
 
-// ToHostConfiguredContainer converts kubeScheduler into generic container struct
+// ToHostConfiguredContainer converts kubeScheduler into generic container struct.
 func (k *kubeScheduler) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles := make(map[string]string)
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
@@ -38,7 +38,7 @@ clientConnection:
 `
 
 	c := container.Container{
-		// TODO this is weird. This sets docker as default runtime config
+		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
@@ -75,7 +75,7 @@ clientConnection:
 	}, nil
 }
 
-// New validates KubeScheduler struct and returns it's usable version
+// New validates KubeScheduler struct and returns it's usable version.
 func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 	if k.Common == nil {
 		k.Common = &Common{}

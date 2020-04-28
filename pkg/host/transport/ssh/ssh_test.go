@@ -88,7 +88,7 @@ func TestNewValidate(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateRequireAddress(t *testing.T) {
 	c := &Config{
 		User:              "root",
@@ -374,7 +374,7 @@ func TestExtractPathTCP(t *testing.T) {
 	}
 }
 
-// randomUnixSocket()
+// randomUnixSocket() tests.
 func TestRandomUnixSocket(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
@@ -403,7 +403,7 @@ func TestRandomUnixSocketBadUUID(t *testing.T) {
 	}
 }
 
-// forwardConnection()
+// forwardConnection() tests.
 func TestForwardConnection(t *testing.T) {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -491,7 +491,7 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 	}
 }
 
-// Connect()
+// Connect() tests.
 func TestConnect(t *testing.T) {
 	c := &Config{
 		Address:           "localhost",
@@ -548,7 +548,7 @@ func TestConnectFail(t *testing.T) {
 	}
 }
 
-// ForwardTCP()
+// ForwardTCP() tests.
 func TestForwardTCP(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
@@ -590,7 +590,7 @@ func TestForwardTCPValidateAddress(t *testing.T) {
 	}
 }
 
-// ForwardUnixSocket()
+// ForwardUnixSocket() tests.
 func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 

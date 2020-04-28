@@ -13,7 +13,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// KubeAPIServer represents kube-apiserver container configuration
+// KubeAPIServer represents kube-apiserver container configuration.
 type KubeAPIServer struct {
 	Common                   *Common           `json:"common,omitempty"`
 	Host                     *host.Host        `json:"host,omitempty"`
@@ -34,7 +34,7 @@ type KubeAPIServer struct {
 	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey"`
 }
 
-// kubeAPIServer is a validated version of KubeAPIServer
+// kubeAPIServer is a validated version of KubeAPIServer.
 type kubeAPIServer struct {
 	common                   Common
 	host                     host.Host
@@ -109,25 +109,25 @@ func (k *kubeAPIServer) args() []string {
 		fmt.Sprintf("--client-ca-file=%s", path.Join(containerConfigPath, clientCAFile)),
 		fmt.Sprintf("--tls-cert-file=%s", path.Join(containerConfigPath, tlsCertFile)),
 		fmt.Sprintf("--tls-private-key-file=%s", path.Join(containerConfigPath, tlsPrivateKeyFile)),
-		// Required for TLS bootstrapping
+		// Required for TLS bootstrapping.
 		"--enable-bootstrap-token-auth=true",
 		// Allow user to configure service CIDR, so it does not conflict with host nor pods CIDRs.
 		fmt.Sprintf("--service-cluster-ip-range=%s", k.serviceCIDR),
-		// To disable access without authentication
+		// To disable access without authentication.
 		"--insecure-port=0",
 		// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
 		"--allow-privileged=true",
 		// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
 		"--authorization-mode=RBAC,Node",
-		// Required to validate service account tokens created by controller manager
+		// Required to validate service account tokens created by controller manager.
 		fmt.Sprintf("--service-account-key-file=%s", path.Join(containerConfigPath, serviceAccountKeyFile)),
-		// IP address which will be added to the kubernetes.default service endpoint
+		// IP address which will be added to the kubernetes.default service endpoint.
 		fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
-		// For static api-server use non-standard port, so haproxy can use standard one
+		// For static api-server use non-standard port, so haproxy can use standard one.
 		fmt.Sprintf("--secure-port=%d", k.securePort),
 		// Be a bit more verbose.
 		//"--v=2",
-		// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust
+		// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust.
 		"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
 		// Required for enabling aggregation layer.
 		fmt.Sprintf("--requestheader-client-ca-file=%s", path.Join(containerConfigPath, requestheaderClientCAFile)),
@@ -152,13 +152,13 @@ func (k *kubeAPIServer) args() []string {
 	}
 }
 
-// ToHostConfiguredContainer takes configured values and converts them to generic container configuration
+// ToHostConfiguredContainer takes configured values and converts them to generic container configuration.
 func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	return &container.HostConfiguredContainer{
 		Host:        k.host,
 		ConfigFiles: k.configFiles(),
 		Container: container.Container{
-			// TODO this is weird. This sets docker as default runtime config
+			// TODO: This is weird. This sets docker as default runtime config.
 			Runtime: container.RuntimeConfig{
 				Docker: docker.DefaultConfig(),
 			},
@@ -184,7 +184,7 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 	}, nil
 }
 
-// New validates KubeAPIServer configuration and populates default for some fields, if they are empty
+// New validates KubeAPIServer configuration and populates default for some fields, if they are empty.
 func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 	if k.Common == nil {
 		k.Common = &Common{}
@@ -219,9 +219,9 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 	}, nil
 }
 
-// Validate validates KubeAPIServer struct
+// Validate validates KubeAPIServer struct.
 //
-// TODO add validation of certificates if specified
+// TODO: Add validation of certificates if specified.
 func (k *KubeAPIServer) Validate() error {
 	var errors util.ValidateError
 

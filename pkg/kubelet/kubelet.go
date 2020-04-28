@@ -24,7 +24,7 @@ type Kubelet struct {
 	Image               string    `json:"image,omitempty"`
 	Host                host.Host `json:"host,omitempty"`
 	BootstrapKubeconfig string    `json:"bootstrapKubeconfig,omitempty"`
-	// TODO we require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
+	// TODO: We require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
 	// bootstrap-kubeconfig too then?
 	KubernetesCACertificate    types.Certificate      `json:"kubernetesCACertificate,omitempty"`
 	ClusterDNSIPs              []string               `json:"clusterDNSIPs,omitempty"`
@@ -52,7 +52,7 @@ type kubelet struct {
 
 // New validates Kubelet configuration and returns it's usable version.
 func (k *Kubelet) New() (container.ResourceInstance, error) {
-	// TODO when creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
+	// TODO: When creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate kubelet configuration: %w", err)
 	}
@@ -70,7 +70,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 
 // Validate validates kubelet configuration.
 //
-// TODO better validation should be done here
+// TODO: Better validation should be done here.
 func (k *Kubelet) Validate() error {
 	var errors util.ValidateError
 

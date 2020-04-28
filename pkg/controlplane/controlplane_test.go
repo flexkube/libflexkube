@@ -118,7 +118,7 @@ func TestControlplaneFromYaml(t *testing.T) {
 	}
 }
 
-// GetImage()
+// GetImage() tests.
 func TestCommonGetImage(t *testing.T) {
 	c := Common{}
 	if a := c.GetImage(); a == "" {
@@ -137,7 +137,7 @@ func TestCommonGetImageSpecified(t *testing.T) {
 	}
 }
 
-// New()
+// New() tests.
 func TestControlplaneNewValidate(t *testing.T) {
 	c := &Controlplane{}
 

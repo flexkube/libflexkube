@@ -13,7 +13,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
-// Create()
+// Create() tests.
 func TestDockerCreateNonExistingImage(t *testing.T) {
 	cc := &Container{
 		Runtime: RuntimeConfig{
@@ -56,7 +56,7 @@ func TestDockerCreate(t *testing.T) {
 	}
 }
 
-// Status()
+// Status() tests.
 func TestDockerStatus(t *testing.T) {
 	cc := &Container{
 		Runtime: RuntimeConfig{
@@ -116,7 +116,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 	}
 }
 
-// Start()
+// Start() tests.
 func TestDockerStart(t *testing.T) {
 	cc := &Container{
 		Runtime: RuntimeConfig{
@@ -143,7 +143,7 @@ func TestDockerStart(t *testing.T) {
 	}
 }
 
-// Stop()
+// Stop() tests.
 func TestDockerStop(t *testing.T) {
 	cc := &Container{
 		Runtime: RuntimeConfig{
@@ -174,7 +174,7 @@ func TestDockerStop(t *testing.T) {
 	}
 }
 
-// Delete()
+// Delete() tests.
 func TestDockerDelete(t *testing.T) {
 	cc := &Container{
 		Runtime: RuntimeConfig{

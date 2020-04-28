@@ -22,7 +22,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
-// FromYAML()
+// FromYAML() tests.
 func TestClusterFromYaml(t *testing.T) {
 	c := `
 ssh:
@@ -83,7 +83,7 @@ members:
 	}
 }
 
-// New()
+// New() tests.
 func TestNewValidateFail(t *testing.T) {
 	config := &Cluster{}
 
@@ -92,7 +92,7 @@ func TestNewValidateFail(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateValidateMembers(t *testing.T) {
 	config := &Cluster{
 		Members: map[string]Member{
@@ -105,7 +105,7 @@ func TestValidateValidateMembers(t *testing.T) {
 	}
 }
 
-// getExistingEndpoints()
+// getExistingEndpoints() tests.
 func TestExistingEndpointsNoEndpoints(t *testing.T) {
 	c := &cluster{}
 	if len(c.getExistingEndpoints()) != 0 {
@@ -130,7 +130,7 @@ func TestExistingEndpoints(t *testing.T) {
 	}
 }
 
-// firstMember()
+// firstMember() tests.
 func TestFirstMemberNoMembers(t *testing.T) {
 	c := &cluster{}
 
@@ -188,7 +188,7 @@ func getFakeHostConfiguredContainer() *container.HostConfiguredContainer {
 	}
 }
 
-// getClient()
+// getClient() tests.
 func TestGetClientEmptyCluster(t *testing.T) {
 	c := &cluster{}
 	if _, err := c.getClient(); err == nil {
@@ -239,7 +239,7 @@ func TestGetClient(t *testing.T) {
 	}
 }
 
-// membersToRemove()
+// membersToRemove() tests.
 func TestMembersToRemove(t *testing.T) {
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
@@ -267,7 +267,7 @@ func TestMembersToRemove(t *testing.T) {
 	}
 }
 
-// membersToAdd()
+// membersToAdd() tests.
 func TestMembersToAdd(t *testing.T) {
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
@@ -295,7 +295,7 @@ func TestMembersToAdd(t *testing.T) {
 	}
 }
 
-// updateMembers()
+// updateMembers() tests.
 func TestUpdateMembersNoUpdates(t *testing.T) {
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
@@ -413,7 +413,7 @@ func TestUpdateMembersAddMember(t *testing.T) {
 	}
 }
 
-// Deploy()
+// Deploy() tests.
 func TestDeploy(t *testing.T) {
 	cc := &container.Containers{
 		DesiredState: container.ContainersState{

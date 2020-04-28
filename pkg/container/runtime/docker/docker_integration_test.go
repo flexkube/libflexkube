@@ -14,7 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 )
 
-// Create
+// Create() tests.
 func TestContainerCreate(t *testing.T) {
 	r, _ := getDockerRuntime(t)
 
@@ -129,7 +129,7 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 	}
 }
 
-// Start()
+// Start() tests.
 func TestContainerStart(t *testing.T) {
 	r, _ := getDockerRuntime(t)
 
@@ -147,7 +147,7 @@ func TestContainerStart(t *testing.T) {
 	}
 }
 
-// Stop()
+// Stop() tests.
 func TestContainerStop(t *testing.T) {
 	r, _ := getDockerRuntime(t)
 
@@ -169,7 +169,7 @@ func TestContainerStop(t *testing.T) {
 	}
 }
 
-// Status()
+// Status() tests.
 func TestContainerStatus(t *testing.T) {
 	r, _ := getDockerRuntime(t)
 
@@ -239,7 +239,7 @@ func deleteImage(t *testing.T, image string) {
 	}
 }
 
-// imageID()
+// imageID() tests.
 func TestImageID(t *testing.T) {
 	_, d := getDockerRuntime(t)
 
@@ -277,7 +277,7 @@ func TestImageIDMissing(t *testing.T) {
 	}
 }
 
-// pullImage()
+// pullImage() tests.
 func TestPullImage(t *testing.T) {
 	_, d := getDockerRuntime(t)
 

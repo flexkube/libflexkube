@@ -8,7 +8,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
-// New()
+// New() tests.
 func TestNew(t *testing.T) {
 	h := BuildConfig(Host{
 		SSHConfig: &ssh.Config{
@@ -30,7 +30,7 @@ func TestNewValidate(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidate(t *testing.T) {
 	cases := []struct {
 		Host    *Host
@@ -74,7 +74,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-// Connect()
+// Connect() tests.
 func TestConnect(t *testing.T) {
 	h := Host{
 		DirectConfig: &direct.Config{},
@@ -90,7 +90,7 @@ func TestConnect(t *testing.T) {
 	}
 }
 
-// ForwardUnixSocket()
+// ForwardUnixSocket() tests.
 func TestForwardUnixSocket(t *testing.T) {
 	h := Host{
 		DirectConfig: &direct.Config{},
@@ -111,7 +111,7 @@ func TestForwardUnixSocket(t *testing.T) {
 	}
 }
 
-// ForwardTCP()
+// ForwardTCP() tests.
 func TestForwardTCP(t *testing.T) {
 	h := Host{
 		DirectConfig: &direct.Config{},
@@ -132,7 +132,7 @@ func TestForwardTCP(t *testing.T) {
 	}
 }
 
-// BuildConfig()
+// BuildConfig() tests.
 func TestBuildConfigDirectByDefault(t *testing.T) {
 	h := BuildConfig(Host{}, Host{})
 	if err := h.Validate(); err != nil {

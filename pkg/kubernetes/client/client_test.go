@@ -53,7 +53,7 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 	}
 }
 
-// Ping()
+// Ping() tests.
 func TestPingFakeKubeconfig(t *testing.T) {
 	kubeconfig := GetKubeconfig(t)
 

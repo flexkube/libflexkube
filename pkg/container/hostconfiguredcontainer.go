@@ -44,7 +44,7 @@ type Hooks struct {
 // Hook is an action, which may be called before or after certain container operation, like starting or creating.
 type Hook func() error
 
-// HostConfiguredContainer represents single container, running on remote host with it's configuration files
+// HostConfiguredContainer represents single container, running on remote host with it's configuration files.
 type HostConfiguredContainer struct {
 	Container   Container         `json:"container"`
 	Host        host.Host         `json:"host"`
@@ -54,7 +54,7 @@ type HostConfiguredContainer struct {
 }
 
 // hostConfiguredContainer is a validated version of HostConfiguredContainer, which allows user to perform
-// actions on it
+// actions on it.
 type hostConfiguredContainer struct {
 	container       Interface
 	host            host.Host
@@ -63,7 +63,7 @@ type hostConfiguredContainer struct {
 	hooks           *Hooks
 }
 
-// New validates HostConfiguredContainer struct and return it's executable version
+// New validates HostConfiguredContainer struct and return it's executable version.
 func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate container configuration: %w", err)
@@ -126,7 +126,7 @@ func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) error {
 	c := m.container.RuntimeConfig()
 
-	// Store originally configured address so we can restore it later
+	// Store originally configured address so we can restore it later.
 	a := c.GetAddress()
 
 	s, err := m.connectAndForward(a)
@@ -178,8 +178,8 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 		},
 	}
 
-	// Docker container does not need to run (be started) to be able to copy files from it
-	// TODO this might not be the case for other container runtimes
+	// Docker container does not need to run (be started) to be able to copy files from it.
+	// TODO: This might not be the case for other container runtimes.
 	ci, err := cc.Create()
 	if err != nil {
 		return fmt.Errorf("failed creating config container while checking configuration: %w", err)
@@ -213,10 +213,10 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 		return nil
 	}
 
-	// Build list of files we need to read from the container
+	// Build list of files we need to read from the container.
 	files := []string{}
 
-	// Keep map of original paths
+	// Keep map of original paths.
 	paths := map[string]string{}
 
 	// Build list of the files we should read.
@@ -271,7 +271,7 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 	})
 }
 
-// Configure copies specified configuration files on target host
+// Configure copies specified configuration files on target host.
 //
 // It uses host definition to connect to container runtime, which is then used
 // to create temporary container used for copying files and also bypassing privileges requirements.
@@ -415,7 +415,7 @@ func (m *hostConfiguredContainer) Create() error {
 
 // Status updates container status.
 func (m *hostConfiguredContainer) Status() error {
-	// If container does not exist, skip checking the status of it, as it won't work
+	// If container does not exist, skip checking the status of it, as it won't work.
 	if !m.container.Status().Exists() {
 		return nil
 	}

@@ -66,7 +66,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestKubeAPIServerValidate(t *testing.T) {
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
@@ -258,7 +258,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 	}
 }
 
-// New()
+// New() tests.
 func TestKubeAPIServerNewEmptyHost(t *testing.T) {
 	c := &KubeAPIServer{}
 

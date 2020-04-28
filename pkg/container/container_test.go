@@ -11,7 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
-// New()
+// New() tests.
 func TestNewEmptyConfiguration(t *testing.T) {
 	if _, err := (&Container{}).New(); err == nil {
 		t.Errorf("Creating container with wrong configuration should fail")
@@ -33,7 +33,7 @@ func TestNewGoodConfiguration(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateNoName(t *testing.T) {
 	c := &Container{
 		Config: types.ContainerConfig{},
@@ -81,7 +81,7 @@ func TestValidateRequireImage(t *testing.T) {
 	}
 }
 
-// selectRuntime()
+// selectRuntime() tests.
 func TestSelectDockerRuntime(t *testing.T) {
 	c := &container{
 		base: base{
@@ -98,7 +98,7 @@ func TestSelectDockerRuntime(t *testing.T) {
 	}
 }
 
-// FromStatus()
+// FromStatus() tests.
 func TestFromStatusValid(t *testing.T) {
 	c := &container{
 		base: base{
@@ -123,7 +123,7 @@ func TestFromStatusNoID(t *testing.T) {
 	}
 }
 
-// Status()
+// Status() tests.
 func TestStatus(t *testing.T) {
 	c := &containerInstance{
 		base: base{
@@ -140,7 +140,7 @@ func TestStatus(t *testing.T) {
 	}
 }
 
-// UpdateStatus()
+// UpdateStatus() tests.
 func TestContainerUpdateStatusEmptyStatus(t *testing.T) {
 	c := &container{}
 
@@ -197,7 +197,7 @@ func TestContainerUpdateStatus(t *testing.T) {
 	}
 }
 
-// Start()
+// Start() tests.
 func TestContainerStartBadState(t *testing.T) {
 	c := &container{
 		base: base{
@@ -262,7 +262,7 @@ func TestContainerStart(t *testing.T) {
 	}
 }
 
-// Stop()
+// Stop() tests.
 func TestContainerStopBadState(t *testing.T) {
 	c := &container{
 		base: base{
@@ -327,7 +327,7 @@ func TestContainerStop(t *testing.T) {
 	}
 }
 
-// Delete()
+// Delete() tests.
 func TestContainerDeleteBadState(t *testing.T) {
 	c := &container{
 		base: base{
@@ -384,7 +384,7 @@ func TestContainerDelete(t *testing.T) {
 	}
 }
 
-// SetStatus()
+// SetStatus() tests.
 func TestContainerSetStatus(t *testing.T) {
 	c := &container{
 		base: base{

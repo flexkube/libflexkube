@@ -26,30 +26,30 @@ type Release interface {
 	Uninstall() error
 }
 
-// Config represents user-configured Helm release
+// Config represents user-configured Helm release.
 type Config struct {
 
 	// Kubeconfig is content of kubeconfig file in YAML format, which will be used to authenticate
 	// to the cluster and create a release.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
-	// Namespace is a namespace, where helm release will be created and all it's resources
+	// Namespace is a namespace, where helm release will be created and all it's resources.
 	Namespace string `json:"namespace,omitempty"`
 
-	// Name is a name of the release used to identify it
+	// Name is a name of the release used to identify it.
 	Name string `json:"name,omitempty"`
 
-	// Chart is a location of the chart. It may be local path or remote chart in user repository
+	// Chart is a location of the chart. It may be local path or remote chart in user repository.
 	Chart string `json:"chart,omitempty"`
 
-	// Values is a chart values in YAML format
+	// Values is a chart values in YAML format.
 	Values string `json:"values,omitempty"`
 
-	// Version is a requested version of the chart
+	// Version is a requested version of the chart.
 	Version string `json:"version,omitempty"`
 }
 
-// release is a validated and installable/update'able version of Config
+// release is a validated and installable/update'able version of Config.
 type release struct {
 	actionConfig *action.Configuration
 	settings     *cli.EnvSettings
@@ -61,17 +61,17 @@ type release struct {
 	client       client.Client
 }
 
-// New validates release configuration and builts installable version of it
+// New validates release configuration and builts installable version of it.
 func (r *Config) New() (Release, error) {
 	if err := r.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate helm release: %w", err)
 	}
 
-	// Initialize kubernetes and helm CLI clients
+	// Initialize kubernetes and helm CLI clients.
 	actionConfig := &action.Configuration{}
 	settings := cli.New()
 
-	// Safe to ignore errors, because Validate will return early if data is not valid
+	// Safe to ignore errors, because Validate will return early if data is not valid.
 	g, kc, cs, _ := newClients(r.Kubeconfig)
 
 	actionConfig.RESTClientGetter = g
@@ -98,11 +98,11 @@ func (r *Config) New() (Release, error) {
 	return release, nil
 }
 
-// Validate validates Release configuration
+// Validate validates Release configuration.
 func (r *Config) Validate() error {
 	var errors util.ValidateError
 
-	// Check if all required values are filled in
+	// Check if all required values are filled in.
 	if r.Kubeconfig == "" {
 		errors = append(errors, fmt.Errorf("kubeconfig is empty"))
 	}
@@ -119,12 +119,12 @@ func (r *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("chart is empty"))
 	}
 
-	// Try to create a clients
+	// Try to create a clients.
 	if _, _, _, err := newClients(r.Kubeconfig); err != nil {
 		errors = append(errors, fmt.Errorf("failed to create kubernetes clients: %w", err))
 	}
 
-	// Parse given values
+	// Parse given values.
 	if _, err := r.parseValues(); err != nil {
 		errors = append(errors, fmt.Errorf("failed to parse values: %w", err))
 	}
@@ -158,7 +158,7 @@ func (r *release) Install() error {
 		return fmt.Errorf("loading chart failed: %w", err)
 	}
 
-	// Install a release
+	// Install a release.
 	if _, err = client.Run(chart, r.values); err != nil {
 		return fmt.Errorf("installing a release failed: %w", err)
 	}
@@ -224,13 +224,13 @@ func (r *release) Exists() (bool, error) {
 
 // Uninstall removes the release from the cluster. This function is idempotent.
 func (r *release) Uninstall() error {
-	// Check if release exists
+	// Check if release exists.
 	e, err := r.Exists()
 	if err != nil {
 		return err
 	}
 
-	// If it does not exist anymore, simply return
+	// If it does not exist anymore, simply return.
 	if !e {
 		return nil
 	}
@@ -244,11 +244,11 @@ func (r *release) Uninstall() error {
 	return nil
 }
 
-// loadChart locates and loads the chart
+// loadChart locates and loads the chart.
 func (r *release) loadChart() (*chart.Chart, error) {
 	client := action.NewInstall(r.actionConfig)
 
-	// Locate chart to install
+	// Locate chart to install.
 	cp, err := client.ChartPathOptions.LocateChart(r.chart, r.settings)
 	if err != nil {
 		return nil, fmt.Errorf("locating chart failed: %w", err)
@@ -257,10 +257,11 @@ func (r *release) loadChart() (*chart.Chart, error) {
 	return loader.Load(cp)
 }
 
-// installClient returns action install client for helm
+// installClient returns action install client for helm.
 func (r *release) installClient() *action.Install {
-	// Initialize install action client
-	// TODO maybe there is more generic action we could use?
+	// Initialize install action client.
+	//
+	// TODO: Maybe there is more generic action we could use?
 	client := action.NewInstall(r.actionConfig)
 
 	client.Version = r.version
@@ -270,10 +271,10 @@ func (r *release) installClient() *action.Install {
 	return client
 }
 
-// upgradeClient returns action install client for helm
+// upgradeClient returns action install client for helm.
 func (r *release) upgradeClient() *action.Upgrade {
-	// Initialize install action client
-	// TODO maybe there is more generic action we could use?
+	// Initialize install action client.
+	// TODO: Maybe there is more generic action we could use?
 	client := action.NewUpgrade(r.actionConfig)
 
 	client.Version = r.version
@@ -282,16 +283,17 @@ func (r *release) upgradeClient() *action.Upgrade {
 	return client
 }
 
-// uninstallClient returns action uninstall client for helm
+// uninstallClient returns action uninstall client for helm.
 func (r *release) uninstallClient() *action.Uninstall {
-	// Initialize install action client
-	// TODO maybe there is more generic action we could use?
+	// Initialize install action client.
+	//
+	// TODO: Maybe there is more generic action we could use?
 	client := action.NewUninstall(r.actionConfig)
 
 	return client
 }
 
-// parseValues parses release values and returns it ready to use when installing chart
+// parseValues parses release values and returns it ready to use when installing chart.
 func (r *Config) parseValues() (map[string]interface{}, error) {
 	values := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(r.Values), &values); err != nil {

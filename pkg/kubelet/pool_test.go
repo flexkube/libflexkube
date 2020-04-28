@@ -51,7 +51,7 @@ kubelets:
 	return p
 }
 
-// New()
+// New() tests.
 func TestPoolNewValidate(t *testing.T) {
 	y := `
 ssh:
@@ -71,12 +71,12 @@ kubelets:
 	}
 }
 
-// FromYaml()
+// FromYaml() tests.
 func TestPoolFromYaml(t *testing.T) {
 	GetPool(t)
 }
 
-// StateToYaml()
+// StateToYaml() tests.
 func TestPoolStateToYAML(t *testing.T) {
 	p := GetPool(t)
 
@@ -85,7 +85,7 @@ func TestPoolStateToYAML(t *testing.T) {
 	}
 }
 
-// CheckCurrentState()
+// CheckCurrentState() tests.
 func TestPoolCheckCurrentState(t *testing.T) {
 	p := GetPool(t)
 
@@ -94,7 +94,7 @@ func TestPoolCheckCurrentState(t *testing.T) {
 	}
 }
 
-// Containers()
+// Containers() tests.
 func TestPoolContainers(t *testing.T) {
 	p := GetPool(t)
 
@@ -103,7 +103,7 @@ func TestPoolContainers(t *testing.T) {
 	}
 }
 
-// Deploy()
+// Deploy() tests.
 func TestPoolDeploy(t *testing.T) {
 	p := GetPool(t)
 

@@ -15,7 +15,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-// saveState()
+// saveState() tests.
 func TestSaveStateBadScheme(t *testing.T) {
 	r := resourceContainers()
 	delete(r.Schema, stateYAMLSchemaKey)
@@ -27,7 +27,7 @@ func TestSaveStateBadScheme(t *testing.T) {
 	}
 }
 
-// resourceDelete()
+// resourceDelete() tests.
 func TestResourceDeleteRuntimeFail(t *testing.T) {
 	// Get the resource object we will work on.
 	r := resourceContainers()
@@ -130,7 +130,7 @@ func TestResourceDeleteBadKey(t *testing.T) {
 	}
 }
 
-// newResource()
+// newResource() tests.
 func TestNewResourceFailRefresh(t *testing.T) {
 	cc := &resource.Containers{
 		PreviousState: container.ContainersState{
@@ -162,7 +162,7 @@ func TestNewResourceFailRefresh(t *testing.T) {
 	}
 }
 
-// resourceCreate()
+// resourceCreate() tests.
 func TestResourceCreate(t *testing.T) {
 	r := resourceContainers()
 
@@ -227,7 +227,7 @@ func TestResourceCreateFailInitialize(t *testing.T) {
 	}
 }
 
-// resourceRead()
+// resourceRead() tests.
 func TestResourceRead(t *testing.T) {
 	r := resourceContainers()
 
