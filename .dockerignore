@@ -4,6 +4,8 @@ bin
 e2e
 integration
 examples
+libvirt
+local-testing
 README.md
 LICENSE
 Vagrantfile
