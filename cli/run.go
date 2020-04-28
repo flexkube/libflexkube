@@ -107,7 +107,7 @@ func saveState(c types.Resource) error {
 		state = []byte{}
 	}
 
-	if err := ioutil.WriteFile("state.yaml", state, 0644); err != nil {
+	if err := ioutil.WriteFile("state.yaml", state, 0600); err != nil {
 		return fmt.Errorf("failed writing new state to file: %w", err)
 	}
 
