@@ -99,7 +99,7 @@ func TestExistingCluster(t *testing.T) {
 	}
 }
 
-// peerURLs()
+// peerURLs() tests.
 func TestPeerURLs(t *testing.T) {
 	m := &member{
 		peerAddress: "1.1.1.1",
@@ -111,7 +111,7 @@ func TestPeerURLs(t *testing.T) {
 	}
 }
 
-// forwardEndpoints()
+// forwardEndpoints() tests.
 func TestForwardEndpoints(t *testing.T) {
 	m := &member{
 		peerAddress: "127.0.0.1",
@@ -143,7 +143,7 @@ func TestForwardEndpointsFail(t *testing.T) {
 	}
 }
 
-// getID()
+// getID() tests.
 func TestGetIDFailToListMembers(t *testing.T) {
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
@@ -234,7 +234,7 @@ func TestGetIDByPeerURL(t *testing.T) {
 	}
 }
 
-// getEtcdClient()
+// getEtcdClient() tests.
 func TestGetEtcdClientNoEndpoints(t *testing.T) {
 	m := &member{
 		caCertificate: utiltest.GenerateX509Certificate(t),
@@ -262,7 +262,7 @@ func TestGetEtcdClient(t *testing.T) {
 
 const testID = 1
 
-// remove()
+// remove() tests.
 func TestRemove(t *testing.T) {
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
@@ -354,7 +354,7 @@ func TestRemoveGetIDFail(t *testing.T) {
 	}
 }
 
-// addMember()
+// addMember() tests.
 func TestAddMember(t *testing.T) {
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
@@ -446,7 +446,7 @@ func TestAddGetIDFail(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateNoName(t *testing.T) {
 	m := &Member{}
 

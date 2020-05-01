@@ -15,7 +15,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-// withHook()
+// withHook() tests.
 func TestWithHook(t *testing.T) {
 	action := false
 
@@ -103,7 +103,7 @@ func TestConnectAndForward(t *testing.T) {
 	}
 }
 
-// Status()
+// Status() tests.
 func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 	h := &hostConfiguredContainer{
 		container: &container{},
@@ -140,7 +140,7 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 	}
 }
 
-// createConfigurationContainer()
+// createConfigurationContainer() tests.
 func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 	h := &hostConfiguredContainer{
 		container: &container{
@@ -159,7 +159,7 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 	}
 }
 
-// removeConfigurationContainer()
+// removeConfigurationContainer() tests.
 func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 	deleted := false
 	i := foo
@@ -217,7 +217,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 	}
 }
 
-// statMounts()
+// statMounts() tests.
 func TestStatMountsNoMounts(t *testing.T) {
 	h := &hostConfiguredContainer{
 		container: &container{},
@@ -297,7 +297,7 @@ func TestStatMounts(t *testing.T) {
 	}
 }
 
-// createMissingMounts()
+// createMissingMounts() tests.
 func TestCreateMissingMountpointsStatFail(t *testing.T) {
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
@@ -478,7 +478,7 @@ func TestCreateMissingMountpoints(t *testing.T) {
 	}
 }
 
-// dirMounts()
+// dirMounts() tests.
 func TestDirMounts(t *testing.T) {
 	m := types.Mount{
 		Source: "/etc/",
@@ -506,7 +506,7 @@ func TestDirMounts(t *testing.T) {
 	}
 }
 
-// withForwardedRuntime()
+// withForwardedRuntime() tests.
 func TestWithForwardedRuntimeFailForward(t *testing.T) {
 	h := &hostConfiguredContainer{
 		container: &container{
@@ -568,7 +568,7 @@ func TestWithForwardedRuntime(t *testing.T) {
 	}
 }
 
-// Create()
+// Create() tests.
 func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 	h := &hostConfiguredContainer{
 		host: host.Host{
@@ -757,7 +757,7 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 	}
 }
 
-// updateConfigurationStatus()
+// updateConfigurationStatus() tests.
 func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) {
 	h := &hostConfiguredContainer{
 		host: host.Host{

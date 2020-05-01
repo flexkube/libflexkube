@@ -18,7 +18,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Member represents single etcd member
+// Member represents single etcd member.
 type Member struct {
 	Name              string            `json:"name,omitempty"`
 	Image             string            `json:"image,omitempty"`
@@ -35,7 +35,7 @@ type Member struct {
 	NewCluster        bool              `json:"newCluster,omitempty"`
 }
 
-// member is a validated, executable version of Member
+// member is a validated, executable version of Member.
 type member struct {
 	name              string
 	image             string
@@ -68,7 +68,7 @@ func (m *member) args() []string {
 		// TODO Add descriptions explaining why we need each line.
 		// Default value 'capnslog' for logger is deprecated and prints warning now.
 		"--logger=zap", // Available only from 3.4.x
-		// Since we are in container, listen on all interfaces
+		// Since we are in container, listen on all interfaces.
 		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
 		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
 		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
@@ -84,11 +84,11 @@ func (m *member) args() []string {
 		"--key-file=/etc/kubernetes/pki/etcd/server.key",
 		fmt.Sprintf("--data-dir=/%s.etcd", m.name),
 		// To get rid of warning with default configuration.
-		// ttl parameter support has been added in 3.4.x
+		// ttl parameter support has been added in 3.4.x.
 		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
-		// This is set by typhoon, seems like extra safety knob
+		// This is set by typhoon, seems like extra safety knob.
 		"--strict-reconfig-check",
-		// TODO enable metrics
+		// TODO: Enable metrics.
 		// Enable TLS authentication with certificate CN field.
 		// See https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/authentication.md#using-tls-common-name
 		// for more details.
@@ -96,10 +96,10 @@ func (m *member) args() []string {
 	}
 }
 
-// ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer
+// ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer.
 func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	c := container.Container{
-		// TODO this is weird. This sets docker as default runtime config
+		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
 		},
@@ -109,8 +109,8 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Entrypoint: []string{"/usr/local/bin/etcd"},
 			Mounts: []containertypes.Mount{
 				{
-					// TODO between /var/lib/etcd and data dir we should probably put cluster name, to group them
-					// TODO make data dir configurable
+					// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
+					// TODO: Make data dir configurable.
 					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.name),
 					Target: fmt.Sprintf("/%s.etcd", m.name),
 				},
@@ -137,7 +137,7 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 	}, nil
 }
 
-// New validates Member configuration and returns it's usable version
+// New validates Member configuration and returns it's usable version.
 func (m *Member) New() (container.ResourceInstance, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
@@ -166,18 +166,19 @@ func (m *Member) New() (container.ResourceInstance, error) {
 	return nm, nil
 }
 
-// Validate validates etcd member configuration
-// TODO add validation of certificates if specified
+// Validate validates etcd member configuration.
+//
+// TODO: Add validation of certificates if specified.
 func (m *Member) Validate() error {
 	var errors util.ValidateError
 
-	// TODO require peer address for now. Later we could figure out
-	// how to use CNI for setting it using env variables or something
+	// TODO: Require peer address for now. Later we could figure out
+	// how to use CNI for setting it using env variables or something.
 	if m.PeerAddress == "" {
 		errors = append(errors, fmt.Errorf("peer address must be set"))
 	}
 
-	// TODO can we auto-generate it?
+	// TODO: Can we auto-generate it?
 	if m.Name == "" {
 		errors = append(errors, fmt.Errorf("member name must be set"))
 	}

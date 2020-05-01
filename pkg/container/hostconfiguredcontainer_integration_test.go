@@ -19,7 +19,7 @@ const (
 	containerRunningDelay = 3 * time.Second
 )
 
-// Create()
+// Create() tests.
 func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	p := "/tmp/foo"
 	f := path.Join(p, randomContainerName())

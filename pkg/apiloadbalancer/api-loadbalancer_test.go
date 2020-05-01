@@ -35,7 +35,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateRequireServers(t *testing.T) {
 	kk := &APILoadBalancer{
 		BindAddress: "0.0.0.0:6434",
@@ -62,7 +62,7 @@ func TestValidateRequireBindAddress(t *testing.T) {
 	}
 }
 
-// New()
+// New() tests.
 func TestNewValidate(t *testing.T) {
 	kk := &APILoadBalancer{
 		Host: host.Host{

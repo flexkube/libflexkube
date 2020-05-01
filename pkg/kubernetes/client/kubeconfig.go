@@ -52,7 +52,7 @@ func (c *Config) Validate() error {
 	return errors.Return()
 }
 
-// ToYAMLString converts given configuration to kubeconfig format as YAML text
+// ToYAMLString converts given configuration to kubeconfig format as YAML text.
 func (c *Config) ToYAMLString() (string, error) {
 	if err := c.Validate(); err != nil {
 		return "", fmt.Errorf("failed validating config: %w", err)

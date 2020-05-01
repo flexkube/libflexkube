@@ -159,7 +159,7 @@ func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// New()
+// New() tests.
 func TestKubeControllerManagerNewEmptyHost(t *testing.T) {
 	ks := &KubeControllerManager{}
 

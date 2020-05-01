@@ -13,7 +13,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-// ToExported()
+// ToExported() tests.
 func TestToExported(t *testing.T) {
 	c := containersState{
 		"foo": &hostConfiguredContainer{
@@ -47,7 +47,7 @@ func TestToExported(t *testing.T) {
 	}
 }
 
-// CheckState()
+// CheckState() tests.
 func TestContainersStateCheckStateFailStatus(t *testing.T) {
 	c := containersState{
 		"foo": &hostConfiguredContainer{
@@ -114,7 +114,7 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 	}
 }
 
-// RemoveContainer()
+// RemoveContainer() tests.
 func TestRemoveContainerDontStopStopped(t *testing.T) { //nolint:dupl
 	c := containersState{
 		"foo": &hostConfiguredContainer{
@@ -265,7 +265,7 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 	}
 }
 
-// createAndStart()
+// createAndStart() tests.
 func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
 	c := containersState{}
 

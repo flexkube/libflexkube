@@ -49,7 +49,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestKubeletValidate(t *testing.T) {
 	k := &Kubelet{
 		BootstrapKubeconfig:     "foo",

@@ -16,7 +16,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
-// Config represents SSH transport configuration
+// Config represents SSH transport configuration.
 type Config struct {
 	Address           string `json:"address,omitempty"`
 	Port              int    `json:"port,omitempty"`
@@ -28,7 +28,7 @@ type Config struct {
 	PrivateKey        string `json:"privateKey,omitempty"`
 }
 
-// ssh is an implementation of Transport interface over SSH protocol
+// ssh is an implementation of Transport interface over SSH protocol.
 type ssh struct {
 	address           string
 	user              string
@@ -50,13 +50,13 @@ type dialer interface {
 	Dial(network string, address string) (net.Conn, error)
 }
 
-// New creates new instance of ssh struct
+// New creates new instance of ssh struct.
 func (d *Config) New() (transport.Interface, error) {
 	if err := d.Validate(); err != nil {
 		return nil, fmt.Errorf("ssh host validation failed: %w", err)
 	}
 
-	// Validate checks parsing, so we can skip error checking here
+	// Validate checks parsing, so we can skip error checking here.
 	ct, _ := time.ParseDuration(d.ConnectionTimeout)
 	rt, _ := time.ParseDuration(d.RetryTimeout)
 	ri, _ := time.ParseDuration(d.RetryInterval)
@@ -82,7 +82,7 @@ func (d *Config) New() (transport.Interface, error) {
 	return s, nil
 }
 
-// Validate validates given configuration and returns on first encountered error
+// Validate validates given configuration and returns on first encountered error.
 func (d *Config) Validate() error {
 	var errors util.ValidateError
 
@@ -127,7 +127,7 @@ func (d *ssh) Connect() (transport.Connected, error) {
 		Auth:    d.auth,
 		Timeout: d.connectionTimeout,
 		User:    d.user,
-		// TODO add possibility to specify host keys, which should be accepted.
+		// TODO: Add possibility to specify host keys, which should be accepted.
 		// Since user may not know the public keys of their server, for convenience,
 		// allow insecure host keys.
 		//
@@ -141,7 +141,7 @@ func (d *ssh) Connect() (transport.Connected, error) {
 
 	start := time.Now()
 
-	// Try until we timeout
+	// Try until we timeout.
 	for time.Since(start) < d.retryTimeout {
 		if connection, err = d.sshClientGetter("tcp", d.address, sshConfig); err == nil {
 			return newConnected(d.address, connection), nil
@@ -187,7 +187,7 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 }
 
 // handleClient is responsible for copying incoming and outgoing data going
-// through the forwarded connection
+// through the forwarded connection.
 func handleClient(client net.Conn, remote io.ReadWriter) {
 	defer func() {
 		if err := client.Close(); err != nil {
@@ -197,7 +197,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 
 	chDone := make(chan bool)
 
-	// Start remote -> local data transfer
+	// Start remote -> local data transfer.
 	go func() {
 		if _, err := io.Copy(client, remote); err != nil {
 			fmt.Printf("error while copy remote->local: %s\n", err)
@@ -205,7 +205,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 		chDone <- true
 	}()
 
-	// Start local -> remote data transfer
+	// Start local -> remote data transfer.
 	go func() {
 		if _, err := io.Copy(remote, client); err != nil {
 			fmt.Printf("error while copy local->remote: %s\n", err)
@@ -216,9 +216,9 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 	<-chDone
 }
 
-// forwardConnection accepts local connections, and forwards them to remote address
+// forwardConnection accepts local connections, and forwards them to remote address.
 //
-// TODO should we do some error handling here?
+// TODO: Should we do some error handling here?
 func forwardConnection(l net.Listener, connection dialer, remoteAddress string, connectionType string) {
 	defer func() {
 		if err := l.Close(); err != nil {
@@ -231,7 +231,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress string, 
 		c, err := l.Accept()
 		if err != nil {
 			fmt.Printf("failed to accept connection: %v\n", err)
-			// handle error (and then for example indicate acceptor is down)
+			// Handle error (and then for example indicate acceptor is down).
 			return
 		}
 
@@ -265,8 +265,8 @@ func extractPath(path string) (string, error) {
 // randomUnixSocket generates random abstract UNIX socket, including unique UUID,
 // to avoid collisions.
 func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
-	// TODO rather than connecting again every time ForwardUnixSocket is called
-	// we should cache and reuse the connections
+	// TODO: Rather than connecting again every time ForwardUnixSocket is called
+	// we should cache and reuse the connections.
 	id, err := d.uuid()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)

@@ -4,21 +4,21 @@ import (
 	"testing"
 )
 
-// GenerateX509Certificate()
+// GenerateX509Certificate() tests.
 func TestGenerateX509Certificate(t *testing.T) {
 	if a := GenerateX509Certificate(t); a == "" {
 		t.Fatalf("Generating X509 certificate should not return empty string")
 	}
 }
 
-// GenerateRSAPrivateKey()
+// GenerateRSAPrivateKey() tests.
 func TestGenerateRSAPrivateKey(t *testing.T) {
 	if a := GenerateRSAPrivateKey(t); a == "" {
 		t.Fatalf("Generating RSA private key should not return empty string")
 	}
 }
 
-// GeneratePKI()
+// GeneratePKI() tests.
 func TestGeneratePKI(t *testing.T) {
 	p := GeneratePKI(t)
 

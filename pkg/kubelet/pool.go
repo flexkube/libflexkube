@@ -103,7 +103,7 @@ func (p *Pool) New() (types.Resource, error) {
 
 // Validate validates Pool configuration.
 //
-// TODO add actual validation
+// TODO: Add actual validation.
 func (p *Pool) Validate() error {
 	cc := &container.Containers{
 		PreviousState: p.State,

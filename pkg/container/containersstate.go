@@ -21,10 +21,10 @@ type ContainersStateInterface interface {
 	Export() ContainersState
 }
 
-// ContainersState represents states of multiple containers
+// ContainersState represents states of multiple containers.
 type ContainersState map[string]*HostConfiguredContainer
 
-// containerState is a validated version of ContainersState, which can be user to perform operations
+// containerState is a validated version of ContainersState, which can be user to perform operations.
 type containersState map[string]*hostConfiguredContainer
 
 // New validates ContainersState struct and returns operational containerState.
@@ -48,7 +48,7 @@ func (s ContainersState) New() (ContainersStateInterface, error) {
 }
 
 // CheckState updates the state of all previously configured containers
-// and their configuration on the host
+// and their configuration on the host.
 func (s containersState) CheckState() error {
 	for _, hcc := range s {
 		if err := hcc.Status(); err != nil {
@@ -69,7 +69,7 @@ func (s containersState) CheckState() error {
 	return nil
 }
 
-// RemoveContainer removes the container by ID
+// RemoveContainer removes the container by ID.
 func (s containersState) RemoveContainer(containerName string) error {
 	if _, exists := s[containerName]; !exists {
 		return fmt.Errorf("can't remove non-existing container")

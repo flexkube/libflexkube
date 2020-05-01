@@ -22,7 +22,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
-// New()
+// New() tests.
 func TestNewClient(t *testing.T) {
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
@@ -38,7 +38,7 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-// getDockerClient()
+// getDockerClient() tests.
 func TestNewClientWithHost(t *testing.T) {
 	config := &Config{
 		Host: "unix:///foo.sock",
@@ -54,7 +54,7 @@ func TestNewClientWithHost(t *testing.T) {
 	}
 }
 
-// sanitizeImageName()
+// sanitizeImageName() tests.
 func TestSanitizeImageName(t *testing.T) {
 	e := "foo:latest"
 
@@ -71,7 +71,7 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 	}
 }
 
-// Status()
+// Status() tests.
 func TestStatus(t *testing.T) {
 	es := "running"
 
@@ -139,7 +139,7 @@ func TestStatusRuntimeError(t *testing.T) {
 	}
 }
 
-// Copy()
+// Copy() tests.
 func TestCopyRuntimeError(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
@@ -155,7 +155,7 @@ func TestCopyRuntimeError(t *testing.T) {
 	}
 }
 
-// Read()
+// Read() tests.
 func TestReadRuntimeError(t *testing.T) {
 	p := defaultPath
 
@@ -268,7 +268,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 	}
 }
 
-// tarToFiles()
+// tarToFiles() tests.
 func TestTarToFiles(t *testing.T) {
 	fs, err := tarToFiles(testTar(t))
 	if err != nil {
@@ -289,7 +289,7 @@ func TestTarToFiles(t *testing.T) {
 	}
 }
 
-// filesToTar()
+// filesToTar() tests.
 func TestFilesToTar(t *testing.T) {
 	tn := "test"
 	f := &types.File{
@@ -364,7 +364,7 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 	}
 }
 
-// Create()
+// Create() tests.
 func TestCreatePullImageFail(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
@@ -466,14 +466,14 @@ func TestCreateRuntimeFail(t *testing.T) {
 
 func TestCreate(t *testing.T) {}
 
-// DefaultConfig()
+// DefaultConfig() tests.
 func TestDefaultConfig(t *testing.T) {
 	if DefaultConfig().Host != client.DefaultDockerHost {
 		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, DefaultConfig().Host)
 	}
 }
 
-// GetAddress()
+// GetAddress() tests.
 func TestGetAddressNilConfig(t *testing.T) {
 	var c *Config
 

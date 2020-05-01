@@ -47,7 +47,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// New()
+// New() tests.
 func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 	ks := &KubeScheduler{}
 
@@ -61,7 +61,7 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestKubeSchedulerValidate(t *testing.T) {
 	pki := utiltest.GeneratePKI(t)
 

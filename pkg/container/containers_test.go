@@ -20,7 +20,7 @@ const (
 	bar = "bar"
 )
 
-// New()
+// New() tests.
 func TestContainersNew(t *testing.T) {
 	GetContainers(t)
 }
@@ -53,7 +53,7 @@ func GetContainers(t *testing.T) ContainersInterface {
 	return c
 }
 
-// Containers()
+// Containers() tests.
 func TestContainersContainers(t *testing.T) {
 	c := &containers{}
 
@@ -62,7 +62,7 @@ func TestContainersContainers(t *testing.T) {
 	}
 }
 
-// CheckCurrentState()
+// CheckCurrentState() tests.
 func TestContainersCheckCurrentStateNew(t *testing.T) {
 	c := GetContainers(t)
 
@@ -71,7 +71,7 @@ func TestContainersCheckCurrentStateNew(t *testing.T) {
 	}
 }
 
-// CurrentStateToYaml()
+// CurrentStateToYaml() tests.
 func TestContainersCurrentStateToYAML(t *testing.T) {
 	c := GetContainers(t)
 
@@ -81,14 +81,14 @@ func TestContainersCurrentStateToYAML(t *testing.T) {
 	}
 }
 
-// ToExported()
+// ToExported() tests.
 func TestContainersToExported(t *testing.T) {
 	c := GetContainers(t)
 
 	c.ToExported()
 }
 
-// FromYaml()
+// FromYaml() tests.
 func TestContainersFromYamlBad(t *testing.T) {
 	if _, err := FromYaml([]byte{}); err == nil {
 		t.Fatalf("Creating containers from empty YAML should fail")
@@ -114,7 +114,7 @@ desiredState:
 	}
 }
 
-// filesToUpdate
+// filesToUpdate() tests.
 func TestFilesToUpdateEmpty(t *testing.T) {
 	expected := []string{foo}
 
@@ -129,7 +129,7 @@ func TestFilesToUpdateEmpty(t *testing.T) {
 	}
 }
 
-// Validate()
+// Validate() tests.
 func TestValidateEmpty(t *testing.T) {
 	cc := &Containers{}
 
@@ -183,7 +183,7 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 	}
 }
 
-// isUpdatable()
+// isUpdatable() tests.
 func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -223,7 +223,7 @@ func TestIsUpdatable(t *testing.T) {
 	}
 }
 
-// diffHost()
+// diffHost() tests.
 func TestDiffHostNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -286,7 +286,7 @@ func TestDiffHost(t *testing.T) {
 	}
 }
 
-// diffContainer()
+// diffContainer() tests.
 func TestDiffContainerNotUpdatable(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -401,7 +401,7 @@ func TestDiffContainerRuntimeConfig(t *testing.T) {
 	}
 }
 
-// ensureRunning()
+// ensureRunning() tests.
 func TestEnsureRunningNonExistent(t *testing.T) {
 	c := &containers{
 		currentState: containersState{},
@@ -443,7 +443,7 @@ func TestEnsureRunning(t *testing.T) {
 	}
 }
 
-// ensureExists()
+// ensureExists() tests.
 func TestEnsureExistsAlreadyExists(t *testing.T) {
 	c := &containers{
 		currentState: containersState{
@@ -588,7 +588,7 @@ func TestEnsureExist(t *testing.T) {
 	}
 }
 
-// ensureHost()
+// ensureHost() tests.
 func TestEnsureHostNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -760,7 +760,7 @@ func TestEnsureHost(t *testing.T) {
 	}
 }
 
-// ensureContainer()
+// ensureContainer() tests.
 func TestEnsureContainerNoDiff(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -944,7 +944,7 @@ func TestEnsureContainer(t *testing.T) {
 	}
 }
 
-// recreate()
+// recreate() tests.
 func TestRecreateNonExistent(t *testing.T) {
 	c := &containers{}
 	if err := c.recreate(foo); err == nil {
@@ -952,7 +952,7 @@ func TestRecreateNonExistent(t *testing.T) {
 	}
 }
 
-// Deploy()
+// Deploy() tests.
 func TestDeployNoCurrentState(t *testing.T) {
 	c := &containers{}
 	if err := c.Deploy(); err == nil {
@@ -960,7 +960,7 @@ func TestDeployNoCurrentState(t *testing.T) {
 	}
 }
 
-// hasUpdates()
+// hasUpdates() tests.
 func TestHasUpdatesHost(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{
@@ -1098,7 +1098,7 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 	}
 }
 
-// ensureConfigured()
+// ensureConfigured() tests.
 func TestEnsureConfiguredDisposable(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{},
@@ -1331,7 +1331,7 @@ func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 	}
 }
 
-// selectRuntime()
+// selectRuntime() tests.
 func TestSelectRuntime(t *testing.T) {
 	c := &container{
 		base: base{
@@ -1348,7 +1348,7 @@ func TestSelectRuntime(t *testing.T) {
 	}
 }
 
-// DesiredState
+// DesiredState() tests.
 func TestContainersDesiredStateEmpty(t *testing.T) {
 	c := &containers{}
 
@@ -1458,7 +1458,7 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 	}
 }
 
-// updateExistingContainers()
+// updateExistingContainers() tests.
 func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 	c := &containers{
 		desiredState: containersState{},
@@ -1535,7 +1535,7 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 	}
 }
 
-// ensureCurrentContainer()
+// ensureCurrentContainer() tests.
 func TestEnsureCurrentContainer(t *testing.T) {
 	hcc := hostConfiguredContainer{
 		hooks: &Hooks{},
