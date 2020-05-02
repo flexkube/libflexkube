@@ -2,7 +2,7 @@
 // to avoid cyclic dependencies while importing.
 package types
 
-// ContainerConfig stores runtime-agnostic information how to run the container
+// ContainerConfig stores runtime-agnostic information how to run the container.
 type ContainerConfig struct {
 	Name        string    `json:"name"`
 	Image       string    `json:"image"`
@@ -26,16 +26,18 @@ type ContainerStatus struct {
 	Status string `json:"status,omitempty"`
 }
 
-// PortMap is basically a github.com/docker/go-connections/nat.PortMap
-// TODO Once we introduce Kubelet runtime, we need to figure out how to structure it
+// PortMap is basically a github.com/docker/go-connections/nat.PortMap.
+//
+// TODO: Once we introduce Kubelet runtime, we need to figure out how to structure it.
 type PortMap struct {
 	IP       string `json:"ip"`
 	Port     int    `json:"port"`
 	Protocol string `json:"protocol"`
 }
 
-// Mount describe host bind mount
-// TODO Same as PortMap
+// Mount describe host bind mount.
+//
+// TODO: Same as PortMap.
 type Mount struct {
 	Source      string `json:"source"`
 	Target      string `json:"target"`

@@ -133,7 +133,7 @@ func TestResourceDeleteBadKey(t *testing.T) {
 // newResource() tests.
 func TestNewResourceFailRefresh(t *testing.T) {
 	cc := &resource.Containers{
-		PreviousState: container.ContainersState{
+		State: container.ContainersState{
 			"foo": &container.HostConfiguredContainer{
 				Host: host.Host{
 					DirectConfig: &direct.Config{},

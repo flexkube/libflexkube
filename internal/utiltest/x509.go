@@ -91,7 +91,7 @@ func GeneratePKI(t *testing.T) *PKI {
 // generateX509Certificate generates X.509 certificate in DER format using given RSA private key.
 func generateX509Certificate(priv *rsa.PrivateKey) ([]byte, error) {
 	// Generate serial number for X.509 certificate.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {

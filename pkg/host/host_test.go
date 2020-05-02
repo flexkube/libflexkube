@@ -153,7 +153,7 @@ func TestBuildConfigSSH(t *testing.T) {
 
 	d := Host{
 		SSHConfig: &ssh.Config{
-			Port: 33, //nolint:gomnd
+			Port: 33,
 		},
 	}
 

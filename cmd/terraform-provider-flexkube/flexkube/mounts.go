@@ -1,4 +1,4 @@
-package flexkube //nolint:dupl
+package flexkube
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"

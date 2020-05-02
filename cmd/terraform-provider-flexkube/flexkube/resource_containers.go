@@ -26,11 +26,11 @@ func containersUnmarshal(d getter, includeState bool) types.ResourceConfig {
 	c := &resource.Containers{}
 
 	if cs := containersStateUnmarshal(d.Get("container")); cs != nil {
-		c.DesiredState = *cs
+		c.Containers = *cs
 	}
 
 	if s := getState(d); includeState && s != nil {
-		c.PreviousState = *s
+		c.State = *s
 	}
 
 	return c

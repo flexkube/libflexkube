@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=CGO_ENABLED=$(CGO_ENABLED) $(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.25.1
+GOLANGCI_LINT_VERSION=v1.26.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -28,7 +28,7 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
-DISABLED_LINTERS=godox,lll,funlen,testpackage
+DISABLED_LINTERS=godox,lll,funlen,testpackage,goerr113
 
 TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
