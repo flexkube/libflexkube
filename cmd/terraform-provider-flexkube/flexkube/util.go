@@ -399,7 +399,7 @@ func saveState(d *schema.ResourceData, s container.ContainersState, uf unmarshal
 // stateYaml returns data in format compatible for writing to 'state_yaml' field.
 func stateYaml(s container.ContainersState) (interface{}, error) {
 	cc := &resource.Containers{
-		PreviousState: s,
+		State: s,
 	}
 
 	ccy, err := yaml.Marshal(cc)
