@@ -30,7 +30,7 @@ type APILoadBalancers struct {
 	State container.ContainersState `json:"state,omitempty"`
 }
 
-// apiLoadBalancers is validated and executable version of APILoadBalancers
+// apiLoadBalancers is validated and executable version of APILoadBalancers.
 type apiLoadBalancers struct {
 	containers container.ContainersInterface
 }

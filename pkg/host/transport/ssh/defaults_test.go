@@ -181,7 +181,7 @@ func TestBuildConfig(t *testing.T) {
 				Port: customPort,
 			},
 			&Config{
-				Port: 44, //nolint:gomnd
+				Port: 44,
 			},
 			&Config{
 				ConnectionTimeout: ConnectionTimeout,

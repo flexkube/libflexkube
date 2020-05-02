@@ -1,4 +1,4 @@
-package flexkube //nolint:dupl
+package flexkube
 
 import (
 	"regexp"
@@ -509,7 +509,7 @@ func TestControlplaneDestroy(t *testing.T) {
 			},
 		},
 		"api_server_address": "1.1.1.1",
-		"api_server_port":    1, //nolint:gomnd
+		"api_server_port":    1,
 		"kube_scheduler": []interface{}{
 			map[string]interface{}{
 				"kubeconfig": []interface{}{
