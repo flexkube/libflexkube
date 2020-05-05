@@ -53,9 +53,9 @@ func Run(rc types.ResourceConfig) int {
 	return deploy(c)
 }
 
-// readYamlFile reads YAML file from disk and handles empty files,
+// ReadYamlFile reads YAML file from disk and handles empty files,
 // so they can be merged.
-func readYamlFile(file string) ([]byte, error) {
+func ReadYamlFile(file string) ([]byte, error) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return []byte(""), nil
 	}
@@ -80,14 +80,14 @@ func readYamlFile(file string) ([]byte, error) {
 // Read files reads state and config files from disk and returns their
 // content merged.
 func readFiles() ([]byte, error) {
-	s, err := readYamlFile("state.yaml")
+	s, err := ReadYamlFile("state.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed reading state file: %w", err)
 	}
 
 	fmt.Println("Reading config file config.yaml")
 
-	config, err := readYamlFile("config.yaml")
+	config, err := ReadYamlFile("config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed reading config file: %w", err)
 	}
