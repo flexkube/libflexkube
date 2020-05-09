@@ -16,6 +16,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -29,6 +30,7 @@ type Cluster struct {
 	SSH           *ssh.Config       `json:"ssh,omitempty"`
 	CACertificate types.Certificate `json:"caCertificate,omitempty"`
 	Members       map[string]Member `json:"members,omitempty"`
+	PKI           *pki.PKI          `json:"pki,omitempty"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state,omitempty"`
@@ -61,6 +63,25 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))
 	m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate)))
+
+	// PKI integration.
+	if c.PKI != nil && c.PKI.Etcd != nil {
+		e := c.PKI.Etcd
+
+		m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate), e.CA.X509Certificate))
+
+		if c, ok := e.PeerCertificates[m.Name]; ok {
+			m.PeerCertificate = types.Certificate(util.PickString(string(m.PeerCertificate), c.X509Certificate))
+			m.PeerKey = types.PrivateKey(util.PickString(string(m.PeerKey), c.PrivateKey))
+		}
+
+		if c, ok := e.ServerCertificates[m.Name]; ok {
+			m.ServerCertificate = types.Certificate(util.PickString(string(m.ServerCertificate), c.X509Certificate))
+			m.ServerKey = types.PrivateKey(util.PickString(string(m.ServerKey), c.PrivateKey))
+		}
+	}
+
+	m.ServerAddress = util.PickString(m.ServerAddress, m.PeerAddress)
 
 	m.Host = host.BuildConfig(m.Host, host.Host{
 		SSHConfig: c.SSH,

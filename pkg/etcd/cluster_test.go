@@ -20,6 +20,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
+	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
 // FromYAML() tests.
@@ -468,5 +469,32 @@ func TestDeployUpdateMembers(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "failed getting etcd client") {
 		t.Fatalf("Expected failure in client creation, got: %v", err)
+	}
+}
+
+func TestClusterNewPKIIntegration(t *testing.T) {
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
+			Peers: map[string]string{
+				"test": "127.0.0.1",
+			},
+		},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating PKI should succeed, got: %v", err)
+	}
+
+	c := &Cluster{
+		PKI: pki,
+		Members: map[string]Member{
+			"test": {
+				PeerAddress: "127.0.0.1",
+			},
+		},
+	}
+
+	if _, err := c.New(); err != nil {
+		t.Fatalf("creating new cluster with valid PKI should succeed, got: %v", err)
 	}
 }
