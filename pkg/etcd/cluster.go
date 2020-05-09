@@ -13,6 +13,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -56,7 +57,7 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	sort.Strings(peerCertAllowedCNArr)
 
 	m.Name = util.PickString(m.Name, i)
-	m.Image = util.PickString(m.Image, c.Image)
+	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))
 	m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate)))

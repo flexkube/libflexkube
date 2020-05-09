@@ -10,6 +10,7 @@ import (
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
 
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -31,6 +32,7 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 		PeerKey:           privateKey,
 		ServerCertificate: cert,
 		ServerKey:         privateKey,
+		Image:             defaults.EtcdImage,
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
