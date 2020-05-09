@@ -244,7 +244,7 @@ func buildCertificate(certs ...*Certificate) (*Certificate, error) {
 func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 	der, _ := pem.Decode([]byte(c.PrivateKey))
 	if der == nil {
-		return nil, fmt.Errorf("failed to decode PEM format")
+		return nil, fmt.Errorf("private key is not defined in valid PEM format")
 	}
 
 	k, err := x509.ParsePKCS1PrivateKey(der.Bytes)
@@ -253,6 +253,20 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 	}
 
 	return k, nil
+}
+
+func (c *Certificate) decodeX509Certificate() (*x509.Certificate, error) {
+	der, _ := pem.Decode([]byte(c.X509Certificate))
+	if der == nil {
+		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format")
+	}
+
+	cert, err := x509.ParseCertificate(der.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse X.509 certificate: %w", err)
+	}
+
+	return cert, nil
 }
 
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
@@ -338,7 +352,7 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 
 	ku, eku := c.decodeKeyUsage()
 
-	template := x509.Certificate{
+	cert := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{c.Organization},
@@ -354,24 +368,42 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 	}
 
 	for _, i := range c.IPAddresses {
-		template.IPAddresses = append(template.IPAddresses, net.ParseIP(i))
+		cert.IPAddresses = append(cert.IPAddresses, net.ParseIP(i))
 	}
+
+	pk := k
+	caCert := &cert
 
 	if ca != nil {
 		var err error
 
-		k, err = ca.decodePrivateKey()
+		caCert, pk, err = ca.decodeKeypair()
 		if err != nil {
-			return fmt.Errorf("failed to decode CA certificate private key for signing: %w", err)
+			return fmt.Errorf("failed to decode CA keypair: %w", err)
 		}
 	}
 
-	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &k.PublicKey, k)
+	der, err := x509.CreateCertificate(rand.Reader, &cert, caCert, &k.PublicKey, pk)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	return c.persistX509Certificate(der)
+}
+
+// decodeKeypair decodes both X.509 certificate and private key.
+func (c *Certificate) decodeKeypair() (*x509.Certificate, *rsa.PrivateKey, error) {
+	pk, err := c.decodePrivateKey()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decode private key: %w", err)
+	}
+
+	cert, err := c.decodeX509Certificate()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decode X.509 certificate: %w", err)
+	}
+
+	return cert, pk, nil
 }
 
 func (c *Certificate) persistX509Certificate(der []byte) error {
