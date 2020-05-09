@@ -167,15 +167,23 @@ func (m *Member) New() (container.ResourceInstance, error) {
 func (m *Member) Validate() error {
 	var errors util.ValidateError
 
-	// TODO: Require peer address for now. Later we could figure out
-	// how to use CNI for setting it using env variables or something.
-	if m.PeerAddress == "" {
-		errors = append(errors, fmt.Errorf("peer address must be set"))
+	nonEmptyFields := map[string]string{
+		// TODO: Require peer address for now. Later we could figure out
+		// how to use CNI for setting it using env variables or something.
+		"peer address": m.PeerAddress,
+		// TODO: Can we auto-generate it?
+		"member name":        m.Name,
+		"CA certificate":     string(m.CACertificate),
+		"peer certificate":   string(m.PeerCertificate),
+		"peer key":           string(m.PeerKey),
+		"server certificate": string(m.ServerCertificate),
+		"server key":         string(m.ServerKey),
 	}
 
-	// TODO: Can we auto-generate it?
-	if m.Name == "" {
-		errors = append(errors, fmt.Errorf("member name must be set"))
+	for k, v := range nonEmptyFields {
+		if v == "" {
+			errors = append(errors, fmt.Errorf("%s can't be empty", k))
+		}
 	}
 
 	if err := m.Host.Validate(); err != nil {
