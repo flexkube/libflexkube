@@ -144,6 +144,47 @@ func TestBuildConfigDirectByDefault(t *testing.T) {
 	}
 }
 
+func TestBuildConfigFirstPriotityDirect(t *testing.T) {
+	c := Host{
+		DirectConfig: &direct.Config{},
+	}
+
+	d := Host{
+		SSHConfig: &ssh.Config{},
+	}
+
+	h := BuildConfig(c, d)
+	if err := h.Validate(); err != nil {
+		t.Errorf("Config returned by default should be valid, got: %v", err)
+	}
+
+	if h.SSHConfig != nil {
+		t.Fatalf("BuildConfig should not inject SSH configuration from defaults if direct configuration has been requested")
+	}
+}
+
+func TestBuildConfigFirstPriotitySSH(t *testing.T) {
+	c := Host{
+		SSHConfig: &ssh.Config{
+			Address:  "foo",
+			Password: "foo",
+		},
+	}
+
+	d := Host{
+		DirectConfig: &direct.Config{},
+	}
+
+	h := BuildConfig(c, d)
+	if err := h.Validate(); err != nil {
+		t.Errorf("Config returned should be valid, got: %v", err)
+	}
+
+	if h.DirectConfig != nil {
+		t.Fatalf("BuildConfig should not have direct configuration from defaults if SSH configuration has been requested")
+	}
+}
+
 func TestBuildConfigSSH(t *testing.T) {
 	u := Host{
 		SSHConfig: &ssh.Config{
