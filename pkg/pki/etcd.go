@@ -40,8 +40,8 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 	}
 
 	// If there is no different server certificates defined, assume they are the same as peers.
-	if e.ServerCertificates == nil {
-		e.ServerCertificates = e.PeerCertificates
+	if e.Servers == nil {
+		e.Servers = e.Peers
 	}
 
 	if e.ClientCertificates == nil {
