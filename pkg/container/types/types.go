@@ -63,3 +63,8 @@ func (s *ContainerStatus) Exists() bool {
 func (s *ContainerStatus) Running() bool {
 	return s.Exists() && s.Status == "running"
 }
+
+// Restarting returns true, if container is restarting in a loop, based on ContainerStatus.
+func (s *ContainerStatus) Restarting() bool {
+	return s.Exists() && s.Status == "restarting"
+}

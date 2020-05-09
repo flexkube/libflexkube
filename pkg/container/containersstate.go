@@ -75,7 +75,8 @@ func (s containersState) RemoveContainer(containerName string) error {
 		return fmt.Errorf("can't remove non-existing container")
 	}
 
-	if s[containerName].container.Status().Running() {
+	status := s[containerName].container.Status()
+	if status.Running() || status.Restarting() {
 		if err := s[containerName].Stop(); err != nil {
 			return fmt.Errorf("failed stopping container: %w", err)
 		}
