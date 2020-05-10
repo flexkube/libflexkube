@@ -39,6 +39,10 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 		e.PeerCertificates = map[string]*Certificate{}
 	}
 
+	if e.ServerCertificates == nil {
+		e.ServerCertificates = map[string]*Certificate{}
+	}
+
 	// If there is no different server certificates defined, assume they are the same as peers.
 	if e.Servers == nil {
 		e.Servers = e.Peers
