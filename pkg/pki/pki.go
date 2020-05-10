@@ -284,7 +284,10 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 
 	c.PrivateKey = buf.String()
 
-	pubBytes := x509.MarshalPKCS1PublicKey(k.Public().(*rsa.PublicKey))
+	pubBytes, err := x509.MarshalPKIXPublicKey(k.Public().(*rsa.PublicKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed marshaling RSA public key: %w", err)
+	}
 
 	buf.Reset()
 
