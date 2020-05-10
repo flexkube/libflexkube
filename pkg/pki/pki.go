@@ -359,6 +359,7 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{c.Organization},
+			CommonName:   c.CommonName,
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(vd),
