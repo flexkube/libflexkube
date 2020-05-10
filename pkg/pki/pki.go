@@ -258,7 +258,7 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 func (c *Certificate) decodeX509Certificate() (*x509.Certificate, error) {
 	der, _ := pem.Decode([]byte(c.X509Certificate))
 	if der == nil {
-		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format")
+		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format") //nolint:stylecheck
 	}
 
 	cert, err := x509.ParseCertificate(der.Bytes)
