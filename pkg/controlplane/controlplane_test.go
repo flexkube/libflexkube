@@ -8,6 +8,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
 func controlplaneYAML(t *testing.T) string {
@@ -191,5 +192,31 @@ state:
 
 	if _, err := FromYaml([]byte(y)); err != nil {
 		t.Fatalf("creating controlplane config to destroy with valid state should succeed, got: %v", err)
+	}
+}
+
+func TestControlplaneNewPKIIntegration(t *testing.T) {
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
+			ClientCNs: []string{"kube-apiserver", "root"},
+		},
+		Kubernetes: &pki.Kubernetes{},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating PKI should succeed, got: %v", err)
+	}
+
+	c := &Controlplane{
+		PKI:              pki,
+		APIServerAddress: "127.0.0.1",
+		APIServerPort:    6443,
+		KubeAPIServer: KubeAPIServer{
+			EtcdServers: []string{"https://127.0.0.1:2379"},
+		},
+	}
+
+	if _, err := c.New(); err != nil {
+		t.Fatalf("creating new controlplane with valid PKI should succeed, got: %v", err)
 	}
 }
