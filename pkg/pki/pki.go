@@ -269,7 +269,26 @@ func (c *Certificate) decodeX509Certificate() (*x509.Certificate, error) {
 	return cert, nil
 }
 
+// persistPublicKey persist given RSA public key into the certificate object.
+func (c *Certificate) persistPublicKey(k *rsa.PublicKey) error {
+	pubBytes, err := x509.MarshalPKIXPublicKey(k)
+	if err != nil {
+		return fmt.Errorf("failed marshaling RSA public key: %w", err)
+	}
+
+	var buf bytes.Buffer
+
+	if err := pem.Encode(&buf, &pem.Block{Type: RSAPublicKeyPEMHeader, Bytes: pubBytes}); err != nil {
+		return fmt.Errorf("failed to encode RSA public key: %w", err)
+	}
+
+	c.PublicKey = buf.String()
+
+	return nil
+}
+
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
+	// generate RSA private key.
 	k, err := rsa.GenerateKey(rand.Reader, c.RSABits)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating RSA key: %w", err)
@@ -284,18 +303,9 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 
 	c.PrivateKey = buf.String()
 
-	pubBytes, err := x509.MarshalPKIXPublicKey(k.Public().(*rsa.PublicKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed marshaling RSA public key: %w", err)
+	if err := c.persistPublicKey(k.Public().(*rsa.PublicKey)); err != nil {
+		return nil, fmt.Errorf("failed persisting RSA public key: %w", err)
 	}
-
-	buf.Reset()
-
-	if err := pem.Encode(&buf, &pem.Block{Type: RSAPublicKeyPEMHeader, Bytes: pubBytes}); err != nil {
-		return nil, fmt.Errorf("failed to encode RSA public key: %w", err)
-	}
-
-	c.PublicKey = buf.String()
 
 	return k, nil
 }
