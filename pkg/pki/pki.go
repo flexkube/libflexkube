@@ -244,7 +244,7 @@ func buildCertificate(certs ...*Certificate) (*Certificate, error) {
 func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 	der, _ := pem.Decode([]byte(c.PrivateKey))
 	if der == nil {
-		return nil, fmt.Errorf("failed to decode PEM format")
+		return nil, fmt.Errorf("private key is not defined in valid PEM format")
 	}
 
 	k, err := x509.ParsePKCS1PrivateKey(der.Bytes)
@@ -255,7 +255,40 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 	return k, nil
 }
 
+func (c *Certificate) decodeX509Certificate() (*x509.Certificate, error) {
+	der, _ := pem.Decode([]byte(c.X509Certificate))
+	if der == nil {
+		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format") //nolint:stylecheck
+	}
+
+	cert, err := x509.ParseCertificate(der.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse X.509 certificate: %w", err)
+	}
+
+	return cert, nil
+}
+
+// persistPublicKey persist given RSA public key into the certificate object.
+func (c *Certificate) persistPublicKey(k *rsa.PublicKey) error {
+	pubBytes, err := x509.MarshalPKIXPublicKey(k)
+	if err != nil {
+		return fmt.Errorf("failed marshaling RSA public key: %w", err)
+	}
+
+	var buf bytes.Buffer
+
+	if err := pem.Encode(&buf, &pem.Block{Type: RSAPublicKeyPEMHeader, Bytes: pubBytes}); err != nil {
+		return fmt.Errorf("failed to encode RSA public key: %w", err)
+	}
+
+	c.PublicKey = buf.String()
+
+	return nil
+}
+
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
+	// generate RSA private key.
 	k, err := rsa.GenerateKey(rand.Reader, c.RSABits)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating RSA key: %w", err)
@@ -270,15 +303,9 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 
 	c.PrivateKey = buf.String()
 
-	pubBytes := x509.MarshalPKCS1PublicKey(k.Public().(*rsa.PublicKey))
-
-	buf.Reset()
-
-	if err := pem.Encode(&buf, &pem.Block{Type: RSAPublicKeyPEMHeader, Bytes: pubBytes}); err != nil {
-		return nil, fmt.Errorf("failed to encode RSA public key: %w", err)
+	if err := c.persistPublicKey(k.Public().(*rsa.PublicKey)); err != nil {
+		return nil, fmt.Errorf("failed persisting RSA public key: %w", err)
 	}
-
-	c.PublicKey = buf.String()
 
 	return k, nil
 }
@@ -301,6 +328,10 @@ func (c *Certificate) Validate() error {
 		if ip := net.ParseIP(i); ip == nil {
 			return fmt.Errorf("failed parsing IP address %q", i)
 		}
+	}
+
+	if c.RSABits == 0 {
+		return fmt.Errorf("RSA bits can't be 0")
 	}
 
 	return nil
@@ -338,10 +369,11 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 
 	ku, eku := c.decodeKeyUsage()
 
-	template := x509.Certificate{
+	cert := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{c.Organization},
+			CommonName:   c.CommonName,
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(vd),
@@ -354,24 +386,42 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 	}
 
 	for _, i := range c.IPAddresses {
-		template.IPAddresses = append(template.IPAddresses, net.ParseIP(i))
+		cert.IPAddresses = append(cert.IPAddresses, net.ParseIP(i))
 	}
+
+	pk := k
+	caCert := &cert
 
 	if ca != nil {
 		var err error
 
-		k, err = ca.decodePrivateKey()
+		caCert, pk, err = ca.decodeKeypair()
 		if err != nil {
-			return fmt.Errorf("failed to decode CA certificate private key for signing: %w", err)
+			return fmt.Errorf("failed to decode CA keypair: %w", err)
 		}
 	}
 
-	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &k.PublicKey, k)
+	der, err := x509.CreateCertificate(rand.Reader, &cert, caCert, &k.PublicKey, pk)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	return c.persistX509Certificate(der)
+}
+
+// decodeKeypair decodes both X.509 certificate and private key.
+func (c *Certificate) decodeKeypair() (*x509.Certificate, *rsa.PrivateKey, error) {
+	pk, err := c.decodePrivateKey()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decode private key: %w", err)
+	}
+
+	cert, err := c.decodeX509Certificate()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to decode X.509 certificate: %w", err)
+	}
+
+	return cert, pk, nil
 }
 
 func (c *Certificate) persistX509Certificate(der []byte) error {
