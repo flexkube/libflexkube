@@ -7,13 +7,20 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/host/transport"
+)
+
+const (
+	// SSHAuthSockEnv is environment variable name used for connecting to ssh-agent.
+	SSHAuthSockEnv = "SSH_AUTH_SOCK"
 )
 
 // Config represents SSH transport configuration.
@@ -79,6 +86,28 @@ func (d *Config) New() (transport.Interface, error) {
 		s.auth = append(s.auth, gossh.PublicKeys(signer))
 	}
 
+	// Multiple auth methods might be used, so if SSH_AUTH_SOCK is defined, try to use it
+	// automatically. That gives nice user experience, when user don't have to specify any
+	// authentication information explicitly.
+	if authSock := os.Getenv(SSHAuthSockEnv); authSock != "" {
+		authConn, err := net.Dial("unix", authSock)
+		if err != nil {
+			return nil, fmt.Errorf("dialing SSH agent failed: %w", err)
+		}
+		// TODO: We should close the authSock with Close() after we finish using it,
+		// but it is not trivial at the moment, so we just let the dying process to
+		// close it.
+		//
+		// defer authConn.Close()
+
+		signers, err := agent.NewClient(authConn).Signers()
+		if err != nil {
+			return nil, fmt.Errorf("getting public keys from SSH agent failed: %w", err)
+		}
+
+		s.auth = append(s.auth, gossh.PublicKeys(signers...))
+	}
+
 	return s, nil
 }
 
@@ -94,8 +123,8 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("user must be set"))
 	}
 
-	if d.Password == "" && d.PrivateKey == "" {
-		errors = append(errors, fmt.Errorf("either password or private key must be set for authentication"))
+	if d.Password == "" && d.PrivateKey == "" && os.Getenv(SSHAuthSockEnv) == "" {
+		errors = append(errors, fmt.Errorf("at least one authentication method must be available"))
 	}
 
 	if d.Port == 0 {

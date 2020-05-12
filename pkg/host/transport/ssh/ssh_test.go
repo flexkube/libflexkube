@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 const (
@@ -40,6 +42,10 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewSetPassword(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -646,5 +652,110 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 
 	if diff := cmp.Diff(a, b); diff == "" {
 		t.Fatalf("forwarded random unix sockets should differ")
+	}
+}
+
+func TestNewBadSSHAgentEnv(t *testing.T) {
+	if err := os.Setenv(SSHAuthSockEnv, "foo"); err != nil {
+		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+	}
+
+	if _, err := c.New(); err == nil {
+		t.Fatalf("creating new SSH object with bad ssh-agent environment variable should fail")
+	}
+}
+
+func TestNewSSHAgent(t *testing.T) {
+	a := agent.NewKeyring()
+
+	addr := &net.UnixAddr{
+		Name: fmt.Sprintf("@foo"),
+		Net:  "unix",
+	}
+
+	l, err := net.Listen("unix", addr.String())
+	if err != nil {
+		t.Fatalf("failed to listen on address %q: %v", addr.String(), err)
+	}
+
+	go func() {
+		c, err := l.Accept()
+		if err != nil {
+			t.Logf("accepting connection failed: %v", err)
+		}
+
+		if err := agent.ServeAgent(a, c); err != nil {
+			t.Logf("serving agent failed: %v", err)
+		}
+
+		if err := l.Close(); err != nil {
+			t.Logf("closing listener failed: %v", err)
+		}
+	}()
+
+	if err := os.Setenv(SSHAuthSockEnv, addr.String()); err != nil {
+		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+	}
+
+	if _, err := c.New(); err != nil {
+		t.Fatalf("creating new SSH object with good ssh-agent should work, got: %v", err)
+	}
+}
+
+func TestNewSSHAgentWrongSocket(t *testing.T) {
+	addr := &net.UnixAddr{
+		Name: fmt.Sprintf("@bar"),
+		Net:  "unix",
+	}
+
+	l, err := net.Listen("unix", addr.String())
+	if err != nil {
+		t.Fatalf("failed to listen on address %q: %v", addr.String(), err)
+	}
+
+	go func() {
+		c, err := l.Accept()
+		if err != nil {
+			t.Logf("accepting connection failed: %v", err)
+		}
+
+		if err := c.Close(); err != nil {
+			t.Logf("closing connection failed: %v", err)
+		}
+	}()
+
+	if err := os.Setenv(SSHAuthSockEnv, addr.String()); err != nil {
+		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
+	c := &Config{
+		Address:           "localhost",
+		User:              "root",
+		ConnectionTimeout: "30s",
+		RetryTimeout:      "60s",
+		RetryInterval:     "1s",
+		Port:              Port,
+	}
+
+	if _, err := c.New(); err == nil {
+		t.Fatalf("creating new SSH object with bad ssh-agent socket should fail")
 	}
 }

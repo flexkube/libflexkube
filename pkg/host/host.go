@@ -97,14 +97,19 @@ func (h *hostConnected) ForwardTCP(address string) (string, error) {
 }
 
 // BuildConfig merges values from both host objects.
-func BuildConfig(h Host, d Host) Host {
-	if h.DirectConfig == nil && h.SSHConfig == nil && d.SSHConfig == nil {
+func BuildConfig(config Host, defaults Host) Host {
+	// If config has no direct config configured or has SSH config configured, build SSH configuration.
+	if (config.DirectConfig == nil && defaults.SSHConfig != nil) || config.SSHConfig != nil {
+		config.SSHConfig = ssh.BuildConfig(config.SSHConfig, defaults.SSHConfig)
+	}
+
+	// If config has nothing configured and default has no SSH configuration configured,
+	// return direct config as a default.
+	if config.DirectConfig == nil && config.SSHConfig == nil && defaults.SSHConfig == nil {
 		return Host{
 			DirectConfig: &direct.Config{},
 		}
 	}
 
-	h.SSHConfig = ssh.BuildConfig(h.SSHConfig, d.SSHConfig)
-
-	return h
+	return config
 }
