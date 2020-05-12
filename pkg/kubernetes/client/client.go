@@ -2,6 +2,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -53,15 +54,15 @@ func (c *client) PingWait() error {
 // We use Roles, as helm client sometimes fails, even if API is already available,
 // saying that this type of object is not recognized.
 func (c *client) Ping() (bool, error) {
-	if _, err := c.RbacV1().Roles("").List(metav1.ListOptions{}); err != nil {
+	if _, err := c.RbacV1().Roles("").List(context.TODO(), metav1.ListOptions{}); err != nil {
 		return false, nil
 	}
 
-	if _, err := c.AppsV1().Deployments("").List(metav1.ListOptions{}); err != nil {
+	if _, err := c.AppsV1().Deployments("").List(context.TODO(), metav1.ListOptions{}); err != nil {
 		return false, nil
 	}
 
-	if _, err := c.PolicyV1beta1().PodSecurityPolicies().List(metav1.ListOptions{}); err != nil {
+	if _, err := c.PolicyV1beta1().PodSecurityPolicies().List(context.TODO(), metav1.ListOptions{}); err != nil {
 		return false, nil
 	}
 
@@ -71,7 +72,7 @@ func (c *client) Ping() (bool, error) {
 // CheckNodeExists checks if given node object exists.
 func (c *client) CheckNodeExists(name string) func() (bool, error) {
 	return func() (bool, error) {
-		_, err := c.CoreV1().Nodes().Get(name, metav1.GetOptions{})
+		_, err := c.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 		if err == nil {
 			return true, nil
 		}
@@ -110,7 +111,7 @@ func (c *client) LabelNode(name string, labels map[string]string) error {
 		return fmt.Errorf("failed to encode update payload: %w", err)
 	}
 
-	if _, err := c.CoreV1().Nodes().Patch(name, types.JSONPatchType, payloadBytes); err != nil {
+	if _, err := c.CoreV1().Nodes().Patch(context.TODO(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{}); err != nil {
 		return err
 	}
 
