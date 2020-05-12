@@ -19,7 +19,9 @@ ssh:
   connectionTimeout: 1s
   retryTimeout: 1s
   retryInterval: 1s
-bootstrapKubeconfig: foo
+bootstrapConfig:
+  server: "foo"
+  token: "foo"
 volumePluginDir: /var/lib/kubelet/volumeplugins
 extraMounts:
 - source: /foo/

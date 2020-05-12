@@ -8,12 +8,34 @@ import (
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
+func getClientConfig(t *testing.T) *client.Config {
+	t.Parallel()
+
+	p := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{},
+	}
+
+	if err := p.Generate(); err != nil {
+		t.Fatalf("failed generating testing PKI: %v", err)
+	}
+
+	return &client.Config{
+		Server:        "foo",
+		CACertificate: p.Kubernetes.CA.X509Certificate,
+		Token:         "foo",
+	}
+}
+
 func TestToHostConfiguredContainer(t *testing.T) {
+	cc := getClientConfig(t)
+
 	kk := &Kubelet{
-		BootstrapKubeconfig:     "foo",
+		BootstrapConfig:         cc,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
@@ -30,8 +52,9 @@ func TestToHostConfiguredContainer(t *testing.T) {
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",
 		},
-		PrivilegedLabelsKubeconfig: "foo",
-		ClusterDNSIPs:              []string{"10.0.0.1"},
+
+		AdminConfig:   cc,
+		ClusterDNSIPs: []string{"10.0.0.1"},
 	}
 
 	k, err := kk.New()
@@ -51,8 +74,10 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 // Validate() tests.
 func TestKubeletValidate(t *testing.T) {
+	cc := getClientConfig(t)
+
 	k := &Kubelet{
-		BootstrapKubeconfig:     "foo",
+		BootstrapConfig:         cc,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/foo",
@@ -68,10 +93,12 @@ func TestKubeletValidate(t *testing.T) {
 }
 
 func TestKubeletValidateRequireName(t *testing.T) {
+	cc := getClientConfig(t)
+
 	k := &Kubelet{
-		BootstrapKubeconfig: "foo",
-		NetworkPlugin:       "cni",
-		VolumePluginDir:     "/foo",
+		BootstrapConfig: cc,
+		NetworkPlugin:   "cni",
+		VolumePluginDir: "/foo",
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -83,10 +110,12 @@ func TestKubeletValidateRequireName(t *testing.T) {
 }
 
 func TestKubeletValidateEmptyCA(t *testing.T) {
+	cc := getClientConfig(t)
+
 	k := &Kubelet{
-		BootstrapKubeconfig: "foo",
-		NetworkPlugin:       "cni",
-		VolumePluginDir:     "/foo",
+		BootstrapConfig: cc,
+		NetworkPlugin:   "cni",
+		VolumePluginDir: "/foo",
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -98,8 +127,10 @@ func TestKubeletValidateEmptyCA(t *testing.T) {
 }
 
 func TestKubeletValidateBadCA(t *testing.T) {
+	cc := getClientConfig(t)
+
 	k := &Kubelet{
-		BootstrapKubeconfig:     "foo",
+		BootstrapConfig:         cc,
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/foo",
 		KubernetesCACertificate: "doh",
@@ -119,8 +150,10 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 		Target: "/foo",
 	}
 
+	cc := getClientConfig(t)
+
 	kk := &Kubelet{
-		BootstrapKubeconfig:     "foo",
+		BootstrapConfig:         cc,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
@@ -137,9 +170,9 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",
 		},
-		ExtraMounts:                []containertypes.Mount{em},
-		PrivilegedLabelsKubeconfig: "foo",
-		ClusterDNSIPs:              []string{"10.0.0.1"},
+		ExtraMounts:   []containertypes.Mount{em},
+		AdminConfig:   cc,
+		ClusterDNSIPs: []string{"10.0.0.1"},
 	}
 
 	k, err := kk.New()

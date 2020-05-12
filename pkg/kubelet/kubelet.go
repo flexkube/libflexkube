@@ -20,26 +20,24 @@ import (
 
 // Kubelet represents single kubelet instance.
 type Kubelet struct {
-	Address             string    `json:"address,omitempty"`
-	Image               string    `json:"image,omitempty"`
-	Host                host.Host `json:"host,omitempty"`
-	BootstrapKubeconfig string    `json:"bootstrapKubeconfig,omitempty"`
-	// TODO: We require CA certificate, so it can be referred in bootstrap-kubeconfig. Maybe we should be responsible for creating
-	// bootstrap-kubeconfig too then?
-	KubernetesCACertificate    types.Certificate      `json:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs              []string               `json:"clusterDNSIPs,omitempty"`
-	Name                       string                 `json:"name,omitempty"`
-	Taints                     map[string]string      `json:"taints,omitempty"`
-	Labels                     map[string]string      `json:"labels,omitempty"`
-	PrivilegedLabels           map[string]string      `json:"privilegedLabels,omitempty"`
-	PrivilegedLabelsKubeconfig string                 `json:"privilegedLabelsKubeconfig,omitempty"`
-	CgroupDriver               string                 `json:"cgroupDriver,omitempty"`
-	NetworkPlugin              string                 `json:"networkPlugin,omitempty"`
-	SystemReserved             map[string]string      `json:"systemReserved,omitempty"`
-	KubeReserved               map[string]string      `json:"kubeReserved,omitempty"`
-	HairpinMode                string                 `json:"hairpinMode,omitempty"`
-	VolumePluginDir            string                 `json:"volumePluginDir,omitempty"`
-	ExtraMounts                []containertypes.Mount `json:"extraMounts,omitempty"`
+	Address                 string                 `json:"address,omitempty"`
+	Image                   string                 `json:"image,omitempty"`
+	Host                    host.Host              `json:"host,omitempty"`
+	BootstrapConfig         *client.Config         `json:"bootstrapConfig,omitempty"`
+	KubernetesCACertificate types.Certificate      `json:"kubernetesCACertificate,omitempty"`
+	ClusterDNSIPs           []string               `json:"clusterDNSIPs,omitempty"`
+	Name                    string                 `json:"name,omitempty"`
+	Taints                  map[string]string      `json:"taints,omitempty"`
+	Labels                  map[string]string      `json:"labels,omitempty"`
+	PrivilegedLabels        map[string]string      `json:"privilegedLabels,omitempty"`
+	AdminConfig             *client.Config         `json:"adminConfig,omitempty"`
+	CgroupDriver            string                 `json:"cgroupDriver,omitempty"`
+	NetworkPlugin           string                 `json:"networkPlugin,omitempty"`
+	SystemReserved          map[string]string      `json:"systemReserved,omitempty"`
+	KubeReserved            map[string]string      `json:"kubeReserved,omitempty"`
+	HairpinMode             string                 `json:"hairpinMode,omitempty"`
+	VolumePluginDir         string                 `json:"volumePluginDir,omitempty"`
+	ExtraMounts             []containertypes.Mount `json:"extraMounts,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -68,6 +66,50 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 	return nk, nil
 }
 
+// validateBootstrapConfig validates bootstrap config.
+func (k *Kubelet) validateBootstrapConfig() error {
+	if k.BootstrapConfig == nil {
+		return fmt.Errorf("bootstrapConfig must be set")
+	}
+
+	if err := k.BootstrapConfig.Validate(); err != nil {
+		return fmt.Errorf("failed validating bootstrap config: %w", err)
+	}
+
+	if _, err := k.BootstrapConfig.ToYAMLString(); err != nil {
+		return fmt.Errorf("failed to generate bootstrap kubeconfig: %w", err)
+	}
+
+	return nil
+}
+
+// validateAdminConfig validates admin config and related parameters.
+func (k *Kubelet) validateAdminConfig() error {
+	var errors util.ValidateError
+
+	if k.AdminConfig == nil && len(k.PrivilegedLabels) > 0 {
+		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
+	}
+
+	if k.AdminConfig != nil && len(k.PrivilegedLabels) == 0 {
+		errors = append(errors, fmt.Errorf("adminConfig specified, but no privilegedLabels requested"))
+	}
+
+	if k.AdminConfig == nil {
+		return errors.Return()
+	}
+
+	if err := k.AdminConfig.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("failed validating admin config: %w", err))
+	}
+
+	if _, err := k.AdminConfig.ToYAMLString(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to generate admin kubeconfig: %w", err))
+	}
+
+	return errors.Return()
+}
+
 // Validate validates kubelet configuration.
 //
 // TODO: Better validation should be done here.
@@ -87,24 +129,16 @@ func (k *Kubelet) Validate() error {
 		errors = append(errors, fmt.Errorf("kubernetesCACertificate can't be empty"))
 	}
 
-	if k.BootstrapKubeconfig == "" {
-		errors = append(errors, fmt.Errorf("bootstrapKubeconfig can't be empty"))
+	if err := k.validateBootstrapConfig(); err != nil {
+		errors = append(errors, err)
 	}
 
 	if k.VolumePluginDir == "" {
 		errors = append(errors, fmt.Errorf("volumePluginDir can't be empty"))
 	}
 
-	if len(k.PrivilegedLabels) > 0 && k.PrivilegedLabelsKubeconfig == "" {
-		errors = append(errors, fmt.Errorf("privilegedLabels requested, but privilegedLabelsKubeconfig is empty"))
-	}
-
-	if k.PrivilegedLabelsKubeconfig != "" && len(k.PrivilegedLabels) == 0 {
-		errors = append(errors, fmt.Errorf("privilegedLabelsKubeconfig specified, but no privilegedLabels requested"))
-	}
-
-	if k.Name == "" {
-		errors = append(errors, fmt.Errorf("name can't be empty"))
+	if err := k.validateAdminConfig(); err != nil {
+		errors = append(errors, err)
 	}
 
 	switch k.NetworkPlugin {
@@ -195,10 +229,12 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 		return nil, fmt.Errorf("failed building kubelet configuration: %w", err)
 	}
 
+	bootstrapKubeconfig, _ := k.config.BootstrapConfig.ToYAMLString()
+
 	return map[string]string{
 		// kubelet.yaml file is a recommended way to configure the kubelet.
 		"/etc/kubernetes/kubelet/kubelet.yaml":         config,
-		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": k.config.BootstrapKubeconfig,
+		"/etc/kubernetes/kubelet/bootstrap-kubeconfig": bootstrapKubeconfig,
 		"/etc/kubernetes/kubelet/pki/ca.crt":           string(k.config.KubernetesCACertificate),
 	}, nil
 }
@@ -396,7 +432,8 @@ func (k *kubelet) getHooks() *container.Hooks {
 
 // applyPrivilegedLabels adds privileged labels to kubelet object using Kubernetes API.
 func (k *kubelet) applyPrivilegedLabels() error {
-	c, err := client.NewClient([]byte(k.config.PrivilegedLabelsKubeconfig))
+	kc, _ := k.config.AdminConfig.ToYAMLString()
+	c, err := client.NewClient([]byte(kc))
 	if err != nil {
 		return fmt.Errorf("failed creating kubernetes client: %w", err)
 	}
@@ -407,7 +444,7 @@ func (k *kubelet) applyPrivilegedLabels() error {
 // postStartHook defines actions which will be executed after new kubelet instance is created.
 func (k *kubelet) postStartHook() *container.Hook {
 	f := container.Hook(func() error {
-		if len(k.config.PrivilegedLabelsKubeconfig) > 0 {
+		if len(k.config.PrivilegedLabels) > 0 {
 			if err := k.applyPrivilegedLabels(); err != nil {
 				return fmt.Errorf("failed applying privileged labels: %w", err)
 			}
