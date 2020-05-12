@@ -330,6 +330,10 @@ func (c *Certificate) Validate() error {
 		}
 	}
 
+	if c.RSABits == 0 {
+		return fmt.Errorf("RSA bits can't be 0")
+	}
+
 	return nil
 }
 
