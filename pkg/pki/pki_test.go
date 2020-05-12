@@ -167,3 +167,28 @@ func TestGenerateEtcdCopyServers(t *testing.T) {
 		t.Fatalf("servers should be copied from peers, if they are not defined, got: %v", diff)
 	}
 }
+
+func TestDecodeKeypair(t *testing.T) {
+	ca := &Certificate{
+		PrivateKey: "foo",
+	}
+
+	c := &Certificate{
+		ValidityDuration: "24h",
+		RSABits:          2048,
+	}
+
+	if err := c.Generate(ca); err == nil {
+		t.Fatalf("generating certificate with bad CA should fail")
+	}
+}
+
+func TestValidateRSABits(t *testing.T) {
+	c := &Certificate{
+		ValidityDuration: "24h",
+	}
+
+	if err := c.Validate(); err == nil {
+		t.Fatalf("certificate with 0 RSA bits should be invalid")
+	}
+}
