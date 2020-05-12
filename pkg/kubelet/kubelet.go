@@ -433,6 +433,7 @@ func (k *kubelet) getHooks() *container.Hooks {
 // applyPrivilegedLabels adds privileged labels to kubelet object using Kubernetes API.
 func (k *kubelet) applyPrivilegedLabels() error {
 	kc, _ := k.config.AdminConfig.ToYAMLString()
+
 	c, err := client.NewClient([]byte(kc))
 	if err != nil {
 		return fmt.Errorf("failed creating kubernetes client: %w", err)

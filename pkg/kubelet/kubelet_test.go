@@ -27,7 +27,7 @@ func getClientConfig(t *testing.T) *client.Config {
 	return &client.Config{
 		Server:        "foo",
 		CACertificate: p.Kubernetes.CA.X509Certificate,
-		Token:         "foo",
+		Token:         "foob",
 	}
 }
 
@@ -36,7 +36,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 	kk := &Kubelet{
 		BootstrapConfig:         cc,
-		Name:                    "foo",
+		Name:                    "fooz",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
 		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
@@ -44,10 +44,10 @@ func TestToHostConfiguredContainer(t *testing.T) {
 			DirectConfig: &direct.Config{},
 		},
 		Labels: map[string]string{
-			"foo": "bar",
+			"do": "bar",
 		},
 		Taints: map[string]string{
-			"foo": "bar",
+			"noo": "bar",
 		},
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",

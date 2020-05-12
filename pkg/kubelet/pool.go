@@ -14,6 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -37,6 +38,7 @@ type Pool struct {
 	HairpinMode             string                 `json:"hairpinMode,omitempty"`
 	VolumePluginDir         string                 `json:"volumePluginDir,omitempty"`
 	ExtraMounts             []containertypes.Mount `json:"extraMounts,omitempty"`
+	PKI                     *pki.PKI               `json:"pki,omitempty"`
 
 	// Serializable fields.
 	State container.ContainersState `json:"state,omitempty"`
@@ -47,10 +49,45 @@ type pool struct {
 	containers container.ContainersInterface
 }
 
+func (p *Pool) pkiIntegration() {
+	if p.PKI != nil && p.PKI.Kubernetes != nil {
+		if p.PKI.Kubernetes.CA != nil && p.KubernetesCACertificate == "" {
+			p.KubernetesCACertificate = p.PKI.Kubernetes.CA.X509Certificate
+		}
+
+		if p.AdminConfig != nil && p.AdminConfig.ClientCertificate == "" && p.PKI.Kubernetes.AdminCertificate != nil {
+			p.AdminConfig.ClientCertificate = p.PKI.Kubernetes.AdminCertificate.X509Certificate
+		}
+
+		if p.AdminConfig != nil && p.AdminConfig.ClientKey == "" && p.PKI.Kubernetes.AdminCertificate != nil {
+			p.AdminConfig.ClientKey = p.PKI.Kubernetes.AdminCertificate.PrivateKey
+		}
+	}
+}
+
+func (p *Pool) kubeletPKIIntegration(k *Kubelet) {
+	k.KubernetesCACertificate = types.Certificate(util.PickString(string(k.KubernetesCACertificate), string(p.KubernetesCACertificate)))
+
+	if k.BootstrapConfig == nil && p.BootstrapConfig != nil {
+		k.BootstrapConfig = p.BootstrapConfig
+	}
+
+	if k.AdminConfig == nil && p.AdminConfig != nil {
+		k.AdminConfig = p.AdminConfig
+	}
+
+	if k.BootstrapConfig != nil && k.BootstrapConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
+		k.BootstrapConfig.CACertificate = p.KubernetesCACertificate
+	}
+
+	if k.AdminConfig != nil && k.AdminConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
+		k.AdminConfig.CACertificate = p.KubernetesCACertificate
+	}
+}
+
 // propagateKubelet fills given kubelet with values from Pool object.
 func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.Image = util.PickString(k.Image, p.Image)
-	k.KubernetesCACertificate = types.Certificate(util.PickString(string(k.KubernetesCACertificate), string(p.KubernetesCACertificate)))
 	k.ClusterDNSIPs = util.PickStringSlice(k.ClusterDNSIPs, p.ClusterDNSIPs)
 	k.Labels = util.PickStringMap(k.Labels, p.Labels)
 	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
@@ -70,21 +107,9 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 		SSHConfig: p.SSH,
 	})
 
-	if k.BootstrapConfig == nil && p.BootstrapConfig != nil {
-		k.BootstrapConfig = p.BootstrapConfig
-	}
+	p.pkiIntegration()
 
-	if k.AdminConfig == nil && p.AdminConfig != nil {
-		k.AdminConfig = p.AdminConfig
-	}
-
-	if k.BootstrapConfig != nil && k.BootstrapConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
-		k.BootstrapConfig.CACertificate = p.KubernetesCACertificate
-	}
-
-	if k.AdminConfig != nil && k.AdminConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
-		k.AdminConfig.CACertificate = p.KubernetesCACertificate
-	}
+	p.kubeletPKIIntegration(k)
 }
 
 // New validates kubelet pool configuration and fills all members with configured values.

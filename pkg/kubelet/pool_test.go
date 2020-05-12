@@ -8,6 +8,8 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -143,5 +145,40 @@ func TestPoolPropagateExtraMounts(t *testing.T) {
 
 	if !found {
 		t.Fatalf("kubelet doh should have directly configured extra mount")
+	}
+}
+
+func TestPoolPKIIntegration(t *testing.T) {
+	pk := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{},
+	}
+
+	if err := pk.Generate(); err != nil {
+		t.Fatalf("generating PKI: %v", err)
+	}
+
+	p := &Pool{
+		PKI: pk,
+		AdminConfig: &client.Config{
+			Server: "foo",
+		},
+		BootstrapConfig: &client.Config{
+			Server: "bar",
+			Token:  "bar",
+		},
+		Kubelets: []Kubelet{
+			{
+				Name:            "foo",
+				VolumePluginDir: "foo",
+				NetworkPlugin:   "cni",
+			},
+		},
+		PrivilegedLabels: map[string]string{
+			"foo": "bar",
+		},
+	}
+
+	if _, err := p.New(); err != nil {
+		t.Fatalf("creating kubelet pool with PKI integration should work, got: %v", err)
 	}
 }
