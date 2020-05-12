@@ -68,7 +68,7 @@ func TestToYAMLStringNew(t *testing.T) {
 		},
 		{
 			func(c *Config) {
-				c.ClientCertificate = "foo"
+				c.ClientCertificate = "dfoo"
 			},
 			func(err error, t *testing.T) {
 				if err == nil {
@@ -78,7 +78,7 @@ func TestToYAMLStringNew(t *testing.T) {
 		},
 		{
 			func(c *Config) {
-				c.ClientKey = "foo"
+				c.ClientKey = "ffoo"
 			},
 			func(err error, t *testing.T) {
 				if err == nil {
@@ -97,12 +97,45 @@ func TestToYAMLStringNew(t *testing.T) {
 				}
 			},
 		},
-
 		{
 			func(c *Config) {},
 			func(err error, t *testing.T) {
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
+				}
+			},
+		},
+		{
+			func(c *Config) {
+				c.ClientCertificate = ""
+				c.ClientKey = ""
+				c.Token = "doo"
+			},
+			func(err error, t *testing.T) {
+				if err != nil {
+					t.Errorf("config with only token set should be valid, got: %v", err)
+				}
+			},
+		},
+		{
+			func(c *Config) {
+				c.ClientCertificate = ""
+				c.Token = "roo"
+			},
+			func(err error, t *testing.T) {
+				if err == nil {
+					t.Errorf("config with token and client key set should not be valid")
+				}
+			},
+		},
+		{
+			func(c *Config) {
+				c.ClientKey = ""
+				c.Token = "fnoo"
+			},
+			func(err error, t *testing.T) {
+				if err == nil {
+					t.Errorf("config with token and client certificate set should be valid")
 				}
 			},
 		},

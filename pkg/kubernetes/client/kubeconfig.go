@@ -16,8 +16,9 @@ import (
 type Config struct {
 	Server            string            `json:"server,omitempty"`
 	CACertificate     types.Certificate `json:"caCertificate,omitempty"`
-	ClientCertificate types.Certificate `json:"clientCertificate"`
-	ClientKey         types.PrivateKey  `json:"clientKey"`
+	ClientCertificate types.Certificate `json:"clientCertificate,omitempty"`
+	ClientKey         types.PrivateKey  `json:"clientKey,omitempty"`
+	Token             string            `json:"token,omitempty"`
 }
 
 // Validate validates Config struct.
@@ -28,12 +29,20 @@ func (c *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("server is empty"))
 	}
 
-	if c.ClientCertificate == "" {
-		errors = append(errors, fmt.Errorf("client certificate is empty"))
+	if c.ClientCertificate == "" && c.Token == "" {
+		errors = append(errors, fmt.Errorf("either client certificate or token must be set"))
 	}
 
-	if c.ClientKey == "" {
-		errors = append(errors, fmt.Errorf("client key is empty"))
+	if c.ClientKey == "" && c.Token == "" {
+		errors = append(errors, fmt.Errorf("either client key or token must be set"))
+	}
+
+	if c.Token != "" && c.ClientCertificate != "" {
+		errors = append(errors, fmt.Errorf("client certificate should not be set together with token"))
+	}
+
+	if c.Token != "" && c.ClientKey != "" {
+		errors = append(errors, fmt.Errorf("client key should not be set together with token"))
 	}
 
 	if c.CACertificate == "" {
@@ -85,6 +94,7 @@ users:
   user:
     client-certificate-data: {{ .ClientCertificate }}
     client-key-data: {{ .ClientKey }}
+    token: {{ .Token }}
 current-context: static
 contexts:
 - name: static
@@ -98,11 +108,13 @@ contexts:
 		CACertificate     string
 		ClientCertificate string
 		ClientKey         string
+		Token             string
 	}{
 		c.Server,
 		base64.StdEncoding.EncodeToString([]byte(c.CACertificate)),
 		base64.StdEncoding.EncodeToString([]byte(c.ClientCertificate)),
 		base64.StdEncoding.EncodeToString([]byte(c.ClientKey)),
+		c.Token,
 	}
 
 	var buf bytes.Buffer
