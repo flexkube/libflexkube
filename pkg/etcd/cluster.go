@@ -68,16 +68,16 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	if c.PKI != nil && c.PKI.Etcd != nil {
 		e := c.PKI.Etcd
 
-		m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate), e.CA.X509Certificate))
+		m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate), string(e.CA.X509Certificate)))
 
 		if c, ok := e.PeerCertificates[m.Name]; ok {
-			m.PeerCertificate = types.Certificate(util.PickString(string(m.PeerCertificate), c.X509Certificate))
-			m.PeerKey = types.PrivateKey(util.PickString(string(m.PeerKey), c.PrivateKey))
+			m.PeerCertificate = types.Certificate(util.PickString(string(m.PeerCertificate), string(c.X509Certificate)))
+			m.PeerKey = types.PrivateKey(util.PickString(string(m.PeerKey), string(c.PrivateKey)))
 		}
 
 		if c, ok := e.ServerCertificates[m.Name]; ok {
-			m.ServerCertificate = types.Certificate(util.PickString(string(m.ServerCertificate), c.X509Certificate))
-			m.ServerKey = types.PrivateKey(util.PickString(string(m.ServerKey), c.PrivateKey))
+			m.ServerCertificate = types.Certificate(util.PickString(string(m.ServerCertificate), string(c.X509Certificate)))
+			m.ServerKey = types.PrivateKey(util.PickString(string(m.ServerKey), string(c.PrivateKey)))
 		}
 	}
 

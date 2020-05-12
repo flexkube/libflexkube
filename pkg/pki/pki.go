@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"sigs.k8s.io/yaml"
+
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 const (
@@ -78,18 +80,18 @@ func extKeyUsage(k string) x509.ExtKeyUsage {
 
 // Certificate defines configurable options for each certificate.
 type Certificate struct {
-	Organization     string   `json:"organization,omitempty"`
-	RSABits          int      `json:"rsaBits,omitempty"`
-	ValidityDuration string   `json:"validityDuration,omitempty"`
-	RenewThreshold   string   `json:"renewThreshold,omitempty"`
-	CommonName       string   `json:"commonName,omitempty"`
-	CA               bool     `json:"ca,omitempty"`
-	KeyUsage         []string `json:"keyUsage,omitempty"`
-	IPAddresses      []string `json:"ipAddresses,omitempty"`
-	DNSNames         []string `json:"dnsNames,omitempty"`
-	X509Certificate  string   `json:"x509Certificate,omitempty"`
-	PublicKey        string   `json:"publicKey,omitempty"`
-	PrivateKey       string   `json:"privateKey,omitempty"`
+	Organization     string            `json:"organization,omitempty"`
+	RSABits          int               `json:"rsaBits,omitempty"`
+	ValidityDuration string            `json:"validityDuration,omitempty"`
+	RenewThreshold   string            `json:"renewThreshold,omitempty"`
+	CommonName       string            `json:"commonName,omitempty"`
+	CA               bool              `json:"ca,omitempty"`
+	KeyUsage         []string          `json:"keyUsage,omitempty"`
+	IPAddresses      []string          `json:"ipAddresses,omitempty"`
+	DNSNames         []string          `json:"dnsNames,omitempty"`
+	X509Certificate  types.Certificate `json:"x509Certificate,omitempty"`
+	PublicKey        string            `json:"publicKey,omitempty"`
+	PrivateKey       types.PrivateKey  `json:"privateKey,omitempty"`
 }
 
 // PKI contains configuration and all generated certificates and private keys required for running Kubernetes.
@@ -301,7 +303,7 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to encode RSA private key: %w", err)
 	}
 
-	c.PrivateKey = buf.String()
+	c.PrivateKey = types.PrivateKey(buf.String())
 
 	if err := c.persistPublicKey(k.Public().(*rsa.PublicKey)); err != nil {
 		return nil, fmt.Errorf("failed persisting RSA public key: %w", err)
@@ -432,7 +434,7 @@ func (c *Certificate) persistX509Certificate(der []byte) error {
 		return fmt.Errorf("failed to write data to cert.pem: %w", err)
 	}
 
-	c.X509Certificate = cert.String()
+	c.X509Certificate = types.Certificate(cert.String())
 
 	return nil
 }

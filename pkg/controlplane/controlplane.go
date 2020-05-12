@@ -59,7 +59,7 @@ type controlplane struct {
 func (c *Controlplane) propagateKubeconfig(d *client.Config) {
 	pkiCA := ""
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.CA != nil {
-		pkiCA = c.PKI.Kubernetes.CA.X509Certificate
+		pkiCA = string(c.PKI.Kubernetes.CA.X509Certificate)
 	}
 
 	d.CACertificate = types.Certificate(util.PickString(string(d.CACertificate), string(c.Common.KubernetesCACertificate), pkiCA))
@@ -98,12 +98,12 @@ func (c *Controlplane) propagateCommon(co *Common) {
 
 	pkiCA := ""
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.CA != nil {
-		pkiCA = c.PKI.Kubernetes.CA.X509Certificate
+		pkiCA = string(c.PKI.Kubernetes.CA.X509Certificate)
 	}
 
 	frontProxyCA := ""
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.FrontProxyCA != nil {
-		frontProxyCA = c.PKI.Kubernetes.FrontProxyCA.X509Certificate
+		frontProxyCA = string(c.PKI.Kubernetes.FrontProxyCA.X509Certificate)
 	}
 
 	co.KubernetesCACertificate = types.Certificate(util.PickString(string(co.KubernetesCACertificate), string(c.Common.KubernetesCACertificate), pkiCA))
@@ -120,8 +120,8 @@ func (c *Controlplane) buildKubeScheduler() {
 
 	// TODO: can be moved to function, which takes Kubeconfig and *pki.Certificate as an input
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.KubeSchedulerCertificate != nil {
-		k.Kubeconfig.ClientCertificate = types.Certificate(util.PickString(string(k.Kubeconfig.ClientCertificate), c.PKI.Kubernetes.KubeSchedulerCertificate.X509Certificate))
-		k.Kubeconfig.ClientKey = types.PrivateKey(util.PickString(string(k.Kubeconfig.ClientKey), c.PKI.Kubernetes.KubeSchedulerCertificate.PrivateKey))
+		k.Kubeconfig.ClientCertificate = types.Certificate(util.PickString(string(k.Kubeconfig.ClientCertificate), string(c.PKI.Kubernetes.KubeSchedulerCertificate.X509Certificate)))
+		k.Kubeconfig.ClientKey = types.PrivateKey(util.PickString(string(k.Kubeconfig.ClientKey), string(c.PKI.Kubernetes.KubeSchedulerCertificate.PrivateKey)))
 	}
 
 	k.Host = c.propagateHost(k.Host)
@@ -137,20 +137,20 @@ func (c *Controlplane) buildKubeControllerManager() {
 
 	if c.PKI != nil && c.PKI.Kubernetes != nil {
 		if c.PKI.Kubernetes.KubeControllerManagerCertificate != nil {
-			k.Kubeconfig.ClientCertificate = types.Certificate(util.PickString(string(k.Kubeconfig.ClientCertificate), c.PKI.Kubernetes.KubeControllerManagerCertificate.X509Certificate))
-			k.Kubeconfig.ClientKey = types.PrivateKey(util.PickString(string(k.Kubeconfig.ClientKey), c.PKI.Kubernetes.KubeControllerManagerCertificate.PrivateKey))
+			k.Kubeconfig.ClientCertificate = types.Certificate(util.PickString(string(k.Kubeconfig.ClientCertificate), string(c.PKI.Kubernetes.KubeControllerManagerCertificate.X509Certificate)))
+			k.Kubeconfig.ClientKey = types.PrivateKey(util.PickString(string(k.Kubeconfig.ClientKey), string(c.PKI.Kubernetes.KubeControllerManagerCertificate.PrivateKey)))
 		}
 
 		if c.PKI.Kubernetes.CA != nil {
-			k.KubernetesCAKey = types.PrivateKey(util.PickString(string(k.KubernetesCAKey), c.PKI.Kubernetes.CA.PrivateKey))
+			k.KubernetesCAKey = types.PrivateKey(util.PickString(string(k.KubernetesCAKey), string(c.PKI.Kubernetes.CA.PrivateKey)))
 		}
 
 		if c.PKI.RootCA != nil {
-			k.RootCACertificate = types.Certificate(util.PickString(string(k.RootCACertificate), c.PKI.RootCA.X509Certificate))
+			k.RootCACertificate = types.Certificate(util.PickString(string(k.RootCACertificate), string(c.PKI.RootCA.X509Certificate)))
 		}
 
 		if c.PKI.Kubernetes.ServiceAccountCertificate != nil {
-			k.ServiceAccountPrivateKey = types.PrivateKey(util.PickString(string(k.ServiceAccountPrivateKey), c.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey))
+			k.ServiceAccountPrivateKey = types.PrivateKey(util.PickString(string(k.ServiceAccountPrivateKey), string(c.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey)))
 		}
 	}
 
@@ -168,18 +168,18 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 
 	if p := c.PKI.Etcd; p != nil {
 		if p.CA != nil {
-			k.EtcdCACertificate = types.Certificate(util.PickString(string(k.EtcdCACertificate), p.CA.X509Certificate))
+			k.EtcdCACertificate = types.Certificate(util.PickString(string(k.EtcdCACertificate), string(p.CA.X509Certificate)))
 		}
 
 		// "root" and "kube-apiserver" are common CNs for etcd client certificate for kube-apiserver.
 		if c, ok := p.ClientCertificates["root"]; ok {
-			k.EtcdClientCertificate = types.Certificate(util.PickString(string(k.EtcdClientCertificate), c.X509Certificate))
-			k.EtcdClientKey = types.PrivateKey(util.PickString(string(k.EtcdClientKey), c.PrivateKey))
+			k.EtcdClientCertificate = types.Certificate(util.PickString(string(k.EtcdClientCertificate), string(c.X509Certificate)))
+			k.EtcdClientKey = types.PrivateKey(util.PickString(string(k.EtcdClientKey), string(c.PrivateKey)))
 		}
 
 		if c, ok := p.ClientCertificates["kube-apiserver"]; ok {
-			k.EtcdClientCertificate = types.Certificate(util.PickString(string(k.EtcdClientCertificate), c.X509Certificate))
-			k.EtcdClientKey = types.PrivateKey(util.PickString(string(k.EtcdClientKey), c.PrivateKey))
+			k.EtcdClientCertificate = types.Certificate(util.PickString(string(k.EtcdClientCertificate), string(c.X509Certificate)))
+			k.EtcdClientKey = types.PrivateKey(util.PickString(string(k.EtcdClientKey), string(c.PrivateKey)))
 		}
 	}
 
@@ -197,18 +197,18 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 	}
 
 	if c := p.ServerCertificate; c != nil {
-		k.APIServerCertificate = types.Certificate(util.PickString(string(k.APIServerCertificate), c.X509Certificate))
-		k.APIServerKey = types.PrivateKey(util.PickString(string(k.APIServerKey), c.PrivateKey))
+		k.APIServerCertificate = types.Certificate(util.PickString(string(k.APIServerCertificate), string(c.X509Certificate)))
+		k.APIServerKey = types.PrivateKey(util.PickString(string(k.APIServerKey), string(c.PrivateKey)))
 	}
 
 	if c := p.FrontProxyClientCertificate; c != nil {
-		k.FrontProxyCertificate = types.Certificate(util.PickString(string(k.FrontProxyCertificate), c.X509Certificate))
-		k.FrontProxyKey = types.PrivateKey(util.PickString(string(k.FrontProxyKey), c.PrivateKey))
+		k.FrontProxyCertificate = types.Certificate(util.PickString(string(k.FrontProxyCertificate), string(c.X509Certificate)))
+		k.FrontProxyKey = types.PrivateKey(util.PickString(string(k.FrontProxyKey), string(c.PrivateKey)))
 	}
 
 	if c := p.KubeletCertificate; c != nil {
-		k.KubeletClientCertificate = types.Certificate(util.PickString(string(k.KubeletClientCertificate), c.X509Certificate))
-		k.KubeletClientKey = types.PrivateKey(util.PickString(string(k.KubeletClientKey), c.PrivateKey))
+		k.KubeletClientCertificate = types.Certificate(util.PickString(string(k.KubeletClientCertificate), string(c.X509Certificate)))
+		k.KubeletClientKey = types.PrivateKey(util.PickString(string(k.KubeletClientKey), string(c.PrivateKey)))
 	}
 }
 
