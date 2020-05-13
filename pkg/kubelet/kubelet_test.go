@@ -2,6 +2,7 @@ package kubelet
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/flexkube/libflexkube/internal/utiltest"
@@ -74,73 +75,145 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 // Validate() tests.
 func TestKubeletValidate(t *testing.T) {
-	cc := getClientConfig(t)
+	t.Parallel()
 
-	k := &Kubelet{
-		BootstrapConfig:         cc,
-		Name:                    "foo",
-		NetworkPlugin:           "cni",
-		VolumePluginDir:         "/foo",
-		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
-		Host: host.Host{
-			DirectConfig: &direct.Config{},
+	cases := []struct {
+		MutationF func(k *Kubelet)
+		TestF     func(t *testing.T, er error)
+	}{
+		{
+			MutationF: func(k *Kubelet) {},
+			TestF: func(t *testing.T, err error) {
+				if err != nil {
+					t.Fatalf("validation of kubelet should pass, got: %v", err)
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.Name = "" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when name is not set")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) {},
+			TestF:     func(t *testing.T, err error) {},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.KubernetesCACertificate = "" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when kubernetes CA certificate is not set")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.BootstrapConfig.Server = "" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when bootstrap config is invalid")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.VolumePluginDir = "" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when volume plugin dir is empty")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) {
+				k.PrivilegedLabels = map[string]string{
+					"foo": "bar",
+				}
+				k.AdminConfig = nil
+			},
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when privileged labels are configured and admin config is not")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.AdminConfig = k.BootstrapConfig },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when admin config is defined and there is no privileged labels")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) {
+				k.PrivilegedLabels = map[string]string{
+					"foo": "bar",
+				}
+				k.AdminConfig = &client.Config{}
+			},
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when admin config is wrong")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.PodCIDR = "foo" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when network plugin is 'cni' and pod CIDR is set")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.NetworkPlugin = "kubenet" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when network plugin is 'kubelet' and pod CIDR is empty")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.NetworkPlugin = "doh" },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when network plugin is invalid")
+				}
+			},
+		},
+		{
+			MutationF: func(k *Kubelet) { k.Host.DirectConfig = nil },
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when host is invalid")
+				}
+			},
 		},
 	}
 
-	if err := k.Validate(); err != nil {
-		t.Fatalf("validation of kubelet should pass, got: %v", err)
-	}
-}
+	for i, tc := range cases {
+		tc := tc
 
-func TestKubeletValidateRequireName(t *testing.T) {
-	cc := getClientConfig(t)
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			cc := getClientConfig(t)
 
-	k := &Kubelet{
-		BootstrapConfig: cc,
-		NetworkPlugin:   "cni",
-		VolumePluginDir: "/foo",
-		Host: host.Host{
-			DirectConfig: &direct.Config{},
-		},
-	}
+			k := &Kubelet{
+				BootstrapConfig:         cc,
+				Name:                    "foo",
+				NetworkPlugin:           "cni",
+				VolumePluginDir:         "/foo",
+				KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
+				Host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+			}
 
-	if err := k.Validate(); err == nil {
-		t.Fatalf("validation of kubelet should fail when name is not set")
-	}
-}
+			tc.MutationF(k)
 
-func TestKubeletValidateEmptyCA(t *testing.T) {
-	cc := getClientConfig(t)
-
-	k := &Kubelet{
-		BootstrapConfig: cc,
-		NetworkPlugin:   "cni",
-		VolumePluginDir: "/foo",
-		Host: host.Host{
-			DirectConfig: &direct.Config{},
-		},
-	}
-
-	if err := k.Validate(); err == nil {
-		t.Fatalf("validation of kubelet should fail when kubernetes CA certificate is not set")
-	}
-}
-
-func TestKubeletValidateBadCA(t *testing.T) {
-	cc := getClientConfig(t)
-
-	k := &Kubelet{
-		BootstrapConfig:         cc,
-		NetworkPlugin:           "cni",
-		VolumePluginDir:         "/foo",
-		KubernetesCACertificate: "doh",
-		Host: host.Host{
-			DirectConfig: &direct.Config{},
-		},
-	}
-
-	if err := k.Validate(); err == nil {
-		t.Fatalf("validation of kubelet should fail when kubernetes CA certificate is not valid")
+			tc.TestF(t, k.Validate())
+		})
 	}
 }
 

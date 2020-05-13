@@ -158,6 +158,10 @@ func (k *Kubelet) Validate() error {
 		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
 	}
 
+	if k.Name == "" {
+		errors = append(errors, fmt.Errorf("name can't be empty"))
+	}
+
 	return errors.Return()
 }
 
