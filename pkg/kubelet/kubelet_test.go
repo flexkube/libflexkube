@@ -168,7 +168,7 @@ func TestKubeletValidate(t *testing.T) {
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.NetworkPlugin = "kubenet" },
+			MutationF: func(k *Kubelet) { k.NetworkPlugin = KubenetNetworkPlugin },
 			TestF: func(t *testing.T, err error) {
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is 'kubelet' and pod CIDR is empty")

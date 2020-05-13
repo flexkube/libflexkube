@@ -18,6 +18,11 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
+const (
+	// KubenetNetworkPlugin is the name of kubenet network plugin.
+	KubenetNetworkPlugin = "kubenet"
+)
+
 // Kubelet represents single kubelet instance.
 type Kubelet struct {
 	Address                 string                 `json:"address,omitempty"`
@@ -146,7 +151,7 @@ func (k *Kubelet) Validate() error {
 		if k.PodCIDR != "" {
 			errors = append(errors, fmt.Errorf("podCIDR has no effect when using 'cni' network plugin"))
 		}
-	case "kubenet":
+	case KubenetNetworkPlugin:
 		if k.PodCIDR == "" {
 			errors = append(errors, fmt.Errorf("podCIDR must be set when using 'kubenet' network plugin"))
 		}
@@ -214,7 +219,7 @@ func (k *kubelet) configFile() (string, error) {
 		HairpinMode: k.config.HairpinMode,
 	}
 
-	if k.config.NetworkPlugin == "kubenet" {
+	if k.config.NetworkPlugin == KubenetNetworkPlugin {
 		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
 		config.PodCIDR = k.config.PodCIDR
 	}
