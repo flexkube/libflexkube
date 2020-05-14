@@ -2,45 +2,28 @@ provider "local" {
   version = "= 1.4.0"
 }
 
-module "root_pki" {
-  source = "git::https://github.com/flexkube/terraform-root-pki.git"
+resource "flexkube_pki" "pki" {
+  certificate {
+    organization = "example"
+  }
 
-  organization = "example"
-}
+  etcd {
+    peers   = zipmap(local.controller_names, local.controller_ips)
+    servers = zipmap(local.controller_names, local.controller_ips)
 
-module "etcd_pki" {
-  source = "git::https://github.com/flexkube/terraform-etcd-pki.git"
+    client_cns = [
+      "root",
+      "kube-apiserver",
+      "prometheus",
+    ]
+  }
 
-  root_ca_cert      = module.root_pki.root_ca_cert
-  root_ca_key       = module.root_pki.root_ca_key
-  root_ca_algorithm = module.root_pki.root_ca_algorithm
-
-  peer_ips   = local.controller_ips
-  peer_names = local.controller_names
-
-  server_ips   = local.controller_ips
-  server_names = local.controller_names
-
-  client_cns = [
-    "root",
-    "kube-apiserver",
-    "prometheus",
-  ]
-
-  organization = "example"
-}
-
-module "kubernetes_pki" {
-  source = "git::https://github.com/flexkube/terraform-kubernetes-pki.git"
-
-  root_ca_cert      = module.root_pki.root_ca_cert
-  root_ca_key       = module.root_pki.root_ca_key
-  root_ca_algorithm = module.root_pki.root_ca_algorithm
-
-  api_server_ips            = local.controller_ips
-  api_server_external_ips   = ["127.0.1.1"]
-  api_server_external_names = ["kube-apiserver.example.com"]
-  organization              = "example"
+  kubernetes {
+    kube_api_server {
+      external_names = ["kube-apiserver.example.com"]
+      server_ips     = concat(local.controller_ips, ["127.0.1.1", "11.0.0.1"])
+    }
+  }
 }
 
 locals {
@@ -51,28 +34,30 @@ locals {
 
   node_load_balancer_address = "127.0.0.1:7443"
 
+  etcd_servers = formatlist("https://%s:2379", values(flexkube_pki.pki.etcd[0].peers))
+
   kube_apiserver_values = templatefile("./templates/kube-apiserver-values.yaml.tmpl", {
-    server_key                     = module.kubernetes_pki.kubernetes_api_server_key
-    server_certificate             = module.kubernetes_pki.kubernetes_api_server_cert
-    service_account_public_key     = module.kubernetes_pki.service_account_public_key
-    ca_certificate                 = module.kubernetes_pki.kubernetes_ca_cert
-    front_proxy_client_key         = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_key
-    front_proxy_client_certificate = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_cert
-    front_proxy_ca_certificate     = module.kubernetes_pki.kubernetes_front_proxy_ca_cert
-    kubelet_client_certificate     = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
-    kubelet_client_key             = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
-    etcd_ca_certificate            = module.etcd_pki.etcd_ca_cert
-    etcd_client_certificate        = module.etcd_pki.client_certs[1]
-    etcd_client_key                = module.etcd_pki.client_keys[1]
-    etcd_servers                   = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
+    server_key                     = flexkube_pki.pki.kubernetes[0].kube_api_server[0].server_certificate[0].private_key
+    server_certificate             = flexkube_pki.pki.kubernetes[0].kube_api_server[0].server_certificate[0].x509_certificate
+    service_account_public_key     = flexkube_pki.pki.kubernetes[0].service_account_certificate[0].public_key
+    ca_certificate                 = flexkube_pki.pki.kubernetes[0].ca[0].x509_certificate
+    front_proxy_client_key         = flexkube_pki.pki.kubernetes[0].kube_api_server[0].front_proxy_client_certificate[0].private_key
+    front_proxy_client_certificate = flexkube_pki.pki.kubernetes[0].kube_api_server[0].front_proxy_client_certificate[0].x509_certificate
+    front_proxy_ca_certificate     = flexkube_pki.pki.kubernetes[0].front_proxy_ca[0].x509_certificate
+    kubelet_client_certificate     = flexkube_pki.pki.kubernetes[0].kube_api_server[0].kubelet_certificate[0].x509_certificate
+    kubelet_client_key             = flexkube_pki.pki.kubernetes[0].kube_api_server[0].kubelet_certificate[0].private_key
+    etcd_ca_certificate            = flexkube_pki.pki.etcd[0].ca[0].x509_certificate
+    etcd_client_certificate        = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "kube-apiserver")].x509_certificate
+    etcd_client_key                = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "kube-apiserver")].private_key
+    etcd_servers                   = local.etcd_servers
     replicas                       = var.controllers_count
   })
 
   kubernetes_values = templatefile("./templates/values.yaml.tmpl", {
-    service_account_private_key = module.kubernetes_pki.service_account_private_key
-    kubernetes_ca_key           = module.kubernetes_pki.kubernetes_ca_key
-    root_ca_certificate         = module.root_pki.root_ca_cert
-    kubernetes_ca_certificate   = module.kubernetes_pki.kubernetes_ca_cert
+    service_account_private_key = flexkube_pki.pki.kubernetes[0].service_account_certificate[0].private_key
+    kubernetes_ca_key           = flexkube_pki.pki.kubernetes[0].ca[0].private_key
+    root_ca_certificate         = flexkube_pki.pki.root_ca[0].x509_certificate
+    kubernetes_ca_certificate   = flexkube_pki.pki.kubernetes[0].ca[0].x509_certificate
     api_servers                 = formatlist("%s:%d", local.controller_ips, local.api_port)
     replicas                    = var.controllers_count
     podsCIDR                    = var.pod_cidr
@@ -116,9 +101,9 @@ EOF
   kubeconfig_admin = templatefile("./templates/kubeconfig.tmpl", {
     name        = "admin"
     server      = "https://${local.first_controller_ip}:${local.api_port}"
-    ca_cert     = base64encode(module.kubernetes_pki.kubernetes_ca_cert)
-    client_cert = base64encode(module.kubernetes_pki.kubernetes_admin_cert)
-    client_key  = base64encode(module.kubernetes_pki.kubernetes_admin_key)
+    ca_cert     = base64encode(flexkube_pki.pki.kubernetes[0].ca[0].x509_certificate)
+    client_cert = base64encode(flexkube_pki.pki.kubernetes[0].admin_certificate[0].x509_certificate)
+    client_key  = base64encode(flexkube_pki.pki.kubernetes[0].admin_certificate[0].private_key)
   })
 
   network_plugin = var.network_plugin == "kubenet" ? "kubenet" : "cni"
@@ -140,23 +125,19 @@ resource "flexkube_etcd_cluster" "etcd" {
     private_key = local.ssh_private_key
   }
 
-  ca_certificate = module.etcd_pki.etcd_ca_cert
+  pki_yaml = flexkube_pki.pki.state_yaml
 
   dynamic "member" {
-    for_each = module.etcd_pki.etcd_peer_ips
+    for_each = flexkube_pki.pki.etcd[0].peers
 
     content {
-      name               = module.etcd_pki.etcd_peer_names[member.key]
-      peer_certificate   = module.etcd_pki.etcd_peer_certs[member.key]
-      peer_key           = module.etcd_pki.etcd_peer_keys[member.key]
-      server_certificate = module.etcd_pki.etcd_server_certs[member.key]
-      server_key         = module.etcd_pki.etcd_server_keys[member.key]
-      peer_address       = module.etcd_pki.etcd_peer_ips[member.key]
-      server_address     = local.controller_ips[member.key]
+      name           = member.key
+      peer_address   = member.value
+      server_address = member.value
 
       host {
         ssh {
-          address = local.controller_ips[member.key]
+          address = member.value
         }
       }
     }
@@ -210,46 +191,18 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 resource "flexkube_controlplane" "bootstrap" {
-  common {
-    kubernetes_ca_certificate  = module.kubernetes_pki.kubernetes_ca_cert
-    front_proxy_ca_certificate = module.kubernetes_pki.kubernetes_front_proxy_ca_cert
-  }
+  pki_yaml = flexkube_pki.pki.state_yaml
 
   kube_apiserver {
-    api_server_certificate     = module.kubernetes_pki.kubernetes_api_server_cert
-    api_server_key             = module.kubernetes_pki.kubernetes_api_server_key
-    front_proxy_certificate    = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_cert
-    front_proxy_key            = module.kubernetes_pki.kubernetes_api_server_front_proxy_client_key
-    kubelet_client_certificate = module.kubernetes_pki.kubernetes_api_server_kubelet_client_cert
-    kubelet_client_key         = module.kubernetes_pki.kubernetes_api_server_kubelet_client_key
-    service_account_public_key = module.kubernetes_pki.service_account_public_key
-    etcd_ca_certificate        = module.etcd_pki.etcd_ca_cert
-    etcd_client_certificate    = module.etcd_pki.client_certs[1]
-    etcd_client_key            = module.etcd_pki.client_keys[1]
-    service_cidr               = "11.0.0.0/24"
-    etcd_servers               = formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips)
-    bind_address               = local.bootstrap_api_bind
-    advertise_address          = local.first_controller_ip
-    secure_port                = local.api_port
+    service_cidr      = "11.0.0.0/24"
+    etcd_servers      = local.etcd_servers
+    bind_address      = local.bootstrap_api_bind
+    advertise_address = local.first_controller_ip
+    secure_port       = local.api_port
   }
 
   kube_controller_manager {
-    flex_volume_plugin_dir      = "/var/lib/kubelet/volumeplugins"
-    kubernetes_ca_key           = module.kubernetes_pki.kubernetes_ca_key
-    service_account_private_key = module.kubernetes_pki.service_account_private_key
-    root_ca_certificate         = module.root_pki.root_ca_cert
-
-    kubeconfig {
-      client_certificate = module.kubernetes_pki.kube_controller_manager_cert
-      client_key         = module.kubernetes_pki.kube_controller_manager_key
-    }
-  }
-
-  kube_scheduler {
-    kubeconfig {
-      client_certificate = module.kubernetes_pki.kube_scheduler_cert
-      client_key         = module.kubernetes_pki.kube_scheduler_key
-    }
+    flex_volume_plugin_dir = "/var/lib/kubelet/volumeplugins"
   }
 
   api_server_address = local.first_controller_ip
@@ -352,11 +305,11 @@ resource "flexkube_kubelet_pool" "controller" {
     token  = "07401b.f395accd246ae52d"
   }
 
-  cgroup_driver             = local.cgroup_driver
-  network_plugin            = local.network_plugin
-  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
-  hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
-  volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
+  pki_yaml          = flexkube_pki.pki.state_yaml
+  cgroup_driver     = local.cgroup_driver
+  network_plugin    = local.network_plugin
+  hairpin_mode      = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
+  volume_plugin_dir = "/var/lib/kubelet/volumeplugins"
   cluster_dns_ips = [
     "11.0.0.10"
   ]
@@ -377,12 +330,8 @@ resource "flexkube_kubelet_pool" "controller" {
   }
 
   admin_config {
-    server             = "${local.first_controller_ip}:${local.api_port}"
-    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
-    client_key         = module.kubernetes_pki.kubernetes_admin_key
+    server = "${local.first_controller_ip}:${local.api_port}"
   }
-
-  privileged_labels_kubeconfig = local.kubeconfig_admin
 
   taints = {
     "node-role.kubernetes.io/master" = "NoSchedule"
@@ -453,11 +402,12 @@ resource "flexkube_kubelet_pool" "workers" {
     token  = "07401b.f395accd246ae52d"
   }
 
-  cgroup_driver             = local.cgroup_driver
-  network_plugin            = local.network_plugin
-  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
-  hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
-  volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
+  pki_yaml = flexkube_pki.pki.state_yaml
+
+  cgroup_driver     = local.cgroup_driver
+  network_plugin    = local.network_plugin
+  hairpin_mode      = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
+  volume_plugin_dir = "/var/lib/kubelet/volumeplugins"
   cluster_dns_ips = [
     "11.0.0.10"
   ]
