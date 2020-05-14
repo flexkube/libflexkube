@@ -6,16 +6,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
-func stringSliceToInterfaceSlice(i []string) []interface{} {
-	var o []interface{} //nolint:prealloc
-
-	for _, v := range i {
-		o = append(o, v)
-	}
-
-	return o
-}
-
 func containerConfigMarshal(c types.ContainerConfig) interface{} {
 	return []interface{}{
 		map[string]interface{}{

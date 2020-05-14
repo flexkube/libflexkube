@@ -18,6 +18,7 @@ func Provider() terraform.ResourceProvider {
 			"flexkube_apiloadbalancer_pool": resourceAPILoadBalancerPool(),
 			"flexkube_helm_release":         resourceHelmRelease(),
 			"flexkube_containers":           resourceContainers(),
+			"flexkube_pki":                  resourcePKI(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

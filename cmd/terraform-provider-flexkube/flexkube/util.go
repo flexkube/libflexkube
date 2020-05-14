@@ -153,6 +153,15 @@ func requiredList(computed bool, sensitive bool, elem func(bool) *schema.Resourc
 	}
 }
 
+func optionalList(computed bool, elem func(bool) *schema.Resource) *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: computed,
+		Required: !computed,
+		Elem:     elem(computed),
+	}
+}
+
 func sha256sum(data []byte) string {
 	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
@@ -436,10 +445,14 @@ func stringMapUnmarshal(i interface{}) map[string]string {
 	r := map[string]string{}
 
 	if i == nil {
-		return r
+		return nil
 	}
 
 	j := i.(map[string]interface{})
+
+	if len(j) == 0 {
+		return nil
+	}
 
 	for k, v := range j {
 		r[k] = v.(string)
@@ -462,4 +475,32 @@ func stringListUnmarshal(i interface{}) []string {
 	}
 
 	return r
+}
+
+func stringSliceToInterfaceSlice(i []string) []interface{} {
+	var o []interface{} //nolint:prealloc
+
+	for _, v := range i {
+		o = append(o, v)
+	}
+
+	return o
+}
+
+func stringMapSchema(computed bool) *schema.Schema {
+	return optionalMapPrimitive(false, func(computed bool) *schema.Schema {
+		return &schema.Schema{
+			Type: schema.TypeString,
+		}
+	})
+}
+
+func stringMapMarshal(c map[string]string) interface{} {
+	i := map[string]interface{}{}
+
+	for k, v := range c {
+		i[k] = v
+	}
+
+	return i
 }
