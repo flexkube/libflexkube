@@ -56,3 +56,23 @@ func TestCertificateParse(t *testing.T) {
 		})
 	}
 }
+
+func TestCertificatePickNil(t *testing.T) {
+	var c Certificate
+
+	d := Certificate("bar")
+	e := Certificate("baz")
+
+	if c.Pick(d, e) != "bar" {
+		t.Fatalf("first non empty certificate should be picked")
+	}
+}
+
+func TestCertificatePick(t *testing.T) {
+	d := Certificate("foo")
+	e := Certificate("baz")
+
+	if d.Pick(e) != "foo" {
+		t.Fatalf("first non empty certificate should be picked")
+	}
+}

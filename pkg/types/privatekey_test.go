@@ -78,3 +78,23 @@ func TestParsePrivateKeyBad(t *testing.T) {
 		t.Fatalf("parsing not PEM format should fail")
 	}
 }
+
+func TestPrivateKeyPickNil(t *testing.T) {
+	var c PrivateKey
+
+	d := PrivateKey("bar")
+	e := PrivateKey("baz")
+
+	if c.Pick(d, e) != "bar" {
+		t.Fatalf("first non empty private key should be picked")
+	}
+}
+
+func TestPrivateKeyPick(t *testing.T) {
+	d := PrivateKey("foo")
+	e := PrivateKey("baz")
+
+	if d.Pick(e) != "foo" {
+		t.Fatalf("first non empty private key should be picked")
+	}
+}
