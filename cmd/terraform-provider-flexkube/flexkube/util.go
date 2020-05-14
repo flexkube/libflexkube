@@ -140,6 +140,7 @@ func optionalList(computed bool, elem func(bool) *schema.Resource) *schema.Schem
 		Type:     schema.TypeList,
 		Computed: computed,
 		Required: !computed,
+		Optional: true,
 		Elem:     elem(computed),
 	}
 }

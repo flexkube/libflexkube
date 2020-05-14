@@ -9,7 +9,15 @@ import (
 
 func TestPKI(t *testing.T) {
 	config := `
-resource "flexkube_pki" "pki" {}
+resource "flexkube_pki" "pki" {
+	etcd {
+		peer_certificates {
+			organization = "foo"
+		}
+	}
+
+	kubernetes {}
+}
 `
 
 	resource.UnitTest(t, resource.TestCase{
@@ -19,7 +27,6 @@ resource "flexkube_pki" "pki" {}
 		Steps: []resource.TestStep{
 			{
 				Config:             config,
-				PlanOnly:           true,
 				ExpectNonEmptyPlan: true,
 			},
 		},
