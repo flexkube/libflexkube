@@ -13,6 +13,8 @@ import (
 )
 
 func TestAPILoadBalancerPoolPlanOnly(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -43,6 +45,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -83,6 +87,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolValidateFail(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -108,6 +114,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolUnmarshalIncludeState(t *testing.T) {
+	t.Parallel()
+
 	s := map[string]interface{}{
 		"state_sensitive": []interface{}{
 			map[string]interface{}{

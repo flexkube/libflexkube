@@ -19,6 +19,8 @@ import (
 )
 
 func TestControlplanePlanOnly(t *testing.T) {
+	t.Parallel()
+
 	config := `
 locals {
   controller_ips = ["1.1.1.1"]
@@ -138,6 +140,8 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 
 func TestControlplaneCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	config := `
 locals {
   controller_ips = ["1.1.1.1"]
@@ -302,6 +306,8 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 
 func TestControlplaneValidateFail(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_controlplane" "bootstrap" {
   common {
@@ -372,6 +378,8 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 
 func TestControlplaneDecodeEmptyBlocks(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_controlplane" "bootstrap" {
   common {}
@@ -400,6 +408,8 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 
 func TestControlplaneDecodeEmptyConfig(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_controlplane" "bootstrap" {}
 `
@@ -418,6 +428,8 @@ resource "flexkube_controlplane" "bootstrap" {}
 }
 
 func TestControlplaneDecodeEmptyKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_controlplane" "bootstrap" {
 	kube_controller_manager {
@@ -441,6 +453,8 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 
 func TestControlplaneDestroy(t *testing.T) {
+	t.Parallel()
+
 	pki := utiltest.GeneratePKI(t)
 
 	// Prepare some fake state.
@@ -542,6 +556,8 @@ func TestControlplaneDestroy(t *testing.T) {
 }
 
 func TestControlplaneDestroyValidateConfiguration(t *testing.T) {
+	t.Parallel()
+
 	// Prepare some fake state.
 	cs := container.ContainersState{
 		"foo": &container.HostConfiguredContainer{

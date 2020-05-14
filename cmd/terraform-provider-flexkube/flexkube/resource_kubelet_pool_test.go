@@ -110,6 +110,8 @@ resource "flexkube_kubelet_pool" "controller" {
 `
 
 func TestKubeletPool(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
@@ -245,6 +247,8 @@ resource "flexkube_kubelet_pool" "controller" {
 `
 
 func TestKubeletPoolUnmarshalIncludeState(t *testing.T) {
+	t.Parallel()
+
 	s := map[string]interface{}{
 		"state_sensitive": []interface{}{
 			map[string]interface{}{

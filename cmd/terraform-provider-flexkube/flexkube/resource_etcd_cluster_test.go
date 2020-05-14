@@ -14,6 +14,8 @@ import (
 )
 
 func TestEtcdClusterPlanOnly(t *testing.T) {
+	t.Parallel()
+
 	config := `
 locals {
 	controller_ips = ["1.1.1.1"]
@@ -90,6 +92,8 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 
 func TestEtcdClusterCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	config := `
 locals {
   controller_ips = ["1.1.1.1"]
@@ -170,6 +174,8 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 
 func TestEtcdClusterValidateFail(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_etcd_cluster" "etcd" {
 	member {
@@ -197,6 +203,8 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 
 func TestEtcdClusterUnmarshalIncludeState(t *testing.T) {
+	t.Parallel()
+
 	s := map[string]interface{}{
 		"state_sensitive": []interface{}{
 			map[string]interface{}{
