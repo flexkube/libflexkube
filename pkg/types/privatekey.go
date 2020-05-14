@@ -5,6 +5,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"strconv"
+
+	"github.com/flexkube/libflexkube/internal/util"
 )
 
 // PrivateKey is a wrapper on string type, which parses it's content
@@ -13,13 +15,13 @@ import (
 type PrivateKey string
 
 // UnmarshalJSON implements encoding/json.Unmarshaler interface.
-func (c *PrivateKey) UnmarshalJSON(data []byte) error {
-	p, err := strconv.Unquote(string(data))
+func (p *PrivateKey) UnmarshalJSON(data []byte) error {
+	up, err := strconv.Unquote(string(data))
 	if err != nil {
 		return fmt.Errorf("failed to unquote string: %v", err)
 	}
 
-	der, _ := pem.Decode([]byte(p))
+	der, _ := pem.Decode([]byte(up))
 	if der == nil {
 		return fmt.Errorf("failed to decode PEM format")
 	}
@@ -28,7 +30,7 @@ func (c *PrivateKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*c = PrivateKey(p)
+	*p = PrivateKey(up)
 
 	return nil
 }
@@ -49,4 +51,19 @@ func parsePrivateKey(b []byte) error {
 	}
 
 	return fmt.Errorf("unable to parse private key")
+}
+
+// Pick returns first non-empty private key.
+func (p *PrivateKey) Pick(values ...PrivateKey) PrivateKey {
+	if p == nil || *p == "" {
+		pt := PrivateKey("")
+		p = &pt
+	}
+
+	pks := []string{string(*p)}
+	for _, v := range values {
+		pks = append(pks, string(v))
+	}
+
+	return PrivateKey(util.PickString(pks...))
 }

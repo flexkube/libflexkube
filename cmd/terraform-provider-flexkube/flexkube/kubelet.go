@@ -20,27 +20,33 @@ func kubeletsUnmarshal(i interface{}) []kubelet.Kubelet {
 		t := v.(map[string]interface{})
 
 		k := kubelet.Kubelet{
-			Image:                      t["image"].(string),
-			BootstrapKubeconfig:        t["bootstrap_kubeconfig"].(string),
-			KubernetesCACertificate:    types.Certificate(t["kubernetes_ca_certificate"].(string)),
-			PrivilegedLabelsKubeconfig: t["privileged_labels_kubeconfig"].(string),
-			CgroupDriver:               t["cgroup_driver"].(string),
-			NetworkPlugin:              t["network_plugin"].(string),
-			HairpinMode:                t["hairpin_mode"].(string),
-			VolumePluginDir:            t["volume_plugin_dir"].(string),
-			Name:                       t["name"].(string),
-			Address:                    t["address"].(string),
-			ClusterDNSIPs:              stringListUnmarshal(t["cluster_dns_ips"]),
-			Taints:                     stringMapUnmarshal(t["taints"]),
-			Labels:                     stringMapUnmarshal(t["labels"]),
-			PrivilegedLabels:           stringMapUnmarshal(t["privileged_labels"]),
-			SystemReserved:             stringMapUnmarshal(t["system_reserved"]),
-			KubeReserved:               stringMapUnmarshal(t["kube_reserved"]),
-			ExtraMounts:                mountsUnmarshal(t["mount"]),
+			Image:                   t["image"].(string),
+			KubernetesCACertificate: types.Certificate(t["kubernetes_ca_certificate"].(string)),
+			CgroupDriver:            t["cgroup_driver"].(string),
+			NetworkPlugin:           t["network_plugin"].(string),
+			HairpinMode:             t["hairpin_mode"].(string),
+			VolumePluginDir:         t["volume_plugin_dir"].(string),
+			Name:                    t["name"].(string),
+			Address:                 t["address"].(string),
+			ClusterDNSIPs:           stringListUnmarshal(t["cluster_dns_ips"]),
+			Taints:                  stringMapUnmarshal(t["taints"]),
+			Labels:                  stringMapUnmarshal(t["labels"]),
+			PrivilegedLabels:        stringMapUnmarshal(t["privileged_labels"]),
+			SystemReserved:          stringMapUnmarshal(t["system_reserved"]),
+			KubeReserved:            stringMapUnmarshal(t["kube_reserved"]),
+			ExtraMounts:             mountsUnmarshal(t["mount"]),
 		}
 
 		if v, ok := t["host"]; ok && len(v.([]interface{})) == 1 {
 			k.Host = hostUnmarshal(v.([]interface{})[0])
+		}
+
+		if v, ok := t["bootstrap_config"]; ok && len(v.([]interface{})) == 1 {
+			k.BootstrapConfig = clientUnmarshal(v.([]interface{})[0])
+		}
+
+		if v, ok := t["admin_config"]; ok && len(v.([]interface{})) == 1 {
+			k.AdminConfig = clientUnmarshal(v.([]interface{})[0])
 		}
 
 		kubelets = append(kubelets, k)
@@ -57,7 +63,7 @@ func kubeletSchema() *schema.Schema {
 				"image":                     optionalString(false),
 				"host":                      hostSchema(false),
 				"address":                   requiredString(false),
-				"bootstrap_kubeconfig":      optionalString(false),
+				"bootstrap_config":          clientSchema(false),
 				"kubernetes_ca_certificate": optionalString(false),
 				"cluster_dns_ips":           optionalStringList(false),
 				"taints": optionalMapPrimitive(false, func(computed bool) *schema.Schema {
@@ -75,9 +81,9 @@ func kubeletSchema() *schema.Schema {
 						Type: schema.TypeString,
 					}
 				}),
-				"privileged_labels_kubeconfig": sensitiveString(false),
-				"cgroup_driver":                optionalString(false),
-				"network_plugin":               optionalString(false),
+				"admin_config":   clientSchema(false),
+				"cgroup_driver":  optionalString(false),
+				"network_plugin": optionalString(false),
 				"system_reserved": optionalMapPrimitive(false, func(computed bool) *schema.Schema {
 					return &schema.Schema{
 						Type: schema.TypeString,

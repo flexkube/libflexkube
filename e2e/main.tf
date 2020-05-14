@@ -123,27 +123,6 @@ EOF
 
   network_plugin = var.network_plugin == "kubenet" ? "kubenet" : "cni"
 
-  bootstrap_kubeconfig = <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    certificate-authority: /etc/kubernetes/pki/ca.crt
-    server: https://${local.node_load_balancer_address}
-  name: bootstrap
-contexts:
-- context:
-    cluster: bootstrap
-    user: kubelet-bootstrap
-  name: bootstrap
-current-context: bootstrap
-preferences: {}
-users:
-- name: kubelet-bootstrap
-  user:
-    token: 07401b.f395accd246ae52d
-EOF
-
   deploy_workers = var.workers_count > 0 ? 1 : 0
 
   ssh_private_key = file(var.ssh_private_key_path)
@@ -368,7 +347,11 @@ resource "flexkube_helm_release" "calico" {
 }
 
 resource "flexkube_kubelet_pool" "controller" {
-  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  bootstrap_config {
+    server = local.node_load_balancer_address
+    token  = "07401b.f395accd246ae52d"
+  }
+
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
   kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
@@ -391,6 +374,12 @@ resource "flexkube_kubelet_pool" "controller" {
 
   privileged_labels = {
     "node-role.kubernetes.io/master" = ""
+  }
+
+  admin_config {
+    server             = "${local.first_controller_ip}:${local.api_port}"
+    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
+    client_key         = module.kubernetes_pki.kubernetes_admin_key
   }
 
   privileged_labels_kubeconfig = local.kubeconfig_admin
@@ -459,7 +448,11 @@ resource "flexkube_apiloadbalancer_pool" "workers" {
 resource "flexkube_kubelet_pool" "workers" {
   count = local.deploy_workers
 
-  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  bootstrap_config {
+    server = local.node_load_balancer_address
+    token  = "07401b.f395accd246ae52d"
+  }
+
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
   kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert

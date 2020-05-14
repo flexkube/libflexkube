@@ -1,4 +1,4 @@
-package flexkube //nolint:dupl
+package flexkube
 
 import (
 	"regexp"
@@ -13,61 +13,16 @@ import (
 	"github.com/flexkube/libflexkube/pkg/kubelet"
 )
 
-func TestKubeletPoolPlanOnly(t *testing.T) {
-	config := `
+const kubeletPoolConfigPlanOnly = `
 locals {
-	controller_ips = ["1.1.1.1"]
-	controller_names = ["controller01"]
-	cgroup_driver = "systemd"
-	network_plugin = "cni"
-	first_controller_ip = local.controller_ips[0]
-	api_port = 6443
-	node_load_balancer_address = "127.0.0.1"
-	controller_cidrs = ["10.0.1/0/24"]
-
-	kubeconfig_admin = <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- name: admin-cluster
-  cluster:
-    server: https://${local.first_controller_ip}:${local.api_port}
-    certificate-authority-data: base64encode(module.kubernetes_pki.kubernetes_ca_cert)
-users:
-- name: admin-user
-  user:
-    client-certificate-data: base64encode(module.kubernetes_pki.kubernetes_admin_cert)
-    client-key-data: base64encode(module.kubernetes_pki.kubernetes_admin_key)
-current-context: admin-context
-contexts:
-- name: admin-context
-  context:
-    cluster: admin-cluster
-    namespace: kube-system
-    user: admin-user
-EOF
-
-	bootstrap_kubeconfig = <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    certificate-authority: /etc/kubernetes/pki/ca.crt
-    server: https://${local.node_load_balancer_address}
-  name: bootstrap
-contexts:
-- context:
-    cluster: bootstrap
-    user: kubelet-bootstrap
-  name: bootstrap
-current-context: bootstrap
-preferences: {}
-users:
-- name: kubelet-bootstrap
-  user:
-    token: 07401b.f395accd246ae52d
-EOF
-
+  controller_ips = ["1.1.1.1"]
+  controller_names = ["controller01"]
+  cgroup_driver = "systemd"
+  network_plugin = "cni"
+  first_controller_ip = local.controller_ips[0]
+  api_port = 6443
+  node_load_balancer_address = "127.0.0.1"
+  controller_cidrs = ["10.0.1/0/24"]
 }
 
 module "root_pki" {
@@ -90,7 +45,11 @@ module "kubernetes_pki" {
 }
 
 resource "flexkube_kubelet_pool" "controller" {
-  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  bootstrap_config {
+    server = local.node_load_balancer_address
+    token  = "07401b.f395accd246ae52d"
+  }
+
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
   kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
@@ -115,7 +74,11 @@ resource "flexkube_kubelet_pool" "controller" {
     "node-role.kubernetes.io/master" = ""
   }
 
-  privileged_labels_kubeconfig = local.kubeconfig_admin
+  admin_config {
+    server             = "${local.first_controller_ip}:${local.api_port}"
+    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
+    client_key         = module.kubernetes_pki.kubernetes_admin_key
+  }
 
   taints = {
     "node-role.kubernetes.io/master" = "NoSchedule"
@@ -124,7 +87,7 @@ resource "flexkube_kubelet_pool" "controller" {
   ssh {
     user     = "core"
     port     = 22
-		password = "foo"
+    password = "foo"
   }
 
   dynamic "kubelet" {
@@ -146,6 +109,7 @@ resource "flexkube_kubelet_pool" "controller" {
 }
 `
 
+func TestKubeletPool(t *testing.T) {
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
@@ -153,16 +117,23 @@ resource "flexkube_kubelet_pool" "controller" {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:             config,
+				Config:             kubeletPoolConfigPlanOnly,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config:      kubeletPoolConfigCreateRuntimeError,
+				ExpectError: regexp.MustCompile(`connection refused`),
+			},
+			{
+				Config:      kubeletPoolConfigValidateFail,
+				ExpectError: regexp.MustCompile(`networkPlugin must be either`),
 			},
 		},
 	})
 }
 
-func TestKubeletPoolCreateRuntimeError(t *testing.T) {
-	config := `
+const kubeletPoolConfigCreateRuntimeError = `
 locals {
   controller_ips = ["1.1.1.1"]
   controller_names = ["controller01"]
@@ -172,50 +143,6 @@ locals {
   api_port = 6443
   node_load_balancer_address = "127.0.0.1"
   controller_cidrs = ["10.0.1/0/24"]
-
-  kubeconfig_admin = <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- name: admin-cluster
-  cluster:
-    server: https://${local.first_controller_ip}:${local.api_port}
-    certificate-authority-data: base64encode(module.kubernetes_pki.kubernetes_ca_cert)
-users:
-- name: admin-user
-  user:
-    client-certificate-data: base64encode(module.kubernetes_pki.kubernetes_admin_cert)
-    client-key-data: base64encode(module.kubernetes_pki.kubernetes_admin_key)
-current-context: admin-context
-contexts:
-- name: admin-context
-  context:
-    cluster: admin-cluster
-    namespace: kube-system
-    user: admin-user
-EOF
-
-  bootstrap_kubeconfig = <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    certificate-authority: /etc/kubernetes/pki/ca.crt
-    server: https://${local.node_load_balancer_address}
-  name: bootstrap
-contexts:
-- context:
-    cluster: bootstrap
-    user: kubelet-bootstrap
-  name: bootstrap
-current-context: bootstrap
-preferences: {}
-users:
-- name: kubelet-bootstrap
-  user:
-    token: 07401b.f395accd246ae52d
-EOF
-
 }
 
 module "root_pki" {
@@ -238,7 +165,11 @@ module "kubernetes_pki" {
 }
 
 resource "flexkube_kubelet_pool" "controller" {
-  bootstrap_kubeconfig      = local.bootstrap_kubeconfig
+  bootstrap_config {
+    server = local.node_load_balancer_address
+    token  = "07401b.f395accd246ae52d"
+  }
+
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
   kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
@@ -263,7 +194,11 @@ resource "flexkube_kubelet_pool" "controller" {
     "node-role.kubernetes.io/master" = ""
   }
 
-  privileged_labels_kubeconfig = local.kubeconfig_admin
+  admin_config {
+    server             = "${local.first_controller_ip}:${local.api_port}"
+    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
+    client_key         = module.kubernetes_pki.kubernetes_admin_key
+  }
 
   taints = {
     "node-role.kubernetes.io/master" = "NoSchedule"
@@ -284,7 +219,7 @@ resource "flexkube_kubelet_pool" "controller" {
 
       address = local.controller_ips[kubelet.key]
 
-			host {
+      host {
         ssh {
           address            = "127.0.0.1"
           port               = 12345
@@ -300,22 +235,7 @@ resource "flexkube_kubelet_pool" "controller" {
 
 `
 
-	resource.UnitTest(t, resource.TestCase{
-		Providers: map[string]terraform.ResourceProvider{
-			"flexkube": Provider(),
-			"tls":      tls.Provider(),
-		},
-		Steps: []resource.TestStep{
-			{
-				Config:      config,
-				ExpectError: regexp.MustCompile(`connection refused`),
-			},
-		},
-	})
-}
-
-func TestKubeletPoolValidateFail(t *testing.T) {
-	config := `
+const kubeletPoolConfigValidateFail = `
 resource "flexkube_kubelet_pool" "controller" {
 	kubelet {
 		name		= "foo"
@@ -323,19 +243,6 @@ resource "flexkube_kubelet_pool" "controller" {
 	}
 }
 `
-
-	resource.UnitTest(t, resource.TestCase{
-		Providers: map[string]terraform.ResourceProvider{
-			"flexkube": Provider(),
-		},
-		Steps: []resource.TestStep{
-			{
-				Config:      config,
-				ExpectError: regexp.MustCompile(`networkPlugin must be either`),
-			},
-		},
-	})
-}
 
 func TestKubeletPoolUnmarshalIncludeState(t *testing.T) {
 	s := map[string]interface{}{

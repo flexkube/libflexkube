@@ -62,22 +62,22 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))
-	m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate)))
+	m.CACertificate = m.CACertificate.Pick(c.CACertificate)
 
 	// PKI integration.
 	if c.PKI != nil && c.PKI.Etcd != nil {
 		e := c.PKI.Etcd
 
-		m.CACertificate = types.Certificate(util.PickString(string(m.CACertificate), string(c.CACertificate), e.CA.X509Certificate))
+		m.CACertificate = m.CACertificate.Pick(c.CACertificate, e.CA.X509Certificate)
 
 		if c, ok := e.PeerCertificates[m.Name]; ok {
-			m.PeerCertificate = types.Certificate(util.PickString(string(m.PeerCertificate), c.X509Certificate))
-			m.PeerKey = types.PrivateKey(util.PickString(string(m.PeerKey), c.PrivateKey))
+			m.PeerCertificate = m.PeerCertificate.Pick(c.X509Certificate)
+			m.PeerKey = m.PeerKey.Pick(c.PrivateKey)
 		}
 
 		if c, ok := e.ServerCertificates[m.Name]; ok {
-			m.ServerCertificate = types.Certificate(util.PickString(string(m.ServerCertificate), c.X509Certificate))
-			m.ServerKey = types.PrivateKey(util.PickString(string(m.ServerKey), c.PrivateKey))
+			m.ServerCertificate = m.ServerCertificate.Pick(c.X509Certificate)
+			m.ServerKey = m.ServerKey.Pick(c.PrivateKey)
 		}
 	}
 

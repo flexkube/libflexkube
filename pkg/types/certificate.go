@@ -5,6 +5,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"strconv"
+
+	"github.com/flexkube/libflexkube/internal/util"
 )
 
 // Certificate is a wrapper on string type, which parses it's content
@@ -31,4 +33,19 @@ func (c *Certificate) UnmarshalJSON(data []byte) error {
 	*c = Certificate(p)
 
 	return nil
+}
+
+// Pick returns first non-empty certificate.
+func (c *Certificate) Pick(values ...Certificate) Certificate {
+	if c == nil || *c == "" {
+		ce := Certificate("")
+		c = &ce
+	}
+
+	cs := []string{string(*c)}
+	for _, v := range values {
+		cs = append(cs, string(v))
+	}
+
+	return Certificate(util.PickString(cs...))
 }
