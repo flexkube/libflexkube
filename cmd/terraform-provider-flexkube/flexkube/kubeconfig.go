@@ -8,14 +8,12 @@ import (
 )
 
 func kubeconfigSchema() *schema.Schema {
-	return requiredBlock(false, func(computed bool) *schema.Resource {
-		return &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"server":             optionalString(false),
-				"ca_certificate":     optionalString(false),
-				"client_certificate": requiredString(false),
-				"client_key":         requiredSensitiveString(),
-			},
+	return optionalBlock(false, func(computed bool) map[string]*schema.Schema {
+		return map[string]*schema.Schema{
+			"server":             optionalString(false),
+			"ca_certificate":     optionalString(false),
+			"client_certificate": optionalString(false),
+			"client_key":         sensitiveString(false),
 		}
 	})
 }

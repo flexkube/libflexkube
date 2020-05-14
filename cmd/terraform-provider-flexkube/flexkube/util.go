@@ -10,6 +10,7 @@ import (
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/resource"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -503,4 +504,17 @@ func stringMapMarshal(c map[string]string) interface{} {
 	}
 
 	return i
+}
+
+func unmarshalPKI(d getter) *pki.PKI {
+	pki := &pki.PKI{}
+
+	v, ok := d.GetOk("pki_yaml")
+	if !ok || v.(string) == "" {
+		return pki
+	}
+
+	_ = yaml.Unmarshal([]byte(v.(string)), pki)
+
+	return pki
 }

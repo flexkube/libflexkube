@@ -52,6 +52,7 @@ func resourceKubeletPool() *schema.Resource {
 			"volume_plugin_dir": optionalString(false),
 			"kubelet":           kubeletSchema(),
 			"extra_mount":       mountsSchema(false),
+			"pki_yaml":          sensitiveString(false),
 		}),
 	}
 }
@@ -72,6 +73,7 @@ func kubeletPoolUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		SystemReserved:          stringMapUnmarshal(d.Get("system_reserved")),
 		KubeReserved:            stringMapUnmarshal(d.Get("kube_reserved")),
 		ExtraMounts:             mountsUnmarshal(d.Get("extra_mount")),
+		PKI:                     unmarshalPKI(d),
 	}
 
 	if s := getState(d); includeState && s != nil {

@@ -7,13 +7,11 @@ import (
 )
 
 func kubeSchedulerSchema() *schema.Schema {
-	return requiredBlock(false, func(computed bool) *schema.Resource {
-		return &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"common":     controlplaneCommonSchema(),
-				"host":       hostSchema(false),
-				"kubeconfig": kubeconfigSchema(),
-			},
+	return optionalBlock(false, func(computed bool) map[string]*schema.Schema {
+		return map[string]*schema.Schema{
+			"common":     controlplaneCommonSchema(),
+			"host":       hostSchema(false),
+			"kubeconfig": kubeconfigSchema(),
 		}
 	})
 }

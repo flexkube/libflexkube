@@ -19,6 +19,7 @@ func resourceEtcdCluster() *schema.Resource {
 			"ssh":            sshSchema(false),
 			"ca_certificate": optionalString(false),
 			"member":         memberSchema(),
+			"pki_yaml":       sensitiveString(false),
 		}),
 	}
 }
@@ -28,6 +29,7 @@ func etcdClusterUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		Image:         d.Get("image").(string),
 		CACertificate: types.Certificate(d.Get("ca_certificate").(string)),
 		Members:       membersUnmarshal(d.Get("member")),
+		PKI:           unmarshalPKI(d),
 	}
 
 	if s := getState(d); includeState && s != nil {
