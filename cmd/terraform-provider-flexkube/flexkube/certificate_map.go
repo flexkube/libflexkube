@@ -18,6 +18,7 @@ func certificateMapMarshal(cm map[string]*pki.Certificate) interface{} {
 
 func certificateMapUnmarshal(i interface{}) map[string]*pki.Certificate {
 	r := map[string]*pki.Certificate{}
+
 	if i == nil {
 		return r
 	}

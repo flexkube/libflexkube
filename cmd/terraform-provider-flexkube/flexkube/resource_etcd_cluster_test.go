@@ -1,4 +1,4 @@
-package flexkube
+package flexkube //nolint:dupl
 
 import (
 	"regexp"
@@ -17,8 +17,8 @@ func TestEtcdClusterPlanOnly(t *testing.T) {
 
 	config := `
 locals {
-	controller_ips = ["1.1.1.1"]
-	controller_names = ["controller01"]
+  controller_ips = ["1.1.1.1"]
+  controller_names = ["controller01"]
 }
 
 resource "flexkube_pki" "pki" {
@@ -33,11 +33,11 @@ resource "flexkube_pki" "pki" {
 }
 
 resource "flexkube_etcd_cluster" "etcd" {
-	pki_yaml = flexkube_pki.pki.state_yaml
+  pki_yaml = flexkube_pki.pki.state_yaml
 
   ssh {
     user     = "core"
-		password = "foo"
+    password = "foo"
   }
 
   dynamic "member" {
@@ -93,7 +93,7 @@ resource "flexkube_pki" "pki" {
 }
 
 resource "flexkube_etcd_cluster" "etcd" {
-	pki_yaml = flexkube_pki.pki.state_yaml
+  pki_yaml = flexkube_pki.pki.state_yaml
 
   ssh {
     user     = "core"
@@ -109,14 +109,14 @@ resource "flexkube_etcd_cluster" "etcd" {
       server_address     = member.value
 
       host {
-				ssh {
-					address            = "127.0.0.1"
-	        port               = 12345
-		      password           = "bar"
-			    connection_timeout = "1s"
-				  retry_interval     = "1s"
-	        retry_timeout      = "1s"
-		    }
+        ssh {
+          address            = "127.0.0.1"
+          port               = 12345
+          password           = "bar"
+          connection_timeout = "1s"
+          retry_interval     = "1s"
+          retry_timeout      = "1s"
+        }
       }
     }
   }
@@ -141,14 +141,14 @@ func TestEtcdClusterValidateFail(t *testing.T) {
 
 	config := `
 resource "flexkube_etcd_cluster" "etcd" {
-	member {
-		server_address = ""
-		server_key = ""
-		server_certificate = ""
-		peer_key = ""
-		name = "foo"
-		peer_certificate = ""
-	}
+  member {
+    server_address = ""
+    server_key = ""
+    server_certificate = ""
+    peer_key = ""
+    name = "foo"
+    peer_certificate = ""
+  }
 }
 `
 

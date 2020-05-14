@@ -103,9 +103,9 @@ func TestControlplaneCreateRuntimeError(t *testing.T) {
 locals {
   controller_ips = ["1.1.1.1"]
   controller_names = ["controller01"]
-	first_controller_ip = local.controller_ips[0]
-	api_port = 6443
-	bootstrap_api_bind = "0.0.0.0"
+  first_controller_ip = local.controller_ips[0]
+  api_port = 6443
+  bootstrap_api_bind = "0.0.0.0"
 }
 
 resource "flexkube_pki" "pki" {
@@ -137,60 +137,60 @@ resource "flexkube_controlplane" "bootstrap" {
 
   kube_apiserver {
     service_cidr               = "11.0.0.0/24"
-		etcd_servers               = formatlist("https://%s:2379", local.controller_ips)
+    etcd_servers               = formatlist("https://%s:2379", local.controller_ips)
     bind_address               = local.bootstrap_api_bind
     advertise_address          = local.first_controller_ip
     secure_port                = local.api_port
 
-		host {
-			ssh {
-				address            = "127.0.0.1"
-				port               = 12345
-				password           = "bar"
-				connection_timeout = "1s"
-				retry_interval     = "1s"
-				retry_timeout      = "1s"
-			}
-		}
+    host {
+      ssh {
+        address            = "127.0.0.1"
+        port               = 12345
+        password           = "bar"
+        connection_timeout = "1s"
+        retry_interval     = "1s"
+        retry_timeout      = "1s"
+      }
+    }
 
-		common {
-			image = "bar"
-		}
+    common {
+      image = "bar"
+    }
   }
 
   kube_controller_manager {
     flex_volume_plugin_dir      = "/var/lib/kubelet/volumeplugins"
 
-		host {
-			ssh {
-				address            = "127.0.0.1"
-				port               = 12345
-				password           = "bar"
-				connection_timeout = "1s"
-				retry_interval     = "1s"
-				retry_timeout      = "1s"
-			}
-		}
+    host {
+      ssh {
+        address            = "127.0.0.1"
+        port               = 12345
+        password           = "bar"
+        connection_timeout = "1s"
+        retry_interval     = "1s"
+        retry_timeout      = "1s"
+      }
+    }
 
-		common {
+    common {
       image = "baz"
     }
 
   }
 
   kube_scheduler {
-		host {
-			ssh {
-				address            = "127.0.0.1"
-				port               = 12345
-				password           = "bar"
-				connection_timeout = "1s"
-				retry_interval     = "1s"
-				retry_timeout      = "1s"
-			}
-		}
+    host {
+      ssh {
+        address            = "127.0.0.1"
+        port               = 12345
+        password           = "bar"
+        connection_timeout = "1s"
+        retry_interval     = "1s"
+        retry_timeout      = "1s"
+      }
+    }
 
-		common {
+    common {
       image = "doh"
     }
   }
@@ -198,14 +198,14 @@ resource "flexkube_controlplane" "bootstrap" {
   api_server_address = local.first_controller_ip
   api_server_port    = local.api_port
 
-	ssh {
+  ssh {
     address            = "127.0.0.1"
     port               = 12345
     password           = "bar"
     connection_timeout = "1s"
     retry_interval     = "1s"
-		retry_timeout      = "1s"
-	}
+    retry_timeout      = "1s"
+  }
 }
 `
 
@@ -270,7 +270,7 @@ resource "flexkube_controlplane" "bootstrap" {
   }
 
   api_server_address = ""
-	api_server_port    = 0
+  api_server_port    = 0
 
   ssh {
     user        = "core"
@@ -349,10 +349,10 @@ func TestControlplaneDecodeEmptyKubeconfig(t *testing.T) {
 
 	config := `
 resource "flexkube_controlplane" "bootstrap" {
-	kube_controller_manager {
-		kubeconfig {}
-		common {}
-	}
+  kube_controller_manager {
+    kubeconfig {}
+    common {}
+  }
 }
 `
 

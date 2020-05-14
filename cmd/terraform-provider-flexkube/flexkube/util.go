@@ -58,29 +58,10 @@ func sensitiveString(computed bool) *schema.Schema {
 	}
 }
 
-func requiredSensitiveString() *schema.Schema {
-	return &schema.Schema{
-		Type:      schema.TypeString,
-		Required:  true,
-		Sensitive: true,
-	}
-}
-
 func optionalStringList(computed bool) *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Optional: true,
-		Computed: computed,
-		Elem: &schema.Schema{
-			Type: schema.TypeString,
-		},
-	}
-}
-
-func requiredStringList(computed bool) *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Required: true,
 		Computed: computed,
 		Elem: &schema.Schema{
 			Type: schema.TypeString,
@@ -489,7 +470,7 @@ func stringSliceToInterfaceSlice(i []string) []interface{} {
 }
 
 func stringMapSchema(computed bool) *schema.Schema {
-	return optionalMapPrimitive(false, func(computed bool) *schema.Schema {
+	return optionalMapPrimitive(computed, func(computed bool) *schema.Schema {
 		return &schema.Schema{
 			Type: schema.TypeString,
 		}

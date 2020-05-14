@@ -245,10 +245,10 @@ resource "flexkube_kubelet_pool" "controller" {
 
 const kubeletPoolConfigValidateFail = `
 resource "flexkube_kubelet_pool" "controller" {
-	kubelet {
-		name		= "foo"
-		address = ""
-	}
+  kubelet {
+    name    = "foo"
+    address = ""
+  }
 }
 `
 
