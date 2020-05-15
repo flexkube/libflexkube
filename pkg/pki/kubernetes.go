@@ -36,7 +36,6 @@ type KubeAPIServer struct {
 
 	ExternalNames []string `json:"externalNames,omitempty"`
 	ServerIPs     []string `json:"serverIPs,omitempty"`
-	ClusterDomain string   `json:"clusterDomain,omitempty"`
 
 	ServerCertificate           *Certificate `json:"serverCertificate,omitempty"`
 	KubeletCertificate          *Certificate `json:"kubeletCertificate,omitempty"`

@@ -59,27 +59,27 @@ resource "local_file" "kubelet_pool_state" {
 }
 
 resource "local_file" "etcd_ca_certificate" {
-  content  = module.etcd_pki.etcd_ca_cert
+  content  = flexkube_pki.pki.etcd[0].ca[0].x509_certificate
   filename = "./resources/etcd-cluster/ca.pem"
 }
 
 resource "local_file" "etcd_root_user_certificate" {
-  content  = module.etcd_pki.client_certs[0]
+  content  = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "root")].x509_certificate
   filename = "./resources/etcd-cluster/client.pem"
 }
 
 resource "local_file" "etcd_root_user_private_key" {
-  sensitive_content = module.etcd_pki.client_keys[0]
+  sensitive_content = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "root")].private_key
   filename          = "./resources/etcd-cluster/client.key"
 }
 
 resource "local_file" "etcd_prometheus_user_certificate" {
-  content  = module.etcd_pki.client_certs[2]
+  content  = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "prometheus")].x509_certificate
   filename = "./resources/etcd-cluster/prometheus_client.pem"
 }
 
 resource "local_file" "etcd_prometheus_user_private_key" {
-  sensitive_content = module.etcd_pki.client_keys[2]
+  sensitive_content = flexkube_pki.pki.etcd[0].client_certificates[index(flexkube_pki.pki.etcd[0].client_cns, "prometheus")].private_key
   filename          = "./resources/etcd-cluster/prometheus_client.key"
 }
 
@@ -91,7 +91,7 @@ export ETCDCTL_API=3
 export ETCDCTL_CACERT=${abspath(local_file.etcd_ca_certificate.filename)}
 export ETCDCTL_CERT=${abspath(local_file.etcd_root_user_certificate.filename)}
 export ETCDCTL_KEY=${abspath(local_file.etcd_root_user_private_key.filename)}
-export ETCDCTL_ENDPOINTS=${join(",", formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips))}
+export ETCDCTL_ENDPOINTS=${join(",", local.etcd_servers)}
 EOF
 
   depends_on = [
@@ -107,7 +107,7 @@ export ETCDCTL_API=3
 export ETCDCTL_CACERT=${abspath(local_file.etcd_ca_certificate.filename)}
 export ETCDCTL_CERT=${abspath(local_file.etcd_prometheus_user_certificate.filename)}
 export ETCDCTL_KEY=${abspath(local_file.etcd_prometheus_user_private_key.filename)}
-export ETCDCTL_ENDPOINTS=${join(",", formatlist("https://%s:2379", module.etcd_pki.etcd_peer_ips))}
+export ETCDCTL_ENDPOINTS=${join(",", local.etcd_servers)}
 EOF
 
   depends_on = [

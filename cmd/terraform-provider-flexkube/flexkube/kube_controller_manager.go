@@ -8,17 +8,15 @@ import (
 )
 
 func kubeControllerManagerSchema() *schema.Schema {
-	return requiredBlock(false, func(computed bool) *schema.Resource {
-		return &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"common":                      controlplaneCommonSchema(),
-				"host":                        hostSchema(false),
-				"kubeconfig":                  kubeconfigSchema(),
-				"flex_volume_plugin_dir":      requiredString(false),
-				"kubernetes_ca_key":           requiredSensitiveString(),
-				"service_account_private_key": requiredSensitiveString(),
-				"root_ca_certificate":         requiredString(false),
-			},
+	return optionalBlock(false, func(computed bool) map[string]*schema.Schema {
+		return map[string]*schema.Schema{
+			"common":                      controlplaneCommonSchema(),
+			"host":                        hostSchema(false),
+			"kubeconfig":                  kubeconfigSchema(),
+			"flex_volume_plugin_dir":      optionalString(false),
+			"kubernetes_ca_key":           sensitiveString(false),
+			"service_account_private_key": sensitiveString(false),
+			"root_ca_certificate":         optionalString(false),
 		}
 	})
 }

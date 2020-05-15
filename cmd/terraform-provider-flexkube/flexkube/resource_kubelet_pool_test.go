@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/terraform-providers/terraform-provider-tls/tls"
 
 	"github.com/flexkube/libflexkube/pkg/kubelet"
 )
@@ -25,26 +24,33 @@ locals {
   controller_cidrs = ["10.0.1/0/24"]
 }
 
-module "root_pki" {
-  source = "git::https://github.com/flexkube/terraform-root-pki.git"
+resource "flexkube_pki" "pki" {
+  certificate {
+    organization = "example"
+  }
 
-  organization = "example"
-}
+  etcd {
+    peers   = zipmap(local.controller_names, local.controller_ips)
+    servers = zipmap(local.controller_names, local.controller_ips)
 
-module "kubernetes_pki" {
-  source = "git::https://github.com/flexkube/terraform-kubernetes-pki.git"
+    client_cns = [
+      "root",
+      "kube-apiserver",
+      "prometheus",
+    ]
+  }
 
-  root_ca_cert      = module.root_pki.root_ca_cert
-  root_ca_key       = module.root_pki.root_ca_key
-  root_ca_algorithm = module.root_pki.root_ca_algorithm
-
-  api_server_ips            = local.controller_ips
-  api_server_external_ips   = ["127.0.1.1"]
-  api_server_external_names = ["kube-apiserver.example.com"]
-  organization              = "example"
+  kubernetes {
+    kube_api_server {
+      external_names = ["kube-apiserver.example.com"]
+      server_ips     = concat(local.controller_ips, ["127.0.1.1", "11.0.0.1"])
+    }
+  }
 }
 
 resource "flexkube_kubelet_pool" "controller" {
+  pki_yaml = flexkube_pki.pki.state_yaml
+
   bootstrap_config {
     server = local.node_load_balancer_address
     token  = "07401b.f395accd246ae52d"
@@ -52,7 +58,6 @@ resource "flexkube_kubelet_pool" "controller" {
 
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
-  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
   hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
   volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
   cluster_dns_ips = [
@@ -76,8 +81,6 @@ resource "flexkube_kubelet_pool" "controller" {
 
   admin_config {
     server             = "${local.first_controller_ip}:${local.api_port}"
-    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
-    client_key         = module.kubernetes_pki.kubernetes_admin_key
   }
 
   taints = {
@@ -110,10 +113,11 @@ resource "flexkube_kubelet_pool" "controller" {
 `
 
 func TestKubeletPool(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
-			"tls":      tls.Provider(),
 		},
 		Steps: []resource.TestStep{
 			{
@@ -145,26 +149,33 @@ locals {
   controller_cidrs = ["10.0.1/0/24"]
 }
 
-module "root_pki" {
-  source = "git::https://github.com/flexkube/terraform-root-pki.git"
+resource "flexkube_pki" "pki" {
+  certificate {
+    organization = "example"
+  }
 
-  organization = "example"
-}
+  etcd {
+    peers   = zipmap(local.controller_names, local.controller_ips)
+    servers = zipmap(local.controller_names, local.controller_ips)
 
-module "kubernetes_pki" {
-  source = "git::https://github.com/flexkube/terraform-kubernetes-pki.git"
+    client_cns = [
+      "root",
+      "kube-apiserver",
+      "prometheus",
+    ]
+  }
 
-  root_ca_cert      = module.root_pki.root_ca_cert
-  root_ca_key       = module.root_pki.root_ca_key
-  root_ca_algorithm = module.root_pki.root_ca_algorithm
-
-  api_server_ips            = local.controller_ips
-  api_server_external_ips   = ["127.0.1.1"]
-  api_server_external_names = ["kube-apiserver.example.com"]
-  organization              = "example"
+  kubernetes {
+    kube_api_server {
+      external_names = ["kube-apiserver.example.com"]
+      server_ips     = concat(local.controller_ips, ["127.0.1.1", "11.0.0.1"])
+    }
+  }
 }
 
 resource "flexkube_kubelet_pool" "controller" {
+  pki_yaml = flexkube_pki.pki.state_yaml
+
   bootstrap_config {
     server = local.node_load_balancer_address
     token  = "07401b.f395accd246ae52d"
@@ -172,7 +183,6 @@ resource "flexkube_kubelet_pool" "controller" {
 
   cgroup_driver             = local.cgroup_driver
   network_plugin            = local.network_plugin
-  kubernetes_ca_certificate = module.kubernetes_pki.kubernetes_ca_cert
   hairpin_mode              = local.network_plugin == "kubenet" ? "promiscuous-bridge" : "hairpin-veth"
   volume_plugin_dir         = "/var/lib/kubelet/volumeplugins"
   cluster_dns_ips = [
@@ -196,8 +206,6 @@ resource "flexkube_kubelet_pool" "controller" {
 
   admin_config {
     server             = "${local.first_controller_ip}:${local.api_port}"
-    client_certificate = module.kubernetes_pki.kubernetes_admin_cert
-    client_key         = module.kubernetes_pki.kubernetes_admin_key
   }
 
   taints = {
@@ -237,14 +245,16 @@ resource "flexkube_kubelet_pool" "controller" {
 
 const kubeletPoolConfigValidateFail = `
 resource "flexkube_kubelet_pool" "controller" {
-	kubelet {
-		name		= "foo"
-		address = ""
-	}
+  kubelet {
+    name    = "foo"
+    address = ""
+  }
 }
 `
 
 func TestKubeletPoolUnmarshalIncludeState(t *testing.T) {
+	t.Parallel()
+
 	s := map[string]interface{}{
 		"state_sensitive": []interface{}{
 			map[string]interface{}{

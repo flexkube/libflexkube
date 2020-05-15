@@ -10,6 +10,7 @@ import (
 
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/resource"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -57,29 +58,10 @@ func sensitiveString(computed bool) *schema.Schema {
 	}
 }
 
-func requiredSensitiveString() *schema.Schema {
-	return &schema.Schema{
-		Type:      schema.TypeString,
-		Required:  true,
-		Sensitive: true,
-	}
-}
-
 func optionalStringList(computed bool) *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Optional: true,
-		Computed: computed,
-		Elem: &schema.Schema{
-			Type: schema.TypeString,
-		},
-	}
-}
-
-func requiredStringList(computed bool) *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Required: true,
 		Computed: computed,
 		Elem: &schema.Schema{
 			Type: schema.TypeString,
@@ -150,6 +132,16 @@ func requiredList(computed bool, sensitive bool, elem func(bool) *schema.Resourc
 		Sensitive: sensitive,
 		Required:  !computed,
 		Elem:      elem(computed),
+	}
+}
+
+func optionalList(computed bool, elem func(bool) *schema.Resource) *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Computed: computed,
+		Required: !computed,
+		Optional: true,
+		Elem:     elem(computed),
 	}
 }
 
@@ -436,10 +428,14 @@ func stringMapUnmarshal(i interface{}) map[string]string {
 	r := map[string]string{}
 
 	if i == nil {
-		return r
+		return nil
 	}
 
 	j := i.(map[string]interface{})
+
+	if len(j) == 0 {
+		return nil
+	}
 
 	for k, v := range j {
 		r[k] = v.(string)
@@ -462,4 +458,45 @@ func stringListUnmarshal(i interface{}) []string {
 	}
 
 	return r
+}
+
+func stringSliceToInterfaceSlice(i []string) []interface{} {
+	var o []interface{} //nolint:prealloc
+
+	for _, v := range i {
+		o = append(o, v)
+	}
+
+	return o
+}
+
+func stringMapSchema(computed bool) *schema.Schema {
+	return optionalMapPrimitive(computed, func(computed bool) *schema.Schema {
+		return &schema.Schema{
+			Type: schema.TypeString,
+		}
+	})
+}
+
+func stringMapMarshal(c map[string]string) interface{} {
+	i := map[string]interface{}{}
+
+	for k, v := range c {
+		i[k] = v
+	}
+
+	return i
+}
+
+func unmarshalPKI(d getter) *pki.PKI {
+	pki := &pki.PKI{}
+
+	v, ok := d.GetOk("pki_yaml")
+	if !ok || v.(string) == "" {
+		return pki
+	}
+
+	_ = yaml.Unmarshal([]byte(v.(string)), pki)
+
+	return pki
 }

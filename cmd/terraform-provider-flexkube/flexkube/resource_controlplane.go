@@ -27,6 +27,7 @@ func resourceControlplane() *schema.Resource {
 			"kube_apiserver":          kubeAPIServerSchema(),
 			"kube_scheduler":          kubeSchedulerSchema(),
 			"kube_controller_manager": kubeControllerManagerSchema(),
+			"pki_yaml":                sensitiveString(false),
 		}),
 	}
 }
@@ -62,6 +63,7 @@ func controlplaneUnmarshal(d getter, includeState bool) types.ResourceConfig {
 	c := &controlplane.Controlplane{
 		APIServerAddress: d.Get("api_server_address").(string),
 		APIServerPort:    d.Get("api_server_port").(int),
+		PKI:              unmarshalPKI(d),
 	}
 
 	if s := getState(d); includeState && s != nil {

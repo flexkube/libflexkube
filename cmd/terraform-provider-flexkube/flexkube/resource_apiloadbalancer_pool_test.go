@@ -1,4 +1,4 @@
-package flexkube
+package flexkube //nolint:dupl
 
 import (
 	"regexp"
@@ -13,6 +13,8 @@ import (
 )
 
 func TestAPILoadBalancerPoolPlanOnly(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -22,9 +24,9 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 
   api_load_balancer {}
 
-	api_load_balancer {
-		servers = ["192.168.1.3:6443"]
-	}
+  api_load_balancer {
+    servers = ["192.168.1.3:6443"]
+  }
 }
 `
 
@@ -43,6 +45,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -50,9 +54,9 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   bind_address     = "0.0.0.0:8443"
   servers          = ["192.168.1.2:6443"]
 
-	ssh {
-		port = 12345
-	}
+  ssh {
+    port = 12345
+  }
 
   api_load_balancer {
     host {
@@ -83,6 +87,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolValidateFail(t *testing.T) {
+	t.Parallel()
+
 	config := `
 resource "flexkube_apiloadbalancer_pool" "bootstrap" {
   name             = "api-loadbalancer-bootstrap"
@@ -108,6 +114,8 @@ resource "flexkube_apiloadbalancer_pool" "bootstrap" {
 }
 
 func TestAPILoadBalancerPoolUnmarshalIncludeState(t *testing.T) {
+	t.Parallel()
+
 	s := map[string]interface{}{
 		"state_sensitive": []interface{}{
 			map[string]interface{}{
