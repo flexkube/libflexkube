@@ -131,7 +131,7 @@ func TestKubeletPool(t *testing.T) {
 			},
 			{
 				Config:      kubeletPoolConfigValidateFail,
-				ExpectError: regexp.MustCompile(`networkPlugin must be either`),
+				ExpectError: regexp.MustCompile(`bootstrapConfig must be set`),
 			},
 		},
 	})
