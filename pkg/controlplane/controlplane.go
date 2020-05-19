@@ -155,6 +155,8 @@ func (c *Controlplane) buildKubeControllerManager() {
 	}
 
 	k.Host = c.propagateHost(k.Host)
+
+	k.FlexVolumePluginDir = util.PickString(k.FlexVolumePluginDir, defaults.VolumePluginDir)
 }
 
 // kubeAPIServerPKIIntegration injects missing certificates and keys from PKI object
