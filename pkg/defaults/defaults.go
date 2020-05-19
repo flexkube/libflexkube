@@ -13,4 +13,8 @@ const (
 
 	// DockerAPIVersion is a default API version used when talking to Docker runtime.
 	DockerAPIVersion = "v1.38"
+
+	// VolumePluginDir is a default flex volume plugin directory configured for kubelet
+	// and kube-controller-manager.
+	VolumePluginDir = "/usr/libexec/kubernetes/kubelet-plugins/volume/exec"
 )
