@@ -17,50 +17,12 @@ func Run(args []string) int {
 		Name:    "flexkube",
 		Version: Version,
 		Commands: []*cli.Command{
-			{
-				Name:      "kubelet-pool",
-				Usage:     "executes kubelet pool configuration",
-				ArgsUsage: "[POOL NAME]",
-				Action: func(c *cli.Context) error {
-					return withResource(c, kubeletPoolAction)
-				},
-			},
-			{
-				Name:      "apiloadbalancer-pool",
-				Usage:     "executes API Load Balancer pool configuration",
-				ArgsUsage: "[POOL NAME]",
-				Action: func(c *cli.Context) error {
-					return withResource(c, apiLoadBalancerPoolAction)
-				},
-			},
-			{
-				Name:  "etcd",
-				Usage: "execute etcd configuration",
-				Action: func(c *cli.Context) error {
-					return withResource(c, etcdAction)
-				},
-			},
-			{
-				Name:  "pki",
-				Usage: "execute PKI configuration",
-				Action: func(c *cli.Context) error {
-					return withResource(c, pkiAction)
-				},
-			},
-			{
-				Name:  "controlplane",
-				Usage: "execute controlplane configuration",
-				Action: func(c *cli.Context) error {
-					return withResource(c, controlplaneAction)
-				},
-			},
-			{
-				Name:  "kubeconfig",
-				Usage: "prints admin kubeconfig for cluster",
-				Action: func(c *cli.Context) error {
-					return withResource(c, kubeconfigAction)
-				},
-			},
+			kubeletPoolCommand(),
+			apiLoadBalancerPoolCommand(),
+			etcdCommand(),
+			pkiCommand(),
+			controlplaneCommand(),
+			kubeconfigCommand(),
 		},
 	}
 
@@ -72,6 +34,68 @@ func Run(args []string) int {
 	}
 
 	return 0
+}
+
+func kubeletPoolCommand() *cli.Command {
+	return &cli.Command{
+		Name:      "kubelet-pool",
+		Usage:     "executes kubelet pool configuration",
+		ArgsUsage: "[POOL NAME]",
+		Action: func(c *cli.Context) error {
+			return withResource(c, kubeletPoolAction)
+		},
+	}
+}
+
+func apiLoadBalancerPoolCommand() *cli.Command {
+	return &cli.Command{
+		Name:      "apiloadbalancer-pool",
+		Usage:     "executes API Load Balancer pool configuration",
+		ArgsUsage: "[POOL NAME]",
+		Action: func(c *cli.Context) error {
+			return withResource(c, apiLoadBalancerPoolAction)
+		},
+	}
+}
+
+func etcdCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "etcd",
+		Usage: "execute etcd configuration",
+		Action: func(c *cli.Context) error {
+			return withResource(c, etcdAction)
+		},
+	}
+}
+
+func pkiCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "pki",
+		Usage: "execute PKI configuration",
+		Action: func(c *cli.Context) error {
+			return withResource(c, pkiAction)
+		},
+	}
+}
+
+func controlplaneCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "controlplane",
+		Usage: "execute controlplane configuration",
+		Action: func(c *cli.Context) error {
+			return withResource(c, controlplaneAction)
+		},
+	}
+}
+
+func kubeconfigCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "kubeconfig",
+		Usage: "prints admin kubeconfig for cluster",
+		Action: func(c *cli.Context) error {
+			return withResource(c, kubeconfigAction)
+		},
+	}
 }
 
 // apiLoadBalancerPoolAction implements 'apiloadbalancer-pool' subcommand.
