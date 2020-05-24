@@ -8,7 +8,7 @@ import (
 
 const (
 	// Version is a version printed by the --version flag.
-	Version = "v0.3.0-unreleased"
+	Version = "v0.3.0"
 )
 
 // Run executes flexkube CLI binary with given arguments (usually os.Args).
