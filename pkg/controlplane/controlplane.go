@@ -296,13 +296,13 @@ func (c *Controlplane) Validate() error {
 
 	var errors util.ValidateError
 
-	if c.Destroy && c.State == nil {
+	if c.Destroy && (c.State == nil || len(*c.State) == 0) {
 		errors = append(errors, fmt.Errorf("can't destroy non-existent controlplane"))
 	}
 
 	cc := &container.Containers{}
 
-	if c.State != nil {
+	if c.State != nil && len(*c.State) > 0 {
 		cc.PreviousState = *c.State
 
 		if _, err := cc.New(); err != nil {

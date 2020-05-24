@@ -182,3 +182,25 @@ func TestPoolPKIIntegration(t *testing.T) {
 		t.Fatalf("creating kubelet pool with PKI integration should work, got: %v", err)
 	}
 }
+
+func TestPoolNoKubelets(t *testing.T) {
+	pk := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{},
+	}
+
+	if err := pk.Generate(); err != nil {
+		t.Fatalf("generating PKI: %v", err)
+	}
+
+	p := &Pool{
+		PKI: pk,
+		BootstrapConfig: &client.Config{
+			Server: "bar",
+			Token:  "bar",
+		},
+	}
+
+	if _, err := p.New(); err == nil {
+		t.Fatal("creating kubelet pool with no kubelets and no state defined should fail")
+	}
+}

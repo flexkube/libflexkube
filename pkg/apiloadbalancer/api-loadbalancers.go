@@ -79,6 +79,8 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 
 // Validate validates APILoadBalancers struct.
 func (a *APILoadBalancers) Validate() error {
+	var errors util.ValidateError
+
 	cc := &container.Containers{
 		PreviousState: a.State,
 		DesiredState:  make(container.ContainersState),
@@ -90,22 +92,29 @@ func (a *APILoadBalancers) Validate() error {
 
 		lbx, err := lb.New()
 		if err != nil {
-			return fmt.Errorf("failed creating load balancer instance: %w", err)
+			errors = append(errors, fmt.Errorf("failed creating load balancer instance %q: %w", i, err))
+			continue
 		}
 
 		lbxHcc, err := lbx.ToHostConfiguredContainer()
 		if err != nil {
-			return fmt.Errorf("failed creating load balancer container configuration: %w", err)
+			errors = append(errors, fmt.Errorf("failed creating load balancer %q container configuration: %w", i, err))
+			continue
 		}
 
 		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
 	}
 
-	if _, err := cc.New(); err != nil {
-		return fmt.Errorf("failed creating containers object: %w", err)
+	noContainersDefined := len(a.State) == 0 && len(a.APILoadBalancers) == 0
+	if noContainersDefined {
+		errors = append(errors, fmt.Errorf("at least one load balancer must be defined if state is empty"))
 	}
 
-	return nil
+	if _, err := cc.New(); !noContainersDefined && err != nil {
+		errors = append(errors, fmt.Errorf("failed creating containers object: %w", err))
+	}
+
+	return errors.Return()
 }
 
 // FromYaml allows to restore cluster state from YAML.

@@ -145,6 +145,8 @@ func (p *Pool) New() (types.Resource, error) {
 //
 // TODO: Add actual validation.
 func (p *Pool) Validate() error {
+	var errors util.ValidateError
+
 	cc := &container.Containers{
 		PreviousState: p.State,
 		DesiredState:  make(container.ContainersState),
@@ -158,22 +160,29 @@ func (p *Pool) Validate() error {
 
 		kubelet, err := k.New()
 		if err != nil {
-			return fmt.Errorf("failed to create kubelet object: %w", err)
+			errors = append(errors, fmt.Errorf("failed to create kubelet object %q: %w", i, err))
+			continue
 		}
 
 		hcc, err := kubelet.ToHostConfiguredContainer()
 		if err != nil {
-			return fmt.Errorf("failed to generate kubelet container configuration: %w", err)
+			errors = append(errors, fmt.Errorf("failed to generate kubelet %q container configuration: %w", i, err))
+			continue
 		}
 
 		cc.DesiredState[strconv.Itoa(i)] = hcc
 	}
 
-	if _, err := cc.New(); err != nil {
-		return fmt.Errorf("failed validating containers configuration: %w", err)
+	noContainersDefined := len(p.State) == 0 && len(p.Kubelets) == 0
+	if noContainersDefined {
+		errors = append(errors, fmt.Errorf("at least one kubelet must be defined if state is empty"))
 	}
 
-	return nil
+	if _, err := cc.New(); !noContainersDefined && err != nil {
+		errors = append(errors, fmt.Errorf("failed validating containers configuration: %w", err))
+	}
+
+	return errors.Return()
 }
 
 // FromYaml allows to restore cluster state from YAML.
