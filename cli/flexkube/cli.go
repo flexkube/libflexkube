@@ -6,9 +6,16 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	// Version is a version printed by the --version flag.
+	Version = "v0.3.0-unreleased"
+)
+
 // Run executes flexkube CLI binary with given arguments (usually os.Args).
 func Run(args []string) int {
 	app := &cli.App{
+		Name:    "flexkube",
+		Version: Version,
 		Commands: []*cli.Command{
 			{
 				Name:      "kubelet-pool",
