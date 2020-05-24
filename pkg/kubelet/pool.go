@@ -11,11 +11,19 @@ import (
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
+)
+
+const (
+	// DefaultNetworkPlugin is a default NetworkPlugin configured for kubelets.
+	DefaultNetworkPlugin = "cni"
+	// DefaultHairpinMode is a default HairpinMode configured for kubelets.
+	DefaultHairpinMode = "hairpin-veth"
 )
 
 // Pool represents group of kubelet instances and their configuration.
@@ -93,11 +101,11 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
 	k.Taints = util.PickStringMap(k.Taints, p.Taints)
 	k.CgroupDriver = util.PickString(k.CgroupDriver, p.CgroupDriver)
-	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin)
+	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin, DefaultNetworkPlugin)
 	k.SystemReserved = util.PickStringMap(k.SystemReserved, p.SystemReserved)
 	k.KubeReserved = util.PickStringMap(k.KubeReserved, p.KubeReserved)
-	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode)
-	k.VolumePluginDir = util.PickString(k.VolumePluginDir, p.VolumePluginDir)
+	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode, DefaultHairpinMode)
+	k.VolumePluginDir = util.PickString(k.VolumePluginDir, p.VolumePluginDir, defaults.VolumePluginDir)
 
 	if len(k.ExtraMounts) == 0 {
 		k.ExtraMounts = p.ExtraMounts

@@ -678,7 +678,7 @@ func TestNewSSHAgent(t *testing.T) {
 	a := agent.NewKeyring()
 
 	addr := &net.UnixAddr{
-		Name: fmt.Sprintf("@foo"),
+		Name: "@foo",
 		Net:  "unix",
 	}
 
@@ -722,7 +722,7 @@ func TestNewSSHAgent(t *testing.T) {
 
 func TestNewSSHAgentWrongSocket(t *testing.T) {
 	addr := &net.UnixAddr{
-		Name: fmt.Sprintf("@bar"),
+		Name: "@bar",
 		Net:  "unix",
 	}
 

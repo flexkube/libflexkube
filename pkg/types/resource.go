@@ -21,6 +21,7 @@ type Resource interface {
 // ResourceConfig interface defines flexkube resource configuration functionality.
 type ResourceConfig interface {
 	New() (Resource, error)
+	Validate() error
 }
 
 // ResourceFromYaml allows to create any resource instance from YAML configuration.

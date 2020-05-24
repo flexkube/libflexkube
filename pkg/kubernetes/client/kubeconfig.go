@@ -92,9 +92,15 @@ clusters:
 users:
 - name: static
   user:
+    {{- if .ClientCertificate }}
     client-certificate-data: {{ .ClientCertificate }}
+    {{- end }}
+    {{- if .ClientKey }}
     client-key-data: {{ .ClientKey }}
+    {{- end }}
+    {{- if .Token }}
     token: {{ .Token }}
+    {{- end }}
 current-context: static
 contexts:
 - name: static
