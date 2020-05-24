@@ -128,8 +128,8 @@ func (c *Cluster) New() (types.Resource, error) {
 
 // Validate validates Cluster configuration.
 func (c *Cluster) Validate() error {
-	if len(c.Members) == 0 && c.State == nil {
-		return fmt.Errorf("either members or previous state needs to be defined")
+	if len(c.Members) == 0 && len(c.State) == 0 {
+		return fmt.Errorf("at least one member must be defined when state is empty")
 	}
 
 	var errors util.ValidateError
