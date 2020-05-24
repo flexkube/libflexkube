@@ -39,6 +39,16 @@ func (c *Containers) New() (types.Resource, error) {
 	}, nil
 }
 
+// Validate validates Containers configuration.
+func (c *Containers) Validate() error {
+	co := container.Containers{
+		PreviousState: c.State,
+		DesiredState:  c.Containers,
+	}
+
+	return co.Validate()
+}
+
 // StateToYaml serializes containers to YAML format.
 func (c *containers) StateToYaml() ([]byte, error) {
 	co := &Containers{
