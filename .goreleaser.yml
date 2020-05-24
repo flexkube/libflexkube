@@ -1,5 +1,6 @@
 builds:
-- env:
+- id: terraform-provider-flexkube
+  env:
   - CGO_ENABLED=0
   ldflags:
   - -extldflags '-static'
@@ -14,8 +15,24 @@ builds:
   - darwin
   main: ./cmd/terraform-provider-flexkube
   binary: terraform-provider-flexkube_{{.Tag}}_x4
+- id: flexkube
+  env:
+  - CGO_ENABLED=0
+  ldflags:
+  - -extldflags '-static'
+  - -s
+  - -w
+  flags:
+  - -buildmode=exe
+  goarch:
+  - amd64
+  goos:
+  - linux
+  - darwin
+  main: ./cmd/flexkube
+  binary: flexkube
 
-project_name: terraform-provider-flexkube
+project_name: flexkube
 
 changelog:
   skip: true
@@ -26,6 +43,21 @@ release:
   github:
     owner: flexkube
     name: libflexkube
+
+# Only add binaries to the archive files.
+archives:
+- id: terraform-provider-flexkube
+  builds:
+  - terraform-provider-flexkube
+  name_template: "terraform-provider-flexkube_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+  files:
+  - none*
+- id: flexkube
+  builds:
+  - flexkube
+  name_template: "{{ .Binary }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+  files:
+  - none*
 
 signs:
 - artifacts: all

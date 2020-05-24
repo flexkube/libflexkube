@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2020-05-24
+
+### Added
+
+- Added new `flexkube` CLI binary, which allows to manage multiple resources with the same configuration file. It replaces old `etcd-cluster`, `controlplane`, `api-loadbalancers`, `kubelet-pool` and `pki-generator` binaries.
+- Added `PKI` resource, which allows generating all certificates required for cluster using Go API, as Terraform `flexkube_pki` resource or using `flexkube pki` command. This replaces [terraform-root-pki](https://github.com/flexkube/terraform-root-pki), [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki) and [terraform-kubernetes-pki](https://github.com/flexkube/terraform-kubernetes-pki) Terraform modules.
+- Controlplane, etcd and kubelet-pool resources have now PKI resource integration with extra PKI field, so certificates no longer need to be generated externally and provided in configuration. This should  simplify the use of CLI tools and Go API.
+- SSH transport method now automatically integrates with `ssh-agent` if `SSH_AUTH_SOCK` environment variable is set. This allows using this transport method without any credentials configured.
+
+### Fixed
+
+- Constant diff in `containers-runner` and `flexkube_containers` resources caused by wrong JSON struct tags.
+- When removing containers in `restarting` state, they will also be stopped before removing. Before, restarting containers requires manual stop to be removed.
+- Bunch of typos.
+
+### Changed
+
+- Improved error messages when resource has no instances configured.
+- Updated all dependencies to latest versions to fix installing using `go get`.
+- Updated `sonobuoy` to `0.18.1`.
+- State files are now created with `0600` permissions.
+- Updated `golangci-lint` to `1.27.0`.
+- Kubelet now use structured configuration instead of kubeconfig-like string field for bootstrap and administrator kubeconfig fields.
+- `e2e` testing environment now use new PKI resource.
+- Terraform provider unit tests no longer requires `tls` provider and all run in parallel, so they should be a bit faster to execute.
+- Updated default `etcd` version to `3.4.9`.
+- `VolumePluginDir` and `NetworkPlugin` fields now use default values for Kubelet and Controlplane resources, to minimize the default configuration required from the user.
+- Release binaries now ship with stripped debug symbols, which makes them smaller.
+
+### Removed
+
+- Removed `etcd-cluster`, `controlplane`, `api-loadbalancers`, `kubelet-pool` and `pki-generator` binaries, replaced by `flexkube`.
+
 ## [0.2.2] - 2020-04-19
 
 ### Added
