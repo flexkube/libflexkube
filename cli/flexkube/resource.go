@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/urfave/cli/v2"
 	"sigs.k8s.io/yaml"
 
 	flexcli "github.com/flexkube/libflexkube/cli"
@@ -293,18 +292,6 @@ func (r *Resource) Kubeconfig() (string, error) {
 	}
 
 	return k, nil
-}
-
-// withResource is a helper for action functions.
-func withResource(f func(*Resource) func(c *cli.Context) error) func(c *cli.Context) error {
-	r, err := LoadResourceFromFiles()
-	if err != nil {
-		return func(c *cli.Context) error {
-			return fmt.Errorf("reading configuration and state failed: %w", err)
-		}
-	}
-
-	return f(r)
 }
 
 // RunAPILoadBalancerPool deploys given API Load Balancer pool.

@@ -21,33 +21,45 @@ func Run(args []string) int {
 				Name:      "kubelet-pool",
 				Usage:     "executes kubelet pool configuration",
 				ArgsUsage: "[POOL NAME]",
-				Action:    withResource(kubeletPoolAction),
+				Action: func(c *cli.Context) error {
+					return withResource(c, kubeletPoolAction)
+				},
 			},
 			{
 				Name:      "apiloadbalancer-pool",
 				Usage:     "executes API Load Balancer pool configuration",
 				ArgsUsage: "[POOL NAME]",
-				Action:    withResource(apiLoadBalancerPoolAction),
+				Action: func(c *cli.Context) error {
+					return withResource(c, apiLoadBalancerPoolAction)
+				},
 			},
 			{
-				Name:   "etcd",
-				Usage:  "execute etcd configuration",
-				Action: withResource(etcdAction),
+				Name:  "etcd",
+				Usage: "execute etcd configuration",
+				Action: func(c *cli.Context) error {
+					return withResource(c, etcdAction)
+				},
 			},
 			{
-				Name:   "pki",
-				Usage:  "execute PKI configuration",
-				Action: withResource(pkiAction),
+				Name:  "pki",
+				Usage: "execute PKI configuration",
+				Action: func(c *cli.Context) error {
+					return withResource(c, pkiAction)
+				},
 			},
 			{
-				Name:   "controlplane",
-				Usage:  "execute controlplane configuration",
-				Action: withResource(controlplaneAction),
+				Name:  "controlplane",
+				Usage: "execute controlplane configuration",
+				Action: func(c *cli.Context) error {
+					return withResource(c, controlplaneAction)
+				},
 			},
 			{
-				Name:   "kubeconfig",
-				Usage:  "prints admin kubeconfig for cluster",
-				Action: withResource(kubeconfigAction),
+				Name:  "kubeconfig",
+				Usage: "prints admin kubeconfig for cluster",
+				Action: func(c *cli.Context) error {
+					return withResource(c, kubeconfigAction)
+				},
 			},
 		},
 	}
@@ -63,59 +75,47 @@ func Run(args []string) int {
 }
 
 // apiLoadBalancerPoolAction implements 'apiloadbalancer-pool' subcommand.
-func apiLoadBalancerPoolAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		poolName, err := getPoolName(c)
-		if err != nil {
-			return err
-		}
-
-		return r.RunAPILoadBalancerPool(poolName)
+func apiLoadBalancerPoolAction(c *cli.Context, r *Resource) error {
+	poolName, err := getPoolName(c)
+	if err != nil {
+		return err
 	}
+
+	return r.RunAPILoadBalancerPool(poolName)
 }
 
 // controlplaneAction implements 'controlplane' subcommand.
-func controlplaneAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		return r.RunControlplane()
-	}
+func controlplaneAction(c *cli.Context, r *Resource) error {
+	return r.RunControlplane()
 }
 
 // etcdAction implements 'etcd' subcommand.
-func etcdAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		return r.RunEtcd()
-	}
+func etcdAction(c *cli.Context, r *Resource) error {
+	return r.RunEtcd()
 }
 
-func kubeconfigAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		k, err := r.Kubeconfig()
-		if err != nil {
-			return fmt.Errorf("failed generating kubeconfig: %w", err)
-		}
-
-		fmt.Println(k)
-
-		return nil
+func kubeconfigAction(c *cli.Context, r *Resource) error {
+	k, err := r.Kubeconfig()
+	if err != nil {
+		return fmt.Errorf("failed generating kubeconfig: %w", err)
 	}
+
+	fmt.Println(k)
+
+	return nil
 }
 
-func kubeletPoolAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		poolName, err := getPoolName(c)
-		if err != nil {
-			return err
-		}
-
-		return r.RunKubeletPool(poolName)
+func kubeletPoolAction(c *cli.Context, r *Resource) error {
+	poolName, err := getPoolName(c)
+	if err != nil {
+		return err
 	}
+
+	return r.RunKubeletPool(poolName)
 }
 
-func pkiAction(r *Resource) func(*cli.Context) error {
-	return func(c *cli.Context) error {
-		return r.RunPKI()
-	}
+func pkiAction(c *cli.Context, r *Resource) error {
+	return r.RunPKI()
 }
 
 func getPoolName(c *cli.Context) (string, error) {
@@ -129,4 +129,14 @@ func getPoolName(c *cli.Context) (string, error) {
 	}
 
 	return poolName, nil
+}
+
+// withResource is a helper for action functions.
+func withResource(c *cli.Context, rf func(*cli.Context, *Resource) error) error {
+	r, err := LoadResourceFromFiles()
+	if err != nil {
+		return fmt.Errorf("reading configuration and state failed: %w", err)
+	}
+
+	return rf(c, r)
 }
