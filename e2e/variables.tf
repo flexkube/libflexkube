@@ -34,6 +34,14 @@ variable "kubernetes_helm_chart_source" {
   default = "flexkube/kubernetes"
 }
 
+variable "kube_proxy_helm_chart_source" {
+  default = "flexkube/kube-proxy"
+}
+
+variable "tls_bootstrapping_helm_chart_source" {
+  default = "flexkube/tls-bootstrapping"
+}
+
 variable "kubelet_rubber_stamp_helm_chart_source" {
   default = "flexkube/kubelet-rubber-stamp"
 }
