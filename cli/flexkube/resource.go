@@ -247,8 +247,6 @@ func askForConfirmation() (bool, error) {
 
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.
 func LoadResourceFromFiles() (*Resource, error) {
-	fmt.Println("Trying to read config.yaml and state.yaml files...")
-
 	r := &Resource{}
 
 	c, err := flexcli.ReadYamlFile("config.yaml")
