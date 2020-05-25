@@ -301,7 +301,7 @@ func (c *containers) ensureHost(n string) error {
 	}
 
 	fmt.Printf("Detected host configuration drift '%s'\n", n)
-	fmt.Printf("  Diff: %v\n", diff)
+	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	// recreate is 2 step process, it removes old container and creates new one.
 	// If process fails in the middle, we still want to save the progress.
@@ -340,7 +340,7 @@ func (c *containers) ensureContainer(n string) error {
 	}
 
 	fmt.Printf("Detected container configuration drift '%s'\n", n)
-	fmt.Printf("  Diff: %v\n", diff)
+	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	// Reconfiguring container is 2 step process. If we fail in the middle, we still want to
 	// return updated state to the user.
