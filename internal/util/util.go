@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/logrusorgru/aurora"
 )
 
 // PickString returns first non-empty string passed.
@@ -105,4 +107,44 @@ func KeysStringMap(m map[string]string) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+// ColorizeDiff takes diff-formatter output and adds console colors to it.
+func ColorizeDiff(diff string) string {
+	// Don't even try to process empty strings.
+	if diff == "" {
+		return diff
+	}
+
+	// If string ends with newline, strip it before splitting, then we add it at the end of processing.
+	endsWithNewLine := diff[len(diff)-1] == '\n'
+	if endsWithNewLine {
+		diff = diff[:len(diff)-1]
+	}
+
+	lines := strings.Split(diff, "\n")
+	l := len(lines)
+
+	output := ""
+
+	for i, line := range strings.Split(diff, "\n") {
+		nl := line + "\n"
+
+		// If we process last line and the given diff does not end with newline, don't include it.
+		if !endsWithNewLine && i == l-1 {
+			nl = line
+		}
+
+		if len(line) > 0 && line[0] == '-' {
+			nl = aurora.Red(line + "\n").String()
+		}
+
+		if len(line) > 0 && line[0] == '+' {
+			nl = aurora.Green(line + "\n").String()
+		}
+
+		output += nl
+	}
+
+	return output
 }
