@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	flexcli "github.com/flexkube/libflexkube/cli"
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
@@ -198,7 +199,7 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 		return nil
 	}
 
-	fmt.Printf("Following changes required:\n\n%s\n\n", d)
+	fmt.Printf("Following changes required:\n\n%s\n\n", util.ColorizeDiff(d))
 
 	if !r.Confirmed {
 		confirmed, err := askForConfirmation()
