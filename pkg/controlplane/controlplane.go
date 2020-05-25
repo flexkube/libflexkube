@@ -312,6 +312,11 @@ func (c *Controlplane) Validate() error {
 		}
 	}
 
+	// If we destroy, we only need to validate the state.
+	if c.Destroy {
+		return errors.Return()
+	}
+
 	kas, err := c.KubeAPIServer.New()
 	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to verify kube-apiserver configuration: %w", err))

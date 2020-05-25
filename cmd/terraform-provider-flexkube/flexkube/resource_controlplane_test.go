@@ -517,7 +517,7 @@ func TestControlplaneDestroyValidateConfiguration(t *testing.T) {
 		t.Fatalf("destroying with unreachable container runtime should fail")
 	}
 
-	if !strings.Contains(err.Error(), "failed to validate controlplane configuration") {
+	if !strings.Contains(err.Error(), "Cannot connect to the Docker daemon") {
 		t.Fatalf("destroying should fail for unreachable runtime, got: %v", err)
 	}
 }

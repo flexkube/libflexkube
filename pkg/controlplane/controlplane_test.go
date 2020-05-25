@@ -171,9 +171,7 @@ state:
 }
 
 func TestControlplaneDestroyValidState(t *testing.T) {
-	y := controlplaneYAML(t)
-
-	y += `destroy: true
+	y := `destroy: true
 state:
   foo:
     host:
@@ -191,7 +189,7 @@ state:
 `
 
 	if _, err := FromYaml([]byte(y)); err != nil {
-		t.Fatalf("creating controlplane config to destroy with valid state should succeed, got: %v", err)
+		t.Fatalf("creating controlplane config to destroy with only state should succeed, got: %v", err)
 	}
 }
 
