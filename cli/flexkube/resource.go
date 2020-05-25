@@ -1,9 +1,13 @@
 package flexkube
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
+	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
 	flexcli "github.com/flexkube/libflexkube/cli"
@@ -25,6 +29,7 @@ type Resource struct {
 	KubeletPools         map[string]*kubelet.Pool                     `json:"kubeletPools,omitempty"`
 	APILoadBalancerPools map[string]*apiloadbalancer.APILoadBalancers `json:"apiLoadBalancerPools,omitempty"`
 	State                *ResourceState                               `json:"state,omitempty"`
+	Confirmed            bool                                         `json:"confirmed,omitempty"`
 }
 
 // ResourceState represents flexkube CLI state format.
@@ -182,6 +187,32 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 		return fmt.Errorf("failed checking current state: %w", err)
 	}
 
+	// Calculate and print diff.
+	fmt.Printf("Calculating diff...\n\n")
+
+	d := cmp.Diff(rs.Containers().ToExported().PreviousState, rs.Containers().DesiredState())
+
+	if d == "" {
+		fmt.Println("No changes required")
+
+		return nil
+	}
+
+	fmt.Printf("Following changes required:\n\n%s\n\n", d)
+
+	if !r.Confirmed {
+		confirmed, err := askForConfirmation()
+		if err != nil {
+			return fmt.Errorf("failed asking for confirmation: %w", err)
+		}
+
+		if !confirmed {
+			fmt.Println("Aborted")
+
+			return nil
+		}
+	}
+
 	deployErr := rs.Deploy()
 
 	if r.State == nil {
@@ -191,6 +222,26 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 	saveStateF(rs)
 
 	return r.StateToFile(deployErr)
+}
+
+func askForConfirmation() (bool, error) {
+	r := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("To continue, type (y)es nad press enter: ")
+
+	response, err := r.ReadString('\n')
+	if err != nil {
+		return false, fmt.Errorf("failed reading user response: %w", err)
+	}
+
+	switch strings.ToLower(strings.TrimSpace(response)) {
+	case "y", "yes":
+		return true, nil
+	case "n", "no":
+		return false, nil
+	default:
+		return askForConfirmation()
+	}
 }
 
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.

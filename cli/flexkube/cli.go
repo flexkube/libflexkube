@@ -9,6 +9,9 @@ import (
 const (
 	// Version is a version printed by the --version flag.
 	Version = "v0.3.0-unreleased"
+
+	// YesFlag is a const for --yes flag.
+	YesFlag = "yes"
 )
 
 // Run executes flexkube CLI binary with given arguments (usually os.Args).
@@ -16,6 +19,12 @@ func Run(args []string) int {
 	app := &cli.App{
 		Name:    "flexkube",
 		Version: Version,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  YesFlag,
+				Usage: "Evaluate the configuration without confirmation",
+			},
+		},
 		Commands: []*cli.Command{
 			kubeletPoolCommand(),
 			apiLoadBalancerPoolCommand(),
@@ -161,6 +170,8 @@ func withResource(c *cli.Context, rf func(*cli.Context, *Resource) error) error 
 	if err != nil {
 		return fmt.Errorf("reading configuration and state failed: %w", err)
 	}
+
+	r.Confirmed = c.Bool(YesFlag)
 
 	return rf(c, r)
 }
