@@ -39,7 +39,11 @@ type ResourceState struct {
 // getEtcd returns etcd resource, with state and PKI integration enabled.
 func (r *Resource) getEtcd() (types.Resource, error) {
 	if r.Etcd == nil {
-		return nil, fmt.Errorf("etcd management not enabled in the configuration")
+		if r.State == nil || r.State.Etcd == nil {
+			return nil, fmt.Errorf("etcd management not enabled in the configuration and state not found")
+		}
+
+		r.Etcd = &etcd.Cluster{}
 	}
 
 	if r.State != nil && r.State.Etcd != nil {
@@ -57,7 +61,13 @@ func (r *Resource) getEtcd() (types.Resource, error) {
 // getControlplane returns controlplane resource, with state and PKI integration enabled.
 func (r *Resource) getControlplane() (types.Resource, error) {
 	if r.Controlplane == nil {
-		return nil, fmt.Errorf("controlplane not configured")
+		if r.State == nil || r.State.Controlplane == nil {
+			return nil, fmt.Errorf("controlplane not configured and state not found")
+		}
+
+		r.Controlplane = &controlplane.Controlplane{
+			Destroy: true,
+		}
 	}
 
 	if r.State != nil {
@@ -74,12 +84,20 @@ func (r *Resource) getControlplane() (types.Resource, error) {
 
 // getKubeletPool returns requested kubelet pool with state and PKI injected.
 func (r *Resource) getKubeletPool(name string) (types.Resource, error) {
-	pool, ok := r.KubeletPools[name]
-	if !ok {
-		return nil, fmt.Errorf("pool not configured")
+	stateFound := r.State != nil && r.State.KubeletPools != nil && r.State.KubeletPools[name] != nil
+	configPool, configFound := r.KubeletPools[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("pool not configured and state not found")
 	}
 
-	if r.State != nil && r.State.KubeletPools != nil && r.State.KubeletPools[name] != nil {
+	pool := &kubelet.Pool{}
+
+	if configFound {
+		pool = configPool
+	}
+
+	if stateFound {
 		pool.State = *r.State.KubeletPools[name]
 	}
 
@@ -121,12 +139,20 @@ func (r *Resource) getPKI() (*pki.PKI, error) {
 
 // getAPILoadBalancerPool returns requested kubelet pool with state injected.
 func (r *Resource) getAPILoadBalancerPool(name string) (types.Resource, error) {
-	pool, ok := r.APILoadBalancerPools[name]
-	if !ok {
-		return nil, fmt.Errorf("pool not configured")
+	stateFound := r.State != nil && r.State.APILoadBalancerPools != nil && r.State.APILoadBalancerPools[name] != nil
+	configPool, configFound := r.APILoadBalancerPools[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("pool not configured and state not found")
 	}
 
-	if r.State != nil && r.State.APILoadBalancerPools != nil && r.State.APILoadBalancerPools[name] != nil {
+	pool := &apiloadbalancer.APILoadBalancers{}
+
+	if configFound {
+		pool = configPool
+	}
+
+	if stateFound {
 		pool.State = *r.State.APILoadBalancerPools[name]
 	}
 
