@@ -12,6 +12,9 @@ const (
 
 	// YesFlag is a const for --yes flag.
 	YesFlag = "yes"
+
+	// NoopFlag is const for --noop flag.
+	NoopFlag = "noop"
 )
 
 // Run executes flexkube CLI binary with given arguments (usually os.Args).
@@ -23,6 +26,10 @@ func Run(args []string) int {
 			&cli.BoolFlag{
 				Name:  YesFlag,
 				Usage: "Evaluate the configuration without confirmation",
+			},
+			&cli.BoolFlag{
+				Name:  NoopFlag,
+				Usage: "Only checks the status of the deployment, but does not do any changes",
 			},
 		},
 		Commands: []*cli.Command{
@@ -172,6 +179,15 @@ func withResource(c *cli.Context, rf func(*cli.Context, *Resource) error) error 
 	}
 
 	r.Confirmed = c.Bool(YesFlag)
+	r.Noop = c.Bool(NoopFlag)
+
+	if r.Confirmed && r.Noop {
+		return fmt.Errorf("--%s and --%s flags are mutually exclusive", YesFlag, NoopFlag)
+	}
+
+	if r.Noop {
+		fmt.Println("No-op run, no changes will be made.")
+	}
 
 	return rf(c, r)
 }

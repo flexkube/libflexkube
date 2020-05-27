@@ -31,6 +31,7 @@ type Resource struct {
 	APILoadBalancerPools map[string]*apiloadbalancer.APILoadBalancers `json:"apiLoadBalancerPools,omitempty"`
 	State                *ResourceState                               `json:"state,omitempty"`
 	Confirmed            bool                                         `json:"confirmed,omitempty"`
+	Noop                 bool                                         `json:"noop,omitempty"`
 }
 
 // ResourceState represents flexkube CLI state format.
@@ -179,13 +180,12 @@ func validateAndNew(rc types.ResourceConfig) (types.Resource, error) {
 	return r, nil
 }
 
-// execute deploys given resource and persists generated state to disk.
-func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
+func (r *Resource) checkState(rs types.Resource) (string, error) {
 	// Check current state.
 	fmt.Println("Checking current state")
 
 	if err := rs.CheckCurrentState(); err != nil {
-		return fmt.Errorf("failed checking current state: %w", err)
+		return "", fmt.Errorf("failed checking current state: %w", err)
 	}
 
 	// Calculate and print diff.
@@ -196,11 +196,30 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 	if d == "" {
 		fmt.Println("No changes required")
 
-		return nil
+		return d, nil
 	}
 
 	fmt.Printf("Following changes required:\n\n%s\n\n", util.ColorizeDiff(d))
 
+	return d, nil
+}
+
+// execute checks current state of the deployment and triggers the deployment if needed.
+func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
+	diff, err := r.checkState(rs)
+	if err != nil {
+		return fmt.Errorf("failed checking current state: %w", err)
+	}
+
+	if r.Noop || diff == "" {
+		return nil
+	}
+
+	return r.deploy(rs, saveStateF)
+}
+
+// deploy confirms the deployment with the user and persists the state after the deployment.
+func (r *Resource) deploy(rs types.Resource, saveStateF func(types.Resource)) error {
 	if !r.Confirmed {
 		confirmed, err := askForConfirmation()
 		if err != nil {
