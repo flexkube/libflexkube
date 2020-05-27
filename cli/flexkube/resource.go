@@ -1,12 +1,17 @@
 package flexkube
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
+	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
 	flexcli "github.com/flexkube/libflexkube/cli"
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
@@ -25,6 +30,8 @@ type Resource struct {
 	KubeletPools         map[string]*kubelet.Pool                     `json:"kubeletPools,omitempty"`
 	APILoadBalancerPools map[string]*apiloadbalancer.APILoadBalancers `json:"apiLoadBalancerPools,omitempty"`
 	State                *ResourceState                               `json:"state,omitempty"`
+	Confirmed            bool                                         `json:"confirmed,omitempty"`
+	Noop                 bool                                         `json:"noop,omitempty"`
 }
 
 // ResourceState represents flexkube CLI state format.
@@ -39,7 +46,11 @@ type ResourceState struct {
 // getEtcd returns etcd resource, with state and PKI integration enabled.
 func (r *Resource) getEtcd() (types.Resource, error) {
 	if r.Etcd == nil {
-		return nil, fmt.Errorf("etcd management not enabled in the configuration")
+		if r.State == nil || r.State.Etcd == nil {
+			return nil, fmt.Errorf("etcd management not enabled in the configuration and state not found")
+		}
+
+		r.Etcd = &etcd.Cluster{}
 	}
 
 	if r.State != nil && r.State.Etcd != nil {
@@ -57,7 +68,13 @@ func (r *Resource) getEtcd() (types.Resource, error) {
 // getControlplane returns controlplane resource, with state and PKI integration enabled.
 func (r *Resource) getControlplane() (types.Resource, error) {
 	if r.Controlplane == nil {
-		return nil, fmt.Errorf("controlplane not configured")
+		if r.State == nil || r.State.Controlplane == nil {
+			return nil, fmt.Errorf("controlplane not configured and state not found")
+		}
+
+		r.Controlplane = &controlplane.Controlplane{
+			Destroy: true,
+		}
 	}
 
 	if r.State != nil {
@@ -74,12 +91,20 @@ func (r *Resource) getControlplane() (types.Resource, error) {
 
 // getKubeletPool returns requested kubelet pool with state and PKI injected.
 func (r *Resource) getKubeletPool(name string) (types.Resource, error) {
-	pool, ok := r.KubeletPools[name]
-	if !ok {
-		return nil, fmt.Errorf("pool not configured")
+	stateFound := r.State != nil && r.State.KubeletPools != nil && r.State.KubeletPools[name] != nil
+	configPool, configFound := r.KubeletPools[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("pool not configured and state not found")
 	}
 
-	if r.State != nil && r.State.KubeletPools != nil && r.State.KubeletPools[name] != nil {
+	pool := &kubelet.Pool{}
+
+	if configFound {
+		pool = configPool
+	}
+
+	if stateFound {
 		pool.State = *r.State.KubeletPools[name]
 	}
 
@@ -121,12 +146,20 @@ func (r *Resource) getPKI() (*pki.PKI, error) {
 
 // getAPILoadBalancerPool returns requested kubelet pool with state injected.
 func (r *Resource) getAPILoadBalancerPool(name string) (types.Resource, error) {
-	pool, ok := r.APILoadBalancerPools[name]
-	if !ok {
-		return nil, fmt.Errorf("pool not configured")
+	stateFound := r.State != nil && r.State.APILoadBalancerPools != nil && r.State.APILoadBalancerPools[name] != nil
+	configPool, configFound := r.APILoadBalancerPools[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("pool not configured and state not found")
 	}
 
-	if r.State != nil && r.State.APILoadBalancerPools != nil && r.State.APILoadBalancerPools[name] != nil {
+	pool := &apiloadbalancer.APILoadBalancers{}
+
+	if configFound {
+		pool = configPool
+	}
+
+	if stateFound {
 		pool.State = *r.State.APILoadBalancerPools[name]
 	}
 
@@ -147,13 +180,57 @@ func validateAndNew(rc types.ResourceConfig) (types.Resource, error) {
 	return r, nil
 }
 
-// execute deploys given resource and persists generated state to disk.
-func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
+func (r *Resource) checkState(rs types.Resource) (string, error) {
 	// Check current state.
 	fmt.Println("Checking current state")
 
 	if err := rs.CheckCurrentState(); err != nil {
+		return "", fmt.Errorf("failed checking current state: %w", err)
+	}
+
+	// Calculate and print diff.
+	fmt.Printf("Calculating diff...\n\n")
+
+	d := cmp.Diff(rs.Containers().ToExported().PreviousState, rs.Containers().DesiredState())
+
+	if d == "" {
+		fmt.Println("No changes required")
+
+		return d, nil
+	}
+
+	fmt.Printf("Following changes required:\n\n%s\n\n", util.ColorizeDiff(d))
+
+	return d, nil
+}
+
+// execute checks current state of the deployment and triggers the deployment if needed.
+func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
+	diff, err := r.checkState(rs)
+	if err != nil {
 		return fmt.Errorf("failed checking current state: %w", err)
+	}
+
+	if r.Noop || diff == "" {
+		return nil
+	}
+
+	return r.deploy(rs, saveStateF)
+}
+
+// deploy confirms the deployment with the user and persists the state after the deployment.
+func (r *Resource) deploy(rs types.Resource, saveStateF func(types.Resource)) error {
+	if !r.Confirmed {
+		confirmed, err := askForConfirmation()
+		if err != nil {
+			return fmt.Errorf("failed asking for confirmation: %w", err)
+		}
+
+		if !confirmed {
+			fmt.Println("Aborted")
+
+			return nil
+		}
 	}
 
 	deployErr := rs.Deploy()
@@ -167,10 +244,28 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 	return r.StateToFile(deployErr)
 }
 
+func askForConfirmation() (bool, error) {
+	r := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("To continue, type (y)es nad press enter: ")
+
+	response, err := r.ReadString('\n')
+	if err != nil {
+		return false, fmt.Errorf("failed reading user response: %w", err)
+	}
+
+	switch strings.ToLower(strings.TrimSpace(response)) {
+	case "y", "yes":
+		return true, nil
+	case "n", "no":
+		return false, nil
+	default:
+		return askForConfirmation()
+	}
+}
+
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.
 func LoadResourceFromFiles() (*Resource, error) {
-	fmt.Println("Trying to read config.yaml and state.yaml files...")
-
 	r := &Resource{}
 
 	c, err := flexcli.ReadYamlFile("config.yaml")

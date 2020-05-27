@@ -8,6 +8,16 @@ resource "local_file" "kubernetes_values" {
   filename          = "./values/kubernetes.yaml"
 }
 
+resource "local_file" "kube_proxy_values" {
+  sensitive_content = local.kube_proxy_values
+  filename          = "./values/kube-proxy.yaml"
+}
+
+resource "local_file" "tls_bootstrapping_values" {
+  sensitive_content = local.tls_bootstrapping_values
+  filename          = "./values/tls-bootstrapping.yaml"
+}
+
 resource "local_file" "coredns_values" {
   sensitive_content = local.coredns_values
   filename          = "./values/coredns.yaml"

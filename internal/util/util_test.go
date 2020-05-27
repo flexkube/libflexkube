@@ -2,7 +2,10 @@ package util
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
+
+	"github.com/logrusorgru/aurora"
 )
 
 const (
@@ -131,5 +134,53 @@ func TestKeysStringMap(t *testing.T) {
 
 	if k := KeysStringMap(m); !reflect.DeepEqual(expected, k) {
 		t.Fatalf("Expected %v, got %v", expected, k)
+	}
+}
+
+func TestColorizeDiff(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		input  string
+		output string
+	}{
+		{
+			input:  "",
+			output: "",
+		},
+		{
+			input:  "\n",
+			output: "\n",
+		},
+		{
+			input:  "foo\n",
+			output: "foo\n",
+		},
+		{
+			input:  "+foo\n",
+			output: aurora.Green("+foo\n").String(),
+		},
+		{
+			input:  "-foo\n",
+			output: aurora.Red("-foo\n").String(),
+		},
+		{
+			input:  "foo\nbar",
+			output: "foo\nbar",
+		},
+		{
+			input:  "+foo\n-bar\nbaz\n",
+			output: aurora.Green("+foo\n").String() + aurora.Red("-bar\n").String() + "baz\n",
+		},
+	}
+
+	for n, c := range cases {
+		c := c
+
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			if result := ColorizeDiff(c.input); result != c.output {
+				t.Errorf("expected %q, got %q", c.output, result)
+			}
+		})
 	}
 }

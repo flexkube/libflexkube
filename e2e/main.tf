@@ -2,6 +2,10 @@ provider "local" {
   version = "= 1.4.0"
 }
 
+provider "random" {
+  version = "= 2.2.1"
+}
+
 resource "flexkube_pki" "pki" {
   certificate {
     organization = "example"
@@ -26,6 +30,18 @@ resource "flexkube_pki" "pki" {
   }
 }
 
+resource "random_password" "bootstrap_token_id" {
+  length  = 6
+  upper   = false
+  special = false
+}
+
+resource "random_password" "bootstrap_token_secret" {
+  length  = 16
+  upper   = false
+  special = false
+}
+
 locals {
   cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
 
@@ -35,6 +51,12 @@ locals {
   node_load_balancer_address = "127.0.0.1:7443"
 
   etcd_servers = formatlist("https://%s:2379", values(flexkube_pki.pki.etcd[0].peers))
+
+  tls_bootstrapping_values = <<EOF
+tokens:
+- token-id: ${random_password.bootstrap_token_id.result}
+  token-secret: ${random_password.bootstrap_token_secret.result}
+EOF
 
   kube_apiserver_values = templatefile("./templates/kube-apiserver-values.yaml.tmpl", {
     server_key                     = flexkube_pki.pki.kubernetes[0].kube_api_server[0].server_certificate[0].private_key
@@ -53,15 +75,24 @@ locals {
     replicas                       = var.controllers_count
   })
 
+  api_servers = formatlist("%s:%d", local.controller_ips, local.api_port)
+
   kubernetes_values = templatefile("./templates/values.yaml.tmpl", {
     service_account_private_key = flexkube_pki.pki.kubernetes[0].service_account_certificate[0].private_key
     kubernetes_ca_key           = flexkube_pki.pki.kubernetes[0].ca[0].private_key
     root_ca_certificate         = flexkube_pki.pki.root_ca[0].x509_certificate
     kubernetes_ca_certificate   = flexkube_pki.pki.kubernetes[0].ca[0].x509_certificate
-    api_servers                 = formatlist("%s:%d", local.controller_ips, local.api_port)
+    api_servers                 = local.api_servers
     replicas                    = var.controllers_count
-    podsCIDR                    = var.pod_cidr
   })
+
+  kube_proxy_values = <<EOF
+apiServers:
+%{for api_server in local.api_servers~}
+- ${api_server}
+%{endfor~}
+podCIDR: ${var.pod_cidr}
+EOF
 
   coredns_values = <<EOF
 rbac:
@@ -246,6 +277,32 @@ resource "flexkube_helm_release" "kubernetes" {
   ]
 }
 
+resource "flexkube_helm_release" "kube-proxy" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = var.kube_proxy_helm_chart_source
+  name       = "kube-proxy"
+  values     = local.kube_proxy_values
+
+  depends_on = [
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
+  ]
+}
+
+resource "flexkube_helm_release" "tls-bootstrapping" {
+  kubeconfig = local.kubeconfig_admin
+  namespace  = "kube-system"
+  chart      = var.tls_bootstrapping_helm_chart_source
+  name       = "tls-bootstrapping"
+  values     = local.tls_bootstrapping_values
+
+  depends_on = [
+    flexkube_controlplane.bootstrap,
+    flexkube_apiloadbalancer_pool.bootstrap,
+  ]
+}
+
 resource "flexkube_helm_release" "coredns" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
@@ -302,7 +359,7 @@ resource "flexkube_helm_release" "calico" {
 resource "flexkube_kubelet_pool" "controller" {
   bootstrap_config {
     server = local.node_load_balancer_address
-    token  = "07401b.f395accd246ae52d"
+    token  = "${random_password.bootstrap_token_id.result}.${random_password.bootstrap_token_secret.result}"
   }
 
   pki_yaml          = flexkube_pki.pki.state_yaml
@@ -362,7 +419,7 @@ resource "flexkube_kubelet_pool" "controller" {
 
   depends_on = [
     flexkube_apiloadbalancer_pool.controllers,
-    flexkube_helm_release.kubernetes,
+    flexkube_helm_release.tls-bootstrapping,
     flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
@@ -399,7 +456,7 @@ resource "flexkube_kubelet_pool" "workers" {
 
   bootstrap_config {
     server = local.node_load_balancer_address
-    token  = "07401b.f395accd246ae52d"
+    token  = "${random_password.bootstrap_token_id.result}.${random_password.bootstrap_token_secret.result}"
   }
 
   pki_yaml = flexkube_pki.pki.state_yaml
@@ -447,7 +504,7 @@ resource "flexkube_kubelet_pool" "workers" {
 
   depends_on = [
     flexkube_apiloadbalancer_pool.workers,
-    flexkube_helm_release.kubernetes,
+    flexkube_helm_release.tls-bootstrapping,
     flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }

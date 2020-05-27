@@ -241,17 +241,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("failed to validate controlplane configuration: %w", err)
 	}
 
-	controlplane := &controlplane{}
-
-	cc := &container.Containers{}
-
-	if c.State != nil {
-		cc.PreviousState = *c.State
-
-		co, _ := cc.New()
-
-		controlplane.containers = co
-	}
+	controlplane, cc, _ := c.containersWithState()
 
 	// If shutdown is requested, don't fill DesiredState to remove everything.
 	if c.Destroy {
@@ -292,6 +282,27 @@ func (c *Controlplane) buildComponents() {
 	c.buildKubeScheduler()
 }
 
+func (c *Controlplane) containersWithState() (*controlplane, *container.Containers, error) {
+	cp := &controlplane{}
+	cc := &container.Containers{}
+
+	// If state is empty, just return initialized containers config and controlplane.
+	if c.State == nil || len(*c.State) == 0 {
+		return cp, cc, nil
+	}
+
+	cc.PreviousState = *c.State
+
+	ci, err := cc.New()
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to create containers state: %w", err)
+	}
+
+	cp.containers = ci
+
+	return cp, cc, nil
+}
+
 // Validate validates Controlplane configuration.
 func (c *Controlplane) Validate() error {
 	c.buildComponents()
@@ -302,14 +313,14 @@ func (c *Controlplane) Validate() error {
 		errors = append(errors, fmt.Errorf("can't destroy non-existent controlplane"))
 	}
 
-	cc := &container.Containers{}
+	_, cc, err := c.containersWithState()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("malformed containers state: %w", err))
+	}
 
-	if c.State != nil && len(*c.State) > 0 {
-		cc.PreviousState = *c.State
-
-		if _, err := cc.New(); err != nil {
-			errors = append(errors, fmt.Errorf("unable to create containers state: %w", err))
-		}
+	// If we destroy, we only need to validate the state.
+	if c.Destroy {
+		return errors.Return()
 	}
 
 	kas, err := c.KubeAPIServer.New()

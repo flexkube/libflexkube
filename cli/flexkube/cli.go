@@ -8,7 +8,13 @@ import (
 
 const (
 	// Version is a version printed by the --version flag.
-	Version = "v0.3.0"
+	Version = "v0.3.0-unreleased"
+
+	// YesFlag is a const for --yes flag.
+	YesFlag = "yes"
+
+	// NoopFlag is const for --noop flag.
+	NoopFlag = "noop"
 )
 
 // Run executes flexkube CLI binary with given arguments (usually os.Args).
@@ -16,6 +22,16 @@ func Run(args []string) int {
 	app := &cli.App{
 		Name:    "flexkube",
 		Version: Version,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  YesFlag,
+				Usage: "Evaluate the configuration without confirmation",
+			},
+			&cli.BoolFlag{
+				Name:  NoopFlag,
+				Usage: "Only checks the status of the deployment, but does not do any changes",
+			},
+		},
 		Commands: []*cli.Command{
 			kubeletPoolCommand(),
 			apiLoadBalancerPoolCommand(),
@@ -28,7 +44,7 @@ func Run(args []string) int {
 
 	err := app.Run(args)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("Execution failed: %v\n", err)
 
 		return 1
 	}
@@ -160,6 +176,17 @@ func withResource(c *cli.Context, rf func(*cli.Context, *Resource) error) error 
 	r, err := LoadResourceFromFiles()
 	if err != nil {
 		return fmt.Errorf("reading configuration and state failed: %w", err)
+	}
+
+	r.Confirmed = c.Bool(YesFlag)
+	r.Noop = c.Bool(NoopFlag)
+
+	if r.Confirmed && r.Noop {
+		return fmt.Errorf("--%s and --%s flags are mutually exclusive", YesFlag, NoopFlag)
+	}
+
+	if r.Noop {
+		fmt.Println("No-op run, no changes will be made.")
 	}
 
 	return rf(c, r)
