@@ -10,18 +10,37 @@ import (
 	networktypes "github.com/docker/docker/api/types/network"
 )
 
-// FakeClient is a mock of Docker client.
+// FakeClient is a mock of Docker client, which should be used only for testing.
 type FakeClient struct { //nolint:dupl
-	ContainerCreateF   func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
-	ContainerStartF    func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
-	ContainerStopF     func(ctx context.Context, container string, timeout *time.Duration) error
-	ContainerInspectF  func(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
-	ContainerRemoveF   func(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
+	// ContainerCreateF will be called by ContainerCreate.
+	ContainerCreateF func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+
+	// ContainerStartF will be called by ContainerStart.
+	ContainerStartF func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
+
+	// ContainerStopF will be called by ContainerStop.
+	ContainerStopF func(ctx context.Context, container string, timeout *time.Duration) error
+
+	// ContainerInspectF will be called by ContainerInspect.
+	ContainerInspectF func(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
+
+	// ContainerRemoveF will be called by ContainerRemove.
+	ContainerRemoveF func(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
+
+	// CopyFromContainerF will be called by CopyFromContainer.
 	CopyFromContainerF func(ctx context.Context, container, srcPath string) (io.ReadCloser, dockertypes.ContainerPathStat, error)
-	CopyToContainerF   func(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error
+
+	// CopyToContainerF will be called by CopyToContainer.
+	CopyToContainerF func(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error
+
+	// ContainerStatPathF will be called by ContainerStatPath.
 	ContainerStatPathF func(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error)
-	ImageListF         func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error)
-	ImagePullF         func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error)
+
+	// ImageListF will be called by ImageList.
+	ImageListF func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error)
+
+	// ImagePullF will be called by ImagePull.
+	ImagePullF func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error)
 }
 
 // ContainerCreate mocks Docker client ContainerCreate().

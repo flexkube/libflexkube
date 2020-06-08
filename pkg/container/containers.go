@@ -15,12 +15,39 @@ import (
 
 // ContainersInterface represents capabilities of containers struct.
 type ContainersInterface interface {
+	// CheckCurrentState iterates over containers defined in the state, checks if they exist, are
+	// running etc and writes to containers current state. This allows then to compare current state      // of the containers with desired state, using Containers() method, to check if there are any
+	// pending changes to cluster configuration.
+	//
+	// Calling CheckCurrentState is required before calling Deploy(), to ensure, that Deploy() executes
+	// correct actions.
 	CheckCurrentState() error
+
+	// Deploy creates configured containers.
+	//
+	// CheckCurrentState() must be called before calling Deploy(), otherwise error will be returned.
 	Deploy() error
+
+	// StateToYaml converts resource's containers state into YAML format and returns it to the user,
+	// so it can be persisted, e.g. to the file.
 	StateToYaml() ([]byte, error)
+
+	// ToExported converts unexported containers struct into exported one, which can be then
+	// serialized and persisted.
 	ToExported() *Containers
+
+	// DesiredState returns desired state of configured containers.
+	//
+	// Desired state differs from
+	// exported or user-defined desired state, as it will have container IDs filled from the
+	// previous state.
+	//
+	// All returned containers will also have status set to running, as this is always the desired
+	// state of the container.
+	//
+	// Having those fields modified allows to minimize the difference when comparing previous state
+	// and desired state.
 	DesiredState() ContainersState
-	Containers() ContainersInterface
 }
 
 // Containers allow to orchestrate and update multiple containers spread
@@ -29,6 +56,7 @@ type Containers struct {
 	// PreviousState stores previous state of the containers, which should be obtained and persisted
 	// after containers modifications.
 	PreviousState ContainersState `json:"previousState,omitempty"`
+
 	// DesiredState is a user-defined desired containers configuration.
 	DesiredState ContainersState `json:"desiredState,omitempty"`
 }
@@ -38,13 +66,16 @@ type Containers struct {
 type containers struct {
 	// previousState is a previous state of the containers, given by user.
 	previousState containersState
+
 	// currentState stores current state of the containers. It is fed by calling Refresh() function.
 	currentState containersState
+
 	// resiredState is a user-defined desired containers configuration after validation.
 	desiredState containersState
 }
 
-// New validates Containers configuration and returns "executable" containers object.
+// New validates Containers configuration and returns container object, which can be
+// deployed.
 func (c *Containers) New() (ContainersInterface, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate containers configuration: %w", err)
@@ -85,7 +116,13 @@ func (c *Containers) Validate() error {
 	return errors.Return()
 }
 
-// CheckCurrentState checks the state of existing containers and updates their state.
+// CheckCurrentState iterates over containers defined in the state, checks if they exist, are
+// running etc and writes to containers current state. This allows then to compare current state
+// of the containers with desired state, using Containers() method, to check if there are any
+// pending changes to cluster configuration.
+//
+// Calling CheckCurrentState is required before calling Deploy(), to ensure, that Deploy() executes
+// correct actions.
 func (c *Containers) CheckCurrentState() error {
 	containers, err := c.New()
 	if err != nil {
@@ -101,7 +138,9 @@ func (c *Containers) CheckCurrentState() error {
 	return nil
 }
 
-// Deploy deploys defined containers.
+// Deploy creates configured containers.
+//
+// CheckCurrentState() must be called before calling Deploy(), otherwise error will be returned.
 func (c *Containers) Deploy() error {
 	containers, err := c.New()
 	if err != nil {
@@ -485,7 +524,7 @@ func (c *containers) Deploy() error {
 	return c.updateExistingContainers()
 }
 
-// FromYaml allows to restore containers state from YAML.
+// FromYaml allows to load containers configuration and state from YAML format.
 func FromYaml(c []byte) (ContainersInterface, error) {
 	containers := &Containers{}
 	if err := yaml.Unmarshal(c, &containers); err != nil {

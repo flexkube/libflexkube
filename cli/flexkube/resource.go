@@ -24,26 +24,82 @@ import (
 
 // Resource represents flexkube CLI configuration structure.
 type Resource struct {
-	Etcd                 *etcd.Cluster                                `json:"etcd,omitempty"`
-	Controlplane         *controlplane.Controlplane                   `json:"controlplane,omitempty"`
-	PKI                  *pki.PKI                                     `json:"pki,omitempty"`
-	KubeletPools         map[string]*kubelet.Pool                     `json:"kubeletPools,omitempty"`
+	// Etcd allows to manage etcd cluster, which is required for running Kubernetes.
+	//
+	// See etcd.Cluster for available fields.
+	Etcd *etcd.Cluster `json:"etcd,omitempty"`
+
+	// Controlplane allows to manage static Kubernetes controlplane, which consists of kube-apiserver,
+	// kube-scheduler and kube-controller-manager.
+	//
+	// Usually single controlplane is created, which can be then used to install self-hosted controlplane
+	// e.g. using 'helm'.
+	//
+	// See controlplane.Controlplane for available fields.
+	Controlplane *controlplane.Controlplane `json:"controlplane,omitempty"`
+
+	// PKI allows to manage certificates and private keys required by Kubernetes.
+	//
+	// See pki.PKI for available fields.
+	PKI *pki.PKI `json:"pki,omitempty"`
+
+	// KubeletPools allows to manage multiple kubelet pools. In case of self-hosted Kubernetes, you usually want to
+	// run at least 2 pools, which differs in labels. One for controller nodes, which runs for example kube-apiserver
+	// and other pods, which have access to cluster credentials and another one for worker nodes.
+	//
+	// Creating more worker pools is useful, if you have group of cluster nodes with different hardware.
+	//
+	// See kubelet.Pool for available fields.
+	KubeletPools map[string]*kubelet.Pool `json:"kubeletPools,omitempty"`
+
+	// APILoadBalancerPools allows to manage multiple kube-apiserver load balancers, which allows building
+	// highly available Kubernetes clusters.
+	//
+	// For example, kubelet does not support load-balancing internally, so it can be pointed to load balancer
+	// address, which will handle graceful handover in case of one API server going down.
+	//
+	// See apiloadbalancer.APILoadBalancers for available fields.
 	APILoadBalancerPools map[string]*apiloadbalancer.APILoadBalancers `json:"apiLoadBalancerPools,omitempty"`
-	State                *ResourceState                               `json:"state,omitempty"`
-	Confirmed            bool                                         `json:"confirmed,omitempty"`
-	Noop                 bool                                         `json:"noop,omitempty"`
+
+	// Containers allows to manage arbitrary container groups. This is useful, when you need some extra
+	// containers to run as part of your Kubernetes cluster. For example, when running with cloud-controller-manager
+	// it can be used to run static instance of it for bootstrapping.
+	//
+	// See container.ContainersState for available options.
+	Containers map[string]*container.ContainersState `json:"containers,omitempty"`
+
+	// State stores state of all configured resources. Information about all created containers and generated certificates
+	// must be persisted, so it does not change on consecutive runs.
+	State *ResourceState `json:"state,omitempty"`
+
+	// Confirmed controls, if user should be asked for confirmation input before applying changes.
+	// Set to 'true' for unattended runs.
+	Confirmed bool `json:"confirmed,omitempty"`
+
+	// Noop controls, if deployment should actually be executed. If set to 'true', only the difference between
+	// cluster existing state and desired state will be printed, but the State field won't be modified.
+	Noop bool `json:"noop,omitempty"`
 }
 
 // ResourceState represents flexkube CLI state format.
 type ResourceState struct {
-	Etcd                 *container.ContainersState            `json:"etcd,omitempty"`
-	Controlplane         *container.ContainersState            `json:"controlplane,omitempty"`
-	KubeletPools         map[string]*container.ContainersState `json:"kubeletPools,omitempty"`
+	// Etcd stores state information about containers which are part of etcd cluster.
+	Etcd *container.ContainersState `json:"etcd,omitempty"`
+
+	// Controlplane stores state information about containers which are part Kubernetes static controlplane.
+	Controlplane *container.ContainersState `json:"controlplane,omitempty"`
+
+	// KubeletPools stores state information about containers which are part of kubelet pools.
+	KubeletPools map[string]*container.ContainersState `json:"kubeletPools,omitempty"`
+
+	// APILoadBalancerPools stores state information about containers which are part of kube-apiserver load
+	// balancer pools.
 	APILoadBalancerPools map[string]*container.ContainersState `json:"apiLoadBalancerPools,omitempty"`
 
 	// Containers stores state information for configured container groups.
 	Containers map[string]*container.ContainersState `json:"containers,omitempty"`
 
+	// PKI stores generated Kubernetes certificates.
 	PKI *pki.PKI `json:"pki,omitempty"`
 }
 

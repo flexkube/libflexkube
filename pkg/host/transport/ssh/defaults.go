@@ -11,7 +11,7 @@ const (
 	// ConnectionTimeout is a default time SSH will wait while connecting to unreachable server.
 	ConnectionTimeout = "30s"
 
-	// RetryTimeout is a default time after we give up connecting to reachable server.
+	// RetryTimeout is a default time after we give up connecting to unreachable server.
 	RetryTimeout = "60s"
 
 	// RetryInterval is a default time how long we wait between SSH connection attempts.

@@ -18,15 +18,23 @@ import (
 const (
 	// PollInterval defines how long we wait before next attempt while waiting for the objects.
 	PollInterval = 5 * time.Second
+
 	// RetryTimeout defines how long we wait before timing out waiting for the objects.
 	RetryTimeout = 5 * time.Minute
 )
 
-// Client defines exported capabilities of flexkube k8s client.
+// Client defines exported capabilities of Flexkube k8s client.
 type Client interface {
+	// CheckNodeExists returns a function, which checks, if given node exists.
 	CheckNodeExists(name string) func() (bool, error)
+
+	// WaitForNode waits, until Node object shows up in the API.
 	WaitForNode(name string) error
+
+	// LabelNode patches Node object to set given labels on it.
 	LabelNode(name string, labels map[string]string) error
+
+	// PingWait waits until API server becomes available.
 	PingWait() error
 }
 

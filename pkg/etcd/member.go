@@ -19,19 +19,107 @@ import (
 
 // Member represents single etcd member.
 type Member struct {
-	Name              string            `json:"name,omitempty"`
-	Image             string            `json:"image,omitempty"`
-	Host              host.Host         `json:"host,omitempty"`
-	CACertificate     types.Certificate `json:"caCertificate,omitempty"`
-	PeerCertificate   types.Certificate `json:"peerCertificate,omitempty"`
-	PeerKey           types.PrivateKey  `json:"peerKey,omitempty"`
-	PeerAddress       string            `json:"peerAddress,omitempty"`
-	InitialCluster    string            `json:"initialCluster,omitempty"`
-	PeerCertAllowedCN string            `json:"peerCertAllowedCN,omitempty"`
+	// Name defines the name of the etcd member. It is used for --name flag.
+	//
+	// Example values: etcd01, infra2, member3
+	//
+	// This field is optional if used with Cluster struct.
+	Name string `json:"name,omitempty"`
+
+	// Image is a Docker image with tag to use for member container.
+	//
+	// Example values: 'quay.io/coreos/etcd:v3.4.9'
+	//
+	// This field is optional if user together with Cluster struct.
+	Image string `json:"image,omitempty"`
+
+	// Host describes on which machine member container should be created.
+	//
+	// This field is required.
+	Host host.Host `json:"host,omitempty"`
+
+	// CACertificate is a etcd CA X.509 certificate used to verify peers and client
+	// certificates. It is used for --peer-trusted-ca-file and --trusted-ca-file flags.
+	//
+	// This certificate can be generated using pki.PKI struct.
+	//
+	// This field is optional, if used together with Cluster struct.
+	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+
+	// PeerCertificate is a X.509 certificate used to communicate with other cluster
+	// members. Should be signed by CACertificate. It is used for --peer-cert-file flag.
+	//
+	// This certificate can be generated using pki.PKI struct.
+	//
+	// This field is optional, if used together with Cluster struct and PKI integration.
+	PeerCertificate types.Certificate `json:"peerCertificate,omitempty"`
+
+	// PeerKey is a private key for PeerCertificate. Must be defined in either
+	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
+	//
+	// This private key can be generated using pki.PKI struct.
+	//
+	// This field is optional, if used together with Cluster struct and PKI integration.
+	PeerKey types.PrivateKey `json:"peerKey,omitempty"`
+
+	// PeerAddress is an address, where member will listen and which will be
+	// advertised to the cluster. It is used for --listen-peer-urls and
+	// --initial-advertise-peer-urls flags.
+	//
+	// Example value: 192.168.10.10
+	PeerAddress string `json:"peerAddress,omitempty"`
+
+	// InitialCluster defines initial list of members for the cluster. It is used for
+	// --initial-cluster flag.
+	//
+	// Example value: 'infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380'.
+	//
+	// This field is optional, if used together with Cluster struct.
+	InitialCluster string `json:"initialCluster,omitempty"`
+
+	// PeerCertAllowedCN defines allowed CommonName of the client certificate
+	// for peer communication. Can be used when single client certificate is used
+	// for all members of the cluster.
+	//
+	// Is is used for --peer-cert-allowed-cn flag.
+	//
+	// Example value: 'member'.
+	//
+	// This field is optional.
+	PeerCertAllowedCN string `json:"peerCertAllowedCN,omitempty"`
+
+	// ServerCertificate is a X.509 certificate used to communicate with other cluster
+	// members. Should be signed by CACertificate. It is used for --peer-cert-file flag.
+	//
+	//
+	// This certificate can be generated using pki.PKI struct.
+	//
+	// This field is optional, if used together with Cluster struct and PKI integration.
 	ServerCertificate types.Certificate `json:"serverCertificate,omitempty"`
-	ServerKey         types.PrivateKey  `json:"serverKey,omitempty"`
-	ServerAddress     string            `json:"serverAddress,omitempty"`
-	NewCluster        bool              `json:"newCluster,omitempty"`
+
+	// Serverkey is a private key for ServerCertificate. Must be defined in either
+	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
+	//
+	// This private key can be generated using pki.PKI struct.
+	//
+	// This field is optional, if used together with Cluster struct and PKI integration.
+	ServerKey types.PrivateKey `json:"serverKey,omitempty"`
+
+	// ServerAddress is an address, where member will listen and which will be
+	// advertised to the clients. It is used for --listen-client-urls and
+	// --advertise-client-urls flags.
+	//
+	// Example value: 192.168.10.10
+	ServerAddress string `json:"serverAddress,omitempty"`
+
+	// NewCluster controls if member should be created as part of new cluster or as part
+	// of already initialized cluster.
+	//
+	// If set to true, --initial-cluster-token flag will be used when creating the container,
+	// otherwise --initial-cluster-state=existing flag will be used.
+	//
+	// This field is optional, if used together with Cluster struct.
+	NewCluster bool `json:"newCluster,omitempty"`
 }
 
 // member is a validated, executable version of Member.
