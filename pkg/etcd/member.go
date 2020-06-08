@@ -151,7 +151,7 @@ func (m *member) configFiles() map[string]string {
 
 // args returns flags which will be set to the container.
 func (m *member) args() []string {
-	return []string{
+	flags := []string{
 		// TODO Add descriptions explaining why we need each line.
 		// Default value 'capnslog' for logger is deprecated and prints warning now.
 		"--logger=zap", // Available only from 3.4.x
@@ -181,6 +181,12 @@ func (m *member) args() []string {
 		// for more details.
 		"--client-cert-auth=true",
 	}
+
+	if m.peerCertAllowedCN != "" {
+		flags = append(flags, fmt.Sprintf("--peer-cert-allowed-cn=%s", m.peerCertAllowedCN))
+	}
+
+	return flags
 }
 
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer.

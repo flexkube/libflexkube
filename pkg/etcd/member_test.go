@@ -33,6 +33,7 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 		ServerCertificate: cert,
 		ServerKey:         privateKey,
 		Image:             defaults.EtcdImage,
+		PeerCertAllowedCN: nonEmptyString,
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
