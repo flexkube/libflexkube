@@ -12,8 +12,14 @@ import (
 
 // KubeScheduler represents kube-scheduler configuration data.
 type KubeScheduler struct {
-	Common     *Common       `json:"common,omitempty"`
-	Host       *host.Host    `json:"host,omitempty"`
+	// Common stores common information between all controlplane components.
+	Common *Common `json:"common,omitempty"`
+
+	// Host defines on which host kube-scheduler container should be created.
+	Host *host.Host `json:"host,omitempty"`
+
+	// Kubeconfig stores client information used by kube-scheduler to talk to
+	// Kubernetes API.
 	Kubeconfig client.Config `json:"kubeconfig"`
 }
 

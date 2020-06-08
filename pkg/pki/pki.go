@@ -80,23 +80,72 @@ func extKeyUsage(k string) x509.ExtKeyUsage {
 
 // Certificate defines configurable options for each certificate.
 type Certificate struct {
-	Organization     string            `json:"organization,omitempty"`
-	RSABits          int               `json:"rsaBits,omitempty"`
-	ValidityDuration string            `json:"validityDuration,omitempty"`
-	RenewThreshold   string            `json:"renewThreshold,omitempty"`
-	CommonName       string            `json:"commonName,omitempty"`
-	CA               bool              `json:"ca,omitempty"`
-	KeyUsage         []string          `json:"keyUsage,omitempty"`
-	IPAddresses      []string          `json:"ipAddresses,omitempty"`
-	DNSNames         []string          `json:"dnsNames,omitempty"`
-	X509Certificate  types.Certificate `json:"x509Certificate,omitempty"`
-	PublicKey        string            `json:"publicKey,omitempty"`
-	PrivateKey       types.PrivateKey  `json:"privateKey,omitempty"`
+	// Organization stores value for 'organization' field in the certificate.
+	Organization string `json:"organization,omitempty"`
+
+	// RSABits defines length of RSA private key to generate.
+	//
+	// Example value: '2048'.
+	RSABits int `json:"rsaBits,omitempty"`
+
+	// ValidityDuration defines how long generated certificates should be valid.
+	//
+	// Example value: '24h'.
+	ValidityDuration string `json:"validityDuration,omitempty"`
+
+	// RenewThreshold defines how long before expiry date the certificates should
+	// be re-generated.
+	RenewThreshold string `json:"renewThreshold,omitempty"`
+
+	// CommonName defined CN field for the certificate.
+	CommonName string `json:"commonName,omitempty"`
+
+	// CA controls if certificate should be self-signed while generated.
+	CA bool `json:"ca,omitempty"`
+
+	// KeyUsage is a list of key usages. Valid values are:
+	// - "digital_signature"
+	// - "content_commitment"
+	// - "key_encipherment"
+	// - "data_encipherment"
+	// - "key_agreement"
+	// - "cert_signing"
+	// - "crl_signing"
+	// - "encipher_only"
+	// - "decipher_only"
+	// - "any_extended"
+	// - "server_auth"
+	// - "client_auth"
+	// - "code_signing"
+	// - "email_protection"
+	// - "ipsec_end_system"
+	// - "ipsec_tunnel"
+	// - "ipsec_user"
+	// - "timestamping"
+	// - "ocsp_signing"
+	// - "microsoft_server_gated_crypto"
+	// - "netscape_server_gated_crypto"
+	KeyUsage []string `json:"keyUsage,omitempty"`
+
+	// IPAddresses defines for which IP addresses the certificate can be used.
+	IPAddresses []string `json:"ipAddresses,omitempty"`
+
+	// DNSNames defines extra hostnames, which will be valid for the certificate.
+	DNSNames []string `json:"dnsNames,omitempty"`
+
+	// X509Certificate stores generated certificate in X.509 certificate format, PEM encoded.
+	X509Certificate types.Certificate `json:"x509Certificate,omitempty"`
+
+	// PublicKey stores generate RSA public key, PEM encoded.
+	PublicKey string `json:"publicKey,omitempty"`
+
+	// PrivateKey stores generates RSA private key in PKCS1 format, PEM encoded.
+	PrivateKey types.PrivateKey `json:"privateKey,omitempty"`
 }
 
 // PKI contains configuration and all generated certificates and private keys required for running Kubernetes.
 type PKI struct {
-	// Inline Certificate struct, so some settings can be applied as defaults for all certificates in PKI.
+	// Certificate contains default settings for all certificates in PKI.
 	Certificate
 
 	// RootCA contains configuration and generated root CA certificate and private key.
@@ -442,12 +491,17 @@ func (c *Certificate) persistX509Certificate(der []byte) error {
 // Generate ensures that all fields of the certificate are populated.
 //
 // This function currently supports:
+//
 // - Generating new RSA private key and public key.
+//
 // - Generating new X.509 certificates.
 //
 // NOT implemented functionality:
+//
 // - Renewing certificates based on expiry time.
+//
 // - Renewing X.509 certificate after RSA private key renewal.
+//
 // - Renewing issued certificate during CA renewal.
 func (c *Certificate) Generate(ca *Certificate) error {
 	if err := c.Validate(); err != nil {

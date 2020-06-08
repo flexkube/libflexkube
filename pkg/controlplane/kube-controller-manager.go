@@ -13,13 +13,36 @@ import (
 
 // KubeControllerManager represents kube-controller-manager container configuration.
 type KubeControllerManager struct {
-	Common                   *Common           `json:"common,omitempty"`
-	Host                     *host.Host        `json:"host,omitempty"`
-	Kubeconfig               client.Config     `json:"kubeconfig"`
-	KubernetesCAKey          types.PrivateKey  `json:"kubernetesCAKey"`
-	ServiceAccountPrivateKey types.PrivateKey  `json:"serviceAccountPrivateKey"`
-	RootCACertificate        types.Certificate `json:"rootCACertificate"`
-	FlexVolumePluginDir      string            `json:"flexVolumePluginDir"`
+	// Common stores common information between all controlplane components.
+	Common *Common `json:"common,omitempty"`
+
+	// Host defines on which host kube-controller-manager container should be created.
+	Host *host.Host `json:"host,omitempty"`
+
+	// Kubeconfig stores client information used by kube-controller-manager to talk to
+	// Kubernetes API.
+	Kubeconfig client.Config `json:"kubeconfig"`
+
+	// KubernetesCAKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format,
+	// which was used to sign all Kubernetes certificates. It will be used by
+	// kube-controller-manager to sign Kubernetes certificate requests, for example issued by
+	// kubelet as part of TLS bootstrapping and rotation process.
+	KubernetesCAKey types.PrivateKey `json:"kubernetesCAKey"`
+
+	// ServiceAccountPrivateKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format,
+	// which will be used by to sing service account tokens.
+	ServiceAccountPrivateKey types.PrivateKey `json:"serviceAccountPrivateKey"`
+
+	// RootCACertificate is a X.509 CA certificate, PEM encoded, which signed Kubernetes CA
+	// certificate. It will be included into service account tokens, so clients like 'curl', can
+	// perform full validation of Kubernetes API certificate.
+	RootCACertificate types.Certificate `json:"rootCACertificate"`
+
+	// FlexVolumePluginDir is a plugin directory for FlexVolumes, which must be defined for
+	// kube-controller-manager, as stated in Flexvolume specification.
+	//
+	// Example value: '/usr/libexec/kubernetes/kubelet-plugins/volume/exec/'.
+	FlexVolumePluginDir string `json:"flexVolumePluginDir"`
 }
 
 // kubeControllerManager is a validated version of KubeControllerManager.

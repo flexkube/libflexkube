@@ -16,29 +16,53 @@ const (
 
 // Kubernetes stores Kubernetes PKI and settings.
 type Kubernetes struct {
-	// Inline Certificate struct, so some settings can be applied as defaults for all Kubernetes certificates.
+	// Certificate stores default settings for all Kubernetes certificates.
 	Certificate
 
+	// CA stores Kubernetes CA certificate and it's settings.
 	CA *Certificate `json:"ca,omitempty"`
 
+	// FrontProxyCA stores Kubernetes front-proxy CA certificate, required for API aggregation.
 	FrontProxyCA *Certificate `json:"frontProxyCA,omitempty"`
 
-	KubeAPIServer                    *KubeAPIServer `json:"kubeAPIServer,omitempty"`
-	AdminCertificate                 *Certificate   `json:"adminCertificate,omitempty"`
-	KubeControllerManagerCertificate *Certificate   `json:"kubeControllerManagerCertificate,omitempty"`
-	KubeSchedulerCertificate         *Certificate   `json:"kubeSchedulerCertificate,omitempty"`
-	ServiceAccountCertificate        *Certificate   `json:"serviceAccountCertificate,omitempty"`
+	// KubeAPIServer stores kube-apiserver specific certificates.
+	KubeAPIServer *KubeAPIServer `json:"kubeAPIServer,omitempty"`
+
+	// AdminCertificate stores Kubernetes admin certificate.
+	AdminCertificate *Certificate `json:"adminCertificate,omitempty"`
+
+	// KubeControllerManagerCertificate stores kube-controller-manager client certificate.
+	KubeControllerManagerCertificate *Certificate `json:"kubeControllerManagerCertificate,omitempty"`
+
+	// KubeSchedulerCertificate stores kube-scheduler client certificate.
+	KubeSchedulerCertificate *Certificate `json:"kubeSchedulerCertificate,omitempty"`
+
+	// ServiceAccountCertificate stores public and private key used for signing and verifying
+	// service account tokens by kube-controller-manager and kube-apiserver.
+	ServiceAccountCertificate *Certificate `json:"serviceAccountCertificate,omitempty"`
 }
 
 // KubeAPIServer stores kube-apiserver certificates.
 type KubeAPIServer struct {
+	// Certificate stores default settings for all kube-apiserver certificates.
 	Certificate
 
+	// ExternalNames is a helper to ServerCertificate, which allows setting allowed DNS
+	// names while connecting to kube-apiserver.
 	ExternalNames []string `json:"externalNames,omitempty"`
-	ServerIPs     []string `json:"serverIPs,omitempty"`
 
-	ServerCertificate           *Certificate `json:"serverCertificate,omitempty"`
-	KubeletCertificate          *Certificate `json:"kubeletCertificate,omitempty"`
+	// ServerIPs is a helper to ServerCertificate, which allows setting on which IP addresses
+	// kube-apiserver can be available.
+	ServerIPs []string `json:"serverIPs,omitempty"`
+
+	// ServerCertificate stores service certificate for HTTPS server.
+	ServerCertificate *Certificate `json:"serverCertificate,omitempty"`
+
+	// KubeletCertificate stores client certificate used for talking to kubelet on the nodes.
+	KubeletCertificate *Certificate `json:"kubeletCertificate,omitempty"`
+
+	// FrontProxyClientCertificate stores client certificate used for talking to extending
+	// API servers.
 	FrontProxyClientCertificate *Certificate `json:"frontProxyClientCertificate,omitempty"`
 }
 

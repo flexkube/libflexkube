@@ -15,17 +15,27 @@ type Etcd struct {
 	// Inline Certificate struct, so some settings can be applied as defaults for all etcd certificates.
 	Certificate
 
-	// User configurable fields, for easy use.
+	// CA stores etcd CA certificate.
+	CA *Certificate `json:"ca,omitempty"`
 
-	CA        *Certificate      `json:"ca,omitempty"`
-	Peers     map[string]string `json:"peers,omitempty"`
-	Servers   map[string]string `json:"servers,omitempty"`
-	ClientCNs []string          `json:"clientCNs,omitempty"`
+	// Peers is a map of peer certificates to generate, where key is name of the peer and value
+	// is the IP address on which peer will be listening on.
+	Peers map[string]string `json:"peers,omitempty"`
 
-	// Fields, where all certificates will be stored.
+	// Servers is a map of server certificates to generate, where key is the CN of the client
+	// certificate and value is the IP address on which the server will be listening on.
+	Servers map[string]string `json:"servers,omitempty"`
 
-	PeerCertificates   map[string]*Certificate `json:"peerCertificates,omitempty"`
+	// ClientCNS is a list of client certificate Common Names to generate.
+	ClientCNs []string `json:"clientCNs,omitempty"`
+
+	// PeerCertificates defines and stores all peer certificates.
+	PeerCertificates map[string]*Certificate `json:"peerCertificates,omitempty"`
+
+	// ServerCertificates defines and stores all server certificates.
 	ServerCertificates map[string]*Certificate `json:"serverCertificates,omitempty"`
+
+	// ClientCertificates defined and stores all client certificates.
 	ClientCertificates map[string]*Certificate `json:"clientCertificates,omitempty"`
 }
 

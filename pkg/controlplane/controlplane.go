@@ -19,8 +19,22 @@ import (
 
 // Common struct contains fields, which are common between all controlplane components.
 type Common struct {
-	Image                   string            `json:"image,omitempty"`
+	// Image allows to set Docker image with tag, which will be used by all controlplane containers,
+	// if they have no image set. If empty, hyperkube image defined in pkg/defaults
+	// will be used.
+	//
+	// Example value: 'k8s.gcr.io/hyperkube:v1.18.3'.
+	//
+	// This field is optional.
+	Image string `json:"image,omitempty"`
+
+	// KubernetesCACertificate stores Kubernetes X.509 CA certificate, PEM encoded.
+	//
+	// This field is optional.
 	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate,omitempty"`
+
+	// FrontProxyCACertificate stores Kubernetes front proxy X.509 CA certificate, PEM
+	// encoded.
 	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate,omitempty"`
 }
 
@@ -29,23 +43,51 @@ func (co Common) GetImage() string {
 	return util.PickString(co.Image, defaults.KubernetesImage)
 }
 
-// Controlplane represents kubernetes controlplane configuration and state from the user.
+// Controlplane allows creating static Kubernetes controlplane running as containers.
+//
+// It is usually used to bootstrap self-hosted Kubernetes.
 type Controlplane struct {
-	// User-configurable fields.
-	// They should be defined here if they are used more than once. Things like serviceCIDR, which is only needed in KubeAPIServer,
-	// should be defined directly there.
-	Common                *Common               `json:"common,omitempty"`
-	SSH                   *ssh.Config           `json:"ssh,omitempty"`
-	APIServerAddress      string                `json:"apiServerAddress,omitempty"`
-	APIServerPort         int                   `json:"apiServerPort,omitempty"`
-	KubeAPIServer         KubeAPIServer         `json:"kubeAPIServer,omitempty"`
-	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty"`
-	KubeScheduler         KubeScheduler         `json:"kubeScheduler,omitempty"`
-	Hosts                 []host.Host           `json:"hosts,omitempty"`
-	Destroy               bool                  `json:"destroy,omitempty"`
-	PKI                   *pki.PKI              `json:"pki,omitempty"`
+	// Common stores common fields for all controlplane components. If defined here, the
+	// values will be propagated to all 3 components, which allows to de-duplicate parts
+	// of the configuration.
+	Common *Common `json:"common,omitempty"`
 
-	// Serializable fields.
+	// SSH stores common SSH configuration for all controlplane components and will be merged
+	// with SSH configuration of each component.
+	//
+	// Usually entire static controlplane runs on a single host, so all values should be defined
+	// here.
+	//
+	// This field is optional.
+	SSH *ssh.Config `json:"ssh,omitempty"`
+
+	// APIServerAddress defines Kubernetes API address, which will be used by kube-controller-manager
+	// and kube-scheduler to talk to kube-apiserver.
+	APIServerAddress string `json:"apiServerAddress,omitempty"`
+
+	// APIServerPort defines Kubernetes API port, which will be used by kube-controller-manager
+	// and kube-scheduler to talk to kube-apiserver.
+	APIServerPort int `json:"apiServerPort,omitempty"`
+
+	// KubeAPIServer stores kube-apiserver specific configuration.
+	KubeAPIServer KubeAPIServer `json:"kubeAPIServer,omitempty"`
+
+	// KubeControllerManager stores kube-controller-manager specific configuration.
+	KubeControllerManager KubeControllerManager `json:"kubeControllerManager,omitempty"`
+
+	// KubeScheduler stores kube-scheduler specific configuration.
+	KubeScheduler KubeScheduler `json:"kubeScheduler,omitempty"`
+
+	// Destroy controls, if containers should be created or removed. If set to true, all managed
+	// containers will be removed.
+	Destroy bool `json:"destroy,omitempty"`
+
+	// PKI field allows to use PKI resource for managing all Kubernetes certificates. It will be used for
+	// components configuration, if they don't have certificates defined.
+	PKI *pki.PKI `json:"pki,omitempty"`
+
+	// State stores state of the created containers. After deployment, it is up to the user to export
+	// the state and restore it on consecutive runs.
 	State *container.ContainersState `json:"state,omitempty"`
 }
 
@@ -371,7 +413,7 @@ func (c *Controlplane) Validate() error {
 	return errors.Return()
 }
 
-// FromYaml allows to restore controlplane state from YAML.
+// FromYaml allows to restore controlplane configuration and state from YAML format.
 func FromYaml(c []byte) (types.Resource, error) {
 	return types.ResourceFromYaml(c, &Controlplane{})
 }
