@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-// Provider represents Terraform resource provider.
+// Provider returns Terraform Flexkube provider instance.
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{

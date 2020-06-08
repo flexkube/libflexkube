@@ -48,7 +48,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 			"do": "bar",
 		},
 		Taints: map[string]string{
-			"noo": "bar",
+			"noh": "bar",
 		},
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",

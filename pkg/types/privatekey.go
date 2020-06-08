@@ -12,9 +12,14 @@ import (
 // PrivateKey is a wrapper on string type, which parses it's content
 // as private key while unmarshalling. This allows to validate the
 // data during unmarshalling process.
+//
+// This type is deprecated, as it does not allow to produce
+// meaningful error to the user.
 type PrivateKey string
 
-// UnmarshalJSON implements encoding/json.Unmarshaler interface.
+// UnmarshalJSON implements encoding/json.Unmarshaler interface and tries
+// to decode obtained data using PEM format and then tries to parse the
+// private key as PKCS8, PPKCS1 or EC private keys.
 func (p *PrivateKey) UnmarshalJSON(data []byte) error {
 	up, err := strconv.Unquote(string(data))
 	if err != nil {
@@ -53,7 +58,11 @@ func parsePrivateKey(b []byte) error {
 	return fmt.Errorf("unable to parse private key")
 }
 
-// Pick returns first non-empty private key.
+// Pick returns first non-empty private key from given list, including
+// receiver private key.
+//
+// This method is a helper, which allows to select the certificate to use
+// from hierarchical configuration.
 func (p *PrivateKey) Pick(values ...PrivateKey) PrivateKey {
 	if p == nil || *p == "" {
 		pt := PrivateKey("")

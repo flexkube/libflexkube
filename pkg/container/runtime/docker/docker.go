@@ -34,6 +34,8 @@ const (
 
 // Config struct represents Docker container runtime configuration.
 type Config struct {
+	// Host is a Docker runtime URL. Usually 'unix:///run/docker.sock'. If empty
+	// Docker's default URL will be used.
 	Host string `json:"host,omitempty"`
 }
 

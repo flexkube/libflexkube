@@ -13,18 +13,26 @@ const (
 	StatusMissing = "gone"
 )
 
-// ContainersStateInterface exports constainersState capabilities.
+// ContainersStateInterface represents 'constainersState' capabilities.
 type ContainersStateInterface interface {
+	// CheckState updates the state of all previously configured containers
+	// and their configuration on the host
 	CheckState() error
+
+	// RemoveContainer removes the container by ID.
 	RemoveContainer(containerName string) error
+
+	// CreateAndStart is a helper, which creates and spawns given container.
 	CreateAndStart(containerName string) error
+
+	// Export converts unexported containersState to exported type, so it can be serialized and stored.
 	Export() ContainersState
 }
 
 // ContainersState represents states of multiple containers.
 type ContainersState map[string]*HostConfiguredContainer
 
-// containerState is a validated version of ContainersState, which can be user to perform operations.
+// containerState is a validated version of ContainersState, which can be used to perform operations.
 type containersState map[string]*hostConfiguredContainer
 
 // New validates ContainersState struct and returns operational containerState.

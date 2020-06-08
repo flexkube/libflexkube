@@ -14,14 +14,38 @@ type ResourceInstance interface {
 	ToHostConfiguredContainer() (*HostConfiguredContainer, error)
 }
 
-// HostConfiguredContainerInterface exports hostConfiguredContainer capabilities.
+// HostConfiguredContainerInterface defines capabilities of validated HostConfiguredContainer.
 type HostConfiguredContainerInterface interface {
+	// ConfigurationStatus updates configuration file struct with current state on the target host.
 	ConfigurationStatus() error
+
+	// Configure copies specified configuration files on target host.
+	//
+	// It uses host definition to connect to container runtime, which is then used
+	// to create temporary container used for copying files and also bypassing privileges requirements.
+	//
+	// With Kubelet runtime, 'tar' binary is required on the container to be able to write and read the configurations.
+	// By default, the image which will be deployed will be used for copying the configuration as well, to avoid pulling
+	// multiple images, which will save disk space and time. If it happens that this image does not have 'tar' binary,
+	// user can override ConfigImage field in the configuration, to specify different image which should be
+	// pulled and used for configuration management.
 	Configure(paths []string) error
+
+	// Create creates new container on target host. If container already exists,
+	// error should be returned.
 	Create() error
+
+	// Status updates container status.
 	Status() error
+
+	// Start starts created container. Container must be created before it's started.
 	Start() error
+
+	// Stop stops the container.
 	Stop() error
+
+	// Delete removes the container from the host. Host volumes and configuration files
+	// won't be removed.
 	Delete() error
 }
 
@@ -38,6 +62,7 @@ const (
 
 // Hooks defines type of hooks HostConfiguredContainer supports.
 type Hooks struct {
+	// PostStart hook will be executed after container is started.
 	PostStart *Hook
 }
 
@@ -46,10 +71,19 @@ type Hook func() error
 
 // HostConfiguredContainer represents single container, running on remote host with it's configuration files.
 type HostConfiguredContainer struct {
-	Container   Container         `json:"container"`
-	Host        host.Host         `json:"host"`
+	// Container stores container configuration.
+	Container Container `json:"container"`
+
+	// Host defines how to communicate with configured container runtime.
+	Host host.Host `json:"host"`
+
+	// ConfigFiles stores a list of configuration files, which should be created
+	// on the host, where the container will be created.
 	ConfigFiles map[string]string `json:"configFiles,omitempty"`
 
+	// Hooks holds all hooks, which will be triggered after certain container actions.
+	//
+	// Due to it's nature, it can only be set programmatically.
 	Hooks *Hooks `json:"-"`
 }
 
@@ -63,7 +97,8 @@ type hostConfiguredContainer struct {
 	hooks           *Hooks
 }
 
-// New validates HostConfiguredContainer struct and return it's executable version.
+// New validates HostConfiguredContainer struct and return the interface implementation, which
+// can be used for deploying the container.
 func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate container configuration: %w", err)

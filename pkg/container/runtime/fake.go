@@ -9,14 +9,29 @@ import (
 
 // Fake is a fake runtime client, which can be used for testing.
 type Fake struct {
+	// CreateF will be Create by method.
 	CreateF func(config *types.ContainerConfig) (string, error)
+
+	// DeleteF will be called by Delete method.
 	DeleteF func(id string) error
-	StartF  func(id string) error
+
+	// StartF will be called by Start method.
+	StartF func(id string) error
+
+	// StatusF will be called by Status method.
 	StatusF func(id string) (types.ContainerStatus, error)
-	StopF   func(id string) error
-	CopyF   func(id string, files []*types.File) error
-	ReadF   func(id string, srcPath []string) ([]*types.File, error)
-	StatF   func(id string, paths []string) (map[string]os.FileMode, error)
+
+	// StopF will be called by Stop method.
+	StopF func(id string) error
+
+	// CopyF will be called by Copy method.
+	CopyF func(id string, files []*types.File) error
+
+	// ReadF will be called by Read method.
+	ReadF func(id string, srcPath []string) ([]*types.File, error)
+
+	// StatF will be called by Stat method.
+	StatF func(id string, paths []string) (map[string]os.FileMode, error)
 }
 
 // Create mocks runtime Create().
@@ -61,7 +76,10 @@ func (f Fake) Stat(id string, paths []string) (map[string]os.FileMode, error) {
 
 // FakeConfig is a Fake runtime configuration struct.
 type FakeConfig struct {
+	// Runtime holds container runtime to return by New() method.
 	Runtime Runtime
+
+	// Address will be used for GetAddress and SetAddress methods.
 	Address string
 }
 

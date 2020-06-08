@@ -15,18 +15,100 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// APILoadBalancers represents group of APILoadBalancer instances. It allows to set default values for
-// all configured instances.
+// APILoadBalancers allows to manage group of kube-apiserver load balancer containers, which
+// can be used to build highly available Kubernetes cluster.
+//
+// The main use case is to create an load balancer instance in front of the kubelet on every
+// node, as kubelet itself does not support failover for configured API server address.
+//
+// Current implementation uses HAProxy for load balancing with active health checking, so if
+// one of API servers go down, it won't be used by the kubelet. Otherwise some of kubelet requests
+// could timeout, hitting unreachable API server.
+//
+// API load balancer can be also used to expose Kubernetes API to the internet, if it is only
+// available in private network.
+//
+// The HAProxy is configured to run in TCP mode, so potential performance and security overhead
+// should be negligible.
 type APILoadBalancers struct {
-	Image            string            `json:"image,omitempty"`
-	SSH              *ssh.Config       `json:"ssh,omitempty"`
-	Servers          []string          `json:"servers,omitempty"`
-	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty"`
-	Name             string            `json:"name,omitempty"`
-	HostConfigPath   string            `json:"hostConfigPath,omitempty"`
-	BindAddress      string            `json:"bindAddress,omitempty"`
+	// Image allows to set Docker image with tag, which will be used by all instances,
+	// if instance itself has no image set. If empty, haproxy image defined in pkg/defaults
+	// will be used.
+	//
+	// Example value: 'haproxy:2.1.4-alpine'
+	//
+	// This field is optional.
+	Image string `json:"image,omitempty"`
 
-	// Serializable fields
+	// SSH stores common SSH configuration for all instances and will be merged with instances
+	// SSH configuration. If instance has some SSH fields defined, they take precedence over
+	// this block.
+	//
+	// If you use same username or port for all members, it is recommended to have it defined
+	// here to avoid repetition in the configuration.
+	//
+	// This field is optional.
+	SSH *ssh.Config `json:"ssh,omitempty"`
+
+	// Servers is a list of Kubernetes API server addresses, which should be used as a backend
+	// servers.
+	//
+	// Example value: '[]string{"192.168.10.10:6443", "192.168.10.11:6443"}'.
+	//
+	// If specified, this value will be used for all instances, which do not have it defined.
+	//
+	// This field is optional.
+	Servers []string `json:"servers,omitempty"`
+
+	// APILoadBalancers is a list of load balancer instances to create. Usually it has only
+	// instance specific information defined, like IP address to listen on or on which host
+	// the container should be created. See APILoadBalancer struct to see available fields.
+	//
+	// If there is no state defined, this list must not be empty.
+	//
+	// If state is defined and list is empty, all created containers will be removed.
+	APILoadBalancers []APILoadBalancer `json:"apiLoadBalancers,omitempty"`
+
+	// Name is a container name to create. If you want to run more than one instance on a
+	// single host, this field must be unique, otherwise you will get an error with duplicated
+	// container name.
+	//
+	// Currently, when you want to expose Kubernetes API using the load balancer on more than
+	// one specific address (so not listening on 0.0.0.0), then two pools are required.
+	// This limitation will be addressed in the future.
+	//
+	// If specified, this value will be used for all instances, which do not have it defined.
+	//
+	// This field is optional. If empty, value from ContainerName constant will be used.
+	Name string `json:"name,omitempty"`
+
+	// HostConfigPath is a path on the host filesystem, where load balancer configuration should be
+	// written. If you want to run more than one instance on a single host, this field must
+	// be unique, otherwise the configuration will be overwritten by the other instance.
+	//
+	// Currently, when you want to expose Kubernetes API using the load balancer on more than
+	// one specific address (so not listening on 0.0.0.0), then two pools are required.
+	// This limitation will be addressed in the future.
+	//
+	// If specified, this value will be used for all instances, which do not have it defined.
+	//
+	// This field is optional. If empty, value from HostConfigPath constant will be used.
+	HostConfigPath string `json:"hostConfigPath,omitempty"`
+
+	// BindAddress controls, on which IP address load balancer container will be listening on.
+	// Usually, it is set to here to either 127.0.0.1 to only expose the load balancer on host's
+	// localhost address or to 0.0.0.0 to expose the API on all interfaces.
+	//
+	// If you want to listen on specific address, which is different for each host, set it for each
+	// LoadBalancer instance.
+	//
+	// If specified, this value will be used for all instances, which do not have it defined.
+	//
+	// This field is optional.
+	BindAddress string `json:"bindAddress,omitempty"`
+
+	// State stores state of the created containers. After deployment, it is up to the user to export
+	// the state and restore it on consecutive runs.
 	State container.ContainersState `json:"state,omitempty"`
 }
 
@@ -117,7 +199,7 @@ func (a *APILoadBalancers) Validate() error {
 	return errors.Return()
 }
 
-// FromYaml allows to restore cluster state from YAML.
+// FromYaml allows to create and validate resource from YAML format.
 func FromYaml(c []byte) (types.Resource, error) {
 	return types.ResourceFromYaml(c, &APILoadBalancers{})
 }

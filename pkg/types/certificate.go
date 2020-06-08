@@ -12,9 +12,13 @@ import (
 // Certificate is a wrapper on string type, which parses it's content
 // as X.509 certificate while unmarshalling. This allows to validate the
 // data during unmarshalling process.
+//
+// This type is deprecated, as it does not allow to produce
+// meaningful error to the user.
 type Certificate string
 
-// UnmarshalJSON implements encoding/json.Unmarshaler interface.
+// UnmarshalJSON implements encoding/json.Unmarshaler interface and tries
+// to parse obtained data as PEM encoded X.509 certificate.
 func (c *Certificate) UnmarshalJSON(data []byte) error {
 	p, err := strconv.Unquote(string(data))
 	if err != nil {
@@ -35,7 +39,11 @@ func (c *Certificate) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Pick returns first non-empty certificate.
+// Pick returns first non-empty certificate from given list, including
+// receiver certificate.
+//
+// This method is a helper, which allows to select the certificate to use
+// from hierarchical configuration.
 func (c *Certificate) Pick(values ...Certificate) Certificate {
 	if c == nil || *c == "" {
 		ce := Certificate("")

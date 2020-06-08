@@ -13,9 +13,15 @@ import (
 
 // Host allows to forward TCP ports, UNIX sockets to local machine to establish
 // communication with remote daemons.
+//
+// Exactly one transport method must be configured.
 type Host struct {
+	// DirectConfig indicates, that no forwarding should occur, so addresses will
+	// be returned as given.
 	DirectConfig *direct.Config `json:"direct,omitempty"`
-	SSHConfig    *ssh.Config    `json:"ssh,omitempty"`
+
+	// SSHConfig configures given addresses to be forwarded using SSH tunneling.
+	SSHConfig *ssh.Config `json:"ssh,omitempty"`
 }
 
 type host struct {
@@ -87,16 +93,20 @@ func (h *host) Connect() (transport.Connected, error) {
 	}, nil
 }
 
-// ForwardUnixSocket forwards given unix socket path using configured transport method.
+// ForwardUnixSocket forwards given unix socket path using configured transport method and returns
+// local unix socket address.
 func (h *hostConnected) ForwardUnixSocket(path string) (string, error) {
 	return h.transport.ForwardUnixSocket(path)
 }
 
+// ForwardTCP forwards given TCP address using configured transport method and returns local
+// address with port.
 func (h *hostConnected) ForwardTCP(address string) (string, error) {
 	return h.transport.ForwardTCP(address)
 }
 
-// BuildConfig merges values from both host objects.
+// BuildConfig merges values from both host objects. This is a helper method used for building hierarchical
+// configuration.
 func BuildConfig(config Host, defaults Host) Host {
 	// If config has no direct config configured or has SSH config configured, build SSH configuration.
 	if (config.DirectConfig == nil && defaults.SSHConfig != nil) || config.SSHConfig != nil {

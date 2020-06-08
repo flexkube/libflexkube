@@ -24,15 +24,34 @@ const (
 )
 
 // Config represents SSH transport configuration.
+//
+// All fields are required. Use BuildConfig to pre-fill the configuration with default values.
 type Config struct {
-	Address           string `json:"address,omitempty"`
-	Port              int    `json:"port,omitempty"`
-	User              string `json:"user,omitempty"`
-	Password          string `json:"password,omitempty"`
+	// Address is a hostname or IP address which should be used for connection.
+	Address string `json:"address,omitempty"`
+
+	// Port defines which port should be used for SSH connection.
+	Port int `json:"port,omitempty"`
+
+	// User defines as which user the connection should authenticate.
+	User string `json:"user,omitempty"`
+
+	// Password adds password as one of available authentication methods.
+	Password string `json:"password,omitempty"`
+
+	// ConnectionTimeout defines time, after which SSH client gives up single attempt for connecting.
 	ConnectionTimeout string `json:"connectionTimeout,omitempty"`
-	RetryTimeout      string `json:"retryTimeout,omitempty"`
-	RetryInterval     string `json:"retryInterval,omitempty"`
-	PrivateKey        string `json:"privateKey,omitempty"`
+
+	// RetryTimeout defines after what time connecting should give up, if trying to connect to unreachable
+	// host.
+	RetryTimeout string `json:"retryTimeout,omitempty"`
+
+	// RetryInterval defines how long to wait between connection attempts.
+	RetryInterval string `json:"retryInterval,omitempty"`
+
+	// PrivateKey adds private key as authentication method.
+	// It must be defined as valid SSH private key in PEM format.
+	PrivateKey string `json:"privateKey,omitempty"`
 }
 
 // ssh is an implementation of Transport interface over SSH protocol.
@@ -57,7 +76,7 @@ type dialer interface {
 	Dial(network string, address string) (net.Conn, error)
 }
 
-// New creates new instance of ssh struct.
+// New validates SSH configuration and returns new instance of transport interface.
 func (d *Config) New() (transport.Interface, error) {
 	if err := d.Validate(); err != nil {
 		return nil, fmt.Errorf("ssh host validation failed: %w", err)
@@ -111,7 +130,7 @@ func (d *Config) New() (transport.Interface, error) {
 	return s, nil
 }
 
-// Validate validates given configuration and returns on first encountered error.
+// Validate validates given configuration.
 func (d *Config) Validate() error {
 	var errors util.ValidateError
 
@@ -151,6 +170,7 @@ func (d *Config) Validate() error {
 	return errors.Return()
 }
 
+// Connect opens SSH connection to configured host.
 func (d *ssh) Connect() (transport.Connected, error) {
 	sshConfig := &gossh.ClientConfig{
 		Auth:    d.auth,
@@ -307,6 +327,8 @@ func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 	}, nil
 }
 
+// ForwardTCP takes remote TCP address, starts listening on local port and forwards all incoming
+// connections to local address to remote address using estabilshed SSH tunnel.
 func (d *sshConnected) ForwardTCP(address string) (string, error) {
 	if _, _, err := net.SplitHostPort(address); err != nil {
 		return "", fmt.Errorf("failed to validate address '%s': %w", address, err)

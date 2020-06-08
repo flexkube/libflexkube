@@ -9,48 +9,78 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
-// Interface represents container capabilities.
+// Interface represents container capabilities, which may or may not exist.
 type Interface interface {
-	// Methods to instantiate Instance.
+	// Create creates the container.
 	Create() (InstanceInterface, error)
+
+	// From status restores container instance from given status.
 	FromStatus() (InstanceInterface, error)
 
-	// Helpers.
+	// UpdateStatus updates container status.
 	UpdateStatus() error
+
+	// Start starts the container.
 	Start() error
+
+	// Stop stops the container.
 	Stop() error
+
+	// Delete removes the container.
 	Delete() error
+
+	// Status returns container status.
 	Status() *types.ContainerStatus
 
-	// Getters.
+	// Config allows reading container configuration.
 	Config() types.ContainerConfig
+
+	// RuntimeConfig allows reading container runtime configuration.
 	RuntimeConfig() runtime.Config
+
+	// Runtime allows getting container runtime.
 	Runtime() runtime.Runtime
 
-	// Setters.
+	// SetRuntime allows overriding used container runtime.
 	SetRuntime(runtime.Runtime)
+
+	// SetStatus allows overriding container status.
 	SetStatus(types.ContainerStatus)
 }
 
-// InstanceInterface represents containerInstance capabilities.
+// InstanceInterface represents operations, which can be executed on existing
+// container.
 type InstanceInterface interface {
+	// Status returns container status read from the configured container runtime.
 	Status() (types.ContainerStatus, error)
+
+	// Read reads content of the given file paths in the container.
 	Read(srcPath []string) ([]*types.File, error)
+
+	// Copy copies file into the container.
 	Copy(files []*types.File) error
+
+	// Stat checks if given files exist on the container and returns map of
+	// file modes. If key is missing, it means file does not exist in the container.
 	Stat(paths []string) (map[string]os.FileMode, error)
+
+	// Start starts the container.
 	Start() error
+
+	// Stop stops the container.
 	Stop() error
+
+	// Delete deletes the container.
 	Delete() error
 }
 
-// Container represents public, serializable version of the container object.
-//
-// It should be used for persisting and restoring container state with combination
-// with New(), which make sure that the configuration is actually correct.
+// Container allows managing single container on directly reachable, configured container
+// runtime, for example Docker using 'unix:///run/docker.sock' address.
 type Container struct {
-	// Stores runtime configuration of the container.
+	// Config defines the properties of the container to manage.
 	Config types.ContainerConfig `json:"config"`
-	// Status of the container.
+	// Status stores container status. Setting status allows to manage existing containers
+	// and e.g. removing them.
 	Status *types.ContainerStatus `json:"status,omitempty"`
 	// Runtime stores configuration for various container runtimes.
 	Runtime RuntimeConfig `json:"runtime,omitempty"`
@@ -59,6 +89,7 @@ type Container struct {
 // RuntimeConfig is a collection of various runtime configurations which can be defined
 // by user.
 type RuntimeConfig struct {
+	// Docker stores Docker runtime configuration.
 	Docker *docker.Config `json:"docker,omitempty"`
 }
 
@@ -86,7 +117,7 @@ type base struct {
 	status types.ContainerStatus
 }
 
-// New creates new instance of container from Container and validates it's configuration
+// New creates new instance of container from Container and validates it's configuration.
 // It also validates container runtime configuration.
 func (c *Container) New() (Interface, error) {
 	if err := c.Validate(); err != nil {

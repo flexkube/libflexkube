@@ -10,10 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
-	flexcli "github.com/flexkube/libflexkube/cli"
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 	"github.com/flexkube/libflexkube/pkg/container"
+	"github.com/flexkube/libflexkube/pkg/container/resource"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
 	"github.com/flexkube/libflexkube/pkg/etcd"
 	"github.com/flexkube/libflexkube/pkg/kubelet"
@@ -24,23 +24,83 @@ import (
 
 // Resource represents flexkube CLI configuration structure.
 type Resource struct {
-	Etcd                 *etcd.Cluster                                `json:"etcd,omitempty"`
-	Controlplane         *controlplane.Controlplane                   `json:"controlplane,omitempty"`
-	PKI                  *pki.PKI                                     `json:"pki,omitempty"`
-	KubeletPools         map[string]*kubelet.Pool                     `json:"kubeletPools,omitempty"`
+	// Etcd allows to manage etcd cluster, which is required for running Kubernetes.
+	//
+	// See etcd.Cluster for available fields.
+	Etcd *etcd.Cluster `json:"etcd,omitempty"`
+
+	// Controlplane allows to manage static Kubernetes controlplane, which consists of kube-apiserver,
+	// kube-scheduler and kube-controller-manager.
+	//
+	// Usually single controlplane is created, which can be then used to install self-hosted controlplane
+	// e.g. using 'helm'.
+	//
+	// See controlplane.Controlplane for available fields.
+	Controlplane *controlplane.Controlplane `json:"controlplane,omitempty"`
+
+	// PKI allows to manage certificates and private keys required by Kubernetes.
+	//
+	// See pki.PKI for available fields.
+	PKI *pki.PKI `json:"pki,omitempty"`
+
+	// KubeletPools allows to manage multiple kubelet pools. In case of self-hosted Kubernetes, you usually want to
+	// run at least 2 pools, which differs in labels. One for controller nodes, which runs for example kube-apiserver
+	// and other pods, which have access to cluster credentials and another one for worker nodes.
+	//
+	// Creating more worker pools is useful, if you have group of cluster nodes with different hardware.
+	//
+	// See kubelet.Pool for available fields.
+	KubeletPools map[string]*kubelet.Pool `json:"kubeletPools,omitempty"`
+
+	// APILoadBalancerPools allows to manage multiple kube-apiserver load balancers, which allows building
+	// highly available Kubernetes clusters.
+	//
+	// For example, kubelet does not support load-balancing internally, so it can be pointed to load balancer
+	// address, which will handle graceful handover in case of one API server going down.
+	//
+	// See apiloadbalancer.APILoadBalancers for available fields.
 	APILoadBalancerPools map[string]*apiloadbalancer.APILoadBalancers `json:"apiLoadBalancerPools,omitempty"`
-	State                *ResourceState                               `json:"state,omitempty"`
-	Confirmed            bool                                         `json:"confirmed,omitempty"`
-	Noop                 bool                                         `json:"noop,omitempty"`
+
+	// Containers allows to manage arbitrary container groups. This is useful, when you need some extra
+	// containers to run as part of your Kubernetes cluster. For example, when running with cloud-controller-manager
+	// it can be used to run static instance of it for bootstrapping.
+	//
+	// See container.ContainersState for available options.
+	Containers map[string]*container.ContainersState `json:"containers,omitempty"`
+
+	// State stores state of all configured resources. Information about all created containers and generated certificates
+	// must be persisted, so it does not change on consecutive runs.
+	State *ResourceState `json:"state,omitempty"`
+
+	// Confirmed controls, if user should be asked for confirmation input before applying changes.
+	// Set to 'true' for unattended runs.
+	Confirmed bool `json:"confirmed,omitempty"`
+
+	// Noop controls, if deployment should actually be executed. If set to 'true', only the difference between
+	// cluster existing state and desired state will be printed, but the State field won't be modified.
+	Noop bool `json:"noop,omitempty"`
 }
 
 // ResourceState represents flexkube CLI state format.
 type ResourceState struct {
-	Etcd                 *container.ContainersState            `json:"etcd,omitempty"`
-	Controlplane         *container.ContainersState            `json:"controlplane,omitempty"`
-	KubeletPools         map[string]*container.ContainersState `json:"kubeletPools,omitempty"`
+	// Etcd stores state information about containers which are part of etcd cluster.
+	Etcd *container.ContainersState `json:"etcd,omitempty"`
+
+	// Controlplane stores state information about containers which are part Kubernetes static controlplane.
+	Controlplane *container.ContainersState `json:"controlplane,omitempty"`
+
+	// KubeletPools stores state information about containers which are part of kubelet pools.
+	KubeletPools map[string]*container.ContainersState `json:"kubeletPools,omitempty"`
+
+	// APILoadBalancerPools stores state information about containers which are part of kube-apiserver load
+	// balancer pools.
 	APILoadBalancerPools map[string]*container.ContainersState `json:"apiLoadBalancerPools,omitempty"`
-	PKI                  *pki.PKI                              `json:"pki,omitempty"`
+
+	// Containers stores state information for configured container groups.
+	Containers map[string]*container.ContainersState `json:"containers,omitempty"`
+
+	// PKI stores generated Kubernetes certificates.
+	PKI *pki.PKI `json:"pki,omitempty"`
 }
 
 // getEtcd returns etcd resource, with state and PKI integration enabled.
@@ -166,6 +226,28 @@ func (r *Resource) getAPILoadBalancerPool(name string) (types.Resource, error) {
 	return validateAndNew(pool)
 }
 
+// getContainers returns requested containers group with state.
+func (r *Resource) getContainers(name string) (types.Resource, error) {
+	stateFound := r.State != nil && r.State.Containers != nil && r.State.Containers[name] != nil
+	config, configFound := r.Containers[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("group not configured and state not found")
+	}
+
+	containers := &resource.Containers{}
+
+	if configFound {
+		containers.Containers = *config
+	}
+
+	if stateFound {
+		containers.State = *r.State.Containers[name]
+	}
+
+	return validateAndNew(containers)
+}
+
 // validateAndNew validates and creates new resource from resource config.
 func validateAndNew(rc types.ResourceConfig) (types.Resource, error) {
 	if err := rc.Validate(); err != nil {
@@ -264,16 +346,40 @@ func askForConfirmation() (bool, error) {
 	}
 }
 
+// readYamlFile reads YAML file from disk and handles empty files,
+// so they can be merged.
+func readYamlFile(file string) ([]byte, error) {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return []byte(""), nil
+	}
+
+	// The function is not exported and all parameters to this function
+	// are static.
+	//
+	// #nosec G304
+	c, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// Workaround for empty YAML file
+	if string(c) == "{}\n" {
+		return []byte{}, nil
+	}
+
+	return c, nil
+}
+
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.
 func LoadResourceFromFiles() (*Resource, error) {
 	r := &Resource{}
 
-	c, err := flexcli.ReadYamlFile("config.yaml")
+	c, err := readYamlFile("config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml file failed: %w", err)
 	}
 
-	s, err := flexcli.ReadYamlFile("state.yaml")
+	s, err := readYamlFile("state.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading state.yaml file failed: %w", err)
 	}
@@ -471,4 +577,22 @@ func (r *Resource) RunPKI() error {
 	r.State.PKI = pki
 
 	return r.StateToFile(genErr)
+}
+
+// RunContainers deploys given containers group.
+func (r *Resource) RunContainers(name string) error {
+	p, err := r.getContainers(name)
+	if err != nil {
+		return fmt.Errorf("failed getting containers group %q from configuration: %w", name, err)
+	}
+
+	saveStateF := func(rs types.Resource) {
+		if r.State.Containers == nil {
+			r.State.Containers = map[string]*container.ContainersState{}
+		}
+
+		r.State.Containers[name] = &p.Containers().ToExported().PreviousState
+	}
+
+	return r.execute(p, saveStateF)
 }

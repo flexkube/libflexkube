@@ -1,4 +1,4 @@
-// Package release allows to manage helm releases.
+// Package release allows to manage Helm 3 releases.
 package release
 
 import (
@@ -18,17 +18,27 @@ import (
 
 // Release is an interface representing helm release.
 type Release interface {
+	// ValidateChart validates configured chart.
 	ValidateChart() error
+
+	// Install installs configured release. If release already exists, error will be returned.
 	Install() error
+
+	// Upgrade upgrades configured release. If release does not exist, error will be returned.
 	Upgrade() error
+
+	// InstallOrUpgrade either installs or upgrades the release, depends whether it exists or not.
 	InstallOrUpgrade() error
+
+	// Exists checks, if release exists. If cluster is not reachable, error is returned.
 	Exists() (bool, error)
+
+	// Uninstall removes the release.
 	Uninstall() error
 }
 
 // Config represents user-configured Helm release.
 type Config struct {
-
 	// Kubeconfig is content of kubeconfig file in YAML format, which will be used to authenticate
 	// to the cluster and create a release.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
@@ -61,7 +71,7 @@ type release struct {
 	client       client.Client
 }
 
-// New validates release configuration and builts installable version of it.
+// New validates release configuration and builds installable version of it.
 func (r *Config) New() (Release, error) {
 	if err := r.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate helm release: %w", err)
@@ -303,7 +313,7 @@ func (r *Config) parseValues() (map[string]interface{}, error) {
 	return values, nil
 }
 
-// FromYaml allows to quickly create new release object from serialized representation.
+// FromYaml allows to quickly create new release object from YAML format.
 func FromYaml(data []byte) (Release, error) {
 	r := Config{}
 

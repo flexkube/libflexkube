@@ -19,12 +19,59 @@ import (
 
 // APILoadBalancer is a user-configurable representation of single instance of API load balancer.
 type APILoadBalancer struct {
-	Image          string    `json:"image,omitempty"`
-	Host           host.Host `json:"host,omitempty"`
-	Servers        []string  `json:"servers,omitempty"`
-	Name           string    `json:"name,omitempty"`
-	HostConfigPath string    `json:"hostConfigPath,omitempty"`
-	BindAddress    string    `json:"bindAddress,omitempty"`
+	// Image allows to set Docker image with tag, which will be used by the container.
+	// if instance itself has no image set. If empty, haproxy image defined in pkg/defaults
+	// will be used.
+	//
+	// Example value: 'haproxy:2.1.4-alpine'
+	//
+	// This field is optional.
+	Image string `json:"image,omitempty"`
+
+	// Host describes on which machine member container should be created.
+	//
+	// This field is required.
+	Host host.Host `json:"host,omitempty"`
+
+	// Servers is a list of Kubernetes API server addresses, which should be used as a backend
+	// servers.
+	//
+	// Example value: '[]string{"192.168.10.10:6443", "192.168.10.11:6443"}'.
+	//
+	// This field is optional, if used together with APILoadBalancers struct.
+	Servers []string `json:"servers,omitempty"`
+
+	// Name is a container name to create. If you want to run more than one instance on a
+	// single host, this field must be unique, otherwise you will get an error with duplicated
+	// container name.
+	//
+	// Currently, when you want to expose Kubernetes API using the load balancer on more than
+	// one specific address (so not listening on 0.0.0.0), then two pools are required.
+	// This limitation will be addressed in the future.
+	//
+	// This field is optional. If empty, value from ContainerName constant will be used.
+	Name string `json:"name,omitempty"`
+
+	// HostConfigPath is a path on the host filesystem, where load balancer configuration should be
+	// written. If you want to run more than one instance on a single host, this field must
+	// be unique, otherwise the configuration will be overwritten by the other instance.
+	//
+	// Currently, when you want to expose Kubernetes API using the load balancer on more than
+	// one specific address (so not listening on 0.0.0.0), then two pools are required.
+	// This limitation will be addressed in the future.
+	//
+	// This field is optional. If empty, value from HostConfigPath constant will be used.
+	HostConfigPath string `json:"hostConfigPath,omitempty"`
+
+	// BindAddress controls, on which IP address load balancer container will be listening on.
+	// Usually, it is set to here to either 127.0.0.1 to only expose the load balancer on host's
+	// localhost address or to 0.0.0.0 to expose the API on all interfaces.
+	//
+	// If you want to listen on specific address, which is different for each host, set it for each
+	// LoadBalancer instance.
+	//
+	// This field is optional, if used together with APILoadBalancers struct.
+	BindAddress string `json:"bindAddress,omitempty"`
 }
 
 // apiLoadBalancer is validated and executable version of APILoadBalancer.
@@ -80,9 +127,16 @@ backend kube-apiserver
 }
 
 const (
-	hostConfigPath      = "/etc/haproxy/haproxy.cfg"
+	// HostConfigPath is a default path on the host filesystem, where container
+	// configuration will be stored.
+	HostConfigPath = "/etc/haproxy/haproxy.cfg"
+
+	// ContainerName is a default name for load balancer container.
+	ContainerName = "api-loadbalancer-haproxy"
+
+	// containerConfigPath is a path inside the container, where configuration
+	// stored on the host filesystem should be mapped into.
 	containerConfigPath = "/usr/local/etc/haproxy/haproxy.cfg"
-	containerName       = "api-loadbalancer-haproxy"
 )
 
 // ToHostConfiguredContainer takes configuration stored in the struct and converts it to HostConfiguredContainer
@@ -138,8 +192,8 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 		image:          a.Image,
 		host:           a.Host,
 		servers:        a.Servers,
-		name:           util.PickString(a.Name, containerName),
-		hostConfigPath: util.PickString(a.HostConfigPath, hostConfigPath),
+		name:           util.PickString(a.Name, ContainerName),
+		hostConfigPath: util.PickString(a.HostConfigPath, HostConfigPath),
 		bindAddress:    a.BindAddress,
 	}
 

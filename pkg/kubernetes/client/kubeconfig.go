@@ -14,11 +14,35 @@ import (
 
 // Config is a simplified version of kubeconfig.
 type Config struct {
-	Server            string            `json:"server,omitempty"`
-	CACertificate     types.Certificate `json:"caCertificate,omitempty"`
+	// Server is a Kubernetes API server address.
+	//
+	// Example value: 'k8s.example.com:6443'.
+	//
+	// This field is required.
+	Server string `json:"server,omitempty"`
+
+	// CACertificate stores PEM encoded X.509 CA certificate, which was used
+	// to sign Kubernetes API server certificate.
+	//
+	// This field is required.
+	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+
+	// ClientCertificate stores PEM encoded X.509 client certificate, which will
+	// be used for authentication and authorization to Kubernetes API server.
+	//
+	// This field is optional if Token field is populated.
 	ClientCertificate types.Certificate `json:"clientCertificate,omitempty"`
-	ClientKey         types.PrivateKey  `json:"clientKey,omitempty"`
-	Token             string            `json:"token,omitempty"`
+
+	// ClientCertificate stores PEM encoded private key in PKCS1, PKCS8 or EC formats,
+	// which will be used for authentication and authorization to Kubernetes API server.
+	// Key must match configured ClientCertificate.
+	//
+	// This field is optional if Token field is populated.
+	ClientKey types.PrivateKey `json:"clientKey,omitempty"`
+
+	// Token stores Kubernetes token, which will be used for authentication and authrization
+	// to Kubernetes API server. Usually used by kubelet to perform TLS bootstrapping.
+	Token string `json:"token,omitempty"`
 }
 
 // Validate validates Config struct.
