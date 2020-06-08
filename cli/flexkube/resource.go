@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
-	flexcli "github.com/flexkube/libflexkube/cli"
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 	"github.com/flexkube/libflexkube/pkg/container"
@@ -291,16 +290,40 @@ func askForConfirmation() (bool, error) {
 	}
 }
 
+// readYamlFile reads YAML file from disk and handles empty files,
+// so they can be merged.
+func readYamlFile(file string) ([]byte, error) {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return []byte(""), nil
+	}
+
+	// The function is not exported and all parameters to this function
+	// are static.
+	//
+	// #nosec G304
+	c, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// Workaround for empty YAML file
+	if string(c) == "{}\n" {
+		return []byte{}, nil
+	}
+
+	return c, nil
+}
+
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.
 func LoadResourceFromFiles() (*Resource, error) {
 	r := &Resource{}
 
-	c, err := flexcli.ReadYamlFile("config.yaml")
+	c, err := readYamlFile("config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml file failed: %w", err)
 	}
 
-	s, err := flexcli.ReadYamlFile("state.yaml")
+	s, err := readYamlFile("state.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading state.yaml file failed: %w", err)
 	}
