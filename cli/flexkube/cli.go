@@ -39,6 +39,7 @@ func Run(args []string) int {
 			pkiCommand(),
 			controlplaneCommand(),
 			kubeconfigCommand(),
+			containersCommand(),
 		},
 	}
 
@@ -114,6 +115,16 @@ func kubeconfigCommand() *cli.Command {
 	}
 }
 
+func containersCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "containers",
+		Usage: "manages arbitrary container pools",
+		Action: func(c *cli.Context) error {
+			return withResource(c, containersAction)
+		},
+	}
+}
+
 // apiLoadBalancerPoolAction implements 'apiloadbalancer-pool' subcommand.
 func apiLoadBalancerPoolAction(c *cli.Context, r *Resource) error {
 	poolName, err := getPoolName(c)
@@ -169,6 +180,15 @@ func getPoolName(c *cli.Context) (string, error) {
 	}
 
 	return poolName, nil
+}
+
+func containersAction(c *cli.Context, r *Resource) error {
+	poolName, err := getPoolName(c)
+	if err != nil {
+		return err
+	}
+
+	return r.RunContainers(poolName)
 }
 
 // withResource is a helper for action functions.

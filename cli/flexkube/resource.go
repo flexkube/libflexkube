@@ -14,6 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
 	"github.com/flexkube/libflexkube/pkg/container"
+	"github.com/flexkube/libflexkube/pkg/container/resource"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
 	"github.com/flexkube/libflexkube/pkg/etcd"
 	"github.com/flexkube/libflexkube/pkg/kubelet"
@@ -40,7 +41,11 @@ type ResourceState struct {
 	Controlplane         *container.ContainersState            `json:"controlplane,omitempty"`
 	KubeletPools         map[string]*container.ContainersState `json:"kubeletPools,omitempty"`
 	APILoadBalancerPools map[string]*container.ContainersState `json:"apiLoadBalancerPools,omitempty"`
-	PKI                  *pki.PKI                              `json:"pki,omitempty"`
+
+	// Containers stores state information for configured container groups.
+	Containers map[string]*container.ContainersState `json:"containers,omitempty"`
+
+	PKI *pki.PKI `json:"pki,omitempty"`
 }
 
 // getEtcd returns etcd resource, with state and PKI integration enabled.
@@ -164,6 +169,28 @@ func (r *Resource) getAPILoadBalancerPool(name string) (types.Resource, error) {
 	}
 
 	return validateAndNew(pool)
+}
+
+// getContainers returns requested containers group with state.
+func (r *Resource) getContainers(name string) (types.Resource, error) {
+	stateFound := r.State != nil && r.State.Containers != nil && r.State.Containers[name] != nil
+	config, configFound := r.Containers[name]
+
+	if !stateFound && !configFound {
+		return nil, fmt.Errorf("group not configured and state not found")
+	}
+
+	containers := &resource.Containers{}
+
+	if configFound {
+		containers.Containers = *config
+	}
+
+	if stateFound {
+		containers.State = *r.State.Containers[name]
+	}
+
+	return validateAndNew(containers)
 }
 
 // validateAndNew validates and creates new resource from resource config.
@@ -471,4 +498,22 @@ func (r *Resource) RunPKI() error {
 	r.State.PKI = pki
 
 	return r.StateToFile(genErr)
+}
+
+// RunContainers deploys given containers group.
+func (r *Resource) RunContainers(name string) error {
+	p, err := r.getContainers(name)
+	if err != nil {
+		return fmt.Errorf("failed getting containers group %q from configuration: %w", name, err)
+	}
+
+	saveStateF := func(rs types.Resource) {
+		if r.State.Containers == nil {
+			r.State.Containers = map[string]*container.ContainersState{}
+		}
+
+		r.State.Containers[name] = &p.Containers().ToExported().PreviousState
+	}
+
+	return r.execute(p, saveStateF)
 }
