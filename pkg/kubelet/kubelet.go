@@ -23,26 +23,90 @@ const (
 	KubenetNetworkPlugin = "kubenet"
 )
 
-// Kubelet represents single kubelet instance.
+// Kubelet represents configuration of single kubelet instance.
 type Kubelet struct {
-	Address                 string                 `json:"address,omitempty"`
-	Image                   string                 `json:"image,omitempty"`
-	Host                    host.Host              `json:"host,omitempty"`
-	BootstrapConfig         *client.Config         `json:"bootstrapConfig,omitempty"`
-	KubernetesCACertificate types.Certificate      `json:"kubernetesCACertificate,omitempty"`
-	ClusterDNSIPs           []string               `json:"clusterDNSIPs,omitempty"`
-	Name                    string                 `json:"name,omitempty"`
-	Taints                  map[string]string      `json:"taints,omitempty"`
-	Labels                  map[string]string      `json:"labels,omitempty"`
-	PrivilegedLabels        map[string]string      `json:"privilegedLabels,omitempty"`
-	AdminConfig             *client.Config         `json:"adminConfig,omitempty"`
-	CgroupDriver            string                 `json:"cgroupDriver,omitempty"`
-	NetworkPlugin           string                 `json:"networkPlugin,omitempty"`
-	SystemReserved          map[string]string      `json:"systemReserved,omitempty"`
-	KubeReserved            map[string]string      `json:"kubeReserved,omitempty"`
-	HairpinMode             string                 `json:"hairpinMode,omitempty"`
-	VolumePluginDir         string                 `json:"volumePluginDir,omitempty"`
-	ExtraMounts             []containertypes.Mount `json:"extraMounts,omitempty"`
+	// Address controls, on which IP address kubelet should listen on and which IP address
+	// should be used as NodeIP in Node object.
+	Address string `json:"address,omitempty"`
+
+	// Image allows to set Docker image with tag, which will be used by kubelet.
+	// if they have no image set. If empty, hyperkube image defined in pkg/defaults
+	// will be used.
+	//
+	// Example value: 'k8s.gcr.io/hyperkube:v1.18.3'.
+	//
+	// This field is optional.
+	Image string `json:"image,omitempty"`
+
+	// Host describes on which machine kubelet container should be created.
+	//
+	// This field is required.
+	Host host.Host `json:"host,omitempty"`
+
+	// BootstrapConfig contains kubelet bootstrap kubeconfig configuration, including
+	// bootstrap token and Kubernetes API server address.
+	//
+	// This field is required.
+	BootstrapConfig *client.Config `json:"bootstrapConfig,omitempty"`
+
+	// KubernetesCACertificate holds Kubernetes X.509 CA certificate, PEM encoded, which will
+	// be used by kubelet to verify Kubernetes API server they talk to.
+	KubernetesCACertificate types.Certificate `json:"kubernetesCACertificate,omitempty"`
+
+	// ClusterDNSIPs is a list of IP addresses, which will be used in pods for as DNS servers
+	// to allow cluster names resolution. This is usually set to 10th address of service CIDR,
+	// so if your service CIDR is 11.0.0.0/16, it should be 11.0.0.10.
+	//
+	// Example value: '11.0.0.10'.
+	ClusterDNSIPs []string `json:"clusterDNSIPs,omitempty"`
+
+	// Name defines what name should be used by kubelet while registering Node object.
+	Name string `json:"name,omitempty"`
+
+	// Taints is a list of taints, which should be set for Node object, when kubelet registers
+	// to the Kubernetes API.
+	Taints map[string]string `json:"taints,omitempty"`
+
+	// Labels is a list of labels, which should be used when kubelet registers Node object into
+	// cluster.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// PrivilegedLabels is a list of labels, which kubelet cannot apply by itself due to node
+	// isolation restrictions, but administrator wants to set them. One of such labels is
+	// 'node-role.kubernetes.io/master', which gives node a master role, which attract pods
+	// which has access to cluster secrets, like kube-apiserver etc.
+	PrivilegedLabels map[string]string `json:"privilegedLabels,omitempty"`
+
+	// AdminConfig is a simplified version of kubeconfig, which will be used for applying
+	// privileged labels while the pool is created/updated.
+	AdminConfig *client.Config `json:"adminConfig,omitempty"`
+
+	// CgroupDriver configures cgroup driver to be used by the kubelet. It must be the same
+	// as configured for container runtime used by the kubelet.
+	CgroupDriver string `json:"cgroupDriver,omitempty"`
+
+	// NetworkPlugin defines which network solution should be used by kubelet to assign
+	// IP addresses to the pods. By default, 'cni' is used. Also 'kubelet' is a valid value.
+	NetworkPlugin string `json:"networkPlugin,omitempty"`
+
+	// SystemReserved configures, how much resources kubelet should mark as used by the operating
+	// system.
+	SystemReserved map[string]string `json:"systemReserved,omitempty"`
+
+	// KubeReserved configures, how much resources kubelet should mark as used by the Kubernetes
+	// itself on the node.
+	KubeReserved map[string]string `json:"kubeReserved,omitempty"`
+
+	// HairpinMode controls kubelet hairpin mode.
+	HairpinMode string `json:"hairpinMode,omitempty"`
+
+	// VolumePluginDir configures, where Flexvolume plugins should be installed. It will be used
+	// unless kubelet instance define it's own VolumePluginDir.
+	VolumePluginDir string `json:"volumePluginDir,omitempty"`
+
+	// ExtraMounts defines extra mounts from host filesystem, which should be added to kubelet
+	// containers. It will be used unless kubelet instance define it's own extra mounts.
+	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
@@ -116,8 +180,6 @@ func (k *Kubelet) validateAdminConfig() error {
 }
 
 // Validate validates kubelet configuration.
-//
-// TODO: Better validation should be done here.
 func (k *Kubelet) Validate() error {
 	var errors util.ValidateError
 

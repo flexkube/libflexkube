@@ -205,7 +205,7 @@ func (c *Cluster) Validate() error {
 	return errors.Return()
 }
 
-// FromYaml allows to create and validare resource from YAML format.
+// FromYaml allows to create and validate resource from YAML format.
 func FromYaml(c []byte) (types.Resource, error) {
 	return types.ResourceFromYaml(c, &Cluster{})
 }

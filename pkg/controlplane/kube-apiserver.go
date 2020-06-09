@@ -15,23 +15,85 @@ import (
 
 // KubeAPIServer represents kube-apiserver container configuration.
 type KubeAPIServer struct {
-	Common                   *Common           `json:"common,omitempty"`
-	Host                     *host.Host        `json:"host,omitempty"`
-	APIServerCertificate     types.Certificate `json:"apiServerCertificate"`
-	APIServerKey             types.PrivateKey  `json:"apiServerKey"`
-	ServiceAccountPublicKey  string            `json:"serviceAccountPublicKey"`
-	BindAddress              string            `json:"bindAddress"`
-	AdvertiseAddress         string            `json:"advertiseAddress"`
-	EtcdServers              []string          `json:"etcdServers"`
-	ServiceCIDR              string            `json:"serviceCIDR"`
-	SecurePort               int               `json:"securePort"`
-	FrontProxyCertificate    types.Certificate `json:"frontProxyCertificate"`
-	FrontProxyKey            types.PrivateKey  `json:"frontProxyKey"`
+	// Common stores common information between all controlplane components.
+	Common *Common `json:"common,omitempty"`
+
+	// Host defines on which host kube-apiserver container should be created.
+	Host *host.Host `json:"host,omitempty"`
+
+	// APIServerCertificate stores X.509 certificate, PEM encoded, which will be
+	// used for serving.
+	APIServerCertificate types.Certificate `json:"apiServerCertificate"`
+
+	// APIServerKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format.
+	// It must match certificate defined in APIServerCertificate field.
+	APIServerKey types.PrivateKey `json:"apiServerKey"`
+
+	// ServiceAccountPublicKey stores PEM encoded public certificate, which will be used
+	// to validate service account tokens.
+	ServiceAccountPublicKey string `json:"serviceAccountPublicKey"`
+
+	// BindAddress defines IP address where kube-apiserver process should listen for
+	// incoming requests.
+	BindAddress string `json:"bindAddress"`
+
+	// AdvertiseAddress defines IP address, which should be advertised to
+	// kubernetes.default.svc Service on the cluster.
+	AdvertiseAddress string `json:"advertiseAddress"`
+
+	// EtcdServers is a list of etcd servers URLs.
+	//
+	// Example value: '[]string{"https://localhost:2380"}'.
+	EtcdServers []string `json:"etcdServers"`
+
+	// ServiceCIDR defines, from which CIDR Service type ClusterIP should get IP addresses
+	// assigned. You should make sure, that this CIDR does not collide with any of CIDRs
+	// accessible from your cluster nodes.
+	//
+	// Example value: '10.96.0.0/12'.
+	ServiceCIDR string `json:"serviceCIDR"`
+
+	// SecurePort defines TCP port, where kube-apiserver will be listening for incoming
+	// requests and which will be advertised to kubernetes.default.svc Service on the cluster.
+	//
+	// Currently, there is no way to use advertise different port due to kube-apiserver limitations.
+	//
+	// If you want to mitigate that, you can use APILoadBalancers resource.
+	SecurePort int `json:"securePort"`
+
+	// FrontProxyCertificate stores X.509 client certificate, PEM encoded, which will be used by
+	// kube-apiserver to talk to extension API server.
+	//
+	// See https://kubernetes.io/docs/tasks/access-kubernetes-api/configure-aggregation-layer/
+	// for more details.
+	FrontProxyCertificate types.Certificate `json:"frontProxyCertificate"`
+
+	// FrontProxyKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format.
+	//
+	// It must match certificate defined in FrontProxyCertificate field.
+	FrontProxyKey types.PrivateKey `json:"frontProxyKey"`
+
+	// KubeletClientCertificate stores X.509 client certificate, PEM encoded, which will be used by
+	// kube-apiserver to talk to kubelet process on all nodes, to fetch logs etc.
 	KubeletClientCertificate types.Certificate `json:"kubeletClientCertificate"`
-	KubeletClientKey         types.PrivateKey  `json:"kubeletClientKey"`
-	EtcdCACertificate        types.Certificate `json:"etcdCACertificate"`
-	EtcdClientCertificate    types.Certificate `json:"etcdClientCertificate"`
-	EtcdClientKey            types.PrivateKey  `json:"etcdClientKey"`
+
+	// KubeletClientKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format.
+	//
+	// It must match certificate defined in KubeletClientCertificate field.
+	KubeletClientKey types.PrivateKey `json:"kubeletClientKey"`
+
+	// EtcdCACertificate stores X.509 CA certificate, PEM encoded, which will be used by
+	// kube-apiserver to validate etcd servers certificate.
+	EtcdCACertificate types.Certificate `json:"etcdCACertificate"`
+
+	// EtcdClientCertificate stores X.509 client certificate, PEM encoded, which will be used by
+	// kube-apiserver to talk to etcd members.
+	EtcdClientCertificate types.Certificate `json:"etcdClientCertificate"`
+
+	// EtcdClientKey is a PEM encoded, private key in either PKCS1, PKCS8 or EC format.
+	//
+	// It must match certificate defined in EtcdClientCertificate field.
+	EtcdClientKey types.PrivateKey `json:"etcdClientKey"`
 }
 
 // kubeAPIServer is a validated version of KubeAPIServer.
