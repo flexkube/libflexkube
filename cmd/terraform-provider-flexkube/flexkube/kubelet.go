@@ -37,6 +37,10 @@ func kubeletsUnmarshal(i interface{}) []kubelet.Kubelet {
 			ExtraMounts:             mountsUnmarshal(t["mount"]),
 		}
 
+		if v, ok := t["wait_for_node_ready"]; ok {
+			k.WaitForNodeReady = v.(bool)
+		}
+
 		if v, ok := t["host"]; ok && len(v.([]interface{})) == 1 {
 			k.Host = hostUnmarshal(v.([]interface{})[0])
 		}
@@ -94,10 +98,11 @@ func kubeletSchema() *schema.Schema {
 						Type: schema.TypeString,
 					}
 				}),
-				"hairpin_mode":      optionalString(false),
-				"volume_plugin_dir": optionalString(false),
-				"pod_cidr":          optionalString(false),
-				"extra_mount":       mountsSchema(false),
+				"hairpin_mode":        optionalString(false),
+				"volume_plugin_dir":   optionalString(false),
+				"pod_cidr":            optionalString(false),
+				"extra_mount":         mountsSchema(false),
+				"wait_for_node_ready": optionalBool(false),
 			},
 		}
 	})

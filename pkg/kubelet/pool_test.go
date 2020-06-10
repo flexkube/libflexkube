@@ -30,6 +30,7 @@ extraMounts:
   target: /bar
 kubernetesCACertificate: |
   {{.}}
+waitForNodeReady: true
 kubelets:
 - networkPlugin: cni
   name: foo

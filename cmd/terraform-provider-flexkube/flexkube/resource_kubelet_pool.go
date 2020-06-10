@@ -48,11 +48,12 @@ func resourceKubeletPool() *schema.Resource {
 					Type: schema.TypeString,
 				}
 			}),
-			"hairpin_mode":      optionalString(false),
-			"volume_plugin_dir": optionalString(false),
-			"kubelet":           kubeletSchema(),
-			"extra_mount":       mountsSchema(false),
-			"pki_yaml":          sensitiveString(false),
+			"hairpin_mode":        optionalString(false),
+			"volume_plugin_dir":   optionalString(false),
+			"kubelet":             kubeletSchema(),
+			"extra_mount":         mountsSchema(false),
+			"pki_yaml":            sensitiveString(false),
+			"wait_for_node_ready": optionalBool(false),
 		}),
 	}
 }
@@ -74,6 +75,7 @@ func kubeletPoolUnmarshal(d getter, includeState bool) types.ResourceConfig {
 		KubeReserved:            stringMapUnmarshal(d.Get("kube_reserved")),
 		ExtraMounts:             mountsUnmarshal(d.Get("extra_mount")),
 		PKI:                     unmarshalPKI(d),
+		WaitForNodeReady:        d.Get("wait_for_node_ready").(bool),
 	}
 
 	if s := getState(d); includeState && s != nil {
