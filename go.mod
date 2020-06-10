@@ -76,6 +76,7 @@ require (
 	google.golang.org/api v0.24.0 // indirect
 	google.golang.org/genproto v0.0.0-20200511104702-f5ebc3bea380 // indirect
 	helm.sh/helm/v3 v3.2.1
+	k8s.io/api v0.18.2
 	k8s.io/apiextensions-apiserver v0.18.2
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v1.5.1

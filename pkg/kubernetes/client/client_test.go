@@ -72,3 +72,23 @@ func TestPingFakeKubeconfig(t *testing.T) {
 		t.Errorf("Ping should swallow all errors and just return boolean value")
 	}
 }
+
+// CheckNodeReady() tests.
+func TestCheckNodeReadyFakeKubeconfig(t *testing.T) {
+	kubeconfig := GetKubeconfig(t)
+
+	c, err := NewClient([]byte(kubeconfig))
+	if err != nil {
+		t.Fatalf("Failed creating client: %v", err)
+	}
+
+	e, err := c.CheckNodeReady("foo")()
+
+	if e == true {
+		t.Errorf("check should never return true with fake kubeconfig")
+	}
+
+	if err != nil {
+		t.Errorf("check should swallow all errors and just return boolean value")
+	}
+}

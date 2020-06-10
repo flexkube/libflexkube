@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,8 +29,14 @@ type Client interface {
 	// CheckNodeExists returns a function, which checks, if given node exists.
 	CheckNodeExists(name string) func() (bool, error)
 
+	// CheckNodeReady returns a function, which checks, if given node is ready.
+	CheckNodeReady(name string) func() (bool, error)
+
 	// WaitForNode waits, until Node object shows up in the API.
 	WaitForNode(name string) error
+
+	// WaitForNodeReady waits, until Node object becomes ready.
+	WaitForNodeReady(name string) error
 
 	// LabelNode patches Node object to set given labels on it.
 	LabelNode(name string, labels map[string]string) error
@@ -93,9 +100,33 @@ func (c *client) CheckNodeExists(name string) func() (bool, error) {
 	}
 }
 
+// CheckNodeReady checks if given node object is ready.
+func (c *client) CheckNodeReady(name string) func() (bool, error) {
+	return func() (bool, error) {
+		n, err := c.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return false, nil
+		}
+
+		for _, condition := range n.Status.Conditions {
+			if condition.Type == "Ready" && condition.Status != v1.ConditionTrue {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	}
+}
+
 // WaitForNode waits for node object. If object is not found and we reach the timeout, error is returned.
 func (c *client) WaitForNode(name string) error {
 	return wait.PollImmediate(PollInterval, RetryTimeout, c.CheckNodeExists(name))
+}
+
+// WaitForNode waits for node object to become ready. If object is not found and we reach the timeout,
+// error is returned.
+func (c *client) WaitForNodeReady(name string) error {
+	return wait.PollImmediate(PollInterval, RetryTimeout, c.CheckNodeReady(name))
 }
 
 // LabelNode add specified labels to the Node object. If label already exist, it will be replaced.
