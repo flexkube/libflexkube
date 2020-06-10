@@ -21,7 +21,7 @@ const (
 	PollInterval = 5 * time.Second
 
 	// RetryTimeout defines how long we wait before timing out waiting for the objects.
-	RetryTimeout = 5 * time.Minute
+	RetryTimeout = 10 * time.Minute
 )
 
 // Client defines exported capabilities of Flexkube k8s client.
