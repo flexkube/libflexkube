@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1" // #nosec G505
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -452,12 +453,34 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 		}
 	}
 
-	der, err := x509.CreateCertificate(rand.Reader, &cert, caCert, &k.PublicKey, pk)
+	subjectKeyID, err := bigIntHash(pk.N)
+	if err != nil {
+		return fmt.Errorf("failed generating certificate subjet Key ID: %w", err)
+	}
+
+	cert.SubjectKeyId = subjectKeyID
+
+	return c.createAndPersist(&cert, caCert, k, pk)
+}
+
+func (c *Certificate) createAndPersist(cert *x509.Certificate, caCert *x509.Certificate, k *rsa.PrivateKey, pk *rsa.PrivateKey) error {
+	der, err := x509.CreateCertificate(rand.Reader, cert, caCert, &k.PublicKey, pk)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	return c.persistX509Certificate(der)
+}
+
+// Taken from https://play.golang.org/p/tispiUVmdm.
+func bigIntHash(n *big.Int) ([]byte, error) {
+	h := sha1.New() // #nosec G401
+
+	if _, err := h.Write(n.Bytes()); err != nil {
+		return nil, err
+	}
+
+	return h.Sum(nil), nil
 }
 
 // decodeKeypair decodes both X.509 certificate and private key.
