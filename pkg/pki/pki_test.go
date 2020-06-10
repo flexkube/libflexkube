@@ -1,6 +1,8 @@
 package pki
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -28,6 +30,56 @@ func TestGenerate(t *testing.T) {
 
 	if err := pki.Generate(); err != nil {
 		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+}
+
+func TestGenerateTrustChain(t *testing.T) {
+	t.Parallel()
+
+	pki := &PKI{
+		Etcd: &Etcd{
+			Peers: map[string]string{
+				"controller01": "192.168.1.10",
+			},
+		},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	roots := x509.NewCertPool()
+
+	ok := roots.AppendCertsFromPEM([]byte(pki.RootCA.X509Certificate))
+	if !ok {
+		t.Fatal("failed to parse root certificate")
+	}
+
+	intermediates := x509.NewCertPool()
+
+	ok = intermediates.AppendCertsFromPEM([]byte(pki.Etcd.CA.X509Certificate))
+	if !ok {
+		t.Fatal("failed to parse etcd CA certificate")
+	}
+
+	block, _ := pem.Decode([]byte(pki.Etcd.PeerCertificates["controller01"].X509Certificate))
+	if block == nil {
+		t.Fatal("failed to parse certificate PEM")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		t.Fatalf("failed to parse certificate: %v", err)
+	}
+
+	opts := x509.VerifyOptions{
+		Roots:         roots,
+		DNSName:       "controller01",
+		Intermediates: intermediates,
+	}
+
+	if _, err := cert.Verify(opts); err != nil {
+		t.Fatalf("failed to verify certificate: %v", err)
 	}
 }
 
