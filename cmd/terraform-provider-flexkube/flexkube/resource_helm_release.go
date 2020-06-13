@@ -14,8 +14,9 @@ func resourceHelmRelease() *schema.Resource {
 		Update: resourceHelmReleaseCreate,
 		Schema: map[string]*schema.Schema{
 			"kubeconfig": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
 			},
 			"namespace": {
 				Type:     schema.TypeString,
@@ -30,8 +31,9 @@ func resourceHelmRelease() *schema.Resource {
 				Required: true,
 			},
 			"values": {
-				Type:     schema.TypeString,
+				Type:      schema.TypeString,
 				Optional:  true,
+				Sensitive: true,
 			},
 			"create_namespace": {
 				Type:     schema.TypeBool,
