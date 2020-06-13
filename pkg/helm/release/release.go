@@ -84,6 +84,8 @@ func (r *Config) New() (Release, error) {
 	// Safe to ignore errors, because Validate will return early if data is not valid.
 	g, kc, cs, _ := newClients(r.Kubeconfig)
 
+	kc.Namespace = r.Namespace
+
 	actionConfig.RESTClientGetter = g
 	actionConfig.KubeClient = kc
 	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
