@@ -31,6 +31,10 @@ func resourceHelmRelease() *schema.Resource {
 			},
 			"values": {
 				Type:     schema.TypeString,
+				Optional:  true,
+			},
+			"create_namespace": {
+				Type:     schema.TypeBool,
 				Optional: true,
 			},
 		},
@@ -45,6 +49,10 @@ func getRelease(d *schema.ResourceData, m interface{}) (release.Release, error) 
 		Chart:      d.Get("chart").(string),
 		Values:     d.Get("values").(string),
 		Version:    ">0.0.0-0",
+	}
+
+	if v, ok := d.GetOk("create_namespace"); ok {
+		r.CreateNamespace = v.(bool)
 	}
 
 	l := m.(*meta)
