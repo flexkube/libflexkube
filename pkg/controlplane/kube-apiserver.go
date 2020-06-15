@@ -211,6 +211,8 @@ func (k *kubeAPIServer) args() []string {
 		// - NodeRestriction for extra protection against rogue cluster nodes.
 		// - PodSecurityPolicy for PSP support.
 		"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
+		// To limit memory consumption of bootstrap controlplane, limit it to 512 MB.
+		"--target-ram-mb=512",
 	}
 }
 
