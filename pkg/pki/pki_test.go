@@ -275,3 +275,35 @@ func TestValidateRSABits(t *testing.T) {
 		t.Fatalf("certificate with 0 RSA bits should be invalid")
 	}
 }
+
+func TestGenerateUpdateIPs(t *testing.T) {
+	t.Parallel()
+
+	// First, generate valid PKI.
+	pki := &PKI{
+		Kubernetes: &Kubernetes{
+			KubeAPIServer: &KubeAPIServer{
+				ServerIPs: []string{"1.1.1.1"},
+			},
+		},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	// Save content of generated certificate.
+	cert := pki.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate
+
+	// Update ServerIPs.
+	pki.Kubernetes.KubeAPIServer.ServerIPs = []string{"1.1.1.1", "2.2.2.2"}
+
+	// Generate again to update the certificate.
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("re-generating PKI certificates should succeed, got: %v", err)
+	}
+
+	if cert == pki.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate {
+		t.Fatalf("certificate should be updated when IP addresses change")
+	}
+}

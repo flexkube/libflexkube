@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"sort"
+	"strings"
 	"time"
 
 	"sigs.k8s.io/yaml"
@@ -526,6 +528,8 @@ func (c *Certificate) persistX509Certificate(der []byte) error {
 //
 // - Generating new X.509 certificates.
 //
+// - Re-generating X.509 certificate if IP addresses changes.
+//
 // NOT implemented functionality:
 //
 // - Renewing certificates based on expiry time.
@@ -543,9 +547,53 @@ func (c *Certificate) Generate(ca *Certificate) error {
 		return fmt.Errorf("failed getting private key: %w", err)
 	}
 
-	if c.X509Certificate == "" {
+	return c.ensureX509Certificate(k, ca)
+}
+
+// ensureX509Certificate checks if the certificate is up to date and if not, triggers
+// certificate generation.
+func (c *Certificate) ensureX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
+	upToDate, err := c.IsX509CertificateUpToDate()
+	if err != nil {
+		return fmt.Errorf("failed checking if X.509 certificate is up to date: %w", err)
+	}
+
+	if !upToDate {
 		return c.generateX509Certificate(k, ca)
 	}
 
 	return nil
+}
+
+func ipAddressesUpToDate(cert *x509.Certificate, configuredIPs []string) bool {
+	ips := []string{}
+
+	for _, i := range cert.IPAddresses {
+		ips = append(ips, i.String())
+	}
+
+	sort.Strings(ips)
+
+	sort.Strings(configuredIPs)
+
+	return strings.Join(ips, ",") == strings.Join(configuredIPs, ",")
+}
+
+// IsX509CertificateUpToDate checks, if generated X.509 certificate is up to date
+// with it's configuration.
+func (c *Certificate) IsX509CertificateUpToDate() (bool, error) {
+	if c.X509Certificate == "" {
+		return false, nil
+	}
+
+	cert, err := c.decodeX509Certificate()
+	if err != nil {
+		return true, fmt.Errorf("failed to decode X.509 certificate: %w", err)
+	}
+
+	if !ipAddressesUpToDate(cert, c.IPAddresses) {
+		return false, nil
+	}
+
+	return true, nil
 }
