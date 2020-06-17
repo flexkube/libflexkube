@@ -217,7 +217,13 @@ func buildAndGenerate(crs ...*certificateRequest) error {
 			return fmt.Errorf("failed to generate the certificate: %w", err)
 		}
 
-		*cr.Target = *r
+		if cr.Target == nil {
+			return fmt.Errorf("target certificate is not set")
+		}
+
+		cr.Target.X509Certificate = r.X509Certificate
+		cr.Target.PrivateKey = r.PrivateKey
+		cr.Target.PublicKey = r.PublicKey
 	}
 
 	return nil

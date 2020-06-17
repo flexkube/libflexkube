@@ -33,6 +33,32 @@ func TestGenerate(t *testing.T) {
 	}
 }
 
+func TestGenerateDontCopyAllSettings(t *testing.T) {
+	t.Parallel()
+
+	pki := &PKI{
+		Kubernetes: &Kubernetes{
+			KubeAPIServer: &KubeAPIServer{
+				ServerIPs: []string{"1.1.1.1"},
+			},
+		},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	c := &Certificate{
+		X509Certificate: pki.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate,
+		PrivateKey:      pki.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey,
+		PublicKey:       pki.Kubernetes.KubeAPIServer.ServerCertificate.PublicKey,
+	}
+
+	if diff := cmp.Diff(pki.Kubernetes.KubeAPIServer.ServerCertificate, c); diff != "" {
+		t.Fatalf("generated certificate should only have X.509 certificate and private key field populated, got: %v", diff)
+	}
+}
+
 func TestGenerateTrustChain(t *testing.T) {
 	t.Parallel()
 
