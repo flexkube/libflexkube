@@ -15,6 +15,7 @@ GOLANGCI_LINT_VERSION=v1.27.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
+GO_TESTS=^.*$
 
 INTEGRATION_IMAGE=flexkube/libflexkube-integration
 
@@ -81,7 +82,7 @@ clean:
 
 .PHONY: test
 test: build-test
-	$(GOTEST) $(GO_PACKAGES)
+	$(GOTEST) -run $(GO_TESTS) $(GO_PACKAGES)
 
 .PHONY: download
 download:
@@ -89,15 +90,15 @@ download:
 
 .PHONY: test-race
 test-race: build-test
-	$(GOTEST) -race $(GO_PACKAGES)
+	$(GOTEST) -run $(GO_TESTS) -race $(GO_PACKAGES)
 
 .PHONY: test-integration
 test-integration: build-test
-	$(GOTEST) -tags=integration $(GO_PACKAGES)
+	$(GOTEST) -run $(GO_TESTS) -tags=integration $(GO_PACKAGES)
 
 .PHONY: test-cover
 test-cover: build-test
-	$(GOTEST) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
+	$(GOTEST) -run $(GO_TESTS) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
 
 .PHONY: test-mutate
 test-mutate: install-go-mutesting

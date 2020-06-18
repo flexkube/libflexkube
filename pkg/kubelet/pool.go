@@ -124,6 +124,9 @@ type Pool struct {
 
 	// Serializable fields.
 	State container.ContainersState `json:"state,omitempty"`
+
+	// WaitForNodeReady controls, if deploy should wait until node becomes ready.
+	WaitForNodeReady bool `json:"waitForNodeReady,omitempty"`
 }
 
 // pool is a validated version of Pool.
@@ -192,6 +195,10 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 	p.pkiIntegration()
 
 	p.kubeletPKIIntegration(k)
+
+	if !k.WaitForNodeReady && p.WaitForNodeReady {
+		k.WaitForNodeReady = p.WaitForNodeReady
+	}
 }
 
 // New validates kubelet pool configuration and fills all members with configured values.

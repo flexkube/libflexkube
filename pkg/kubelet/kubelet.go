@@ -110,6 +110,9 @@ type Kubelet struct {
 
 	// Depending on the network plugin, this should be optional, but for now it's required.
 	PodCIDR string `json:"podCIDR,omitempty"`
+
+	// WaitForNodeReady controls, if deploy should wait until node becomes ready.
+	WaitForNodeReady bool `json:"waitForNodeReady,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet.
@@ -513,12 +516,30 @@ func (k *kubelet) applyPrivilegedLabels() error {
 	return c.LabelNode(k.config.Name, k.config.PrivilegedLabels)
 }
 
+// waitForNodeReady waits until the node becomes ready.
+func (k *kubelet) waitForNodeReady() error {
+	kc, _ := k.config.AdminConfig.ToYAMLString()
+
+	c, err := client.NewClient([]byte(kc))
+	if err != nil {
+		return fmt.Errorf("failed creating kubernetes client: %w", err)
+	}
+
+	return c.WaitForNodeReady(k.config.Name)
+}
+
 // postStartHook defines actions which will be executed after new kubelet instance is created.
 func (k *kubelet) postStartHook() *container.Hook {
 	f := container.Hook(func() error {
 		if len(k.config.PrivilegedLabels) > 0 {
 			if err := k.applyPrivilegedLabels(); err != nil {
 				return fmt.Errorf("failed applying privileged labels: %w", err)
+			}
+		}
+
+		if k.config.WaitForNodeReady {
+			if err := k.waitForNodeReady(); err != nil {
+				return fmt.Errorf("failed waiting for node to become ready: %w", err)
 			}
 		}
 

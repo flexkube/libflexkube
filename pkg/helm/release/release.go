@@ -57,18 +57,23 @@ type Config struct {
 
 	// Version is a requested version of the chart.
 	Version string `json:"version,omitempty"`
+
+	// CreateNamespace controls, if the namespace for the release should be created before installing
+	// the release.
+	CreateNamespace bool `json:"createNamespace,omitempty"`
 }
 
 // release is a validated and installable/update'able version of Config.
 type release struct {
-	actionConfig *action.Configuration
-	settings     *cli.EnvSettings
-	values       map[string]interface{}
-	name         string
-	namespace    string
-	version      string
-	chart        string
-	client       client.Client
+	actionConfig    *action.Configuration
+	settings        *cli.EnvSettings
+	values          map[string]interface{}
+	name            string
+	namespace       string
+	version         string
+	chart           string
+	client          client.Client
+	createNamespace bool
 }
 
 // New validates release configuration and builds installable version of it.
@@ -84,6 +89,8 @@ func (r *Config) New() (Release, error) {
 	// Safe to ignore errors, because Validate will return early if data is not valid.
 	g, kc, cs, _ := newClients(r.Kubeconfig)
 
+	kc.Namespace = r.Namespace
+
 	actionConfig.RESTClientGetter = g
 	actionConfig.KubeClient = kc
 	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
@@ -95,14 +102,15 @@ func (r *Config) New() (Release, error) {
 	c, _ := client.NewClient([]byte(r.Kubeconfig))
 
 	release := &release{
-		actionConfig: actionConfig,
-		settings:     settings,
-		values:       values,
-		name:         r.Name,
-		namespace:    r.Namespace,
-		version:      r.Version,
-		chart:        r.Chart,
-		client:       c,
+		actionConfig:    actionConfig,
+		settings:        settings,
+		values:          values,
+		name:            r.Name,
+		namespace:       r.Namespace,
+		version:         r.Version,
+		chart:           r.Chart,
+		client:          c,
+		createNamespace: r.CreateNamespace,
 	}
 
 	return release, nil
@@ -167,6 +175,8 @@ func (r *release) Install() error {
 	if err != nil {
 		return fmt.Errorf("loading chart failed: %w", err)
 	}
+
+	client.CreateNamespace = r.createNamespace
 
 	// Install a release.
 	if _, err = client.Run(chart, r.values); err != nil {

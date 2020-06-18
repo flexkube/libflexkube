@@ -57,6 +57,17 @@ type Cluster struct {
 	// This field is optional.
 	CACertificate types.Certificate `json:"caCertificate,omitempty"`
 
+	// PeerCertAllowedCN defines allowed CommonName of the client certificate
+	// for peer communication. Can be used when single client certificate is used
+	// for all members of the cluster.
+	//
+	// Is is used for --peer-cert-allowed-cn flag.
+	//
+	// Example value: 'member'.
+	//
+	// This field is optional.
+	PeerCertAllowedCN string `json:"peerCertAllowedCN,omitempty"`
+
 	// Members is a list of etcd member containers to create, where key defines the member name.
 	// Member name can be overwritten by setting Name field.
 	//
@@ -99,7 +110,7 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.Name = util.PickString(m.Name, i)
 	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
-	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, strings.Join(peerCertAllowedCNArr, ","))
+	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, c.PeerCertAllowedCN)
 	m.CACertificate = m.CACertificate.Pick(c.CACertificate)
 
 	// PKI integration.

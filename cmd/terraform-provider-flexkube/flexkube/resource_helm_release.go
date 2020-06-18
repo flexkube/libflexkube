@@ -14,8 +14,9 @@ func resourceHelmRelease() *schema.Resource {
 		Update: resourceHelmReleaseCreate,
 		Schema: map[string]*schema.Schema{
 			"kubeconfig": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
 			},
 			"namespace": {
 				Type:     schema.TypeString,
@@ -30,7 +31,12 @@ func resourceHelmRelease() *schema.Resource {
 				Required: true,
 			},
 			"values": {
-				Type:     schema.TypeString,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
+			},
+			"create_namespace": {
+				Type:     schema.TypeBool,
 				Optional: true,
 			},
 		},
@@ -45,6 +51,10 @@ func getRelease(d *schema.ResourceData, m interface{}) (release.Release, error) 
 		Chart:      d.Get("chart").(string),
 		Values:     d.Get("values").(string),
 		Version:    ">0.0.0-0",
+	}
+
+	if v, ok := d.GetOk("create_namespace"); ok {
+		r.CreateNamespace = v.(bool)
 	}
 
 	l := m.(*meta)

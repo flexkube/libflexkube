@@ -80,60 +80,60 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 
 	crs := []*certificateRequest{}
 
-	for k, v := range e.Peers {
-		crs = append(crs, e.peerCR(k, v, defaultCertificate))
+	for commonName, ip := range e.Peers {
+		crs = append(crs, e.peerCR(commonName, ip, defaultCertificate))
 	}
 
-	for k, v := range e.Servers {
-		crs = append(crs, e.serverCR(k, v, defaultCertificate))
+	for commonName, ip := range e.Servers {
+		crs = append(crs, e.serverCR(commonName, ip, defaultCertificate))
 	}
 
-	for _, k := range e.ClientCNs {
-		crs = append(crs, e.clientCR(k, defaultCertificate))
+	for _, commonName := range e.ClientCNs {
+		crs = append(crs, e.clientCR(commonName, defaultCertificate))
 	}
 
 	return buildAndGenerate(crs...)
 }
 
-func (e *Etcd) peerCR(k, v string, defaultCertificate Certificate) *certificateRequest {
-	if c := e.PeerCertificates[k]; c == nil {
-		e.PeerCertificates[k] = &Certificate{}
+func (e *Etcd) peerCR(commonName, ip string, defaultCertificate Certificate) *certificateRequest {
+	if c := e.PeerCertificates[commonName]; c == nil {
+		e.PeerCertificates[commonName] = &Certificate{}
 	}
 
 	return &certificateRequest{
-		Target: e.PeerCertificates[k],
+		Target: e.PeerCertificates[commonName],
 		CA:     e.CA,
 		Certificates: []*Certificate{
 			&defaultCertificate,
 			&e.Certificate,
-			clientServerCert(k, v),
-			e.PeerCertificates[k],
+			clientServerCert(commonName, ip),
+			e.PeerCertificates[commonName],
 		},
 	}
 }
 
-func (e *Etcd) serverCR(k, v string, defaultCertificate Certificate) *certificateRequest {
-	if c := e.ServerCertificates[k]; c == nil {
-		e.ServerCertificates[k] = &Certificate{}
+func (e *Etcd) serverCR(commonName, ip string, defaultCertificate Certificate) *certificateRequest {
+	if c := e.ServerCertificates[commonName]; c == nil {
+		e.ServerCertificates[commonName] = &Certificate{}
 	}
 
 	return &certificateRequest{
-		Target: e.ServerCertificates[k],
+		Target: e.ServerCertificates[commonName],
 		CA:     e.CA,
 		Certificates: []*Certificate{
 			&defaultCertificate,
 			&e.Certificate,
-			clientServerCert(k, v),
-			e.ServerCertificates[k],
+			clientServerCert(commonName, ip),
+			e.ServerCertificates[commonName],
 		},
 	}
 }
 
-func clientServerCert(cn, ip string) *Certificate {
+func clientServerCert(commonName, ip string) *Certificate {
 	return &Certificate{
-		CommonName:  cn,
+		CommonName:  commonName,
 		IPAddresses: []string{ip, "127.0.0.1"},
-		DNSNames:    []string{cn, "localhost"},
+		DNSNames:    []string{commonName, "localhost"},
 		KeyUsage:    clientServerUsage(),
 	}
 }
