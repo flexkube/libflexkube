@@ -125,7 +125,7 @@ func optionalBlock(computed bool, elem func(bool) map[string]*schema.Schema) *sc
 	}
 }
 
-func requiredList(computed bool, sensitive bool, elem func(bool) *schema.Resource) *schema.Schema {
+func requiredList(computed, sensitive bool, elem func(bool) *schema.Resource) *schema.Schema {
 	return &schema.Schema{
 		Type:      schema.TypeList,
 		Computed:  computed,

@@ -23,7 +23,7 @@ const (
 
 // BuildConfig takes destination SSH configuration, struct with default values provided by the user
 // and merges it together with global SSH default values.
-func BuildConfig(sshConfig *Config, defaults *Config) *Config {
+func BuildConfig(sshConfig, defaults *Config) *Config {
 	if sshConfig == nil {
 		sshConfig = &Config{}
 	}

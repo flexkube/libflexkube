@@ -38,7 +38,7 @@ func hostConfiguredContainerUnmarshal(i interface{}) (string, *container.HostCon
 	return j["name"].(string), h
 }
 
-func hostConfiguredContainerSchema(computed bool, sensitive bool) *schema.Schema {
+func hostConfiguredContainerSchema(computed, sensitive bool) *schema.Schema {
 	return requiredList(computed, sensitive, func(computed bool) *schema.Resource {
 		return &schema.Resource{
 			Schema: map[string]*schema.Schema{

@@ -62,7 +62,7 @@ type ssh struct {
 	retryTimeout      time.Duration
 	retryInterval     time.Duration
 	auth              []gossh.AuthMethod
-	sshClientGetter   func(network string, address string, config *gossh.ClientConfig) (*gossh.Client, error)
+	sshClientGetter   func(network, address string, config *gossh.ClientConfig) (*gossh.Client, error)
 }
 
 type sshConnected struct {
@@ -73,7 +73,7 @@ type sshConnected struct {
 }
 
 type dialer interface {
-	Dial(network string, address string) (net.Conn, error)
+	Dial(network, address string) (net.Conn, error)
 }
 
 // New validates SSH configuration and returns new instance of transport interface.
@@ -268,7 +268,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 // forwardConnection accepts local connections, and forwards them to remote address.
 //
 // TODO: Should we do some error handling here?
-func forwardConnection(l net.Listener, connection dialer, remoteAddress string, connectionType string) {
+func forwardConnection(l net.Listener, connection dialer, remoteAddress, connectionType string) {
 	defer func() {
 		if err := l.Close(); err != nil {
 			fmt.Printf("failed closing listener: %v", err)
