@@ -463,7 +463,7 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 	return c.createAndPersist(&cert, caCert, k, pk)
 }
 
-func (c *Certificate) createAndPersist(cert *x509.Certificate, caCert *x509.Certificate, k *rsa.PrivateKey, pk *rsa.PrivateKey) error {
+func (c *Certificate) createAndPersist(cert, caCert *x509.Certificate, k, pk *rsa.PrivateKey) error {
 	der, err := x509.CreateCertificate(rand.Reader, cert, caCert, &k.PublicKey, pk)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate: %w", err)

@@ -517,7 +517,7 @@ func TestConnect(t *testing.T) {
 
 	ss := s.(*ssh)
 
-	ss.sshClientGetter = func(n string, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
 		return nil, nil
 	}
 
@@ -545,7 +545,7 @@ func TestConnectFail(t *testing.T) {
 
 	ss := s.(*ssh)
 
-	ss.sshClientGetter = func(n string, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
@@ -558,7 +558,7 @@ func TestConnectFail(t *testing.T) {
 func TestForwardTCP(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
-	d.listener = func(n string, a string) (net.Listener, error) {
+	d.listener = func(n, a string) (net.Listener, error) {
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatalf("unable to listen on random TCP port: %v", err)
@@ -575,7 +575,7 @@ func TestForwardTCP(t *testing.T) {
 func TestForwardTCPFailListen(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
-	d.listener = func(n string, a string) (net.Listener, error) {
+	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
@@ -587,7 +587,7 @@ func TestForwardTCPFailListen(t *testing.T) {
 func TestForwardTCPValidateAddress(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
-	d.listener = func(n string, a string) (net.Listener, error) {
+	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
@@ -612,7 +612,7 @@ func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 func TestForwardUnixSocketCantListen(t *testing.T) {
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
-	d.listener = func(n string, a string) (net.Listener, error) {
+	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 

@@ -133,7 +133,7 @@ func TestForwardUnixSocketFull(t *testing.T) {
 	}
 }
 
-func runServer(t *testing.T, expectedMessage string, response string) {
+func runServer(t *testing.T, expectedMessage, response string) {
 	l, err := net.Listen("unix", testServerAddr)
 	if err != nil {
 		// Can't use t.Fatalf from go routine. use fmt.Printf + t.Fail() instead
@@ -145,7 +145,7 @@ func runServer(t *testing.T, expectedMessage string, response string) {
 
 	// We may SSH into host as unprivileged user, so make sure we are allowed to access the
 	// socket file.
-	if err := os.Chmod(testServerAddr, 0600); err != nil {
+	if err := os.Chmod(testServerAddr, 0o600); err != nil {
 		fmt.Printf("socket chmod should succeed, got: %v\n", err)
 		t.Fail()
 	}

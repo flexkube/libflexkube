@@ -107,7 +107,7 @@ func (h *hostConnected) ForwardTCP(address string) (string, error) {
 
 // BuildConfig merges values from both host objects. This is a helper method used for building hierarchical
 // configuration.
-func BuildConfig(config Host, defaults Host) Host {
+func BuildConfig(config, defaults Host) Host {
 	// If config has no direct config configured or has SSH config configured, build SSH configuration.
 	if (config.DirectConfig == nil && defaults.SSHConfig != nil) || config.SSHConfig != nil {
 		config.SSHConfig = ssh.BuildConfig(config.SSHConfig, defaults.SSHConfig)

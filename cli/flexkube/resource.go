@@ -406,7 +406,7 @@ func (r *Resource) StateToFile(actionErr error) error {
 		rb = []byte{}
 	}
 
-	if err := ioutil.WriteFile("state.yaml", rb, 0600); err != nil {
+	if err := ioutil.WriteFile("state.yaml", rb, 0o600); err != nil {
 		if actionErr == nil {
 			return fmt.Errorf("failed writing new state to file: %w", err)
 		}

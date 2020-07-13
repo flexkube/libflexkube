@@ -144,7 +144,7 @@ func TestCopyRuntimeError(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyToContainerF: func(ctx context.Context, id string, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error {
+			CopyToContainerF: func(ctx context.Context, id, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error {
 				return fmt.Errorf("Copying failed")
 			},
 		},
@@ -162,7 +162,7 @@ func TestReadRuntimeError(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id string, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				if path != p {
 					t.Fatalf("Should read path %s, got %s", p, path)
 				}
@@ -188,7 +188,7 @@ func TestRead(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id string, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
 					Name: p,
 				}, nil
@@ -222,7 +222,7 @@ func TestReadFileMissing(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id string, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return nil, dockertypes.ContainerPathStat{}, nil
 			},
 		},
@@ -257,7 +257,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id string, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return ioutil.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
 			},
 		},

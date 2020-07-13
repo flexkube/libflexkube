@@ -78,7 +78,7 @@ func Indent(text, indent string) string {
 }
 
 // JoinSorted takes map of keys and values, sorts them by keys and joins with given separators.
-func JoinSorted(values map[string]string, valueSeparator string, keySeparator string) string {
+func JoinSorted(values map[string]string, valueSeparator, keySeparator string) string {
 	keys := []string{}
 
 	for k := range values {
