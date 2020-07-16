@@ -6,7 +6,7 @@ const (
 	EtcdImage = "quay.io/coreos/etcd:v3.4.9"
 
 	// KubernetesImage is a default container image used for all kubernetes containers.
-	KubernetesImage = "k8s.gcr.io/hyperkube:v1.18.4"
+	KubernetesImage = "k8s.gcr.io/hyperkube:v1.18.6"
 
 	// HAProxyImage is a default container image for APILoadBalancer.
 	HAProxyImage = "haproxy:2.1.7-alpine"
