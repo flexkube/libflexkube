@@ -3,7 +3,7 @@ package defaults
 
 const (
 	// EtcdImage points to a default Docker image, which will be used for running etcd.
-	EtcdImage = "quay.io/coreos/etcd:v3.4.9"
+	EtcdImage = "quay.io/coreos/etcd:v3.4.10"
 
 	// KubernetesImage is a default container image used for all kubernetes containers.
 	KubernetesImage = "k8s.gcr.io/hyperkube:v1.18.6"
