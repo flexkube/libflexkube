@@ -57,7 +57,7 @@ const (
 	configFileMode = 0o600
 
 	// mountpointDirMode is default host mountpoint directory permission.
-	mountpointDirMode = 0o755
+	mountpointDirMode = 0o700
 )
 
 // Hooks defines type of hooks HostConfiguredContainer supports.
