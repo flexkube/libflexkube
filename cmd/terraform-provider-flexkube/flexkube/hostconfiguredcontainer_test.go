@@ -12,7 +12,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-func TestHostConfiguredContainerMarshal(t *testing.T) {
+func TestHostConfiguredContainerMarshal(t *testing.T) { //nolint:funlen
 	c := container.HostConfiguredContainer{
 		Container: container.Container{
 			Config: types.ContainerConfig{},

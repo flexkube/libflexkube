@@ -20,7 +20,7 @@ const (
 )
 
 // Create() tests.
-func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
+func TestHostConfiguredContainerDeployConfigFile(t *testing.T) { //nolint:funlen
 	p := "/tmp/foo"
 	f := path.Join(p, randomContainerName())
 

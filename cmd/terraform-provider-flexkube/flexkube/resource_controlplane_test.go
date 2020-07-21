@@ -369,7 +369,7 @@ resource "flexkube_controlplane" "bootstrap" {
 	})
 }
 
-func TestControlplaneDestroy(t *testing.T) {
+func TestControlplaneDestroy(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
 	pki := utiltest.GeneratePKI(t)

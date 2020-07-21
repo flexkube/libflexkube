@@ -62,7 +62,7 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 }
 
 // Validate() tests.
-func TestKubeSchedulerValidate(t *testing.T) {
+func TestKubeSchedulerValidate(t *testing.T) { //nolint:funlen
 	pki := utiltest.GeneratePKI(t)
 
 	hostConfig := &host.Host{
