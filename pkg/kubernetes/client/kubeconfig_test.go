@@ -51,7 +51,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestToYAMLStringNew(t *testing.T) {
+func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 	cases := []struct {
 		f   func(*Config)
 		err func(error, *testing.T)
@@ -180,7 +180,7 @@ func TestToYAMLStringValidate(t *testing.T) {
 }
 
 // Validate() tests.
-func TestValidate(t *testing.T) {
+func TestValidate(t *testing.T) { //nolint:funlen
 	cases := []struct {
 		f   func(*Config)
 		err func(error, *testing.T)

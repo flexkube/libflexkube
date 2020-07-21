@@ -10,7 +10,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-func TestKubeControllerManagerValidate(t *testing.T) {
+func TestKubeControllerManagerValidate(t *testing.T) { //nolint:funlen
 	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}

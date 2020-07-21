@@ -612,7 +612,7 @@ func TestEnsureHostNoDiff(t *testing.T) {
 	}
 }
 
-func TestEnsureHostFailStart(t *testing.T) {
+func TestEnsureHostFailStart(t *testing.T) { //nolint:funlen
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -686,7 +686,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 	}
 }
 
-func TestEnsureHost(t *testing.T) {
+func TestEnsureHost(t *testing.T) { //nolint:funlen
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -788,7 +788,7 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 	}
 }
 
-func TestEnsureContainerFailStart(t *testing.T) {
+func TestEnsureContainerFailStart(t *testing.T) { //nolint:funlen
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -866,7 +866,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 	}
 }
 
-func TestEnsureContainer(t *testing.T) {
+func TestEnsureContainer(t *testing.T) { //nolint:funlen
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1133,7 +1133,7 @@ func TestEnsureConfiguredNoUpdates(t *testing.T) {
 	}
 }
 
-func TestEnsureConfigured(t *testing.T) {
+func TestEnsureConfigured(t *testing.T) { //nolint:funlen
 	called := false
 
 	f := foo
@@ -1459,7 +1459,7 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 }
 
 // updateExistingContainers() tests.
-func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
+func TestUpdateExistingContainersRemoveAllOld(t *testing.T) { //nolint:funlen
 	c := &containers{
 		desiredState: containersState{},
 		currentState: containersState{

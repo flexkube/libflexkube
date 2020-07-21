@@ -17,10 +17,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-func TestControlplanePlanOnly(t *testing.T) {
-	t.Parallel()
-
-	config := `
+const controlplanePlanOnlyConfig = `
 locals {
   controller_ips = ["1.1.1.1"]
   controller_names = ["controller01"]
@@ -82,13 +79,16 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 `
 
+func TestControlplanePlanOnly(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:             config,
+				Config:             controlplanePlanOnlyConfig,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: true,
 			},
@@ -96,10 +96,7 @@ resource "flexkube_controlplane" "bootstrap" {
 	})
 }
 
-func TestControlplaneCreateRuntimeError(t *testing.T) {
-	t.Parallel()
-
-	config := `
+const controlplaneCreateRuntimeErrorConfig = `
 locals {
   controller_ips = ["1.1.1.1"]
   controller_names = ["controller01"]
@@ -209,23 +206,23 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 `
 
+func TestControlplaneCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:      config,
+				Config:      controlplaneCreateRuntimeErrorConfig,
 				ExpectError: regexp.MustCompile(`connection refused`),
 			},
 		},
 	})
 }
 
-func TestControlplaneValidateFail(t *testing.T) {
-	t.Parallel()
-
-	config := `
+const controlplaneValidateFailConfig = `
 resource "flexkube_controlplane" "bootstrap" {
   common {
     kubernetes_ca_certificate  = ""
@@ -281,13 +278,16 @@ resource "flexkube_controlplane" "bootstrap" {
 }
 `
 
+func TestControlplaneValidateFail(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:      config,
+				Config:      controlplaneValidateFailConfig,
 				ExpectError: regexp.MustCompile(`failed to decode PEM format`),
 			},
 		},
@@ -369,7 +369,7 @@ resource "flexkube_controlplane" "bootstrap" {
 	})
 }
 
-func TestControlplaneDestroy(t *testing.T) {
+func TestControlplaneDestroy(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
 	pki := utiltest.GeneratePKI(t)

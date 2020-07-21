@@ -1,4 +1,4 @@
-package flexkube //nolint:dupl
+package flexkube
 
 import (
 	"regexp"
@@ -72,10 +72,7 @@ resource "flexkube_etcd_cluster" "etcd" {
 	})
 }
 
-func TestEtcdClusterCreateRuntimeError(t *testing.T) {
-	t.Parallel()
-
-	config := `
+const etcdClusterCreateRuntimeErrorConfig = `
 locals {
   controller_ips = ["1.1.1.1"]
   controller_names = ["controller01"]
@@ -123,13 +120,16 @@ resource "flexkube_etcd_cluster" "etcd" {
 }
 `
 
+func TestEtcdClusterCreateRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		Providers: map[string]terraform.ResourceProvider{
 			"flexkube": Provider(),
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:      config,
+				Config:      etcdClusterCreateRuntimeErrorConfig,
 				ExpectError: regexp.MustCompile(`connection refused`),
 			},
 		},

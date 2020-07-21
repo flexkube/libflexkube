@@ -11,8 +11,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
-func controlplaneYAML(t *testing.T) string {
-	c := `
+const controlplaneYAMLTemplate = `
 common:
   kubernetesCACertificate: |
     {{.Certificate}}
@@ -72,6 +71,8 @@ ssh:
   retryTimeout: 1ms
   retryInterval: 1ms
 `
+
+func controlplaneYAML(t *testing.T) string {
 	pki := utiltest.GeneratePKI(t)
 
 	data := struct {
@@ -88,7 +89,7 @@ ssh:
 
 	var buf bytes.Buffer
 
-	tpl := template.Must(template.New("c").Parse(c))
+	tpl := template.Must(template.New("c").Parse(controlplaneYAMLTemplate))
 	if err := tpl.Execute(&buf, data); err != nil {
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}

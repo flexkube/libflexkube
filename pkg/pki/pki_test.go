@@ -64,7 +64,12 @@ func TestGenerateTrustChain(t *testing.T) {
 
 	block, _ := pem.Decode([]byte(pki.Etcd.PeerCertificates["controller01"].X509Certificate))
 	if block == nil {
-		t.Fatal("failed to parse certificate PEM")
+		// It seems staticcheck linter do not recognize t.Fatal() as a flow breaking statement,
+		// so then it yells that we might dereference unitialized 'block' variable, which is not
+		// true, so just use t.Fatalf() to silence it.
+		//
+		// The alternative would be to add bare 'return' after this call, which seems even more ugly.
+		t.Fatalf("failed to parse certificate PEM")
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)

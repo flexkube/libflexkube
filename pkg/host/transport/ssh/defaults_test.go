@@ -11,7 +11,7 @@ const (
 	customPort = 33
 )
 
-func TestBuildConfig(t *testing.T) {
+func TestBuildConfig(t *testing.T) { //nolint:funlen
 	cases := []struct {
 		config   *Config
 		defaults *Config

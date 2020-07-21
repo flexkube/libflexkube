@@ -67,7 +67,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 }
 
 // Validate() tests.
-func TestKubeAPIServerValidate(t *testing.T) {
+func TestKubeAPIServerValidate(t *testing.T) { //nolint:funlen
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
