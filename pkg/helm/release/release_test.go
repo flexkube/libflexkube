@@ -96,8 +96,6 @@ func newRelease(t *testing.T) release.Release {
 }
 
 func TestConfigNew(t *testing.T) {
-	t.Parallel()
-
 	newRelease(t)
 }
 
@@ -148,8 +146,6 @@ func TestConfigValidateBadValues(t *testing.T) {
 
 // ValidateChart() tests.
 func TestReleaseValidateChartBad(t *testing.T) {
-	t.Parallel()
-
 	r := newRelease(t)
 
 	if err := r.ValidateChart(); err == nil {
