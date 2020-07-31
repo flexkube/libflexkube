@@ -52,7 +52,7 @@ It will create `config.yaml` configuration file which will be consumed by `flexk
 If you want to perform the same action using Terraform, execute the following commands:
 
 ```sh
-VERSION=v0.3.0 wget -qO- https://github.com/flexkube/libflexkube/releases/download/$VERSION/terraform-provider-flexkube_$VERSION_linux_amd64.tar.gz | tar zxvf - terraform-provider-flexkube_$VERSION_x4
+VERSION=v0.3.1 wget -qO- https://github.com/flexkube/libflexkube/releases/download/$VERSION/terraform-provider-flexkube_$VERSION_linux_amd64.tar.gz | tar zxvf - terraform-provider-flexkube_$VERSION_x4
 echo 'resource "flexkube_pki" "pki" {
   etcd {}
   kubernetes {}
