@@ -288,6 +288,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		remoteSock, err := connection.Dial(connectionType, remoteAddress)
 		if err != nil {
 			fmt.Printf("failed to open remote connection: %v\n", err)
+
 			return
 		}
 

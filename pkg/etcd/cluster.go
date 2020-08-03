@@ -255,6 +255,7 @@ func (c *cluster) firstMember() (*member, error) {
 
 	for i := range c.members {
 		m = c.members[i]
+
 		break
 	}
 

@@ -248,12 +248,14 @@ func (p *Pool) Validate() error {
 		kubelet, err := k.New()
 		if err != nil {
 			errors = append(errors, fmt.Errorf("failed to create kubelet object %q: %w", i, err))
+
 			continue
 		}
 
 		hcc, err := kubelet.ToHostConfiguredContainer()
 		if err != nil {
 			errors = append(errors, fmt.Errorf("failed to generate kubelet %q container configuration: %w", i, err))
+
 			continue
 		}
 

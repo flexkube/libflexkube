@@ -354,6 +354,7 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 		TLS: &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			RootCAs:      p,
+			MinVersion:   tls.VersionTLS12,
 		},
 	})
 	if err != nil {

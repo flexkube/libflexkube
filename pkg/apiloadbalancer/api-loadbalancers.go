@@ -175,12 +175,14 @@ func (a *APILoadBalancers) Validate() error {
 		lbx, err := lb.New()
 		if err != nil {
 			errors = append(errors, fmt.Errorf("failed creating load balancer instance %q: %w", i, err))
+
 			continue
 		}
 
 		lbxHcc, err := lbx.ToHostConfiguredContainer()
 		if err != nil {
 			errors = append(errors, fmt.Errorf("failed creating load balancer %q container configuration: %w", i, err))
+
 			continue
 		}
 
