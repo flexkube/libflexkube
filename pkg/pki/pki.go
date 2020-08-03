@@ -397,6 +397,7 @@ func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
 		r := int(keyUsage(k))
 		if r != 0 {
 			ku |= r
+
 			continue
 		}
 

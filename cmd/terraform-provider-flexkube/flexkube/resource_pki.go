@@ -75,6 +75,7 @@ func resourcePKICreate(d *schema.ResourceData, m interface{}) error {
 
 func resourcePKIDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
+
 	return nil
 }
 

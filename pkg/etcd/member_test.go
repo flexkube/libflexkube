@@ -69,6 +69,7 @@ func TestNewCluster(t *testing.T) {
 	for _, f := range hcc.Container.Config.Args {
 		if strings.Contains(f, "--initial-cluster-token") {
 			flag = true
+
 			break
 		}
 	}
@@ -93,6 +94,7 @@ func TestExistingCluster(t *testing.T) {
 	for _, f := range hcc.Container.Config.Args {
 		if strings.Contains(f, "--initial-cluster-state=existing") {
 			flag = true
+
 			break
 		}
 	}

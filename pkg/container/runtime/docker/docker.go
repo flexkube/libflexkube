@@ -217,6 +217,7 @@ func (d *docker) Start(id string) error {
 func (d *docker) Stop(id string) error {
 	// TODO make timeout configurable?
 	timeout := stopTimeout
+
 	return d.cli.ContainerStop(d.ctx, id, &timeout)
 }
 
