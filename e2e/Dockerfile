@@ -17,6 +17,8 @@ RUN VERSION=0.18.5 OS=linux && \
 
 RUN echo 'plugin_cache_dir = "/root/.terraform.d.host/plugin-cache"' >> /root/.terraformrc
 
+RUN mkdir -p /root/.terraform.d.host/plugin-cache
+
 RUN helm repo add stable https://kubernetes-charts.storage.googleapis.com
 
 RUN helm repo add flexkube https://flexkube.github.io/charts/
