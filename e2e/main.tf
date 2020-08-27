@@ -92,6 +92,7 @@ apiServers:
 - ${api_server}
 %{endfor~}
 podCIDR: ${var.pod_cidr}
+image: k8s.gcr.io/hyperkube:v1.18.8
 EOF
 
   coredns_values = <<EOF
@@ -255,6 +256,7 @@ resource "flexkube_helm_release" "kube-apiserver" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kube_apiserver_helm_chart_source
+  version    = var.kube_apiserver_helm_chart_version
   name       = "kube-apiserver"
   values     = local.kube_apiserver_values
 
@@ -268,6 +270,7 @@ resource "flexkube_helm_release" "kubernetes" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kubernetes_helm_chart_source
+  version    = var.kubernetes_helm_chart_version
   name       = "kubernetes"
   values     = local.kubernetes_values
 
@@ -281,6 +284,7 @@ resource "flexkube_helm_release" "kube-proxy" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kube_proxy_helm_chart_source
+  version    = var.kube_proxy_helm_chart_version
   name       = "kube-proxy"
   values     = local.kube_proxy_values
 
@@ -294,6 +298,7 @@ resource "flexkube_helm_release" "tls-bootstrapping" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.tls_bootstrapping_helm_chart_source
+  version    = var.tls_bootstrapping_helm_chart_version
   name       = "tls-bootstrapping"
   values     = local.tls_bootstrapping_values
 
@@ -307,6 +312,7 @@ resource "flexkube_helm_release" "coredns" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = "stable/coredns"
+  version    = var.coredns_chart_version
   name       = "coredns"
   values     = local.coredns_values
 
@@ -320,6 +326,7 @@ resource "flexkube_helm_release" "metrics-server" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = "stable/metrics-server"
+  version    = var.metrics_server_chart_version
   name       = "metrics-server"
   values     = local.metrics_server_values
 
@@ -333,6 +340,7 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kubelet_rubber_stamp_helm_chart_source
+  version    = var.kubelet_rubber_stamp_helm_chart_version
   name       = "kubelet-rubber-stamp"
 
   depends_on = [
@@ -347,6 +355,7 @@ resource "flexkube_helm_release" "calico" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.calico_helm_chart_source
+  version    = var.calico_helm_chart_version
   name       = "calico"
   values     = local.calico_values
 
