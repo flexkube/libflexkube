@@ -37,8 +37,7 @@ resource "random_password" "bootstrap_token_secret" {
 locals {
   cgroup_driver = var.flatcar_channel == "edge" ? "systemd" : "cgroupfs"
 
-  bootstrap_api_bind = "127.0.0.1"
-  api_port           = 8443
+  api_port = 8443
 
   node_load_balancer_address = "127.0.0.1:7443"
 
@@ -192,34 +191,13 @@ resource "flexkube_apiloadbalancer_pool" "controllers" {
   }
 }
 
-resource "flexkube_apiloadbalancer_pool" "bootstrap" {
-  name             = "api-loadbalancer-bootstrap"
-  host_config_path = "/etc/haproxy/bootstrap.cfg"
-  bind_address     = "${local.first_controller_ip}:${local.api_port}"
-  servers          = ["${local.bootstrap_api_bind}:${local.api_port}"]
-
-  ssh {
-    private_key = local.ssh_private_key
-    port        = var.node_ssh_port
-    user        = "core"
-  }
-
-  api_load_balancer {
-    host {
-      ssh {
-        address = local.first_controller_ip
-      }
-    }
-  }
-}
-
 resource "flexkube_controlplane" "bootstrap" {
   pki_yaml = flexkube_pki.pki.state_yaml
 
   kube_apiserver {
     service_cidr      = "11.0.0.0/24"
     etcd_servers      = local.etcd_servers
-    bind_address      = local.bootstrap_api_bind
+    bind_address      = local.first_controller_ip
     advertise_address = local.first_controller_ip
     secure_port       = local.api_port
   }
@@ -252,7 +230,6 @@ resource "flexkube_helm_release" "kube-apiserver" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -265,7 +242,6 @@ resource "flexkube_helm_release" "kubernetes" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -278,7 +254,6 @@ resource "flexkube_helm_release" "kube-proxy" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -291,7 +266,6 @@ resource "flexkube_helm_release" "tls-bootstrapping" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -304,7 +278,6 @@ resource "flexkube_helm_release" "coredns" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -317,7 +290,6 @@ resource "flexkube_helm_release" "metrics-server" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -329,7 +301,6 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -344,7 +315,6 @@ resource "flexkube_helm_release" "calico" {
 
   depends_on = [
     flexkube_controlplane.bootstrap,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -412,7 +382,6 @@ resource "flexkube_kubelet_pool" "controller" {
   depends_on = [
     flexkube_apiloadbalancer_pool.controllers,
     flexkube_helm_release.tls-bootstrapping,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
 
@@ -497,6 +466,5 @@ resource "flexkube_kubelet_pool" "workers" {
   depends_on = [
     flexkube_apiloadbalancer_pool.workers,
     flexkube_helm_release.tls-bootstrapping,
-    flexkube_apiloadbalancer_pool.bootstrap,
   ]
 }
