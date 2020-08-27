@@ -266,7 +266,7 @@ func (r *release) Uninstall() error {
 
 // loadChart locates and loads the chart.
 func (r *release) loadChart() (*chart.Chart, error) {
-	client := action.NewInstall(r.actionConfig)
+	client := r.installClient()
 
 	// Locate chart to install.
 	cp, err := client.ChartPathOptions.LocateChart(r.chart, r.settings)
