@@ -1,4 +1,4 @@
-FROM hashicorp/terraform:light
+FROM hashicorp/terraform:0.12.29
 
 RUN apk add -U make bash bash-completion vim coreutils
 
