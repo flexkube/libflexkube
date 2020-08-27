@@ -23,7 +23,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.terraform.d/plugins/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.local/share/terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -132,7 +132,8 @@ test-local:
 
 .PHONY: test-local-apply
 test-local-apply:
-	cd cmd/terraform-provider-flexkube && $(GOBUILD) -o ../../local-testing/terraform-provider-flexkube
+	mkdir -p local-testing/.terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/
+	cd cmd/terraform-provider-flexkube && $(GOBUILD) -o ../../local-testing/.terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/terraform-provider-flexkube
 	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
 
 .PHONY: test-conformance
@@ -296,11 +297,6 @@ libvirt-download-image:
 	((test -f libvirt/flatcar_production_qemu_image.img.bz2 || test -f libvirt/flatcar_production_qemu_image.img) || wget https://$(FLATCAR_CHANNEL).release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu_image.img.bz2 -O libvirt/flatcar_production_qemu_image.img.bz2) || true
 	(test -f libvirt/flatcar_production_qemu_image.img.bz2 && bunzip2 libvirt/flatcar_production_qemu_image.img.bz2 && rm libvirt/flatcar_production_qemu_image.img.bz2) || true
 	qemu-img resize libvirt/flatcar_production_qemu_image.img +5G
-
-.PHONY: libvirt-download-providers
-libvirt-download-providers:
-	test -f libvirt/terraform-provider-libvirt || (wget https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v0.6.1/terraform-provider-libvirt-0.6.1+git.1578064534.db13b678.Fedora_28.x86_64.tar.gz -O libvirt/provider.tar.gz && tar zxvf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-libvirt ./libvirt/)
-	test -f libvirt/terraform-provider-ct || (wget https://github.com/poseidon/terraform-provider-ct/releases/download/v0.4.0/terraform-provider-ct-v0.4.0-linux-amd64.tar.gz -O libvirt/provider.tar.gz && tar xzf libvirt/provider.tar.gz && rm libvirt/provider.tar.gz && mv terraform-provider-ct-v0.4.0-linux-amd64/terraform-provider-ct ./libvirt/ && rmdir terraform-provider-ct-v0.4.0-linux-amd64)
 
 .PHONY: test-static
 test-static:
