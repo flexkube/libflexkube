@@ -263,6 +263,7 @@ resource "flexkube_helm_release" "kube-apiserver" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.tls-bootstrapping,
   ]
 }
 
@@ -277,6 +278,7 @@ resource "flexkube_helm_release" "kubernetes" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -291,6 +293,7 @@ resource "flexkube_helm_release" "kube-proxy" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.tls-bootstrapping,
   ]
 }
 
@@ -319,6 +322,7 @@ resource "flexkube_helm_release" "coredns" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -333,6 +337,7 @@ resource "flexkube_helm_release" "metrics-server" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -346,6 +351,7 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -362,6 +368,7 @@ resource "flexkube_helm_release" "calico" {
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.kube-proxy,
   ]
 }
 
