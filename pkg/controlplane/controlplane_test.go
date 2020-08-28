@@ -120,6 +120,25 @@ func TestControlplaneFromYaml(t *testing.T) {
 	}
 }
 
+// GetImage() tests.
+func TestCommonGetImage(t *testing.T) {
+	c := Common{}
+	if a := c.GetImage(); a == "" {
+		t.Fatalf("GetImage() should always return at least default image")
+	}
+}
+
+func TestCommonGetImageSpecified(t *testing.T) {
+	i := "foo"
+	c := Common{
+		Image: i,
+	}
+
+	if a := c.GetImage(); a != i {
+		t.Fatalf("GetImage() should return specified image, if it's defined")
+	}
+}
+
 // New() tests.
 func TestControlplaneNewValidate(t *testing.T) {
 	c := &Controlplane{}

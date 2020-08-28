@@ -3,11 +3,9 @@ package controlplane
 import (
 	"fmt"
 
-	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
-	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
@@ -39,7 +37,7 @@ func (k *kubeScheduler) ToHostConfiguredContainer() (*container.HostConfiguredCo
 	configFiles["/etc/kubernetes/kube-scheduler/kubeconfig"] = k.kubeconfig
 	configFiles["/etc/kubernetes/kube-scheduler/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
 	configFiles["/etc/kubernetes/kube-scheduler/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
-	configFiles["/etc/kubernetes/kube-scheduler/kube-scheduler.yaml"] = `apiVersion: kubescheduler.config.k8s.io/v1beta1
+	configFiles["/etc/kubernetes/kube-scheduler/kube-scheduler.yaml"] = `apiVersion: kubescheduler.config.k8s.io/v1alpha1
 kind: KubeSchedulerConfiguration
 clientConnection:
   kubeconfig: /etc/kubernetes/kubeconfig
@@ -52,7 +50,7 @@ clientConnection:
 		},
 		Config: containertypes.ContainerConfig{
 			Name:  "kube-scheduler",
-			Image: util.PickString(k.common.Image, defaults.KubeSchedulerImage),
+			Image: k.common.GetImage(),
 			Mounts: []containertypes.Mount{
 				{
 					Source: "/etc/kubernetes/kube-scheduler/",

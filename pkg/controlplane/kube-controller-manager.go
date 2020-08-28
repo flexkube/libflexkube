@@ -3,11 +3,9 @@ package controlplane
 import (
 	"fmt"
 
-	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
-	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -116,7 +114,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 		},
 		Config: containertypes.ContainerConfig{
 			Name:  "kube-controller-manager",
-			Image: util.PickString(k.common.Image, defaults.KubeControllerManagerImage),
+			Image: k.common.GetImage(),
 			Mounts: []containertypes.Mount{
 				{
 					Source: "/etc/kubernetes/kube-controller-manager/",
