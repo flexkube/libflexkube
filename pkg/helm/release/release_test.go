@@ -101,8 +101,6 @@ func TestConfigNew(t *testing.T) {
 
 // Validate() tests.
 func TestConfigValidateEmptyNamespace(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Namespace = ""
 
@@ -112,8 +110,6 @@ func TestConfigValidateEmptyNamespace(t *testing.T) {
 }
 
 func TestConfigValidateEmptyName(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Name = ""
 
@@ -123,8 +119,6 @@ func TestConfigValidateEmptyName(t *testing.T) {
 }
 
 func TestConfigValidateEmptyChart(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Chart = ""
 
@@ -134,8 +128,6 @@ func TestConfigValidateEmptyChart(t *testing.T) {
 }
 
 func TestConfigValidateBadValues(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Values = "asd"
 
