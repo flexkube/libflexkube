@@ -485,6 +485,10 @@ resource "flexkube_kubelet_pool" "workers" {
     token  = "${random_password.bootstrap_token_id.result}.${random_password.bootstrap_token_secret.result}"
   }
 
+  admin_config {
+    server = "${local.first_controller_ip}:${local.api_port}"
+  }
+
   wait_for_node_ready = true
 
   pki_yaml = flexkube_pki.pki.state_yaml
