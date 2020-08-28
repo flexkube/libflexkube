@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2020-08-29
+
+### Changed
+
+- e2e: Updated used sonobuoy version to v0.19.0.
+- e2e/local-testing: use Terraform 0.13.
+- Default Kubernetes version is now v1.19.0.
+- As upstream Kubernetes deprecated hyperkube image, now each controlplane component
+  use individual images. As upstream does not publish kubelet images yet, new default kubelet image
+  is build from [kubelet](https://github.com/flexkube/kubelet) repository and available for pulling
+  from `quay.io/flexkube/kubelet` registry.
+- controlplane: static kube-apiserver now runs on host network and with `--permit-port-sharing=true`
+  flag set to make use of binding with SO_REUSEPORT option, which eliminates the need of bootstrap
+  HAProxy and HAProxy container on self-hosted kube-apiserver pods.
+- e2e: use Helm v3.3.0.
+- Updated Go dependencies to latest versions.
+
+### Removed
+
+- e2e: Remove bootstrap API Load Balancer - it is no longer needed as since Kubernetes v1.19.0,
+  kube-apiserver is able to bind with SO_REUSEPORT, if `--permit-port-sharing=true` flag is set.
+
 ## [0.3.3] - 2020-08-29
 
 ### Fixed
@@ -16,7 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated Calico to v3.16.0.
-
 ## [0.3.2] - 2020-08-28
 
 ### Fixed
@@ -214,6 +235,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.4.0]: https://github.com/flexkube/libflexkube/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/flexkube/libflexkube/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/flexkube/libflexkube/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/flexkube/libflexkube/compare/v0.3.0...v0.3.1
