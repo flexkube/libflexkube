@@ -30,7 +30,7 @@ extraMounts:
   target: /bar
 kubernetesCACertificate: |
   {{.}}
-waitForNodeReady: true
+waitForNodeReady: false
 kubelets:
 - networkPlugin: cni
   name: foo
@@ -167,6 +167,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 			Server: "bar",
 			Token:  "bar",
 		},
+		WaitForNodeReady: true,
 		Kubelets: []Kubelet{
 			{
 				Name:            "foo",

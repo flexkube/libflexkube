@@ -163,8 +163,12 @@ func (k *Kubelet) validateAdminConfig() error {
 		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
 	}
 
-	if k.AdminConfig != nil && len(k.PrivilegedLabels) == 0 {
-		errors = append(errors, fmt.Errorf("adminConfig specified, but no privilegedLabels requested"))
+	if k.AdminConfig == nil && k.WaitForNodeReady {
+		errors = append(errors, fmt.Errorf("waitForNodeReady requested, but adminConfig is not set"))
+	}
+
+	if k.AdminConfig != nil && (!k.WaitForNodeReady && len(k.PrivilegedLabels) == 0) {
+		errors = append(errors, fmt.Errorf("adminConfig set but not used"))
 	}
 
 	if k.AdminConfig == nil {

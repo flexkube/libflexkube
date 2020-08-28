@@ -139,6 +139,17 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
+			MutationF: func(k *Kubelet) {
+				k.WaitForNodeReady = true
+				k.AdminConfig = nil
+			},
+			TestF: func(t *testing.T, err error) {
+				if err == nil {
+					t.Fatalf("validation of kubelet should fail when waitForNodeReady is true and admin config is not set")
+				}
+			},
+		},
+		{
 			MutationF: func(k *Kubelet) { k.AdminConfig = k.BootstrapConfig },
 			TestF: func(t *testing.T, err error) {
 				if err == nil {
