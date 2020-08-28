@@ -51,15 +51,15 @@ variable "calico_helm_chart_source" {
 }
 
 variable "kube_apiserver_helm_chart_version" {
-  default = "0.1.14"
+  default = "0.2.0"
 }
 
 variable "kubernetes_helm_chart_version" {
-  default = "0.2.3"
+  default = "0.3.1"
 }
 
 variable "kube_proxy_helm_chart_version" {
-  default = "0.2.0"
+  default = "0.2.1"
 }
 
 variable "tls_bootstrapping_helm_chart_version" {
