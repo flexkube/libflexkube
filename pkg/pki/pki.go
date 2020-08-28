@@ -450,13 +450,13 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 
 		caCert, pk, err = ca.decodeKeypair()
 		if err != nil {
-			return fmt.Errorf("failed to decode CA keypair: %w", err)
+			return fmt.Errorf("failed to decode CA key pair: %w", err)
 		}
 	}
 
 	subjectKeyID, err := bigIntHash(pk.N)
 	if err != nil {
-		return fmt.Errorf("failed generating certificate subjet Key ID: %w", err)
+		return fmt.Errorf("failed generating certificate subject Key ID: %w", err)
 	}
 
 	cert.SubjectKeyId = subjectKeyID
