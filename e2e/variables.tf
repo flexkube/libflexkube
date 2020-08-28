@@ -79,7 +79,7 @@ variable "kubelet_rubber_stamp_helm_chart_version" {
 }
 
 variable "calico_helm_chart_version" {
-  default = "0.2.3"
+  default = "0.2.4"
 }
 
 variable "flatcar_channel" {
