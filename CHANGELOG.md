@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- New website with user documentation is now available at [flexkube.github.io](https://flexkube.github.io/). The documentation is not complete yet, but it's already better than existing documentation. 
+- New website with user documentation is now available at [flexkube.github.io](https://flexkube.github.io/). The documentation is not complete yet, but it's already better than existing documentation.
 - `kube-proxy` and TLS bootstrapping rules are now installed using separate Helm Charts. This is because in case of managed cluster, those components must be installed on the target cluster, not on management cluster. It also allows specifying multiple bootstrap tokens, for example per kubelet pool.
 - Improved the documentation of all Go packages.
 - Updated Helm binary in `e2e` tests to `v3.2.3` and `sonobuoy` binary to `v0.18.4`.
