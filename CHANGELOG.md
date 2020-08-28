@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2020-08-28
+
+### Fixed
+
+- `Version` parameter is now respected when managing Helm releases.
+- Helm release now exposes Helm's --wait option via `Wait` field.
+- Improved reliability of running conformance tests in e2e environment.
+
+### Changed
+
+- Default Kubernetes version is now v1.18.8.
+- Default HAProxy version is now v2.2.2.
+- Default etcd version is now v3.4.13.
+- linter: Updated golangci-lint to v1.30.0.
+- conformance: Dpdated sonobuoy version to v0.18.5.
+- e2e: Pinned Terraform version to allow running conformance tests on old versions
+  in the future.
+- e2e: pinned Kubernetes version and Helm charts versions to allow running conformance
+  tests on old version in the future.
+- Updated Golang version used on CI to 1.15.
+
 ## [0.3.1] - 2020-07-31
 
 ### Added
@@ -26,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- New website with user documentation is now available at [flexkube.github.io](https://flexkube.github.io/). The documentation is not complete yet, but it's already better than existing documentation. 
+- New website with user documentation is now available at [flexkube.github.io](https://flexkube.github.io/). The documentation is not complete yet, but it's already better than existing documentation.
 - `kube-proxy` and TLS bootstrapping rules are now installed using separate Helm Charts. This is because in case of managed cluster, those components must be installed on the target cluster, not on management cluster. It also allows specifying multiple bootstrap tokens, for example per kubelet pool.
 - Improved the documentation of all Go packages.
 - Updated Helm binary in `e2e` tests to `v3.2.3` and `sonobuoy` binary to `v0.18.4`.
@@ -181,5 +202,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.3.2]: https://github.com/flexkube/libflexkube/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/flexkube/libflexkube/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/flexkube/libflexkube/compare/v0.2.2...v0.3.0
+[0.2.3]: https://github.com/flexkube/libflexkube/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/flexkube/libflexkube/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/flexkube/libflexkube/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/flexkube/libflexkube/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flexkube/libflexkube/releases/tag/v0.1.0
