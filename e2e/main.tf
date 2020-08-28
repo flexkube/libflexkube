@@ -92,6 +92,7 @@ apiServers:
 - ${api_server}
 %{endfor~}
 podCIDR: ${var.pod_cidr}
+image: k8s.gcr.io/hyperkube:v1.18.8
 EOF
 
   coredns_values = <<EOF
@@ -255,12 +256,15 @@ resource "flexkube_helm_release" "kube-apiserver" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kube_apiserver_helm_chart_source
+  version    = var.kube_apiserver_helm_chart_version
   name       = "kube-apiserver"
   values     = local.kube_apiserver_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.tls-bootstrapping,
   ]
 }
 
@@ -268,12 +272,15 @@ resource "flexkube_helm_release" "kubernetes" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kubernetes_helm_chart_source
+  version    = var.kubernetes_helm_chart_version
   name       = "kubernetes"
   values     = local.kubernetes_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -281,12 +288,15 @@ resource "flexkube_helm_release" "kube-proxy" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kube_proxy_helm_chart_source
+  version    = var.kube_proxy_helm_chart_version
   name       = "kube-proxy"
   values     = local.kube_proxy_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.tls-bootstrapping,
   ]
 }
 
@@ -294,8 +304,10 @@ resource "flexkube_helm_release" "tls-bootstrapping" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.tls_bootstrapping_helm_chart_source
+  version    = var.tls_bootstrapping_helm_chart_version
   name       = "tls-bootstrapping"
   values     = local.tls_bootstrapping_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
@@ -307,12 +319,15 @@ resource "flexkube_helm_release" "coredns" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = "stable/coredns"
+  version    = var.coredns_chart_version
   name       = "coredns"
   values     = local.coredns_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -320,12 +335,15 @@ resource "flexkube_helm_release" "metrics-server" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = "stable/metrics-server"
+  version    = var.metrics_server_chart_version
   name       = "metrics-server"
   values     = local.metrics_server_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -333,11 +351,14 @@ resource "flexkube_helm_release" "kubelet-rubber-stamp" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.kubelet_rubber_stamp_helm_chart_source
+  version    = var.kubelet_rubber_stamp_helm_chart_version
   name       = "kubelet-rubber-stamp"
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.calico,
   ]
 }
 
@@ -347,12 +368,15 @@ resource "flexkube_helm_release" "calico" {
   kubeconfig = local.kubeconfig_admin
   namespace  = "kube-system"
   chart      = var.calico_helm_chart_source
+  version    = var.calico_helm_chart_version
   name       = "calico"
   values     = local.calico_values
+  wait       = true
 
   depends_on = [
     flexkube_controlplane.bootstrap,
     flexkube_apiloadbalancer_pool.bootstrap,
+    flexkube_helm_release.kube-proxy,
   ]
 }
 
@@ -361,6 +385,8 @@ resource "flexkube_kubelet_pool" "controller" {
     server = local.node_load_balancer_address
     token  = "${random_password.bootstrap_token_id.result}.${random_password.bootstrap_token_secret.result}"
   }
+
+  wait_for_node_ready = true
 
   pki_yaml          = flexkube_pki.pki.state_yaml
   cgroup_driver     = local.cgroup_driver
@@ -458,6 +484,8 @@ resource "flexkube_kubelet_pool" "workers" {
     server = local.node_load_balancer_address
     token  = "${random_password.bootstrap_token_id.result}.${random_password.bootstrap_token_secret.result}"
   }
+
+  wait_for_node_ready = true
 
   pki_yaml = flexkube_pki.pki.state_yaml
 

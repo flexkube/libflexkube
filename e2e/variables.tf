@@ -50,6 +50,38 @@ variable "calico_helm_chart_source" {
   default = "flexkube/calico"
 }
 
+variable "kube_apiserver_helm_chart_version" {
+  default = "0.1.14"
+}
+
+variable "kubernetes_helm_chart_version" {
+  default = "0.2.3"
+}
+
+variable "kube_proxy_helm_chart_version" {
+  default = "0.2.0"
+}
+
+variable "tls_bootstrapping_helm_chart_version" {
+  default = "0.1.1"
+}
+
+variable "coredns_chart_version" {
+  default = "1.13.3"
+}
+
+variable "metrics_server_chart_version" {
+  default = "2.11.1"
+}
+
+variable "kubelet_rubber_stamp_helm_chart_version" {
+  default = "0.1.4"
+}
+
+variable "calico_helm_chart_version" {
+  default = "0.2.3"
+}
+
 variable "flatcar_channel" {
   default = "edge"
 }

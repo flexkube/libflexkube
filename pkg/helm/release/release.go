@@ -61,6 +61,9 @@ type Config struct {
 	// CreateNamespace controls, if the namespace for the release should be created before installing
 	// the release.
 	CreateNamespace bool `json:"createNamespace,omitempty"`
+
+	// Wait controls if client should wait until managed chart converges.
+	Wait bool `json:"wait,omitempty"`
 }
 
 // release is a validated and installable/update'able version of Config.
@@ -74,6 +77,7 @@ type release struct {
 	chart           string
 	client          client.Client
 	createNamespace bool
+	wait            bool
 }
 
 // New validates release configuration and builds installable version of it.
@@ -111,6 +115,7 @@ func (r *Config) New() (Release, error) {
 		chart:           r.Chart,
 		client:          c,
 		createNamespace: r.CreateNamespace,
+		wait:            r.Wait,
 	}
 
 	return release, nil
@@ -266,7 +271,7 @@ func (r *release) Uninstall() error {
 
 // loadChart locates and loads the chart.
 func (r *release) loadChart() (*chart.Chart, error) {
-	client := action.NewInstall(r.actionConfig)
+	client := r.installClient()
 
 	// Locate chart to install.
 	cp, err := client.ChartPathOptions.LocateChart(r.chart, r.settings)
@@ -287,6 +292,7 @@ func (r *release) installClient() *action.Install {
 	client.Version = r.version
 	client.ReleaseName = r.name
 	client.Namespace = r.namespace
+	client.Wait = r.wait
 
 	return client
 }
@@ -299,6 +305,7 @@ func (r *release) upgradeClient() *action.Upgrade {
 
 	client.Version = r.version
 	client.Namespace = r.namespace
+	client.Wait = r.wait
 
 	return client
 }

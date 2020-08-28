@@ -1,4 +1,4 @@
-FROM hashicorp/terraform:light
+FROM hashicorp/terraform:0.12.29
 
 RUN apk add -U make bash bash-completion vim coreutils
 
@@ -16,6 +16,8 @@ RUN VERSION=0.18.5 OS=linux && \
     rm sonobuoy.tar.gz
 
 RUN echo 'plugin_cache_dir = "/root/.terraform.d.host/plugin-cache"' >> /root/.terraformrc
+
+RUN mkdir -p /root/.terraform.d.host/plugin-cache
 
 RUN helm repo add stable https://kubernetes-charts.storage.googleapis.com
 
