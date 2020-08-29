@@ -132,7 +132,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 	}
 
 	if nk.config.Image == "" {
-		nk.config.Image = defaults.KubeletImage
+		nk.config.Image = defaults.KubernetesImage
 	}
 
 	return nk, nil
@@ -163,8 +163,12 @@ func (k *Kubelet) validateAdminConfig() error {
 		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
 	}
 
-	if k.AdminConfig != nil && len(k.PrivilegedLabels) == 0 {
-		errors = append(errors, fmt.Errorf("adminConfig specified, but no privilegedLabels requested"))
+	if k.AdminConfig == nil && k.WaitForNodeReady {
+		errors = append(errors, fmt.Errorf("waitForNodeReady requested, but adminConfig is not set"))
+	}
+
+	if k.AdminConfig != nil && (!k.WaitForNodeReady && len(k.PrivilegedLabels) == 0) {
+		errors = append(errors, fmt.Errorf("adminConfig set but not used"))
 	}
 
 	if k.AdminConfig == nil {
@@ -422,6 +426,7 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen
 
 func (k *kubelet) args() []string {
 	a := []string{
+		"kubelet",
 		// Tell kubelet to use config file.
 		"--config=/etc/kubernetes/kubelet.yaml",
 		// Specify kubeconfig file for kubelet. This enabled API server mode and
