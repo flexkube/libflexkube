@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2020-08-29
+
+### Fixed
+
+- Fixed kubelet applying process panicking, when `WaitForNodeReady` is `true` and `AdminConfig`
+  is not specified. Now `WaitForNodeReady` requires `AdminConfig`, as waiting action is executed
+  on the client side, similar to applying privileged labels to the node.
+
+### Changed
+
+- Updated Calico to v3.16.0.
+
 ## [0.3.2] - 2020-08-28
 
 ### Fixed
@@ -202,6 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.3.3]: https://github.com/flexkube/libflexkube/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/flexkube/libflexkube/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/flexkube/libflexkube/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/flexkube/libflexkube/compare/v0.2.2...v0.3.0
