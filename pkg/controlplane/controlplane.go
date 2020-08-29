@@ -38,11 +38,6 @@ type Common struct {
 	FrontProxyCACertificate types.Certificate `json:"frontProxyCACertificate,omitempty"`
 }
 
-// GetImage returns either image defined in common config or Kubernetes default image.
-func (co Common) GetImage() string {
-	return util.PickString(co.Image, defaults.KubernetesImage)
-}
-
 // Controlplane allows creating static Kubernetes controlplane running as containers.
 //
 // It is usually used to bootstrap self-hosted Kubernetes.

@@ -9,6 +9,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
+	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
@@ -213,6 +214,8 @@ func (k *kubeAPIServer) args() []string {
 		"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
 		// To limit memory consumption of bootstrap controlplane, limit it to 512 MB.
 		"--target-ram-mb=512",
+		// Use SO_REUSEPORT, so multiple instances can run on the same controller for smooth upgrades.
+		"--permit-port-sharing=true",
 	}
 }
 
@@ -227,19 +230,13 @@ func (k *kubeAPIServer) ToHostConfiguredContainer() (*container.HostConfiguredCo
 				Docker: docker.DefaultConfig(),
 			},
 			Config: containertypes.ContainerConfig{
-				Name:  containerName,
-				Image: k.common.GetImage(),
+				Name:        containerName,
+				Image:       util.PickString(k.common.Image, defaults.KubeAPIServerImage),
+				NetworkMode: "host",
 				Mounts: []containertypes.Mount{
 					{
 						Source: hostConfigPath,
 						Target: containerConfigPath,
-					},
-				},
-				Ports: []containertypes.PortMap{
-					{
-						IP:       k.bindAddress,
-						Protocol: "tcp",
-						Port:     k.securePort,
 					},
 				},
 				Args: k.args(),

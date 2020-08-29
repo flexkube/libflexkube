@@ -132,7 +132,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 	}
 
 	if nk.config.Image == "" {
-		nk.config.Image = defaults.KubernetesImage
+		nk.config.Image = defaults.KubeletImage
 	}
 
 	return nk, nil
@@ -426,7 +426,6 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen
 
 func (k *kubelet) args() []string {
 	a := []string{
-		"kubelet",
 		// Tell kubelet to use config file.
 		"--config=/etc/kubernetes/kubelet.yaml",
 		// Specify kubeconfig file for kubelet. This enabled API server mode and
