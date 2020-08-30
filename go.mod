@@ -63,6 +63,7 @@ replace (
 	github.com/moby/moby => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200824191128-ae9734ed278b
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
 	google.golang.org/grpc => google.golang.org/grpc v1.29.1
 	helm.sh/helm/v3 => github.com/flexkube/helm/v3 v3.3.1
 	k8s.io/client-go => k8s.io/client-go v0.19.0
