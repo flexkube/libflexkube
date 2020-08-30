@@ -1,10 +1,5 @@
 provider "libvirt" {
-  version = "~> 0.6.0"
-  uri     = "qemu:///system"
-}
-
-provider "ct" {
-  version = "= 0.4.0"
+  uri = "qemu:///system"
 }
 
 variable "core_public_keys" {
