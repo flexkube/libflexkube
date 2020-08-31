@@ -11,6 +11,7 @@ Before creating a Git tag and a GitHub release, following tasks should be perfor
 - `Version` constant in `cli/flexkube/cli.go` file should be changed to version which will be released and change should be committed. This commit will be later on tagged while releasing, so it should be done as last action before the release.
 - `Version` constant in `cli/flexkube/cli.go` file should be changed to next version with `-unreleased` suffix and change should be committed. This commit will be the first commit of the next release.
 - Conformance tests (e.g. `make vagrant-conformance`) should be performed on the release commit before creating an actual release to ensure the release is working properly.
+- Before creating a Pull Request, run `goreleaser --skip-publish` to ensure that the release will build for all desired platforms.
 - Pull Request with described changes should be created and merged.
 
 ## Creating the release
