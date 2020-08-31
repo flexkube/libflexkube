@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated Calico to v3.16.0.
+
 ## [0.3.2] - 2020-08-28
 
 ### Fixed
