@@ -114,7 +114,7 @@ func TestForwardUnixSocketFull(t *testing.T) {
 
 	go runServer(t, expectedMessage, expectedResponse)
 
-	conn, err := net.Dial("unix", strings.Replace(s, "unix://", "", -1))
+	conn, err := net.Dial("unix", strings.ReplaceAll(s, "unix://", ""))
 	if err != nil {
 		t.Fatalf("opening connection to %s should succeed, got: %v", s, err)
 	}
