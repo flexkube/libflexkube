@@ -13,7 +13,7 @@ import (
 // as private key while unmarshalling. This allows to validate the
 // data during unmarshalling process.
 //
-// This type is deprecated, as it does not allow to produce
+// This type should not be used, as it does not allow to produce
 // meaningful error to the user.
 type PrivateKey string
 

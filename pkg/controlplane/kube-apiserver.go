@@ -188,8 +188,6 @@ func (k *kubeAPIServer) args() []string {
 		fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
 		// For static api-server use non-standard port, so haproxy can use standard one.
 		fmt.Sprintf("--secure-port=%d", k.securePort),
-		// Be a bit more verbose.
-		//"--v=2",
 		// Prefer to talk to kubelets over InternalIP rather than via Hostname or DNS, to make it more robust.
 		"--kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP",
 		// Required for enabling aggregation layer.
