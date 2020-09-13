@@ -362,7 +362,7 @@ func readYamlFile(file string) ([]byte, error) {
 		return nil, err
 	}
 
-	// Workaround for empty YAML file
+	// Workaround for empty YAML file.
 	if string(c) == "{}\n" {
 		return []byte{}, nil
 	}
