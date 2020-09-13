@@ -3,6 +3,8 @@ package flexkube
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/urfave/cli/v2"
 )
@@ -41,6 +43,7 @@ func Run(args []string) int {
 			controlplaneCommand(),
 			kubeconfigCommand(),
 			containersCommand(),
+			templateCommand(),
 		},
 	}
 
@@ -52,6 +55,17 @@ func Run(args []string) int {
 	}
 
 	return 0
+}
+
+func templateCommand() *cli.Command {
+	return &cli.Command{
+		Name:      "template",
+		Usage:     "reads Go template from given file or stdin and evaluates it using configuration and state",
+		ArgsUsage: "[TEMPLATE FILE PATH]",
+		Action: func(c *cli.Context) error {
+			return withResource(c, templateAction)
+		},
+	}
 }
 
 func kubeletPoolCommand() *cli.Command {
@@ -144,6 +158,55 @@ func controlplaneAction(c *cli.Context, r *Resource) error {
 // etcdAction implements 'etcd' subcommand.
 func etcdAction(c *cli.Context, r *Resource) error {
 	return r.RunEtcd()
+}
+
+// getTemplate reads the template either from path given as an argument
+// or from stdin.
+func getTemplate(c *cli.Context) (string, error) {
+	if c.NArg() > 1 {
+		return "", fmt.Errorf("only one template file can be evaluated at a time")
+	}
+
+	template := []byte{}
+
+	if c.NArg() == 1 {
+		p := c.Args().Get(0)
+
+		c, err := ioutil.ReadFile(p) // #nosec G304
+		if err != nil {
+			return "", fmt.Errorf("reading template file %q: %w", p, err)
+		}
+
+		template = c
+	}
+
+	if c.NArg() == 0 {
+		bytes, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			return "", fmt.Errorf("reading template from stdin: %w", err)
+		}
+
+		template = bytes
+	}
+
+	return string(template), nil
+}
+
+// templateActions runs Resource.Template().
+func templateAction(c *cli.Context, r *Resource) error {
+	template, err := getTemplate(c)
+	if err != nil {
+		return fmt.Errorf("getting template: %w", err)
+	}
+
+	o, err := r.Template(template)
+	if err != nil {
+		return fmt.Errorf("templating: %w", err)
+	}
+
+	fmt.Println(o)
+
+	return nil
 }
 
 func kubeconfigAction(c *cli.Context, r *Resource) error {
