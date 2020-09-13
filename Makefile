@@ -3,12 +3,12 @@ CGO_ENABLED=0
 LD_FLAGS="-extldflags '-static'"
 
 # Go parameters
-GOCMD=env GO111MODULE=on go
+GOCMD=env GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) go
 GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GORUN=$(GOCMD) run
-GOBUILD=CGO_ENABLED=$(CGO_ENABLED) $(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
+GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
 GOLANGCI_LINT_VERSION=v1.31.0
@@ -23,7 +23,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/.terraform.d:/root/.terraform.d.host -v /home/core/libflexkube/bin/terraform-provider-flexkube:/root/.local/share/terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/terraform-provider-flexkube -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -73,11 +73,11 @@ build-e2e:
 
 .PHONY: build-test
 build-test:
-	$(GOTEST) -run=nope -tags integration $(GO_PACKAGES)
+	$(GOTEST) -run=nope -tags integration,e2e $(GO_PACKAGES)
 
 .PHONY: clean
 clean:
-	rm -r ./bin c.out coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/terraform.tfstate* 2>/dev/null || true
+	rm -r ./bin c.out coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/state.yaml 2>/dev/null || true
 	make vagrant-destroy || true
 
 .PHONY: test
@@ -113,18 +113,12 @@ test-cover-browse: PROFILEFILE=c.out
 test-cover-browse: test-cover cover-browse
 
 .PHONY: test-e2e-run
-test-e2e-run: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
 test-e2e-run:
 	helm repo update
-	cd e2e && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
-
-.PHONY: test-e2e-destroy
-test-e2e-destroy: TERRAFORM_BIN=$(TERRAFORM_ENV) /bin/terraform
-test-e2e-destroy:
-	cd e2e && $(TERRAFORM_BIN) destroy -auto-approve
+	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e ./e2e/
 
 .PHONY: test-e2e
-test-e2e: test-e2e-run test-e2e-destroy
+test-e2e: test-e2e-run
 
 .PHONY: test-local
 test-local:
@@ -132,9 +126,7 @@ test-local:
 
 .PHONY: test-local-apply
 test-local-apply:
-	mkdir -p local-testing/.terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/
-	cd cmd/terraform-provider-flexkube && $(GOBUILD) -o ../../local-testing/.terraform/plugins/registry.terraform.io/flexkube-testing/flexkube/0.1.0/linux_amd64/terraform-provider-flexkube
-	cd local-testing && $(TERRAFORM_BIN) init && $(TERRAFORM_BIN) apply -auto-approve
+	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e ./local-testing/
 
 .PHONY: test-conformance
 test-conformance:SHELL=/bin/bash
@@ -150,7 +142,7 @@ test-conformance-clean:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration --timeout 10m --exclude-use-default=false $(GO_PACKAGES)
+	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration,e2e --timeout 10m --exclude-use-default=false $(GO_PACKAGES)
 
 .PHONY: update
 update:

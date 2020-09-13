@@ -1,0 +1,17 @@
+serviceAccountPrivateKey: |
+{{ .State.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey | toString | trim | indent 2 }}
+kubernetesCAKey: |
+{{ .State.PKI.Kubernetes.CA.PrivateKey | toString | trim | indent 2 }}
+kubernetesCACertificate: |
+{{ .State.PKI.Kubernetes.CA.X509Certificate | toString | trim | indent 2 }}
+rootCACertificate: |
+{{ .State.PKI.RootCA.X509Certificate | toString | trim | indent 2 }}
+
+replicas: {{ len .Etcd.Members }}
+flexVolumePluginDir: /var/lib/kubelet/volumeplugins
+apiServers:
+{{- with (index .APILoadBalancerPools "controllers") }}
+{{- range $item := .Servers }}
+- {{ $item }}
+{{- end }}
+{{- end }}
