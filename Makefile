@@ -1,8 +1,8 @@
-# Build parameters
+# Build parameters.
 CGO_ENABLED=0
 LD_FLAGS="-extldflags '-static'"
 
-# Go parameters
+# Go parameters.
 GOCMD=env GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) go
 GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe
 GOGET=$(GOCMD) get
