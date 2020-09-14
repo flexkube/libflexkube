@@ -33,9 +33,6 @@ DISABLED_LINTERS=godox,lll,testpackage,goerr113,gci
 
 TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
-# Default target when testing locally
-TEST_LOCAL=controlplane
-
 CONTROLLERS=$(shell (grep CONTROLLERS .env 2>/dev/null || echo "1") | cut -d= -f2 2>/dev/null)
 
 WORKERS=$(shell (grep WORKERS .env 2>/dev/null || echo "2") | cut -d= -f2 2>/dev/null)
@@ -119,10 +116,6 @@ test-e2e-run:
 
 .PHONY: test-e2e
 test-e2e: test-e2e-run
-
-.PHONY: test-local
-test-local:
-	cd local-testing/resources/$(TEST_LOCAL) && $(GORUN) ../../../cmd/$(TEST_LOCAL)/main.go
 
 .PHONY: test-local-apply
 test-local-apply:
