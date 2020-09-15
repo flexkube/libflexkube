@@ -21,7 +21,7 @@
 
 ## Introduction
 
-libflexkube is a core part of Flexkube project. It is a go library, which implements the logic for managing Kubernetes cluster components (e.g. [etcd](https://etcd.io/), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), [certificates](https://kubernetes.io/docs/setup/best-practices/certificates/)) and provides reference implementation of [flexkube](https://flexkube.github.io/documentation/reference/cli/) CLI tool and [Terraform provider](https://flexkube.github.io/documentation/reference/terraform/).
+libflexkube is the core part of Flexkube project. It is a Go library, which implements the logic for managing Kubernetes cluster components (e.g. [etcd](https://etcd.io/), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), [certificates](https://kubernetes.io/docs/setup/best-practices/certificates/)) and provides reference implementation of [flexkube](https://flexkube.github.io/documentation/reference/cli/) CLI tool and [Terraform provider](https://flexkube.github.io/documentation/reference/terraform/).
 
 Flexkube is a minimalistic and flexible Kubernetes distribution, providing tools to manage each main Kubernetes component independently, which can be used together to create Kubernetes clusters.
 
@@ -52,11 +52,21 @@ It will create `config.yaml` configuration file which will be consumed by `flexk
 If you want to perform the same action using Terraform, execute the following commands:
 
 ```sh
-VERSION=v0.3.1 wget -qO- https://github.com/flexkube/libflexkube/releases/download/$VERSION/terraform-provider-flexkube_$VERSION_linux_amd64.tar.gz | tar zxvf - terraform-provider-flexkube_$VERSION_x4
-echo 'resource "flexkube_pki" "pki" {
+cat <<EOF > main.tf
+terraform {
+  required_providers {
+    flexkube = {
+      source  = "flexkube/flexkube"
+      version = "0.4.0"
+    }
+  }
+}
+
+resource "flexkube_pki" "pki" {
   etcd {}
   kubernetes {}
-}' > main.tf
+}
+EOF
 terraform init && terraform apply
 ```
 

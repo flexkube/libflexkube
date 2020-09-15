@@ -2,11 +2,14 @@ package flexkube
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
+	"text/template"
 
+	sprig "github.com/Masterminds/sprig/v3"
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 
@@ -362,7 +365,7 @@ func readYamlFile(file string) ([]byte, error) {
 		return nil, err
 	}
 
-	// Workaround for empty YAML file
+	// Workaround for empty YAML file.
 	if string(c) == "{}\n" {
 		return []byte{}, nil
 	}
@@ -595,4 +598,30 @@ func (r *Resource) RunContainers(name string) error {
 	}
 
 	return r.execute(p, saveStateF)
+}
+
+// Template executes given Go template using configuration and state.
+func (r *Resource) Template(templateContent string) (string, error) {
+	tmpl, err := template.New("template").Funcs(sprig.TxtFuncMap()).Parse(templateContent)
+	if err != nil {
+		return "", fmt.Errorf("parsing template: %w", err)
+	}
+
+	var buf bytes.Buffer
+
+	if err := tmpl.Execute(&buf, r); err != nil {
+		return "", fmt.Errorf("executing template: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// TemplateFromFile reads template from a given path and executes it using configuration and state.
+func (r *Resource) TemplateFromFile(templatePath string) (string, error) {
+	t, err := ioutil.ReadFile(templatePath) // #nosec G304
+	if err != nil {
+		return "", fmt.Errorf("reading template file %q: %w", templatePath, err)
+	}
+
+	return r.Template(string(t))
 }

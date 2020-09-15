@@ -152,7 +152,7 @@ func (c *Containers) Deploy() error {
 	// On the other hand, maybe it's a good thing to call it once we execute. This way we could compare
 	// the plan user agreed to execute with plan calculated right before the execution and fail early if they
 	// differ.
-	// This is similar to what terraform is doing and may cause planning to run several times, so it may require
+	// This is similar to what Terraform is doing and may cause planning to run several times, so it may require
 	// some optimization.
 	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
 	// make additional validation or not.

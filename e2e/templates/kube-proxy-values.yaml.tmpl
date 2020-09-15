@@ -1,0 +1,7 @@
+apiServers:
+{{- with (index .APILoadBalancerPools "controllers") }}
+{{- range $item := .Servers }}
+- {{ $item }}
+{{- end }}
+{{- end }}
+podCIDR: 10.1.0.0/16

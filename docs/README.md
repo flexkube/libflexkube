@@ -67,7 +67,7 @@ E2E tests can be executed using following command:
 make vagrant-e2e-run
 ```
 
-This command will create testing virtual machine, compile Flexkube Terraform provider inside it and then use Terraform to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the `e2e` directory, which allows further inspection.
+This command will create testing virtual machine and run `TestE2E()` test from `e2e` directory to create Kubernetes cluster. At the end of the tests, `kubeconfig` file with admin access to the cluster will be copied to the `e2e` directory, which allows further inspection.
 
 If you don't have `kubectl` available on host, following command can be executed to spawn shell in E2E container on virtual machine, which contains additional tools like `kubectl` or `helm` binaries and comes with `kubeconfig` predefined, to ease up testing:
 ```sh
@@ -143,21 +143,15 @@ helm upgrade --install -n kube-system -f ./local-testing/values/kubernetes.yaml 
 
 ##### Via Terraform
 
-Charts can also be tested using Terraform. This can be done by creating `local-testing/variables.auto.tfvars` file, with following example content:
-```
-kube_apiserver_helm_chart_source = "<local path with cloned kube-apiserver chart>"
+Charts can also be tested using Terraform. This can be done by creating `local-testing/test-config.yaml` file, with following example content:
+```yaml
+charts:
+  kubeAPIServer:
+    source: <local path with cloned kube-apiserver chart>
+    version: ">0.0.0-0"
 ```
 
 Then run the following command to deploy updated chart:
-```sh
-make test-local-apply
-```
-
-#### Terraform modules development
-
-Local testing is also handy for testing changes to Terraform modules like [terraform-etcd-pki](https://github.com/flexkube/terraform-etcd-pki).
-
-To test changes, modify [local-testing/main.tf](./local-testing/main.tf) file and change the source of the desired module to point to your copy. Then run the following command:
 ```sh
 make test-local-apply
 ```

@@ -1,31 +1,30 @@
 serverKey: |
-  ${indent(2, trimspace(server_key))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey | toString | trim | indent 2 }}
 serverCertificate: |
-  ${indent(2, trimspace(server_certificate))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate | toString | trim | indent 2 }}
 serviceAccountPublicKey: |
-  ${indent(2, trimspace(service_account_public_key))}
+{{ .State.PKI.Kubernetes.ServiceAccountCertificate.PublicKey | toString | trim | indent 2 }}
 caCertificate: |
-  ${indent(2, trimspace(ca_certificate))}
+{{ .State.PKI.Kubernetes.CA.X509Certificate | toString | trim | indent 2 }}
 frontProxyClientKey: |
-  ${indent(2, trimspace(front_proxy_client_key))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.FrontProxyClientCertificate.PrivateKey | toString | trim | indent 2 }}
 frontProxyClientCertificate: |
-  ${indent(2, trimspace(front_proxy_client_certificate))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.FrontProxyClientCertificate.X509Certificate | toString | trim | indent 2 }}
 frontProxyCACertificate: |
-  ${indent(2, trimspace(front_proxy_ca_certificate))}
+{{ .State.PKI.Kubernetes.FrontProxyCA.X509Certificate | toString | trim | indent 2 }}
 kubeletClientCertificate: |
-  ${indent(2, trimspace(kubelet_client_certificate))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.KubeletCertificate.X509Certificate | toString | trim | indent 2 }}
 kubeletClientKey: |
-  ${indent(2, trimspace(kubelet_client_key))}
+{{ .State.PKI.Kubernetes.KubeAPIServer.KubeletCertificate.PrivateKey | toString | trim | indent 2 }}
 etcdCACertificate: |
-  ${indent(2, trimspace(etcd_ca_certificate))}
+{{ .State.PKI.Etcd.CA.X509Certificate | toString | trim | indent 2 }}
 etcdClientCertificate: |
-  ${indent(2, trimspace(etcd_client_certificate))}
+{{ with (index .State.PKI.Etcd.ClientCertificates "kube-apiserver") }}{{ .X509Certificate | toString | trim | indent 2 }}{{ end }}
 etcdClientKey: |
-  ${indent(2, trimspace(etcd_client_key))}
-
+{{ with (index .State.PKI.Etcd.ClientCertificates "kube-apiserver") }}{{ .PrivateKey | toString | trim | indent 2 }}{{ end }}
 etcdServers:
-%{ for server in etcd_servers ~}
-- ${server}
-%{ endfor ~}
-serviceCIDR: "11.0.0.0/24"
-replicas: ${replicas}
+{{- range $item := .Controlplane.KubeAPIServer.EtcdServers }}
+- {{ $item }}
+{{- end }}
+serviceCIDR: {{ .Controlplane.KubeAPIServer.ServiceCIDR }}
+replicas: {{ len .Etcd.Members }}

@@ -16,3 +16,4 @@ flatcar_production_qemu_image.img
 flatcar_production_qemu_image.img.bz2
 *.auto.tfvars
 pool
+test-config.yaml
