@@ -307,3 +307,29 @@ func TestPullImage(t *testing.T) {
 		t.Fatalf("Pulled image should be present")
 	}
 }
+
+func TestContainerEnv(t *testing.T) {
+	env := map[string]string{"foo": "bar"}
+	envSlice := []string{"foo=bar", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+
+	r, d := getDockerRuntime(t)
+
+	c := &types.ContainerConfig{
+		Image: defaults.EtcdImage,
+		Env:   env,
+	}
+
+	id, err := r.Create(c)
+	if err != nil {
+		t.Fatalf("Creating container with environment variables should succeed, got: %v", err)
+	}
+
+	data, err := d.cli.ContainerInspect(d.ctx, id)
+	if err != nil {
+		t.Fatalf("Inspecting created container should succeed, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(data.Config.Env, envSlice) {
+		t.Fatalf("Container created with environment variables set should have environment variables set\nExpected: %+v\nGot: %+v\n", envSlice, data.Config.Env)
+	}
+}

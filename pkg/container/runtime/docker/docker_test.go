@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -498,5 +499,23 @@ func TestGetAddress(t *testing.T) {
 
 	if a := c.GetAddress(); a != f {
 		t.Fatalf("expected %q, got %q", f, a)
+	}
+}
+
+// convertContainerConfig() tests.
+func TestConvertContainerConfigEnvVariables(t *testing.T) {
+	c := &types.ContainerConfig{
+		Env: map[string]string{"foo": "bar"},
+	}
+
+	e := []string{"foo=bar"}
+
+	cc, _, err := convertContainerConfig(c)
+	if err != nil {
+		t.Fatalf("Converting configuration should succeed, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(cc.Env, e) {
+		t.Fatalf("Configured environment variables should be included in container configuration")
 	}
 }
