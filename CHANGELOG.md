@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2020-09-15
+
+### Added
+
+- flexkube: Added `template` subcommand which can be fed with Go template which will have access
+  to CLI resource configuration and state, which allows generating Helm values.yaml files for
+  self-hosted controlplane charts.
+- container: Added support for defining environment variables for containers using `env` key.
+
+### Changed
+
+- e2e: Use Go test framework rather than Terraform to create a cluster.
+- Updated `golangci-lint` to version `v1.31.0`.
+- Default Kubernetes version is now `v1.19.1`.
+
+### Removed
+
+- Terraform provider code is now removed and lives in
+  [flexkube/terraform-provider-flexkube](https://github.com/flexkube/terraform-provider-flexkube)
+  repository.
+
 ## [0.4.0] - 2020-08-31
 
 ### Changed
@@ -236,6 +257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.4.1]: https://github.com/flexkube/libflexkube/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/flexkube/libflexkube/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/flexkube/libflexkube/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/flexkube/libflexkube/compare/v0.3.1...v0.3.2
