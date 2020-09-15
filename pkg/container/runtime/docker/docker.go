@@ -162,21 +162,21 @@ func mounts(m []types.Mount) []mount.Mount {
 	return mounts
 }
 
-// Start starts Docker container.
-func (d *docker) Create(config *types.ContainerConfig) (string, error) {
-	if err := d.pullImageIfNotPresent(config.Image); err != nil {
-		return "", fmt.Errorf("failed pulling image: %w", err)
-	}
-
+func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Config, *containertypes.HostConfig, error) {
 	// TODO That should be validated at ContainerConfig level!
 	portBindings, exposedPorts, err := buildPorts(config.Ports)
 	if err != nil {
-		return "", fmt.Errorf("failed building ports: %w", err)
+		return nil, nil, fmt.Errorf("failed building ports: %w", err)
 	}
 
 	u := config.User
 	if config.Group != "" {
 		u = fmt.Sprintf("%s:%s", config.User, config.Group)
+	}
+
+	env := []string{}
+	for k, v := range config.Env {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
 	// Just structs required for starting container.
@@ -186,6 +186,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		Entrypoint:   config.Entrypoint,
 		ExposedPorts: exposedPorts,
 		User:         u,
+		Env:          env,
 	}
 	hostConfig := containertypes.HostConfig{
 		Mounts:       mounts(config.Mounts),
@@ -199,8 +200,22 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 		},
 	}
 
+	return &dockerConfig, &hostConfig, nil
+}
+
+// Start starts Docker container.
+func (d *docker) Create(config *types.ContainerConfig) (string, error) {
+	if err := d.pullImageIfNotPresent(config.Image); err != nil {
+		return "", fmt.Errorf("failed pulling image: %w", err)
+	}
+
+	dockerConfig, hostConfig, err := convertContainerConfig(config)
+	if err != nil {
+		return "", fmt.Errorf("converting container config to Docker configuration: %w", err)
+	}
+
 	// Create container.
-	c, err := d.cli.ContainerCreate(d.ctx, &dockerConfig, &hostConfig, &networktypes.NetworkingConfig{}, config.Name)
+	c, err := d.cli.ContainerCreate(d.ctx, dockerConfig, hostConfig, &networktypes.NetworkingConfig{}, config.Name)
 	if err != nil {
 		return "", fmt.Errorf("creating container: %w", err)
 	}
