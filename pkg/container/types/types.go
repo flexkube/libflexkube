@@ -46,6 +46,9 @@ type ContainerConfig struct {
 
 	// Group defines as which group the container should run.
 	Group string `json:"group,omitempty"`
+
+	// Env defines a key-value environment variables to set in the container.
+	Env map[string]string `json:"env,omitempty"`
 }
 
 // ContainerStatus stores status information received from the runtime.
