@@ -246,8 +246,8 @@ func TestGenerateEtcdCopyServers(t *testing.T) {
 		t.Fatalf("generating valid PKI should work, got: %v", err)
 	}
 
-	if diff := cmp.Diff(pki.Etcd.Peers, pki.Etcd.Servers); diff != "" {
-		t.Fatalf("servers should be copied from peers, if they are not defined, got: %v", diff)
+	if len(pki.Etcd.ServerCertificates) == 0 {
+		t.Fatalf("if servers are not defined, certificates should be created from peers")
 	}
 }
 

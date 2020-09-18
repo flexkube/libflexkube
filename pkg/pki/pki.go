@@ -315,7 +315,9 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 	return k, nil
 }
 
-func (c *Certificate) decodeX509Certificate() (*x509.Certificate, error) {
+// DecodeX509Certificate returns parsed version of X.509 certificate, so one can read
+// the fields of generated certificate.
+func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 	der, _ := pem.Decode([]byte(c.X509Certificate))
 	if der == nil {
 		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format") //nolint:stylecheck
@@ -499,7 +501,7 @@ func (c *Certificate) decodeKeypair() (*x509.Certificate, *rsa.PrivateKey, error
 		return nil, nil, fmt.Errorf("failed to decode private key: %w", err)
 	}
 
-	cert, err := c.decodeX509Certificate()
+	cert, err := c.DecodeX509Certificate()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to decode X.509 certificate: %w", err)
 	}
@@ -586,7 +588,7 @@ func (c *Certificate) IsX509CertificateUpToDate() (bool, error) {
 		return false, nil
 	}
 
-	cert, err := c.decodeX509Certificate()
+	cert, err := c.DecodeX509Certificate()
 	if err != nil {
 		return true, fmt.Errorf("failed to decode X.509 certificate: %w", err)
 	}
