@@ -45,21 +45,23 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 		e.CA = &Certificate{}
 	}
 
-	if e.Peers != nil && e.PeerCertificates == nil {
+	if e.PeerCertificates == nil {
 		e.PeerCertificates = map[string]*Certificate{}
 	}
 
-	// If there is no different server certificates defined, assume they are the same as peers.
-	if e.Servers == nil && e.Peers != nil {
-		e.Servers = e.Peers
-	}
-
-	if e.Servers != nil && e.ServerCertificates == nil {
+	if e.ServerCertificates == nil {
 		e.ServerCertificates = map[string]*Certificate{}
 	}
 
-	if len(e.ClientCNs) != 0 && e.ClientCertificates == nil {
+	if e.ClientCertificates == nil {
 		e.ClientCertificates = map[string]*Certificate{}
+	}
+
+	servers := e.Servers
+
+	// If there is no different server certificates defined, assume they are the same as peers.
+	if e.Servers == nil && e.Peers != nil {
+		servers = e.Peers
 	}
 
 	cr := &certificateRequest{
@@ -80,80 +82,97 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 
 	crs := []*certificateRequest{}
 
-	for commonName, ip := range e.Peers {
-		crs = append(crs, e.peerCR(commonName, ip, defaultCertificate))
-	}
+	crs = append(crs, e.crsFromMap(&defaultCertificate, e.PeerCertificates, e.Peers, true)...)
+	crs = append(crs, e.crsFromMap(&defaultCertificate, e.ServerCertificates, servers, true)...)
 
-	for commonName, ip := range e.Servers {
-		crs = append(crs, e.serverCR(commonName, ip, defaultCertificate))
-	}
-
+	clientCNsMap := map[string]string{}
 	for _, commonName := range e.ClientCNs {
-		crs = append(crs, e.clientCR(commonName, defaultCertificate))
+		clientCNsMap[commonName] = ""
 	}
+
+	crs = append(crs, e.crsFromMap(&defaultCertificate, e.ClientCertificates, clientCNsMap, false)...)
 
 	return buildAndGenerate(crs...)
 }
 
-func (e *Etcd) peerCR(commonName, ip string, defaultCertificate Certificate) *certificateRequest {
-	if c := e.PeerCertificates[commonName]; c == nil {
-		e.PeerCertificates[commonName] = &Certificate{}
+// certificateFromCNIPMap produces a certificate from given common name and IP address.
+func certificateFromCNIPMap(commonName string, ip string, server bool) *Certificate {
+	c := &Certificate{
+		CommonName: commonName,
+		KeyUsage:   clientUsage(),
 	}
 
-	return &certificateRequest{
-		Target: e.PeerCertificates[commonName],
-		CA:     e.CA,
-		Certificates: []*Certificate{
-			&defaultCertificate,
-			&e.Certificate,
-			clientServerCert(commonName, ip),
-			e.PeerCertificates[commonName],
-		},
+	if server {
+		c.KeyUsage = clientServerUsage()
+		c.DNSNames = []string{commonName, "localhost"}
 	}
+
+	if ip != "" && server {
+		c.IPAddresses = append(c.IPAddresses, ip)
+	}
+
+	return c
 }
 
-func (e *Etcd) serverCR(commonName, ip string, defaultCertificate Certificate) *certificateRequest {
-	if c := e.ServerCertificates[commonName]; c == nil {
-		e.ServerCertificates[commonName] = &Certificate{}
-	}
+// peerCRs builds list of certificate requests for peer certificates by combining
+// information from PeerCertificates and Peers fields, where PeerCertificates always
+// takes precedence.
+func (e *Etcd) crsFromMap(defaultCertificate *Certificate, certs map[string]*Certificate, cnIPs map[string]string, server bool) []*certificateRequest {
+	// Store peer CRs in temporary map, so we can find them by common name.
+	crs := map[string]*certificateRequest{}
 
-	return &certificateRequest{
-		Target: e.ServerCertificates[commonName],
-		CA:     e.CA,
-		Certificates: []*Certificate{
-			&defaultCertificate,
-			&e.Certificate,
-			clientServerCert(commonName, ip),
-			e.ServerCertificates[commonName],
-		},
-	}
-}
+	// Iterate over peer certificates, as they should take priority over
+	// Peers field.
+	for commonName := range certs {
+		// If certificate has no common name set, use map key.
+		if certs[commonName].CommonName == "" {
+			certs[commonName].CommonName = commonName
+		}
 
-func clientServerCert(commonName, ip string) *Certificate {
-	return &Certificate{
-		CommonName:  commonName,
-		IPAddresses: []string{ip, "127.0.0.1"},
-		DNSNames:    []string{commonName, "localhost"},
-		KeyUsage:    clientServerUsage(),
-	}
-}
-
-func (e *Etcd) clientCR(k string, defaultCertificate Certificate) *certificateRequest {
-	if c := e.ClientCertificates[k]; c == nil {
-		e.ClientCertificates[k] = &Certificate{}
-	}
-
-	return &certificateRequest{
-		Target: e.ClientCertificates[k],
-		CA:     e.CA,
-		Certificates: []*Certificate{
-			&defaultCertificate,
-			&e.Certificate,
-			{
-				CommonName: k,
-				KeyUsage:   clientUsage(),
+		crs[commonName] = &certificateRequest{
+			Target: certs[commonName],
+			CA:     e.CA,
+			Certificates: []*Certificate{
+				defaultCertificate,
+				&e.Certificate,
+				certificateFromCNIPMap(commonName, cnIPs[commonName], server),
+				certs[commonName],
 			},
-			e.ClientCertificates[k],
-		},
+		}
 	}
+
+	for commonName, ip := range cnIPs {
+		// If certificate request is already created for a given common name, it will
+		// have peers information included, so we jump to another one.
+		if _, ok := crs[commonName]; ok {
+			continue
+		}
+
+		// Make sure target certificate is initialized.
+		if _, ok := certs[commonName]; !ok {
+			certs[commonName] = &Certificate{}
+		}
+
+		crs[commonName] = &certificateRequest{
+			Target: certs[commonName],
+			CA:     e.CA,
+			Certificates: []*Certificate{
+				defaultCertificate,
+				&e.Certificate,
+				certificateFromCNIPMap(commonName, ip, server),
+			},
+		}
+	}
+
+	return certificateRequestsFromMap(crs)
+}
+
+func certificateRequestsFromMap(crsMap map[string]*certificateRequest) []*certificateRequest {
+	crs := []*certificateRequest{}
+
+	for _, cr := range crsMap {
+		crs = append(crs, cr)
+	}
+
+	return crs
 }
