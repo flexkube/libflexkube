@@ -307,3 +307,26 @@ func TestGenerateUpdateIPs(t *testing.T) {
 		t.Fatalf("certificate should be updated when IP addresses change")
 	}
 }
+
+func TestGenerateDontRecreate(t *testing.T) {
+	t.Parallel()
+
+	// First, generate valid PKI.
+	pki := &PKI{}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	// Save content of generated certificate.
+	cert := pki.RootCA.X509Certificate
+
+	// Generate again.
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("re-generating PKI certificates should succeed, got: %v", err)
+	}
+
+	if cert != pki.RootCA.X509Certificate {
+		t.Fatalf("with no configuration changes, certificates should not be rotated")
+	}
+}
