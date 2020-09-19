@@ -332,3 +332,15 @@ func TestGenerateDontRecreate(t *testing.T) {
 		t.Fatalf("with no configuration changes, certificates should not be rotated")
 	}
 }
+
+func TestIsX509CertificateUpToDateBadCert(t *testing.T) {
+	t.Parallel()
+
+	c := &pki.Certificate{
+		X509Certificate: "doh",
+	}
+
+	if _, err := c.IsX509CertificateUpToDate(); err == nil {
+		t.Fatalf("checking if certificate is up to date should fail on bad certificate")
+	}
+}
