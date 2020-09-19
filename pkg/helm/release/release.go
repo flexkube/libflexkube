@@ -3,6 +3,7 @@ package release
 
 import (
 	"fmt"
+	"strings"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -184,7 +185,11 @@ func (r *release) Install() error {
 	client.CreateNamespace = r.createNamespace
 
 	// Install a release.
-	if _, err = client.Run(chart, r.values); err != nil {
+	if err := retryOnEtcdError(func() error {
+		_, err = client.Run(chart, r.values)
+
+		return err
+	}); err != nil {
 		return fmt.Errorf("installing a release failed: %w", err)
 	}
 
@@ -204,7 +209,11 @@ func (r *release) Upgrade() error {
 		return fmt.Errorf("loading chart failed: %w", err)
 	}
 
-	if _, err := client.Run(r.name, chart, r.values); err != nil {
+	if err := retryOnEtcdError(func() error {
+		_, err := client.Run(r.name, chart, r.values)
+
+		return err
+	}); err != nil {
 		return fmt.Errorf("upgrading a release failed: %w", err)
 	}
 
@@ -216,7 +225,7 @@ func (r *release) Upgrade() error {
 func (r *release) InstallOrUpgrade() error {
 	e, err := r.Exists()
 	if err != nil {
-		return err
+		return fmt.Errorf("checking release existence: %w", err)
 	}
 
 	if e {
@@ -235,16 +244,40 @@ func (r *release) Exists() (bool, error) {
 	histClient := action.NewHistory(r.actionConfig)
 	histClient.Max = 1
 
-	_, err := histClient.Run(r.name)
+	err := retryOnEtcdError(func() error {
+		_, err := histClient.Run(r.name)
+
+		return err
+	})
+
 	if err == driver.ErrReleaseNotFound {
 		return false, nil
 	}
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("checking if release exists: %w", err)
 	}
 
 	return true, nil
+}
+
+func retryOnEtcdError(f func() error) error {
+	var err error
+
+	for i := 0; i < 3; i++ {
+		err = f()
+		if err == nil {
+			return nil
+		}
+
+		if strings.Contains(err.Error(), "etcdserver:") {
+			continue
+		}
+
+		return err
+	}
+
+	return err
 }
 
 // Uninstall removes the release from the cluster. This function is idempotent.
@@ -262,7 +295,11 @@ func (r *release) Uninstall() error {
 
 	client := r.uninstallClient()
 
-	if _, err := client.Run(r.name); err != nil {
+	if err := retryOnEtcdError(func() error {
+		_, err := client.Run(r.name)
+
+		return err
+	}); err != nil {
 		return fmt.Errorf("uninstalling a release failed: %w", err)
 	}
 
