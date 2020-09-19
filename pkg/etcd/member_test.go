@@ -48,11 +48,110 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// Validate() tests.
-func TestValidateNoName(t *testing.T) {
-	m := &etcd.Member{}
+func validMember(t *testing.T) *etcd.Member {
+	cert := utiltest.GenerateX509Certificate(t)
+	privateKey := utiltest.GenerateRSAPrivateKey(t)
 
-	if err := m.Validate(); err == nil {
-		t.Fatalf("Validate() should reject members with empty name")
+	return &etcd.Member{
+		Name:              nonEmptyString,
+		PeerAddress:       nonEmptyString,
+		CACertificate:     cert,
+		PeerCertificate:   cert,
+		PeerKey:           privateKey,
+		ServerCertificate: cert,
+		ServerKey:         privateKey,
+		Image:             defaults.EtcdImage,
+		PeerCertAllowedCN: nonEmptyString,
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+	}
+}
+
+// Validate() tests.
+//
+//nolint:funlen
+func TestValidate(t *testing.T) {
+	cases := map[string]struct {
+		mutator     func(m *etcd.Member) *etcd.Member
+		expectError bool
+	}{
+		"valid": {
+			func(m *etcd.Member) *etcd.Member { return m },
+			false,
+		},
+		"peer address": {
+			func(m *etcd.Member) *etcd.Member {
+				m.PeerAddress = ""
+
+				return m
+			},
+			true,
+		},
+		"member name": {
+			func(m *etcd.Member) *etcd.Member {
+				m.Name = ""
+
+				return m
+			},
+			true,
+		},
+		"CA certificate": {
+			func(m *etcd.Member) *etcd.Member {
+				m.CACertificate = nonEmptyString
+
+				return m
+			},
+			true,
+		},
+		"peer certificate": {
+			func(m *etcd.Member) *etcd.Member {
+				m.PeerCertificate = nonEmptyString
+
+				return m
+			},
+			true,
+		},
+		"server certificate": {
+			func(m *etcd.Member) *etcd.Member {
+				m.ServerCertificate = nonEmptyString
+
+				return m
+			},
+			true,
+		},
+		"peer key": {
+			func(m *etcd.Member) *etcd.Member {
+				m.PeerKey = nonEmptyString
+
+				return m
+			},
+			true,
+		},
+		"server key": {
+			func(m *etcd.Member) *etcd.Member {
+				m.ServerKey = nonEmptyString
+
+				return m
+			},
+			true,
+		},
+	}
+
+	for c, p := range cases {
+		p := p
+
+		t.Run(c, func(t *testing.T) {
+			m := p.mutator(validMember(t))
+			err := m.Validate()
+
+			if p.expectError && err == nil {
+				t.Fatalf("expected error")
+			}
+
+			if !p.expectError && err != nil {
+				t.Fatalf("didn't expect error, got: %v", err)
+			}
+		})
 	}
 }

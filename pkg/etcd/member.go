@@ -14,6 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -44,7 +45,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct.
-	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+	CACertificate string `json:"caCertificate,omitempty"`
 
 	// PeerCertificate is a X.509 certificate used to communicate with other cluster
 	// members. Should be signed by CACertificate. It is used for --peer-cert-file flag.
@@ -52,7 +53,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	PeerCertificate types.Certificate `json:"peerCertificate,omitempty"`
+	PeerCertificate string `json:"peerCertificate,omitempty"`
 
 	// PeerKey is a private key for PeerCertificate. Must be defined in either
 	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
@@ -60,7 +61,7 @@ type Member struct {
 	// This private key can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	PeerKey types.PrivateKey `json:"peerKey,omitempty"`
+	PeerKey string `json:"peerKey,omitempty"`
 
 	// PeerAddress is an address, where member will listen and which will be
 	// advertised to the cluster. It is used for --listen-peer-urls and
@@ -95,7 +96,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	ServerCertificate types.Certificate `json:"serverCertificate,omitempty"`
+	ServerCertificate string `json:"serverCertificate,omitempty"`
 
 	// Serverkey is a private key for ServerCertificate. Must be defined in either
 	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
@@ -103,7 +104,7 @@ type Member struct {
 	// This private key can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	ServerKey types.PrivateKey `json:"serverKey,omitempty"`
+	ServerKey string `json:"serverKey,omitempty"`
 
 	// ServerAddress is an address, where member will listen and which will be
 	// advertised to the clients. It is used for --listen-client-urls and
@@ -240,14 +241,14 @@ func (m *Member) New() (container.ResourceInstance, error) {
 		name:              m.Name,
 		image:             m.Image,
 		host:              m.Host,
-		caCertificate:     string(m.CACertificate),
-		peerCertificate:   string(m.PeerCertificate),
-		peerKey:           string(m.PeerKey),
+		caCertificate:     m.CACertificate,
+		peerCertificate:   m.PeerCertificate,
+		peerKey:           m.PeerKey,
 		peerAddress:       m.PeerAddress,
 		initialCluster:    m.InitialCluster,
 		peerCertAllowedCN: m.PeerCertAllowedCN,
-		serverCertificate: string(m.ServerCertificate),
-		serverKey:         string(m.ServerKey),
+		serverCertificate: m.ServerCertificate,
+		serverKey:         m.ServerKey,
 		serverAddress:     m.ServerAddress,
 		newCluster:        m.NewCluster,
 	}
@@ -256,8 +257,6 @@ func (m *Member) New() (container.ResourceInstance, error) {
 }
 
 // Validate validates etcd member configuration.
-//
-// TODO: Add validation of certificates if specified.
 func (m *Member) Validate() error {
 	var errors util.ValidateError
 
@@ -266,17 +265,39 @@ func (m *Member) Validate() error {
 		// how to use CNI for setting it using env variables or something.
 		"peer address": m.PeerAddress,
 		// TODO: Can we auto-generate it?
-		"member name":        m.Name,
-		"CA certificate":     string(m.CACertificate),
-		"peer certificate":   string(m.PeerCertificate),
-		"peer key":           string(m.PeerKey),
-		"server certificate": string(m.ServerCertificate),
-		"server key":         string(m.ServerKey),
+		"member name": m.Name,
 	}
 
 	for k, v := range nonEmptyFields {
 		if v == "" {
 			errors = append(errors, fmt.Errorf("%s can't be empty", k))
+		}
+	}
+
+	certificates := map[string]string{
+		"CA certificate":     m.CACertificate,
+		"peer certificate":   m.PeerCertificate,
+		"server certificate": m.ServerCertificate,
+	}
+
+	for k, v := range certificates {
+		caCert := &pki.Certificate{
+			X509Certificate: types.Certificate(v),
+		}
+
+		if _, err := caCert.DecodeX509Certificate(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing %s as X.509 certificate: %w", k, err))
+		}
+	}
+
+	keys := map[string]string{
+		"peer key":   m.PeerKey,
+		"server key": m.ServerKey,
+	}
+
+	for k, v := range keys {
+		if err := pki.ValidatePrivateKey(v); err != nil {
+			errors = append(errors, fmt.Errorf("parsing %s as private key: %w", k, err))
 		}
 	}
 

@@ -106,6 +106,51 @@ func TestValidateValidateMembers(t *testing.T) {
 	}
 }
 
+func TestValidateValidatePass(t *testing.T) {
+	cert := utiltest.GenerateX509Certificate(t)
+	key := utiltest.GenerateRSAPrivateKey(t)
+
+	config := &Cluster{
+		Members: map[string]Member{
+			"foo": {
+				PeerCertificate:   cert,
+				PeerKey:           key,
+				ServerCertificate: cert,
+				ServerKey:         key,
+				PeerAddress:       "1",
+				CACertificate:     cert,
+			},
+		},
+	}
+
+	if err := config.Validate(); err != nil {
+		t.Fatalf("Valid configuration should pass, got: %v", err)
+	}
+}
+
+func TestValidateValidateBadCACertificate(t *testing.T) {
+	cert := utiltest.GenerateX509Certificate(t)
+	key := utiltest.GenerateRSAPrivateKey(t)
+
+	config := &Cluster{
+		CACertificate: "doh",
+		Members: map[string]Member{
+			"foo": {
+				PeerCertificate:   cert,
+				PeerKey:           key,
+				ServerCertificate: cert,
+				ServerKey:         key,
+				PeerAddress:       "1",
+				CACertificate:     cert,
+			},
+		},
+	}
+
+	if err := config.Validate(); err == nil {
+		t.Fatalf("Validation with bad CA certificate should fail")
+	}
+}
+
 // getExistingEndpoints() tests.
 func TestExistingEndpointsNoEndpoints(t *testing.T) {
 	c := &cluster{}

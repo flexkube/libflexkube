@@ -55,7 +55,7 @@ type Cluster struct {
 	// pki.PKI object.
 	//
 	// This field is optional.
-	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+	CACertificate string `json:"caCertificate,omitempty"`
 
 	// PeerCertAllowedCN defines allowed CommonName of the client certificate
 	// for peer communication. Can be used when single client certificate is used
@@ -111,22 +111,22 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, c.PeerCertAllowedCN)
-	m.CACertificate = m.CACertificate.Pick(c.CACertificate)
+	m.CACertificate = util.PickString(m.CACertificate, c.CACertificate)
 
 	// PKI integration.
 	if c.PKI != nil && c.PKI.Etcd != nil {
 		e := c.PKI.Etcd
 
-		m.CACertificate = m.CACertificate.Pick(c.CACertificate, e.CA.X509Certificate)
+		m.CACertificate = util.PickString(m.CACertificate, c.CACertificate, string(e.CA.X509Certificate))
 
 		if c, ok := e.PeerCertificates[m.Name]; ok {
-			m.PeerCertificate = m.PeerCertificate.Pick(c.X509Certificate)
-			m.PeerKey = m.PeerKey.Pick(c.PrivateKey)
+			m.PeerCertificate = util.PickString(m.PeerCertificate, string(c.X509Certificate))
+			m.PeerKey = util.PickString(m.PeerKey, string(c.PrivateKey))
 		}
 
 		if c, ok := e.ServerCertificates[m.Name]; ok {
-			m.ServerCertificate = m.ServerCertificate.Pick(c.X509Certificate)
-			m.ServerKey = m.ServerKey.Pick(c.PrivateKey)
+			m.ServerCertificate = util.PickString(m.ServerCertificate, string(c.X509Certificate))
+			m.ServerKey = util.PickString(m.ServerKey, string(c.PrivateKey))
 		}
 	}
 
@@ -182,6 +182,16 @@ func (c *Cluster) Validate() error {
 	}
 
 	var errors util.ValidateError
+
+	if c.CACertificate != "" {
+		caCert := &pki.Certificate{
+			X509Certificate: types.Certificate(c.CACertificate),
+		}
+
+		if _, err := caCert.DecodeX509Certificate(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing CA certificate: %w", err))
+		}
+	}
 
 	cc := container.Containers{
 		PreviousState: c.State,
