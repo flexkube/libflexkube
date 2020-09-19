@@ -13,6 +13,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
@@ -55,7 +56,7 @@ type Cluster struct {
 	// pki.PKI object.
 	//
 	// This field is optional.
-	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+	CACertificate string `json:"caCertificate,omitempty"`
 
 	// PeerCertAllowedCN defines allowed CommonName of the client certificate
 	// for peer communication. Can be used when single client certificate is used
@@ -83,6 +84,10 @@ type Cluster struct {
 	// State stores state of the created containers. After deployment, it is up to the user to export
 	// the state and restore it on consecutive runs.
 	State container.ContainersState `json:"state,omitempty"`
+
+	// ExtraMounts defines extra mounts from host filesystem, which should be added to member
+	// containers. It will be used unless member define it's own extra mounts.
+	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.
@@ -111,22 +116,26 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, c.PeerCertAllowedCN)
-	m.CACertificate = m.CACertificate.Pick(c.CACertificate)
+	m.CACertificate = util.PickString(m.CACertificate, c.CACertificate)
+
+	if len(m.ExtraMounts) == 0 {
+		m.ExtraMounts = c.ExtraMounts
+	}
 
 	// PKI integration.
 	if c.PKI != nil && c.PKI.Etcd != nil {
 		e := c.PKI.Etcd
 
-		m.CACertificate = m.CACertificate.Pick(c.CACertificate, e.CA.X509Certificate)
+		m.CACertificate = util.PickString(m.CACertificate, c.CACertificate, string(e.CA.X509Certificate))
 
 		if c, ok := e.PeerCertificates[m.Name]; ok {
-			m.PeerCertificate = m.PeerCertificate.Pick(c.X509Certificate)
-			m.PeerKey = m.PeerKey.Pick(c.PrivateKey)
+			m.PeerCertificate = util.PickString(m.PeerCertificate, string(c.X509Certificate))
+			m.PeerKey = util.PickString(m.PeerKey, string(c.PrivateKey))
 		}
 
 		if c, ok := e.ServerCertificates[m.Name]; ok {
-			m.ServerCertificate = m.ServerCertificate.Pick(c.X509Certificate)
-			m.ServerKey = m.ServerKey.Pick(c.PrivateKey)
+			m.ServerCertificate = util.PickString(m.ServerCertificate, string(c.X509Certificate))
+			m.ServerKey = util.PickString(m.ServerKey, string(c.PrivateKey))
 		}
 	}
 
@@ -182,6 +191,16 @@ func (c *Cluster) Validate() error {
 	}
 
 	var errors util.ValidateError
+
+	if c.CACertificate != "" {
+		caCert := &pki.Certificate{
+			X509Certificate: types.Certificate(c.CACertificate),
+		}
+
+		if _, err := caCert.DecodeX509Certificate(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing CA certificate: %w", err))
+		}
+	}
 
 	cc := container.Containers{
 		PreviousState: c.State,
@@ -244,7 +263,7 @@ func (c *cluster) getExistingEndpoints() []string {
 			continue
 		}
 
-		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.peerAddress))
+		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.config.PeerAddress))
 	}
 
 	return endpoints
@@ -319,7 +338,9 @@ func (c *cluster) membersToAdd() []string {
 func (c *cluster) updateMembers(cli etcdClient) error {
 	for _, name := range c.membersToRemove() {
 		m := &member{
-			name: name,
+			config: &Member{
+				Name: name,
+			},
 		}
 
 		if err := m.remove(cli); err != nil {

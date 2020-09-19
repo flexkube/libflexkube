@@ -14,6 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
+	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -44,7 +45,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct.
-	CACertificate types.Certificate `json:"caCertificate,omitempty"`
+	CACertificate string `json:"caCertificate,omitempty"`
 
 	// PeerCertificate is a X.509 certificate used to communicate with other cluster
 	// members. Should be signed by CACertificate. It is used for --peer-cert-file flag.
@@ -52,7 +53,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	PeerCertificate types.Certificate `json:"peerCertificate,omitempty"`
+	PeerCertificate string `json:"peerCertificate,omitempty"`
 
 	// PeerKey is a private key for PeerCertificate. Must be defined in either
 	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
@@ -60,7 +61,7 @@ type Member struct {
 	// This private key can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	PeerKey types.PrivateKey `json:"peerKey,omitempty"`
+	PeerKey string `json:"peerKey,omitempty"`
 
 	// PeerAddress is an address, where member will listen and which will be
 	// advertised to the cluster. It is used for --listen-peer-urls and
@@ -95,7 +96,7 @@ type Member struct {
 	// This certificate can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	ServerCertificate types.Certificate `json:"serverCertificate,omitempty"`
+	ServerCertificate string `json:"serverCertificate,omitempty"`
 
 	// Serverkey is a private key for ServerCertificate. Must be defined in either
 	// PKCS8, PKCS1 or EC formats, PEM encoded. It is used for --peer-key-file flag.
@@ -103,7 +104,7 @@ type Member struct {
 	// This private key can be generated using pki.PKI struct.
 	//
 	// This field is optional, if used together with Cluster struct and PKI integration.
-	ServerKey types.PrivateKey `json:"serverKey,omitempty"`
+	ServerKey string `json:"serverKey,omitempty"`
 
 	// ServerAddress is an address, where member will listen and which will be
 	// advertised to the clients. It is used for --listen-client-urls and
@@ -120,32 +121,24 @@ type Member struct {
 	//
 	// This field is optional, if used together with Cluster struct.
 	NewCluster bool `json:"newCluster,omitempty"`
+
+	// ExtraMounts defines extra mounts from host filesystem, which should be added to kubelet
+	// containers. It will be used unless kubelet instance define it's own extra mounts.
+	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 }
 
 // member is a validated, executable version of Member.
 type member struct {
-	name              string
-	image             string
-	host              host.Host
-	caCertificate     string
-	peerCertificate   string
-	peerKey           string
-	peerAddress       string
-	initialCluster    string
-	peerCertAllowedCN string
-	serverCertificate string
-	serverKey         string
-	serverAddress     string
-	newCluster        bool
+	config *Member
 }
 
 func (m *member) configFiles() map[string]string {
 	return map[string]string{
-		"/etc/kubernetes/etcd/ca.crt":     m.caCertificate,
-		"/etc/kubernetes/etcd/peer.crt":   m.peerCertificate,
-		"/etc/kubernetes/etcd/peer.key":   m.peerKey,
-		"/etc/kubernetes/etcd/server.crt": m.serverCertificate,
-		"/etc/kubernetes/etcd/server.key": m.serverKey,
+		"/etc/kubernetes/etcd/ca.crt":     m.config.CACertificate,
+		"/etc/kubernetes/etcd/peer.crt":   m.config.PeerCertificate,
+		"/etc/kubernetes/etcd/peer.key":   m.config.PeerKey,
+		"/etc/kubernetes/etcd/server.crt": m.config.ServerCertificate,
+		"/etc/kubernetes/etcd/server.key": m.config.ServerKey,
 	}
 }
 
@@ -156,12 +149,12 @@ func (m *member) args() []string {
 		// Default value 'capnslog' for logger is deprecated and prints warning now.
 		"--logger=zap", // Available only from 3.4.x
 		// Since we are in container, listen on all interfaces.
-		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
-		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
-		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
-		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
-		fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
-		fmt.Sprintf("--name=%s", m.name),
+		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.config.ServerAddress),
+		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.config.PeerAddress),
+		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.config.ServerAddress),
+		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.config.PeerAddress),
+		fmt.Sprintf("--initial-cluster=%s", m.config.InitialCluster),
+		fmt.Sprintf("--name=%s", m.config.Name),
 		"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
 		"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
 		"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
@@ -169,7 +162,7 @@ func (m *member) args() []string {
 		"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
 		"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
 		"--key-file=/etc/kubernetes/pki/etcd/server.key",
-		fmt.Sprintf("--data-dir=/%s.etcd", m.name),
+		fmt.Sprintf("--data-dir=/%s.etcd", m.config.Name),
 		// To get rid of warning with default configuration.
 		// ttl parameter support has been added in 3.4.x.
 		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
@@ -182,8 +175,8 @@ func (m *member) args() []string {
 		"--client-cert-auth=true",
 	}
 
-	if m.peerCertAllowedCN != "" {
-		flags = append(flags, fmt.Sprintf("--peer-cert-allowed-cn=%s", m.peerCertAllowedCN))
+	if m.config.PeerCertAllowedCN != "" {
+		flags = append(flags, fmt.Sprintf("--peer-cert-allowed-cn=%s", m.config.PeerCertAllowedCN))
 	}
 
 	return flags
@@ -197,34 +190,37 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Docker: docker.DefaultConfig(),
 		},
 		Config: containertypes.ContainerConfig{
-			Name:       fmt.Sprintf("etcd-%s", m.name),
-			Image:      m.image,
+			Name:       fmt.Sprintf("etcd-%s", m.config.Name),
+			Image:      m.config.Image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
-			Mounts: []containertypes.Mount{
-				{
-					// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
-					// TODO: Make data dir configurable.
-					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.name),
-					Target: fmt.Sprintf("/%s.etcd", m.name),
+			Mounts: append(
+				[]containertypes.Mount{
+					{
+						// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
+						// TODO: Make data dir configurable.
+						Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.config.Name),
+						Target: fmt.Sprintf("/%s.etcd", m.config.Name),
+					},
+					{
+						Source: "/etc/kubernetes/etcd/",
+						Target: "/etc/kubernetes/pki/etcd",
+					},
 				},
-				{
-					Source: "/etc/kubernetes/etcd/",
-					Target: "/etc/kubernetes/pki/etcd",
-				},
-			},
+				m.config.ExtraMounts...,
+			),
 			NetworkMode: "host",
 			Args:        m.args(),
 		},
 	}
 
-	if m.newCluster {
+	if m.config.NewCluster {
 		c.Config.Args = append(c.Config.Args, "--initial-cluster-token=etcd-cluster-2")
 	} else {
 		c.Config.Args = append(c.Config.Args, "--initial-cluster-state=existing")
 	}
 
 	return &container.HostConfiguredContainer{
-		Host:        m.host,
+		Host:        m.config.Host,
 		ConfigFiles: m.configFiles(),
 		Container:   c,
 	}, nil
@@ -237,27 +233,13 @@ func (m *Member) New() (container.ResourceInstance, error) {
 	}
 
 	nm := &member{
-		name:              m.Name,
-		image:             m.Image,
-		host:              m.Host,
-		caCertificate:     string(m.CACertificate),
-		peerCertificate:   string(m.PeerCertificate),
-		peerKey:           string(m.PeerKey),
-		peerAddress:       m.PeerAddress,
-		initialCluster:    m.InitialCluster,
-		peerCertAllowedCN: m.PeerCertAllowedCN,
-		serverCertificate: string(m.ServerCertificate),
-		serverKey:         string(m.ServerKey),
-		serverAddress:     m.ServerAddress,
-		newCluster:        m.NewCluster,
+		config: m,
 	}
 
 	return nm, nil
 }
 
 // Validate validates etcd member configuration.
-//
-// TODO: Add validation of certificates if specified.
 func (m *Member) Validate() error {
 	var errors util.ValidateError
 
@@ -266,17 +248,39 @@ func (m *Member) Validate() error {
 		// how to use CNI for setting it using env variables or something.
 		"peer address": m.PeerAddress,
 		// TODO: Can we auto-generate it?
-		"member name":        m.Name,
-		"CA certificate":     string(m.CACertificate),
-		"peer certificate":   string(m.PeerCertificate),
-		"peer key":           string(m.PeerKey),
-		"server certificate": string(m.ServerCertificate),
-		"server key":         string(m.ServerKey),
+		"member name": m.Name,
 	}
 
 	for k, v := range nonEmptyFields {
 		if v == "" {
 			errors = append(errors, fmt.Errorf("%s can't be empty", k))
+		}
+	}
+
+	certificates := map[string]string{
+		"CA certificate":     m.CACertificate,
+		"peer certificate":   m.PeerCertificate,
+		"server certificate": m.ServerCertificate,
+	}
+
+	for k, v := range certificates {
+		caCert := &pki.Certificate{
+			X509Certificate: types.Certificate(v),
+		}
+
+		if _, err := caCert.DecodeX509Certificate(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing %s as X.509 certificate: %w", k, err))
+		}
+	}
+
+	keys := map[string]string{
+		"peer key":   m.PeerKey,
+		"server key": m.ServerKey,
+	}
+
+	for k, v := range keys {
+		if err := pki.ValidatePrivateKey(v); err != nil {
+			errors = append(errors, fmt.Errorf("parsing %s as private key: %w", k, err))
 		}
 	}
 
@@ -287,8 +291,9 @@ func (m *Member) Validate() error {
 	return errors.Return()
 }
 
+// peerURLs returns slice of peer urls assigned to member.
 func (m *member) peerURLs() []string {
-	return []string{fmt.Sprintf("https://%s:2380", m.peerAddress)}
+	return []string{fmt.Sprintf("https://%s:2380", m.config.PeerAddress)}
 }
 
 // forwardEndpoints opens forwarding connection for each endpoint
@@ -296,7 +301,7 @@ func (m *member) peerURLs() []string {
 func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 	newEndpoints := []string{}
 
-	h, _ := m.host.New()
+	h, _ := m.config.Host.New()
 
 	hc, err := h.Connect()
 	if err != nil {
@@ -315,6 +320,8 @@ func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 	return newEndpoints, nil
 }
 
+// getID returns etcd cluster member ID, based on either member name on the cluster or matching
+// peer URL.
 func (m *member) getID(cli etcdClient) (uint64, error) {
 	// Get actual list of members.
 	resp, err := cli.MemberList(context.Background())
@@ -323,7 +330,7 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	}
 
 	for _, v := range resp.Members {
-		if v.Name == m.name {
+		if v.Name == m.config.Name {
 			return v.ID, nil
 		}
 
@@ -339,9 +346,11 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	return 0, nil
 }
 
+// getEtcdClient creates etcd client object using member certificates and
+// given endpoints.
 func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
-	cert, _ := tls.X509KeyPair([]byte(m.peerCertificate), []byte(m.peerKey))
-	der, _ := pem.Decode([]byte(m.caCertificate))
+	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey))
+	der, _ := pem.Decode([]byte(m.config.CACertificate))
 	ca, _ := x509.ParseCertificate(der.Bytes)
 
 	p := x509.NewCertPool()
@@ -364,13 +373,16 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 	return cli, nil
 }
 
+// add uses given etcd client to add member into the cluster.
+//
+// If member is part of the cluster already, no error is returned.
 func (m *member) add(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
 		return fmt.Errorf("failed getting member ID: %w", err)
 	}
 
-	// If no error is returned, and ID is 0, it means member is already returned.
+	// If no error is returned, and ID is 0, it means member is already added.
 	if id != 0 {
 		return nil
 	}
@@ -382,6 +394,9 @@ func (m *member) add(cli etcdClient) error {
 	return nil
 }
 
+// remove uses given etcd client to remove it from the cluster.
+//
+// If member is not part of the cluster anymore, no error is returned.
 func (m *member) remove(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
