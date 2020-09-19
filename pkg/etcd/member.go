@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"path/filepath"
 
 	"go.etcd.io/etcd/clientv3"
 
@@ -139,13 +140,16 @@ type member struct {
 	newCluster        bool
 }
 
+const configFilesPrefix = "/etc/etcd"
+
 func (m *member) configFiles() map[string]string {
 	return map[string]string{
-		"/etc/kubernetes/etcd/ca.crt":     m.caCertificate,
-		"/etc/kubernetes/etcd/peer.crt":   m.peerCertificate,
-		"/etc/kubernetes/etcd/peer.key":   m.peerKey,
-		"/etc/kubernetes/etcd/server.crt": m.serverCertificate,
-		"/etc/kubernetes/etcd/server.key": m.serverKey,
+		filepath.Join(configFilesPrefix, m.name, "ca.crt"):     m.caCertificate,
+		filepath.Join(configFilesPrefix, m.name, "ca.crt"):     m.caCertificate,
+		filepath.Join(configFilesPrefix, m.name, "peer.crt"):   m.peerCertificate,
+		filepath.Join(configFilesPrefix, m.name, "peer.key"):   m.peerKey,
+		filepath.Join(configFilesPrefix, m.name, "server.crt"): m.serverCertificate,
+		filepath.Join(configFilesPrefix, m.name, "server.key"): m.serverKey,
 	}
 }
 
@@ -162,17 +166,17 @@ func (m *member) args() []string {
 		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
 		fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
 		fmt.Sprintf("--name=%s", m.name),
-		"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
-		"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
-		"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
+		"--peer-trusted-ca-file=/etc/etcd/ca.crt",
+		"--peer-cert-file=/etc/etcd/peer.crt",
+		"--peer-key-file=/etc/etcd/peer.key",
 		"--peer-client-cert-auth",
-		"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
-		"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
-		"--key-file=/etc/kubernetes/pki/etcd/server.key",
+		"--trusted-ca-file=/etc/etcd/ca.crt",
+		"--cert-file=/etc/etcd/server.crt",
+		"--key-file=/etc/etcd/server.key",
 		fmt.Sprintf("--data-dir=/%s.etcd", m.name),
 		// To get rid of warning with default configuration.
 		// ttl parameter support has been added in 3.4.x.
-		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
+		"--auth-token=jwt,pub-key=/etc/etcd/peer.crt,priv-key=/etc/etcd/peer.key,sign-method=RS512,ttl=10m",
 		// This is set by typhoon, seems like extra safety knob.
 		"--strict-reconfig-check",
 		// TODO: Enable metrics.
@@ -208,8 +212,8 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 					Target: fmt.Sprintf("/%s.etcd", m.name),
 				},
 				{
-					Source: "/etc/kubernetes/etcd/",
-					Target: "/etc/kubernetes/pki/etcd",
+					Source: filepath.Join(configFilesPrefix, m.name),
+					Target: configFilesPrefix,
 				},
 			},
 			NetworkMode: "host",
