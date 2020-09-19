@@ -13,6 +13,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
+	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/defaults"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
@@ -83,6 +84,10 @@ type Cluster struct {
 	// State stores state of the created containers. After deployment, it is up to the user to export
 	// the state and restore it on consecutive runs.
 	State container.ContainersState `json:"state,omitempty"`
+
+	// ExtraMounts defines extra mounts from host filesystem, which should be added to member
+	// containers. It will be used unless member define it's own extra mounts.
+	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 }
 
 // cluster is executable version of Cluster, with validated fields and calculated containers.
@@ -112,6 +117,10 @@ func (c *Cluster) propagateMember(i string, m *Member) {
 	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
 	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, c.PeerCertAllowedCN)
 	m.CACertificate = util.PickString(m.CACertificate, c.CACertificate)
+
+	if len(m.ExtraMounts) == 0 {
+		m.ExtraMounts = c.ExtraMounts
+	}
 
 	// PKI integration.
 	if c.PKI != nil && c.PKI.Etcd != nil {

@@ -32,6 +32,9 @@ ssh:
   password: foo
 caCertificate: |
   {{.Certificate}}
+extraMounts:
+- source: /foo
+  destination: /bar
 members:
   foo:
     peerCertificate: |

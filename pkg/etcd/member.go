@@ -121,6 +121,10 @@ type Member struct {
 	//
 	// This field is optional, if used together with Cluster struct.
 	NewCluster bool `json:"newCluster,omitempty"`
+
+	// ExtraMounts defines extra mounts from host filesystem, which should be added to kubelet
+	// containers. It will be used unless kubelet instance define it's own extra mounts.
+	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 }
 
 // member is a validated, executable version of Member.
@@ -189,18 +193,21 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Name:       fmt.Sprintf("etcd-%s", m.config.Name),
 			Image:      m.config.Image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
-			Mounts: []containertypes.Mount{
-				{
-					// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
-					// TODO: Make data dir configurable.
-					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.config.Name),
-					Target: fmt.Sprintf("/%s.etcd", m.config.Name),
+			Mounts: append(
+				[]containertypes.Mount{
+					{
+						// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
+						// TODO: Make data dir configurable.
+						Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.config.Name),
+						Target: fmt.Sprintf("/%s.etcd", m.config.Name),
+					},
+					{
+						Source: "/etc/kubernetes/etcd/",
+						Target: "/etc/kubernetes/pki/etcd",
+					},
 				},
-				{
-					Source: "/etc/kubernetes/etcd/",
-					Target: "/etc/kubernetes/pki/etcd",
-				},
-			},
+				m.config.ExtraMounts...,
+			),
 			NetworkMode: "host",
 			Args:        m.args(),
 		},
