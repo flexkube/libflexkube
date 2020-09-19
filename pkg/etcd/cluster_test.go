@@ -164,7 +164,9 @@ func TestExistingEndpoints(t *testing.T) {
 		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
-				peerAddress: "1.1.1.1",
+				config: &Member{
+					PeerAddress: "1.1.1.1",
+				},
 			},
 		},
 	}
@@ -247,14 +249,16 @@ func TestGetClientForwardFail(t *testing.T) {
 		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
-				host: host.Host{
-					SSHConfig: ssh.BuildConfig(&ssh.Config{
-						Address:           "localhost",
-						Password:          "foo",
-						ConnectionTimeout: "1ms",
-						RetryTimeout:      "1ms",
-						RetryInterval:     "1ms",
-					}, nil),
+				config: &Member{
+					Host: host.Host{
+						SSHConfig: ssh.BuildConfig(&ssh.Config{
+							Address:           "localhost",
+							Password:          "foo",
+							ConnectionTimeout: "1ms",
+							RetryTimeout:      "1ms",
+							RetryInterval:     "1ms",
+						}, nil),
+					},
 				},
 			},
 		},
@@ -270,11 +274,13 @@ func TestGetClient(t *testing.T) {
 		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
-				peerCertificate: "",
-				peerKey:         "",
-				caCertificate:   utiltest.GenerateX509Certificate(t),
-				host: host.Host{
-					DirectConfig: &direct.Config{},
+				config: &Member{
+					PeerCertificate: "",
+					PeerKey:         "",
+					CACertificate:   utiltest.GenerateX509Certificate(t),
+					Host: host.Host{
+						DirectConfig: &direct.Config{},
+					},
 				},
 			},
 		},
@@ -361,11 +367,13 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 		containers: co,
 		members: map[string]*member{
 			"foo": {
-				peerCertificate: "",
-				peerKey:         "",
-				caCertificate:   utiltest.GenerateX509Certificate(t),
-				host: host.Host{
-					DirectConfig: &direct.Config{},
+				config: &Member{
+					PeerCertificate: "",
+					PeerKey:         "",
+					CACertificate:   utiltest.GenerateX509Certificate(t),
+					Host: host.Host{
+						DirectConfig: &direct.Config{},
+					},
 				},
 			},
 		},
@@ -383,12 +391,14 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 		containers: getContainers(t),
 		members: map[string]*member{
 			"foo": {
-				name:            "foo",
-				peerCertificate: "",
-				peerKey:         "",
-				caCertificate:   utiltest.GenerateX509Certificate(t),
-				host: host.Host{
-					DirectConfig: &direct.Config{},
+				config: &Member{
+					Name:            "foo",
+					PeerCertificate: "",
+					PeerKey:         "",
+					CACertificate:   utiltest.GenerateX509Certificate(t),
+					Host: host.Host{
+						DirectConfig: &direct.Config{},
+					},
 				},
 			},
 		},
@@ -432,12 +442,14 @@ func TestUpdateMembersAddMember(t *testing.T) {
 		containers: co,
 		members: map[string]*member{
 			"foo": {
-				name:            "foo",
-				peerCertificate: "",
-				peerKey:         "",
-				caCertificate:   utiltest.GenerateX509Certificate(t),
-				host: host.Host{
-					DirectConfig: &direct.Config{},
+				config: &Member{
+					Name:            "foo",
+					PeerCertificate: "",
+					PeerKey:         "",
+					CACertificate:   utiltest.GenerateX509Certificate(t),
+					Host: host.Host{
+						DirectConfig: &direct.Config{},
+					},
 				},
 			},
 		},

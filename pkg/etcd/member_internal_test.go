@@ -16,7 +16,9 @@ import (
 
 func TestNewCluster(t *testing.T) {
 	m := &member{
-		newCluster: true,
+		config: &Member{
+			NewCluster: true,
+		},
 	}
 
 	hcc, err := m.ToHostConfiguredContainer()
@@ -41,7 +43,9 @@ func TestNewCluster(t *testing.T) {
 
 func TestExistingCluster(t *testing.T) {
 	m := &member{
-		newCluster: false,
+		config: &Member{
+			NewCluster: false,
+		},
 	}
 
 	hcc, err := m.ToHostConfiguredContainer()
@@ -67,7 +71,9 @@ func TestExistingCluster(t *testing.T) {
 // peerURLs() tests.
 func TestPeerURLs(t *testing.T) {
 	m := &member{
-		peerAddress: "1.1.1.1",
+		config: &Member{
+			PeerAddress: "1.1.1.1",
+		},
 	}
 
 	e := "https://1.1.1.1:2380"
@@ -79,9 +85,11 @@ func TestPeerURLs(t *testing.T) {
 // forwardEndpoints() tests.
 func TestForwardEndpoints(t *testing.T) {
 	m := &member{
-		peerAddress: "127.0.0.1",
-		host: host.Host{
-			DirectConfig: &direct.Config{},
+		config: &Member{
+			PeerAddress: "127.0.0.1",
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
 		},
 	}
 
@@ -97,9 +105,11 @@ func TestForwardEndpoints(t *testing.T) {
 
 func TestForwardEndpointsFail(t *testing.T) {
 	m := &member{
-		peerAddress: "127.0.0.1",
-		host: host.Host{
-			DirectConfig: &direct.Config{},
+		config: &Member{
+			PeerAddress: "127.0.0.1",
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
 		},
 	}
 
@@ -157,7 +167,9 @@ func TestGetIDByName(t *testing.T) {
 	}
 
 	m := &member{
-		name: "etcd-foo",
+		config: &Member{
+			Name: "etcd-foo",
+		},
 	}
 
 	id, err := m.getID(f)
@@ -186,7 +198,9 @@ func TestGetIDByPeerURL(t *testing.T) {
 	}
 
 	m := &member{
-		peerAddress: "foo",
+		config: &Member{
+			PeerAddress: "foo",
+		},
 	}
 
 	id, err := m.getID(f)
@@ -202,7 +216,9 @@ func TestGetIDByPeerURL(t *testing.T) {
 // getEtcdClient() tests.
 func TestGetEtcdClientNoEndpoints(t *testing.T) {
 	m := &member{
-		caCertificate: utiltest.GenerateX509Certificate(t),
+		config: &Member{
+			CACertificate: utiltest.GenerateX509Certificate(t),
+		},
 	}
 
 	if _, err := m.getEtcdClient([]string{}); err == nil {
@@ -212,11 +228,13 @@ func TestGetEtcdClientNoEndpoints(t *testing.T) {
 
 func TestGetEtcdClient(t *testing.T) {
 	m := &member{
-		peerCertificate: "",
-		peerKey:         "",
-		caCertificate:   utiltest.GenerateX509Certificate(t),
-		host: host.Host{
-			DirectConfig: &direct.Config{},
+		config: &Member{
+			PeerCertificate: "",
+			PeerKey:         "",
+			CACertificate:   utiltest.GenerateX509Certificate(t),
+			Host: host.Host{
+				DirectConfig: &direct.Config{},
+			},
 		},
 	}
 
@@ -247,7 +265,9 @@ func TestRemove(t *testing.T) {
 	}
 
 	m := &member{
-		name: "foo",
+		config: &Member{
+			Name: "foo",
+		},
 	}
 
 	if err := m.remove(f); err != nil {
@@ -293,7 +313,9 @@ func TestRemoveMemberFail(t *testing.T) {
 	}
 
 	m := &member{
-		name: "foo",
+		config: &Member{
+			Name: "foo",
+		},
 	}
 
 	if err := m.remove(f); err == nil {
@@ -338,7 +360,9 @@ func TestAddMember(t *testing.T) {
 		},
 	}
 
-	m := &member{}
+	m := &member{
+		config: &Member{},
+	}
 
 	if err := m.add(f); err != nil {
 		t.Fatalf("Adding member should work, got: %v", err)
@@ -364,7 +388,9 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 	}
 
 	m := &member{
-		peerAddress: "foo",
+		config: &Member{
+			PeerAddress: "foo",
+		},
 	}
 
 	if err := m.add(f); err != nil {
@@ -390,7 +416,9 @@ func TestAddMemberFail(t *testing.T) {
 		},
 	}
 
-	m := &member{}
+	m := &member{
+		config: &Member{},
+	}
 
 	if err := m.add(f); err == nil {
 		t.Fatalf("Adding member should check for adding errors")

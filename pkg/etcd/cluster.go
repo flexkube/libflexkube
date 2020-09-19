@@ -254,7 +254,7 @@ func (c *cluster) getExistingEndpoints() []string {
 			continue
 		}
 
-		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.peerAddress))
+		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.config.PeerAddress))
 	}
 
 	return endpoints
@@ -329,7 +329,9 @@ func (c *cluster) membersToAdd() []string {
 func (c *cluster) updateMembers(cli etcdClient) error {
 	for _, name := range c.membersToRemove() {
 		m := &member{
-			name: name,
+			config: &Member{
+				Name: name,
+			},
 		}
 
 		if err := m.remove(cli); err != nil {

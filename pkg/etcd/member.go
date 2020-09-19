@@ -125,28 +125,16 @@ type Member struct {
 
 // member is a validated, executable version of Member.
 type member struct {
-	name              string
-	image             string
-	host              host.Host
-	caCertificate     string
-	peerCertificate   string
-	peerKey           string
-	peerAddress       string
-	initialCluster    string
-	peerCertAllowedCN string
-	serverCertificate string
-	serverKey         string
-	serverAddress     string
-	newCluster        bool
+	config *Member
 }
 
 func (m *member) configFiles() map[string]string {
 	return map[string]string{
-		"/etc/kubernetes/etcd/ca.crt":     m.caCertificate,
-		"/etc/kubernetes/etcd/peer.crt":   m.peerCertificate,
-		"/etc/kubernetes/etcd/peer.key":   m.peerKey,
-		"/etc/kubernetes/etcd/server.crt": m.serverCertificate,
-		"/etc/kubernetes/etcd/server.key": m.serverKey,
+		"/etc/kubernetes/etcd/ca.crt":     m.config.CACertificate,
+		"/etc/kubernetes/etcd/peer.crt":   m.config.PeerCertificate,
+		"/etc/kubernetes/etcd/peer.key":   m.config.PeerKey,
+		"/etc/kubernetes/etcd/server.crt": m.config.ServerCertificate,
+		"/etc/kubernetes/etcd/server.key": m.config.ServerKey,
 	}
 }
 
@@ -157,12 +145,12 @@ func (m *member) args() []string {
 		// Default value 'capnslog' for logger is deprecated and prints warning now.
 		"--logger=zap", // Available only from 3.4.x
 		// Since we are in container, listen on all interfaces.
-		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.serverAddress),
-		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.peerAddress),
-		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.serverAddress),
-		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.peerAddress),
-		fmt.Sprintf("--initial-cluster=%s", m.initialCluster),
-		fmt.Sprintf("--name=%s", m.name),
+		fmt.Sprintf("--listen-client-urls=https://%s:2379", m.config.ServerAddress),
+		fmt.Sprintf("--listen-peer-urls=https://%s:2380", m.config.PeerAddress),
+		fmt.Sprintf("--advertise-client-urls=https://%s:2379", m.config.ServerAddress),
+		fmt.Sprintf("--initial-advertise-peer-urls=https://%s:2380", m.config.PeerAddress),
+		fmt.Sprintf("--initial-cluster=%s", m.config.InitialCluster),
+		fmt.Sprintf("--name=%s", m.config.Name),
 		"--peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
 		"--peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt",
 		"--peer-key-file=/etc/kubernetes/pki/etcd/peer.key",
@@ -170,7 +158,7 @@ func (m *member) args() []string {
 		"--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt",
 		"--cert-file=/etc/kubernetes/pki/etcd/server.crt",
 		"--key-file=/etc/kubernetes/pki/etcd/server.key",
-		fmt.Sprintf("--data-dir=/%s.etcd", m.name),
+		fmt.Sprintf("--data-dir=/%s.etcd", m.config.Name),
 		// To get rid of warning with default configuration.
 		// ttl parameter support has been added in 3.4.x.
 		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
@@ -183,8 +171,8 @@ func (m *member) args() []string {
 		"--client-cert-auth=true",
 	}
 
-	if m.peerCertAllowedCN != "" {
-		flags = append(flags, fmt.Sprintf("--peer-cert-allowed-cn=%s", m.peerCertAllowedCN))
+	if m.config.PeerCertAllowedCN != "" {
+		flags = append(flags, fmt.Sprintf("--peer-cert-allowed-cn=%s", m.config.PeerCertAllowedCN))
 	}
 
 	return flags
@@ -198,15 +186,15 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 			Docker: docker.DefaultConfig(),
 		},
 		Config: containertypes.ContainerConfig{
-			Name:       fmt.Sprintf("etcd-%s", m.name),
-			Image:      m.image,
+			Name:       fmt.Sprintf("etcd-%s", m.config.Name),
+			Image:      m.config.Image,
 			Entrypoint: []string{"/usr/local/bin/etcd"},
 			Mounts: []containertypes.Mount{
 				{
 					// TODO: Between /var/lib/etcd and data dir we should probably put cluster name, to group them.
 					// TODO: Make data dir configurable.
-					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.name),
-					Target: fmt.Sprintf("/%s.etcd", m.name),
+					Source: fmt.Sprintf("/var/lib/etcd/%s.etcd/", m.config.Name),
+					Target: fmt.Sprintf("/%s.etcd", m.config.Name),
 				},
 				{
 					Source: "/etc/kubernetes/etcd/",
@@ -218,14 +206,14 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 		},
 	}
 
-	if m.newCluster {
+	if m.config.NewCluster {
 		c.Config.Args = append(c.Config.Args, "--initial-cluster-token=etcd-cluster-2")
 	} else {
 		c.Config.Args = append(c.Config.Args, "--initial-cluster-state=existing")
 	}
 
 	return &container.HostConfiguredContainer{
-		Host:        m.host,
+		Host:        m.config.Host,
 		ConfigFiles: m.configFiles(),
 		Container:   c,
 	}, nil
@@ -238,19 +226,7 @@ func (m *Member) New() (container.ResourceInstance, error) {
 	}
 
 	nm := &member{
-		name:              m.Name,
-		image:             m.Image,
-		host:              m.Host,
-		caCertificate:     m.CACertificate,
-		peerCertificate:   m.PeerCertificate,
-		peerKey:           m.PeerKey,
-		peerAddress:       m.PeerAddress,
-		initialCluster:    m.InitialCluster,
-		peerCertAllowedCN: m.PeerCertAllowedCN,
-		serverCertificate: m.ServerCertificate,
-		serverKey:         m.ServerKey,
-		serverAddress:     m.ServerAddress,
-		newCluster:        m.NewCluster,
+		config: m,
 	}
 
 	return nm, nil
@@ -310,7 +286,7 @@ func (m *Member) Validate() error {
 
 // peerURLs returns slice of peer urls assigned to member.
 func (m *member) peerURLs() []string {
-	return []string{fmt.Sprintf("https://%s:2380", m.peerAddress)}
+	return []string{fmt.Sprintf("https://%s:2380", m.config.PeerAddress)}
 }
 
 // forwardEndpoints opens forwarding connection for each endpoint
@@ -318,7 +294,7 @@ func (m *member) peerURLs() []string {
 func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 	newEndpoints := []string{}
 
-	h, _ := m.host.New()
+	h, _ := m.config.Host.New()
 
 	hc, err := h.Connect()
 	if err != nil {
@@ -347,7 +323,7 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	}
 
 	for _, v := range resp.Members {
-		if v.Name == m.name {
+		if v.Name == m.config.Name {
 			return v.ID, nil
 		}
 
@@ -366,8 +342,8 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 // getEtcdClient creates etcd client object using member certificates and
 // given endpoints.
 func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
-	cert, _ := tls.X509KeyPair([]byte(m.peerCertificate), []byte(m.peerKey))
-	der, _ := pem.Decode([]byte(m.caCertificate))
+	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey))
+	der, _ := pem.Decode([]byte(m.config.CACertificate))
 	ca, _ := x509.ParseCertificate(der.Bytes)
 
 	p := x509.NewCertPool()
