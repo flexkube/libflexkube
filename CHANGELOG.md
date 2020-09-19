@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2020-09-20
+
+### Fixed
+
+- etcd certificates generated using `PKI` now always include `127.0.0.1` server address, to make
+  sure that adding etcd members via SSH port forwarding works as expected. This broke adding/removing
+  etcd members if PKI integration was used.
+
+### Added
+
+- Changing `IPAddresses` field for PKI certificates and running `Generate()` will now properly
+  re-generate the certificate to align the field with the configuration. Additionally, it is now
+  easier to add more rules for certificate re-generation, for example based on expiry time. This
+  might be done in further releases.
+- etcd cluster and members may have now additional mounts configured. This is a ground work for allowing
+  etcd to listen on UNIX sockets and for generic resource customization.
+- In case when Kubernetes API returns etcd-related error, changing Helm release will now retry the operation,
+  as in most cases it works on 2nd attempt. If 3 consecutive errors occur, error is returned. This will make
+  adding and removing controller nodes more robust.
+
+### Changed
+
+- All Helm charts used has been updated to the latest versions.
+- Default HAProxy version is now `2.2.3`.
+- Default Kubernetes version is now `v1.19.2`.
+- Generated PKI certificates will now only include generated values instead of all values, as
+  some of them are inherited from other fields and including them there breaks updating via
+  inherited fields.
+- Generation of etcd certificates via PKI is now improved. Now all changes to `Peers` and `Servers`
+  fields are properly propagated and all properties are properly inherited.
+- Maps in `PKI.Etcd` are now only initialized if there are some certificates to be stored.
+- etcd now uses explicit rules for validating certificates and private key fields, so error messages
+  will be better if any of those fields is malformed.
+
 ## [0.4.2] - 2020-09-16
 
 ### Fixed
@@ -264,6 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.4.3]: https://github.com/flexkube/libflexkube/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/flexkube/libflexkube/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/flexkube/libflexkube/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/flexkube/libflexkube/compare/v0.3.3...v0.4.0
