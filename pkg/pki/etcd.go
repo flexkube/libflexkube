@@ -45,23 +45,23 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 		e.CA = &Certificate{}
 	}
 
-	if e.PeerCertificates == nil {
-		e.PeerCertificates = map[string]*Certificate{}
-	}
-
-	if e.ServerCertificates == nil {
-		e.ServerCertificates = map[string]*Certificate{}
-	}
-
-	if e.ClientCertificates == nil {
-		e.ClientCertificates = map[string]*Certificate{}
-	}
-
 	servers := e.Servers
 
 	// If there is no different server certificates defined, assume they are the same as peers.
 	if e.Servers == nil && e.Peers != nil {
 		servers = e.Peers
+	}
+
+	if e.PeerCertificates == nil && len(e.Peers) != 0 {
+		e.PeerCertificates = map[string]*Certificate{}
+	}
+
+	if e.ServerCertificates == nil && len(servers) != 0 {
+		e.ServerCertificates = map[string]*Certificate{}
+	}
+
+	if e.ClientCertificates == nil && len(e.ClientCNs) != 0 {
+		e.ClientCertificates = map[string]*Certificate{}
 	}
 
 	cr := &certificateRequest{
