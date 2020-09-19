@@ -287,6 +287,7 @@ func (m *Member) Validate() error {
 	return errors.Return()
 }
 
+// peerURLs returns slice of peer urls assigned to member.
 func (m *member) peerURLs() []string {
 	return []string{fmt.Sprintf("https://%s:2380", m.peerAddress)}
 }
@@ -315,6 +316,8 @@ func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 	return newEndpoints, nil
 }
 
+// getID returns etcd cluster member ID, based on either member name on the cluster or matching
+// peer URL.
 func (m *member) getID(cli etcdClient) (uint64, error) {
 	// Get actual list of members.
 	resp, err := cli.MemberList(context.Background())
@@ -339,6 +342,8 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	return 0, nil
 }
 
+// getEtcdClient creates etcd client object using member certificates and
+// given endpoints.
 func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 	cert, _ := tls.X509KeyPair([]byte(m.peerCertificate), []byte(m.peerKey))
 	der, _ := pem.Decode([]byte(m.caCertificate))
@@ -364,13 +369,16 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 	return cli, nil
 }
 
+// add uses given etcd client to add member into the cluster.
+//
+// If member is part of the cluster already, no error is returned.
 func (m *member) add(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
 		return fmt.Errorf("failed getting member ID: %w", err)
 	}
 
-	// If no error is returned, and ID is 0, it means member is already returned.
+	// If no error is returned, and ID is 0, it means member is already added.
 	if id != 0 {
 		return nil
 	}
@@ -382,6 +390,9 @@ func (m *member) add(cli etcdClient) error {
 	return nil
 }
 
+// remove uses given etcd client to remove it from the cluster.
+//
+// If member is not part of the cluster anymore, no error is returned.
 func (m *member) remove(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
