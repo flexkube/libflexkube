@@ -34,7 +34,7 @@ func TestGenerateEtcdPeerCertificates(t *testing.T) {
 func TestGenerateEtcdPeerCertificatesPropagate(t *testing.T) {
 	t.Parallel()
 
-	e := []net.IP{net.ParseIP("1.1.1.1")}
+	e := []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("127.0.0.1")}
 
 	pki := &pki.PKI{
 		Etcd: &pki.Etcd{

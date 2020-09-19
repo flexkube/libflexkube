@@ -108,7 +108,7 @@ func certificateFromCNIPMap(commonName string, ip string, server bool) *Certific
 	}
 
 	if ip != "" && server {
-		c.IPAddresses = append(c.IPAddresses, ip)
+		c.IPAddresses = append(c.IPAddresses, ip, "127.0.0.1")
 	}
 
 	return c
