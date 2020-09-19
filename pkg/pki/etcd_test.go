@@ -149,3 +149,27 @@ func TestGenerateEtcdPeerCertitificatesAddServer(t *testing.T) {
 		t.Fatalf("generated etcd server certificate should not be empty")
 	}
 }
+
+func TestGenerateEtcdPeerCertificatesDontSetCommonName(t *testing.T) {
+	t.Parallel()
+
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
+			Peers: map[string]string{
+				"foo": "1.1.1.1",
+			},
+		},
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	if err := pki.Generate(); err != nil {
+		t.Fatalf("generating valid PKI should work, got: %v", err)
+	}
+
+	if pki.Etcd.PeerCertificates["foo"].CommonName != "" {
+		t.Fatalf("generated etcd peer certificate should have empty common name")
+	}
+}

@@ -124,11 +124,6 @@ func (e *Etcd) crsFromMap(defaultCertificate *Certificate, certs map[string]*Cer
 	// Iterate over peer certificates, as they should take priority over
 	// Peers field.
 	for commonName := range certs {
-		// If certificate has no common name set, use map key.
-		if certs[commonName].CommonName == "" {
-			certs[commonName].CommonName = commonName
-		}
-
 		crs[commonName] = &certificateRequest{
 			Target: certs[commonName],
 			CA:     e.CA,
