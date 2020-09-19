@@ -1,4 +1,4 @@
-package pki
+package pki_test
 
 import (
 	"crypto/x509"
@@ -6,13 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
 func TestGenerate(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Etcd: &Etcd{
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
 			Peers: map[string]string{
 				"controller01": "192.168.1.10",
 			},
@@ -25,7 +27,7 @@ func TestGenerate(t *testing.T) {
 				"prometheus",
 			},
 		},
-		Kubernetes: &Kubernetes{},
+		Kubernetes: &pki.Kubernetes{},
 	}
 
 	if err := pki.Generate(); err != nil {
@@ -36,25 +38,25 @@ func TestGenerate(t *testing.T) {
 func TestGenerateDontCopyAllSettings(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Kubernetes: &Kubernetes{
-			KubeAPIServer: &KubeAPIServer{
+	pkii := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{
+			KubeAPIServer: &pki.KubeAPIServer{
 				ServerIPs: []string{"1.1.1.1"},
 			},
 		},
 	}
 
-	if err := pki.Generate(); err != nil {
+	if err := pkii.Generate(); err != nil {
 		t.Fatalf("generating valid PKI should work, got: %v", err)
 	}
 
-	c := &Certificate{
-		X509Certificate: pki.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate,
-		PrivateKey:      pki.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey,
-		PublicKey:       pki.Kubernetes.KubeAPIServer.ServerCertificate.PublicKey,
+	c := &pki.Certificate{
+		X509Certificate: pkii.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate,
+		PrivateKey:      pkii.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey,
+		PublicKey:       pkii.Kubernetes.KubeAPIServer.ServerCertificate.PublicKey,
 	}
 
-	if diff := cmp.Diff(pki.Kubernetes.KubeAPIServer.ServerCertificate, c); diff != "" {
+	if diff := cmp.Diff(pkii.Kubernetes.KubeAPIServer.ServerCertificate, c); diff != "" {
 		t.Fatalf("generated certificate should only have X.509 certificate and private key field populated, got: %v", diff)
 	}
 }
@@ -62,8 +64,8 @@ func TestGenerateDontCopyAllSettings(t *testing.T) {
 func TestGenerateTrustChain(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Etcd: &Etcd{
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
 			Peers: map[string]string{
 				"controller01": "192.168.1.10",
 			},
@@ -117,7 +119,7 @@ func TestGenerateTrustChain(t *testing.T) {
 func TestGenerateNoConfig(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{}
+	pki := &pki.PKI{}
 
 	if err := pki.Generate(); err != nil {
 		t.Fatalf("generating valid PKI should work, got: %v", err)
@@ -127,8 +129,8 @@ func TestGenerateNoConfig(t *testing.T) {
 func TestGenerateBadRootCAPrivateKey(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		RootCA: &Certificate{
+	pki := &pki.PKI{
+		RootCA: &pki.Certificate{
 			PrivateKey: "doh",
 		},
 	}
@@ -141,9 +143,9 @@ func TestGenerateBadRootCAPrivateKey(t *testing.T) {
 func TestGenerateBadEtcdCAPrivateKey(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Etcd: &Etcd{
-			CA: &Certificate{
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
+			CA: &pki.Certificate{
 				PrivateKey: "doh",
 			},
 		},
@@ -157,9 +159,9 @@ func TestGenerateBadEtcdCAPrivateKey(t *testing.T) {
 func TestGenerateBadKubernetesCAPrivateKey(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Kubernetes: &Kubernetes{
-			CA: &Certificate{
+	pki := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{
+			CA: &pki.Certificate{
 				PrivateKey: "doh",
 			},
 		},
@@ -173,8 +175,8 @@ func TestGenerateBadKubernetesCAPrivateKey(t *testing.T) {
 func TestValidateValidityDuration(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		RootCA: &Certificate{
+	pki := &pki.PKI{
+		RootCA: &pki.Certificate{
 			ValidityDuration: "doh",
 		},
 	}
@@ -187,8 +189,8 @@ func TestValidateValidityDuration(t *testing.T) {
 func TestValidateIPAddresses(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		RootCA: &Certificate{
+	pki := &pki.PKI{
+		RootCA: &pki.Certificate{
 			IPAddresses: []string{"doh"},
 		},
 	}
@@ -201,11 +203,11 @@ func TestValidateIPAddresses(t *testing.T) {
 func TestDecodeX509CertificateNotPEM(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		RootCA: &Certificate{
+	pki := &pki.PKI{
+		RootCA: &pki.Certificate{
 			X509Certificate: "foo",
 		},
-		Etcd: &Etcd{},
+		Etcd: &pki.Etcd{},
 	}
 
 	if err := pki.Generate(); err == nil {
@@ -216,14 +218,14 @@ func TestDecodeX509CertificateNotPEM(t *testing.T) {
 func TestDecodeX509CertificateBadData(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		RootCA: &Certificate{
+	pki := &pki.PKI{
+		RootCA: &pki.Certificate{
 			X509Certificate: `-----BEGIN CERTIFICATE-----
 Zm9vCg==
 -----END CERTIFICATE-----
 `,
 		},
-		Etcd: &Etcd{},
+		Etcd: &pki.Etcd{},
 	}
 
 	if err := pki.Generate(); err == nil {
@@ -234,8 +236,8 @@ Zm9vCg==
 func TestGenerateEtcdCopyServers(t *testing.T) {
 	t.Parallel()
 
-	pki := &PKI{
-		Etcd: &Etcd{
+	pki := &pki.PKI{
+		Etcd: &pki.Etcd{
 			Peers: map[string]string{
 				"controller01": "192.168.1.10",
 			},
@@ -252,11 +254,11 @@ func TestGenerateEtcdCopyServers(t *testing.T) {
 }
 
 func TestDecodeKeypair(t *testing.T) {
-	ca := &Certificate{
+	ca := &pki.Certificate{
 		PrivateKey: "foo",
 	}
 
-	c := &Certificate{
+	c := &pki.Certificate{
 		ValidityDuration: "24h",
 		RSABits:          2048,
 	}
@@ -267,7 +269,7 @@ func TestDecodeKeypair(t *testing.T) {
 }
 
 func TestValidateRSABits(t *testing.T) {
-	c := &Certificate{
+	c := &pki.Certificate{
 		ValidityDuration: "24h",
 	}
 
@@ -280,9 +282,9 @@ func TestGenerateUpdateIPs(t *testing.T) {
 	t.Parallel()
 
 	// First, generate valid PKI.
-	pki := &PKI{
-		Kubernetes: &Kubernetes{
-			KubeAPIServer: &KubeAPIServer{
+	pki := &pki.PKI{
+		Kubernetes: &pki.Kubernetes{
+			KubeAPIServer: &pki.KubeAPIServer{
 				ServerIPs: []string{"1.1.1.1"},
 			},
 		},
@@ -312,7 +314,7 @@ func TestGenerateDontRecreate(t *testing.T) {
 	t.Parallel()
 
 	// First, generate valid PKI.
-	pki := &PKI{}
+	pki := &pki.PKI{}
 
 	if err := pki.Generate(); err != nil {
 		t.Fatalf("generating valid PKI should work, got: %v", err)
