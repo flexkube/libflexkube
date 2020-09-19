@@ -136,6 +136,14 @@ func TestValidate(t *testing.T) {
 			},
 			true,
 		},
+		"bad host": {
+			func(m *etcd.Member) *etcd.Member {
+				m.Host.DirectConfig = nil
+
+				return m
+			},
+			true,
+		},
 	}
 
 	for c, p := range cases {
