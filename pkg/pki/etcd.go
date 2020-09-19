@@ -56,7 +56,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 		e.PeerCertificates = map[string]*Certificate{}
 	}
 
-	if e.ServerCertificates == nil && len(e.Servers) != 0 {
+	if e.ServerCertificates == nil && len(servers) != 0 {
 		e.ServerCertificates = map[string]*Certificate{}
 	}
 
