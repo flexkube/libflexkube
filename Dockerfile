@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine
+FROM golang:1.15.3-alpine
 
 # Enable go modules
 ENV GO111MODULE=on
