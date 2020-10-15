@@ -21,7 +21,7 @@
 
 ## Introduction
 
-libflexkube is the core part of Flexkube project. It is a Go library, which implements the logic for managing Kubernetes cluster components (e.g. [etcd](https://etcd.io/), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), [certificates](https://kubernetes.io/docs/setup/best-practices/certificates/)) and provides reference implementation of [flexkube](https://flexkube.github.io/documentation/reference/cli/) CLI tool and [Terraform provider](https://flexkube.github.io/documentation/reference/terraform/).
+libflexkube is the core part of Flexkube project. It is a Go library, which implements the logic for managing Kubernetes cluster components (e.g. [etcd](https://etcd.io/), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), [certificates](https://kubernetes.io/docs/setup/best-practices/certificates/)) and provides reference implementation of [flexkube](https://flexkube.github.io/documentation/reference/cli/) CLI tool and [Terraform provider](https://registry.terraform.io/providers/flexkube/flexkube/latest/docs).
 
 Flexkube is a minimalistic and flexible Kubernetes distribution, providing tools to manage each main Kubernetes component independently, which can be used together to create Kubernetes clusters.
 
@@ -57,7 +57,7 @@ terraform {
   required_providers {
     flexkube = {
       source  = "flexkube/flexkube"
-      version = "0.4.0"
+      version = "0.4.1"
     }
   }
 }
