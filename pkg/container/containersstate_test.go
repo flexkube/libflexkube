@@ -71,8 +71,16 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 		},
 	}
 
-	if err := c.CheckState(); err == nil {
-		t.Fatalf("Should fail with failing status")
+	if err := c.CheckState(); err != nil {
+		t.Fatalf("Should not fail with failing status")
+	}
+
+	if c["foo"].container.Status().ID != "" {
+		t.Errorf("failing status call should reset container ID, so we assume container is gone")
+	}
+
+	if c["foo"].container.Status().Status == "fail" {
+		t.Errorf("container status should include error message returned by status function")
 	}
 }
 

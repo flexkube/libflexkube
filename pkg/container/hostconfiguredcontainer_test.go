@@ -109,8 +109,8 @@ func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 		container: &container{},
 	}
 
-	if err := h.Status(); err != nil {
-		t.Fatalf("checking status of non existing container should succeed, got: %v", err)
+	if err := h.Status(); err == nil {
+		t.Fatalf("checking status of non existing container should fail, got: %v", err)
 	}
 }
 
