@@ -79,10 +79,23 @@ require (
 )
 
 replace (
+	// sigs.k8s.io/kustomize@v2.0.3+incompatible pulled by
+	// k8s.io/cli-runtime pulled by helm.sh/helm/v3
+	// is not compatible with spec v0.19.9.
 	github.com/go-openapi/spec => github.com/go-openapi/spec v0.19.8
+
+	// Force updating docker/docker to most recent version.
 	github.com/moby/moby => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+
+	// k8s.io/kubectl is not compatible with never version.
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+
+	// Force updating etcd to most recent version.
 	go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200824191128-ae9734ed278b
+
+	// Most recent etcd version is not compatible with grpc v1.31.x.
 	google.golang.org/grpc => google.golang.org/grpc v1.29.1
+
+	// Force updating client-go to most recent version.
 	k8s.io/client-go => k8s.io/client-go v0.19.3
 )
