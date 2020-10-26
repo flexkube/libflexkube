@@ -23,7 +23,7 @@ type PrivateKey string
 func (p *PrivateKey) UnmarshalJSON(data []byte) error {
 	up, err := strconv.Unquote(string(data))
 	if err != nil {
-		return fmt.Errorf("failed to unquote string: %v", err)
+		return fmt.Errorf("failed to unquote string: %w", err)
 	}
 
 	der, _ := pem.Decode([]byte(up))
@@ -32,7 +32,7 @@ func (p *PrivateKey) UnmarshalJSON(data []byte) error {
 	}
 
 	if err := parsePrivateKey(der.Bytes); err != nil {
-		return err
+		return fmt.Errorf("parsing private key: %w", err)
 	}
 
 	*p = PrivateKey(up)

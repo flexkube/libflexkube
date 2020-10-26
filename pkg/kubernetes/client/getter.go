@@ -1,6 +1,8 @@
 package client
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
@@ -31,12 +33,12 @@ func (c *Getter) ToRESTMapper() (meta.RESTMapper, error) {
 func (c *Getter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	cc, err := c.ToRESTConfig()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting REST config: %w", err)
 	}
 
 	d, err := discovery.NewDiscoveryClientForConfig(cc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating discovery client: %w", err)
 	}
 
 	return memory.NewMemCacheClient(d), nil
@@ -57,7 +59,7 @@ func (c *Getter) ToRESTConfig() (*rest.Config, error) {
 func NewGetter(data []byte) (*Getter, error) {
 	c, err := clientcmd.NewClientConfigFromBytes(data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating client config: %w", err)
 	}
 
 	return &Getter{

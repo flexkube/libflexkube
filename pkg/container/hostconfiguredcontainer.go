@@ -140,17 +140,17 @@ func (m *HostConfiguredContainer) Validate() error {
 func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 	h, err := m.host.New()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("initializing host: %w", err)
 	}
 
 	hc, err := h.Connect()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("connecting: %w", err)
 	}
 
 	s, err := hc.ForwardUnixSocket(a)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("forwarding unix socket: %w", err)
 	}
 
 	return s, nil
@@ -174,7 +174,7 @@ func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) erro
 
 	r, err := c.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("initializing forwarded runtime: %w", err)
 	}
 
 	// Use forwarded Runtime for managing container.
@@ -185,7 +185,7 @@ func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) erro
 
 	ro, err := c.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("initializing original runtime: %w", err)
 	}
 
 	// After we're done calling action, restore original runtime to the container.
@@ -293,7 +293,7 @@ func (m *hostConfiguredContainer) withConfigurationContainer(action func() error
 	}()
 
 	if err := action(); err != nil {
-		return err
+		return fmt.Errorf("running action: %w", err)
 	}
 
 	return m.removeConfigurationContainer()
@@ -317,6 +317,10 @@ func (m *hostConfiguredContainer) ConfigurationStatus() error {
 // user can override ConfigImage field in the configuration, to specify different image which should be
 // pulled and used for configuration management.
 func (m *hostConfiguredContainer) Configure(paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+
 	return m.withForwardedRuntime(func() error {
 		return m.withConfigurationContainer(func() error {
 			return m.copyConfigFiles(paths)
@@ -345,7 +349,7 @@ func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
 	}
 
 	if err := m.configContainer.Copy(files); err != nil {
-		return err
+		return fmt.Errorf("copying configuration files: %w", err)
 	}
 
 	return nil
@@ -481,12 +485,12 @@ func (m *hostConfiguredContainer) Delete() error {
 func withHook(preHook *Hook, action func() error, postHook *Hook) error {
 	if preHook != nil {
 		if err := (*preHook)(); err != nil {
-			return err
+			return fmt.Errorf("running pre-hook: %w", err)
 		}
 	}
 
 	if err := action(); err != nil {
-		return err
+		return fmt.Errorf("running action: %w", err)
 	}
 
 	if postHook == nil {

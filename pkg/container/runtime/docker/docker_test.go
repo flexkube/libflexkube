@@ -309,7 +309,7 @@ func TestFilesToTar(t *testing.T) {
 	tr := tar.NewReader(r)
 
 	h, err := tr.Next()
-	if err == io.EOF {
+	if err == io.EOF { //nolint:errorlint
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 
@@ -352,7 +352,7 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 	tr := tar.NewReader(r)
 
 	h, err := tr.Next()
-	if err == io.EOF {
+	if err == io.EOF { //nolint:errorlint
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 

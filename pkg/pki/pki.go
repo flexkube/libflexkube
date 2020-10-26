@@ -488,7 +488,7 @@ func bigIntHash(n *big.Int) ([]byte, error) {
 	h := sha1.New() // #nosec G401
 
 	if _, err := h.Write(n.Bytes()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("writing bytes to SHA1 function: %w", err)
 	}
 
 	return h.Sum(nil), nil

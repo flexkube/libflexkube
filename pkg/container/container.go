@@ -250,11 +250,11 @@ func (c *container) Runtime() runtime.Runtime {
 func (c *container) Start() error {
 	ci, err := c.FromStatus()
 	if err != nil {
-		return err
+		return fmt.Errorf("getting containers instance from status: %w", err)
 	}
 
 	if err := ci.Start(); err != nil {
-		return err
+		return fmt.Errorf("starting container: %w", err)
 	}
 
 	return c.UpdateStatus()
@@ -264,11 +264,11 @@ func (c *container) Start() error {
 func (c *container) Stop() error {
 	ci, err := c.FromStatus()
 	if err != nil {
-		return err
+		return fmt.Errorf("getting containers instance from status: %w", err)
 	}
 
 	if err := ci.Stop(); err != nil {
-		return err
+		return fmt.Errorf("stopping container: %w", err)
 	}
 
 	return c.UpdateStatus()
@@ -278,11 +278,11 @@ func (c *container) Stop() error {
 func (c *container) Delete() error {
 	ci, err := c.FromStatus()
 	if err != nil {
-		return err
+		return fmt.Errorf("getting containers instance from status: %w", err)
 	}
 
 	if err := ci.Delete(); err != nil {
-		return err
+		return fmt.Errorf("deleting container: %w", err)
 	}
 
 	c.Status().ID = ""

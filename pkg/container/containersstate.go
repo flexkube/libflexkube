@@ -58,9 +58,9 @@ func (s ContainersState) New() (ContainersStateInterface, error) {
 // CheckState updates the state of all previously configured containers
 // and their configuration on the host.
 func (s containersState) CheckState() error {
-	for _, hcc := range s {
+	for i, hcc := range s {
 		if err := hcc.Status(); err != nil {
-			return err
+			return fmt.Errorf("checking container %q status: %w", i, err)
 		}
 
 		if hcc.container.Status().ID == "" {
@@ -70,7 +70,7 @@ func (s containersState) CheckState() error {
 		}
 
 		if err := hcc.ConfigurationStatus(); err != nil {
-			return err
+			return fmt.Errorf("checking container %q configuration status: %w", i, err)
 		}
 	}
 
