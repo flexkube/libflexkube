@@ -22,7 +22,7 @@ type Certificate string
 func (c *Certificate) UnmarshalJSON(data []byte) error {
 	p, err := strconv.Unquote(string(data))
 	if err != nil {
-		return fmt.Errorf("failed to unquote string: %v", err)
+		return fmt.Errorf("failed to unquote string: %w", err)
 	}
 
 	der, _ := pem.Decode([]byte(p))

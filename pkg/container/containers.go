@@ -144,7 +144,7 @@ func (c *Containers) CheckCurrentState() error {
 func (c *Containers) Deploy() error {
 	containers, err := c.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("initializing containers: %w", err)
 	}
 
 	// TODO Deploy shouldn't refresh the state. However, due to how we handle exported/unexported
@@ -157,11 +157,11 @@ func (c *Containers) Deploy() error {
 	// Alternatively we can have serializable plan and a knob in execute command to control whether we should
 	// make additional validation or not.
 	if err := containers.CheckCurrentState(); err != nil {
-		return err
+		return fmt.Errorf("checking current state: %w", err)
 	}
 
 	if err := containers.Deploy(); err != nil {
-		return err
+		return fmt.Errorf("deploying: %w", err)
 	}
 
 	*c = *containers.ToExported()
@@ -219,14 +219,11 @@ func (c *containers) ensureConfigured(n string) error {
 	r := c.currentState[n]
 
 	f := filesToUpdate(*d, r)
-	if len(f) == 0 {
-		return nil
-	}
 
 	err := d.Configure(f)
 
 	if err != nil && reflect.DeepEqual(f, filesToUpdate(*d, r)) {
-		return err
+		return fmt.Errorf("no files has been updated: %w", err)
 	}
 
 	// If current state does not exist, simply replace it with desired state.
@@ -238,7 +235,11 @@ func (c *containers) ensureConfigured(n string) error {
 	// Update current state config files map.
 	r.configFiles = d.configFiles
 
-	return err
+	if err != nil {
+		return fmt.Errorf("updating configuration partially failed: %w", err)
+	}
+
+	return nil
 }
 
 // ensureRunning makes sure that given container is running.
@@ -268,7 +269,7 @@ func (c *containers) ensureExists(n string) error {
 
 	// Container creation failed and it does not exist, meaning state is clean.
 	if err != nil && !d.container.Status().Exists() {
-		return err
+		return fmt.Errorf("creating container: %w", err)
 	}
 
 	// Even if CreateAndStart failed, update current state. This makes the process more robust,
@@ -285,7 +286,11 @@ func (c *containers) ensureExists(n string) error {
 	// After new container is created, add it to current state, so it can be returned to the user.
 	*r.container.Status() = *d.container.Status()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("starting container: %w", err)
+	}
+
+	return nil
 }
 
 // isUpdatable determines if given container can be updated.

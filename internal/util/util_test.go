@@ -178,6 +178,8 @@ func TestColorizeDiff(t *testing.T) {
 		c := c
 
 		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			t.Parallel()
+
 			if result := ColorizeDiff(c.input); result != c.output {
 				t.Errorf("expected %q, got %q", c.output, result)
 			}

@@ -96,7 +96,7 @@ func (c *client) CheckNodeExists(name string) func() (bool, error) {
 			return false, nil
 		}
 
-		return false, err
+		return false, fmt.Errorf("getting node %q: %w", name, err)
 	}
 }
 
@@ -151,7 +151,7 @@ func (c *client) LabelNode(name string, labels map[string]string) error {
 	}
 
 	if _, err := c.CoreV1().Nodes().Patch(context.TODO(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{}); err != nil {
-		return err
+		return fmt.Errorf("patching node %q: %w", name, err)
 	}
 
 	return nil

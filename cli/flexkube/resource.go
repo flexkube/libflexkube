@@ -362,7 +362,7 @@ func readYamlFile(file string) ([]byte, error) {
 	// #nosec G304
 	c, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	// Workaround for empty YAML file.
@@ -444,8 +444,8 @@ func (r *Resource) validateKubeconfigPKI() error {
 	return nil
 }
 
-// validateKubeconfigControlplane validates if required fields are populated in PKI field
-// to generate admin kubeconfig file.
+// validateKubeconfigControlplane validates if required fields are populated in Controlplane
+// configuration to generate admin kubeconfig file.
 func (r *Resource) validateKubeconfigControlplane() error {
 	if r.Controlplane == nil {
 		return fmt.Errorf("Kubernetes controlplane management not enabled") //nolint:stylecheck
@@ -466,11 +466,11 @@ func (r *Resource) validateKubeconfigControlplane() error {
 // state of the resource.
 func (r *Resource) validateKubeconfig() error {
 	if err := r.validateKubeconfigPKI(); err != nil {
-		return err
+		return fmt.Errorf("validating PKI fields required for generating kubeconfig: %w", err)
 	}
 
 	if err := r.validateKubeconfigControlplane(); err != nil {
-		return err
+		return fmt.Errorf("validating controlplane fields required for generating kubeconfig: %w", err)
 	}
 
 	return nil

@@ -732,7 +732,7 @@ func readYamlFile(file string) ([]byte, error) {
 	// #nosec G304
 	c, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	// Workaround for empty YAML file.

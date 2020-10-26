@@ -144,7 +144,7 @@ func containersCommand() *cli.Command {
 func apiLoadBalancerPoolAction(c *cli.Context, r *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting pool name: %w", err)
 	}
 
 	return r.RunAPILoadBalancerPool(poolName)
@@ -223,7 +223,7 @@ func kubeconfigAction(c *cli.Context, r *Resource) error {
 func kubeletPoolAction(c *cli.Context, r *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting pool name %w", err)
 	}
 
 	return r.RunKubeletPool(poolName)
@@ -249,7 +249,7 @@ func getPoolName(c *cli.Context) (string, error) {
 func containersAction(c *cli.Context, r *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting pool name: %w", err)
 	}
 
 	return r.RunContainers(poolName)

@@ -188,7 +188,7 @@ func (r *release) Install() error {
 	if err := retryOnEtcdError(func() error {
 		_, err = client.Run(chart, r.values)
 
-		return err
+		return err //nolint:wrapcheck
 	}); err != nil {
 		return fmt.Errorf("installing a release failed: %w", err)
 	}
@@ -212,7 +212,7 @@ func (r *release) Upgrade() error {
 	if err := retryOnEtcdError(func() error {
 		_, err := client.Run(r.name, chart, r.values)
 
-		return err
+		return err //nolint:wrapcheck
 	}); err != nil {
 		return fmt.Errorf("upgrading a release failed: %w", err)
 	}
@@ -247,10 +247,10 @@ func (r *release) Exists() (bool, error) {
 	err := retryOnEtcdError(func() error {
 		_, err := histClient.Run(r.name)
 
-		return err
+		return err //nolint:wrapcheck
 	})
 
-	if err == driver.ErrReleaseNotFound {
+	if err == driver.ErrReleaseNotFound { //nolint:errorlint
 		return false, nil
 	}
 
@@ -274,10 +274,10 @@ func retryOnEtcdError(f func() error) error {
 			continue
 		}
 
-		return err
+		return err //nolint:wrapcheck
 	}
 
-	return err
+	return err //nolint:wrapcheck
 }
 
 // Uninstall removes the release from the cluster. This function is idempotent.
@@ -285,7 +285,7 @@ func (r *release) Uninstall() error {
 	// Check if release exists.
 	e, err := r.Exists()
 	if err != nil {
-		return err
+		return fmt.Errorf("checking if release exists: %w", err)
 	}
 
 	// If it does not exist anymore, simply return.
@@ -298,7 +298,7 @@ func (r *release) Uninstall() error {
 	if err := retryOnEtcdError(func() error {
 		_, err := client.Run(r.name)
 
-		return err
+		return err //nolint:wrapcheck
 	}); err != nil {
 		return fmt.Errorf("uninstalling a release failed: %w", err)
 	}

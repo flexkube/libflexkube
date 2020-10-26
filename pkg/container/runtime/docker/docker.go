@@ -302,16 +302,16 @@ func filesToTar(files []*types.File) (io.Reader, error) {
 		}
 
 		if err := tw.WriteHeader(h); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("writing header: %w", err)
 		}
 
 		if _, err := tw.Write([]byte(f.Content)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("writing content: %w", err)
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("closing writer: %w", err)
 	}
 
 	return buf, nil
@@ -325,7 +325,7 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if err == io.EOF { //nolint:errorlint
 			break
 		}
 
@@ -361,7 +361,7 @@ func (d *docker) Stat(id string, paths []string) (map[string]os.FileMode, error)
 	for _, p := range paths {
 		s, err := d.cli.ContainerStatPath(d.ctx, id, p)
 		if err != nil && !client.IsErrNotFound(err) {
-			return nil, err
+			return nil, fmt.Errorf("statting path %q: %w", p, err)
 		}
 
 		if s.Name != "" {
@@ -389,7 +389,7 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 
 		fs, err := tarToFiles(rc)
 		if err != nil {
-			return nil, fmt.Errorf("failed extracting file %s from archive: %v", p, err)
+			return nil, fmt.Errorf("failed extracting file %s from archive: %w", p, err)
 		}
 
 		if err := rc.Close(); err != nil {

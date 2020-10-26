@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.31.0
+GOLANGCI_LINT_VERSION=v1.32.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -29,7 +29,13 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
-DISABLED_LINTERS=godox,lll,testpackage,goerr113,gci
+# godox            - Triggers on TODOs in the code, which is fine to put.
+# lll              - As some lines are long because of the type names, and breaking it down decreases redability.
+# testpackage      - Disabled until tests are splitted and moved to the right file names.
+# goerr113         - Disabled until we implement some error types and migrate to use them.
+# gci              - As we use formatting rules from different linter and they are conflicting.
+# exhaustivestruct - To be able to make use of Go zero-value feature.
+DISABLED_LINTERS=godox,lll,testpackage,goerr113,gci,exhaustivestruct
 
 TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
