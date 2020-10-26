@@ -29,6 +29,12 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
+# godox            - Triggers on TODOs in the code, which is fine to put.
+# lll              - As some lines are long because of the type names, and breaking it down decreases redability.
+# testpackage      - Disabled until tests are splitted and moved to the right file names.
+# goerr113         - Disabled until we implement some error types and migrate to use them.
+# gci              - As we use formatting rules from different linter and they are conflicting.
+# exhaustivestruct - To be able to make use of Go zero-value feature.
 DISABLED_LINTERS=godox,lll,testpackage,goerr113,gci,exhaustivestruct
 
 TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
