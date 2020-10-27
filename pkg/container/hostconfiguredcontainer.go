@@ -456,7 +456,7 @@ func (m *hostConfiguredContainer) Create() error {
 func (m *hostConfiguredContainer) Status() error {
 	// If container does not exist, skip checking the status of it, as it won't work.
 	if !m.container.Status().Exists() {
-		return nil
+		return fmt.Errorf("can't check status of non existing container")
 	}
 
 	return m.withForwardedRuntime(m.container.UpdateStatus)

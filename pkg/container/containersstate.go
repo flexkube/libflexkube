@@ -60,10 +60,14 @@ func (s ContainersState) New() (ContainersStateInterface, error) {
 func (s containersState) CheckState() error {
 	for i, hcc := range s {
 		if err := hcc.Status(); err != nil {
-			return fmt.Errorf("checking container %q status: %w", i, err)
+			hcc.container.SetStatus(types.ContainerStatus{
+				Status: err.Error(),
+			})
+
+			continue
 		}
 
-		if hcc.container.Status().ID == "" {
+		if !hcc.container.Status().Exists() {
 			hcc.container.SetStatus(types.ContainerStatus{
 				Status: StatusMissing,
 			})
@@ -84,15 +88,16 @@ func (s containersState) RemoveContainer(containerName string) error {
 	}
 
 	status := s[containerName].container.Status()
-	if status.Running() || status.Restarting() {
+
+	if status.Exists() && (status.Running() || status.Restarting()) {
 		if err := s[containerName].Stop(); err != nil {
-			return fmt.Errorf("failed stopping container: %w", err)
+			return fmt.Errorf("stopping container before removing: %w", err)
 		}
 	}
 
-	if s[containerName].container.Status().Exists() {
+	if status.Exists() {
 		if err := s[containerName].Delete(); err != nil {
-			return fmt.Errorf("failed removing container: %w", err)
+			return fmt.Errorf("removing container: %w", err)
 		}
 	}
 
@@ -134,7 +139,7 @@ func (s containersState) Export() ContainersState {
 			ConfigFiles: m.configFiles,
 		}
 
-		if s := m.container.Status(); s.ID != "" && s.Status != "" {
+		if s := m.container.Status(); s.ID != "" || s.Status != "" {
 			h.Container.Status = s
 		}
 

@@ -323,10 +323,20 @@ func (c *containers) diffHost(n string) (string, error) {
 // desired state.
 func (c *containers) recreate(n string) error {
 	if err := c.currentState.RemoveContainer(n); err != nil {
-		return fmt.Errorf("failed removing old container: %w", err)
+		return fmt.Errorf("failed removing old container to recreate it: %w", err)
 	}
 
-	return c.desiredState.CreateAndStart(n)
+	c.currentState[n] = nil
+
+	err := c.desiredState.CreateAndStart(n)
+
+	c.currentState[n] = c.desiredState[n]
+
+	if err != nil {
+		return fmt.Errorf("creating and starting new container %q: %w", n, err)
+	}
+
+	return nil
 }
 
 // ensureHost makes sure container is running on the right host.
@@ -346,12 +356,6 @@ func (c *containers) ensureHost(n string) error {
 
 	fmt.Printf("Detected host configuration drift '%s'\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
-
-	// recreate is 2 step process, it removes old container and creates new one.
-	// If process fails in the middle, we still want to save the progress.
-	defer func() {
-		c.currentState[n] = c.desiredState[n]
-	}()
 
 	return c.recreate(n)
 }
@@ -386,12 +390,6 @@ func (c *containers) ensureContainer(n string) error {
 	fmt.Printf("Detected container configuration drift '%s'\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
-	// Reconfiguring container is 2 step process. If we fail in the middle, we still want to
-	// return updated state to the user.
-	defer func() {
-		c.currentState[n] = c.desiredState[n]
-	}()
-
 	return c.recreate(n)
 }
 
@@ -412,7 +410,7 @@ func (c *containers) hasUpdates(n string) (bool, error) {
 	return diffHost != "" || len(f) != 0 || diffContainer != "", nil
 }
 
-func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer) (hostConfiguredContainer, error) {
+func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer) (*hostConfiguredContainer, error) {
 	// Gather facts about the container..
 	exists := r.container.Status().Exists()
 	_, isDesired := c.desiredState[n]
@@ -422,7 +420,7 @@ func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer)
 		// If container is updatable, check if it has any updates pending.
 		u, err := c.hasUpdates(n)
 		if err != nil {
-			return r, fmt.Errorf("failed checking if container has pending updates: %w", err)
+			return &r, fmt.Errorf("failed checking if container has pending updates: %w", err)
 		}
 
 		hasUpdates = u
@@ -431,18 +429,24 @@ func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer)
 	// Container is gone, remove it from current state, so it will be scheduled for recreation.
 	if !exists {
 		delete(c.currentState, n)
+
+		return nil, nil
 	}
 
 	// If container exist, is desired or has no pending updates, make sure it's running.
 	if exists && isDesired && !hasUpdates {
-		return r, ensureRunning(&r)
+		return &r, ensureRunning(&r)
 	}
 
-	return r, nil
+	return &r, nil
 }
 
 // ensureNewContainer handles configuring and creating new containers.
 func (c *containers) ensureNewContainer(i string) error {
+	if _, existingContainer := c.currentState[i]; existingContainer {
+		return nil
+	}
+
 	if err := c.ensureConfigured(i); err != nil {
 		return fmt.Errorf("failed configuring container %s: %w", i, err)
 	}
@@ -509,7 +513,9 @@ func (c *containers) Deploy() error {
 	for n, r := range c.currentState {
 		d, err := c.ensureCurrentContainer(n, *r)
 
-		c.currentState[n] = &d
+		if d != nil {
+			c.currentState[n] = d
+		}
 
 		if err != nil {
 			return fmt.Errorf("failed to handle existing container %s: %w", n, err)
