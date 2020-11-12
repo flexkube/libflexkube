@@ -251,16 +251,12 @@ vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
 	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-run'"
 	make vagrant-e2e-kubeconfig
 
-.PHONY: vagrant-e2e-destroy
-vagrant-e2e-destroy:
-	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-destroy'"
-
 .PHONY: vagrant-e2e-shell
 vagrant-e2e-shell:
 	$(VAGRANTCMD) ssh -c "$(E2E_CMD)"
 
 .PHONY: vagrant-e2e
-vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy
+vagrant-e2e: vagrant-e2e-run vagrant-destroy
 
 .PHONY: vagrant-conformance-run
 vagrant-conformance-run:
