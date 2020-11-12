@@ -22,7 +22,7 @@ const (
 	KubeletImage = "quay.io/flexkube/kubelet:v1.19.4"
 
 	// HAProxyImage is a default container image for APILoadBalancer.
-	HAProxyImage = "haproxy:2.2.4-alpine"
+	HAProxyImage = "haproxy:2.3.0-alpine"
 
 	// DockerAPIVersion is a default API version used when talking to Docker runtime.
 	DockerAPIVersion = "v1.38"
