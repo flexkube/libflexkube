@@ -244,7 +244,7 @@ vagrant-e2e-build:
 
 .PHONY: vagrant-e2e-kubeconfig
 vagrant-e2e-kubeconfig:
-	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/e2e/kubeconfig ./e2e/kubeconfig
+	ssh -p 2222 -i ~/.vagrant.d/insecure_private_key -o StrictHostKeyChecking=no core@127.0.0.1 sudo cat /home/core/libflexkube/e2e/kubeconfig > ./e2e/kubeconfig
 
 .PHONY: vagrant-e2e-run
 vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
@@ -271,7 +271,8 @@ vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance
 
 .PHONY: vagrant-conformance-copy-results
 vagrant-conformance-copy-results:
-	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
+	ssh core@127.0.0.1 -o StrictHostKeyChecking=no -p 2222 sudo -i ~/.vagrant.d/insecure_private_key chmod +w /home/core/libflexkube/*.tar.gz
+	scp -P 2222 -o StrictHostKeyChecking=no -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
 
 .PHONY: libvirt-apply
 libvirt-apply: libvirt-download-image
