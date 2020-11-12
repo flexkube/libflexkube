@@ -15,7 +15,7 @@ RUN VERSION=0.19.0 OS=linux && \
     chmod +x /usr/local/bin/sonobuoy && \
     rm sonobuoy.tar.gz
 
-RUN helm repo add stable https://kubernetes-charts.storage.googleapis.com
+RUN helm repo add stable https://charts.helm.sh/stable
 
 RUN helm repo add flexkube https://flexkube.github.io/charts/
 
