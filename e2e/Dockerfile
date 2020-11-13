@@ -1,8 +1,8 @@
-FROM golang:1.15.3-alpine3.12
+FROM golang:1.15.4-alpine3.12
 
 RUN apk add -U make bash bash-completion vim coreutils
 
-RUN wget https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
+RUN wget https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
     mv linux-amd64/helm /usr/local/bin/
 
 RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(wget -q -O- https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
@@ -14,8 +14,6 @@ RUN VERSION=0.19.0 OS=linux && \
     tar -xzf sonobuoy.tar.gz -C /usr/local/bin && \
     chmod +x /usr/local/bin/sonobuoy && \
     rm sonobuoy.tar.gz
-
-RUN helm repo add stable https://kubernetes-charts.storage.googleapis.com
 
 RUN helm repo add flexkube https://flexkube.github.io/charts/
 

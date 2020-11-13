@@ -23,7 +23,7 @@ INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
-E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
+E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/go:/go -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
 BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
@@ -244,23 +244,19 @@ vagrant-e2e-build:
 
 .PHONY: vagrant-e2e-kubeconfig
 vagrant-e2e-kubeconfig:
-	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/e2e/kubeconfig ./e2e/kubeconfig
+	ssh -p 2222 -i ~/.vagrant.d/insecure_private_key -o StrictHostKeyChecking=no core@127.0.0.1 sudo cat /home/core/libflexkube/e2e/kubeconfig > ./e2e/kubeconfig
 
 .PHONY: vagrant-e2e-run
 vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
 	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-run'"
 	make vagrant-e2e-kubeconfig
 
-.PHONY: vagrant-e2e-destroy
-vagrant-e2e-destroy:
-	$(VAGRANTCMD) ssh -c "$(E2E_CMD) -c 'make test-e2e-destroy'"
-
 .PHONY: vagrant-e2e-shell
 vagrant-e2e-shell:
 	$(VAGRANTCMD) ssh -c "$(E2E_CMD)"
 
 .PHONY: vagrant-e2e
-vagrant-e2e: vagrant-e2e-run vagrant-e2e-destroy vagrant-destroy
+vagrant-e2e: vagrant-e2e-run vagrant-destroy
 
 .PHONY: vagrant-conformance-run
 vagrant-conformance-run:
@@ -275,7 +271,8 @@ vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance
 
 .PHONY: vagrant-conformance-copy-results
 vagrant-conformance-copy-results:
-	scp -P 2222 -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
+	ssh core@127.0.0.1 -o StrictHostKeyChecking=no -p 2222 sudo -i ~/.vagrant.d/insecure_private_key chmod +w /home/core/libflexkube/*.tar.gz
+	scp -P 2222 -o StrictHostKeyChecking=no -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
 
 .PHONY: libvirt-apply
 libvirt-apply: libvirt-download-image

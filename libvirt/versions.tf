@@ -4,15 +4,15 @@ terraform {
   required_providers {
     null = {
       source  = "hashicorp/null"
-      version = "2.1.2"
+      version = "3.0.0"
     }
     libvirt = {
       source  = "dmacvicar/libvirt"
-      version = "0.6.2"
+      version = "0.6.3"
     }
     ct = {
       source  = "poseidon/ct"
-      version = "0.6.1"
+      version = "0.7.0"
     }
   }
 }
