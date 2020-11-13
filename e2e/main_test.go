@@ -102,12 +102,12 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 				Version: "0.1.1",
 			},
 			CoreDNS: chart{
-				Source:  "stable/coredns",
-				Version: "1.13.4",
+				Source:  "flexkube/coredns",
+				Version: "2.0.0",
 			},
 			MetricsServer: chart{
-				Source:  "stable/metrics-server",
-				Version: "2.11.2",
+				Source:  "flexkube/metrics-server",
+				Version: "3.0.0",
 			},
 			KubeletRubberStamp: chart{
 				Source:  "flexkube/kubelet-rubber-stamp",
