@@ -254,6 +254,8 @@ func TestGenerateEtcdCopyServers(t *testing.T) {
 }
 
 func TestDecodeKeypair(t *testing.T) {
+	t.Parallel()
+
 	ca := &pki.Certificate{
 		PrivateKey: "foo",
 	}
@@ -269,6 +271,8 @@ func TestDecodeKeypair(t *testing.T) {
 }
 
 func TestValidateRSABits(t *testing.T) {
+	t.Parallel()
+
 	c := &pki.Certificate{
 		ValidityDuration: "24h",
 	}

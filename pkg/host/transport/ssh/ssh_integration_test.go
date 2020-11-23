@@ -19,6 +19,8 @@ import (
 const testServerAddr = "/run/test.sock"
 
 func TestPasswordAuth(t *testing.T) {
+	t.Parallel()
+
 	pass, err := ioutil.ReadFile("/home/core/.password")
 	if err != nil {
 		t.Fatalf("reading password shouldn't fail, got: %v", err)
@@ -45,6 +47,8 @@ func TestPasswordAuth(t *testing.T) {
 }
 
 func TestPasswordAuthFail(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "core",
@@ -66,6 +70,8 @@ func TestPasswordAuthFail(t *testing.T) {
 }
 
 func TestPrivateKeyAuth(t *testing.T) {
+	t.Parallel()
+
 	s := withPrivateKey(t)
 
 	if _, err := s.Connect(); err != nil {
@@ -74,6 +80,8 @@ func TestPrivateKeyAuth(t *testing.T) {
 }
 
 func withPrivateKey(t *testing.T) transport.Interface {
+	t.Parallel()
+
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
 		t.Fatalf("reading SSH private key shouldn't fail, got: %v", err)
@@ -98,6 +106,8 @@ func withPrivateKey(t *testing.T) transport.Interface {
 }
 
 func TestForwardUnixSocketFull(t *testing.T) {
+	t.Parallel()
+
 	ssh := withPrivateKey(t)
 	expectedMessage := "foo"
 	expectedResponse := "bar"

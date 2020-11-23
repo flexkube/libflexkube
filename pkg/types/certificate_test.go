@@ -12,6 +12,8 @@ import (
 )
 
 func TestCertificateParse(t *testing.T) {
+	t.Parallel()
+
 	type Foo struct {
 		Bar Certificate `json:"bar"`
 	}
@@ -34,6 +36,8 @@ func TestCertificateParse(t *testing.T) {
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			bar := &Foo{}
 
 			err := yaml.Unmarshal([]byte(c.YAML), bar)
@@ -58,6 +62,8 @@ func TestCertificateParse(t *testing.T) {
 }
 
 func TestCertificatePickNil(t *testing.T) {
+	t.Parallel()
+
 	var c Certificate
 
 	d := Certificate("bar")
@@ -69,6 +75,8 @@ func TestCertificatePickNil(t *testing.T) {
 }
 
 func TestCertificatePick(t *testing.T) {
+	t.Parallel()
+
 	d := Certificate("foo")
 	e := Certificate("baz")
 

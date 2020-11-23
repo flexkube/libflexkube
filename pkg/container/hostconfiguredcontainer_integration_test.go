@@ -20,7 +20,11 @@ const (
 )
 
 // Create() tests.
-func TestHostConfiguredContainerDeployConfigFile(t *testing.T) { //nolint:funlen
+//
+//nolint:funlen
+func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
+	t.Parallel()
+
 	p := "/tmp/foo"
 	f := path.Join(p, randomContainerName())
 
@@ -92,6 +96,8 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) { //nolint:funlen
 }
 
 func TestHostConfiguredContainerPostStartHook(t *testing.T) {
+	t.Parallel()
+
 	hookCalled := false
 
 	f := Hook(func() error {

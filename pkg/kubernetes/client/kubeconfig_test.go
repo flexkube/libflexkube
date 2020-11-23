@@ -46,6 +46,8 @@ clientKey: |
 
 // ToYAMLString() tests.
 func TestUnmarshal(t *testing.T) {
+	t.Parallel()
+
 	if kubeconfig := GetKubeconfig(t); kubeconfig == "" {
 		t.Fatalf("Generated kubeconfig shouldn't be empty")
 	}
@@ -168,6 +170,8 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 }
 
 func TestToYAMLStringValidate(t *testing.T) {
+	t.Parallel()
+
 	pki := utiltest.GeneratePKI(t)
 
 	c := &Config{

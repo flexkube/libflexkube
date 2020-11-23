@@ -5,6 +5,8 @@ import (
 )
 
 func TestNewClientset(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	if _, err := NewClientset([]byte(kubeconfig)); err != nil {

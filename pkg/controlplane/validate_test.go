@@ -37,6 +37,8 @@ func validValidator(t *testing.T) validator {
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
+
 	v := validValidator(t)
 
 	if err := v.validate(true); err != nil {
@@ -45,6 +47,8 @@ func TestValidate(t *testing.T) {
 }
 
 func TestValidateMarshalFail(t *testing.T) {
+	t.Parallel()
+
 	v := validValidator(t)
 
 	v.YAML = map[string]interface{}{

@@ -10,7 +10,10 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-func TestKubeControllerManagerValidate(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestKubeControllerManagerValidate(t *testing.T) {
+	t.Parallel()
+
 	hostConfig := &host.Host{
 		DirectConfig: &direct.Config{},
 	}
@@ -110,6 +113,8 @@ func TestKubeControllerManagerValidate(t *testing.T) { //nolint:funlen
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			err := c.Config.Validate()
 			if !c.Error && err != nil {
 				t.Errorf("didn't expect error, got: %v", err)
@@ -123,6 +128,8 @@ func TestKubeControllerManagerValidate(t *testing.T) { //nolint:funlen
 }
 
 func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	pki := utiltest.GeneratePKI(t)
 
 	kcm := &KubeControllerManager{
@@ -161,6 +168,8 @@ func TestKubeControllerManagerToHostConfiguredContainer(t *testing.T) {
 
 // New() tests.
 func TestKubeControllerManagerNewEmptyHost(t *testing.T) {
+	t.Parallel()
+
 	ks := &KubeControllerManager{}
 
 	k, err := ks.New()

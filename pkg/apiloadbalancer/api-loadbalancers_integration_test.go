@@ -10,6 +10,8 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
+	t.Parallel()
+
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
 		t.Fatalf("reading SSH private key shouldn't fail, got: %v", err)

@@ -6,6 +6,8 @@ import (
 )
 
 func TestRetryOnEtcdErrorRetry(t *testing.T) {
+	t.Parallel()
+
 	calls := 0
 
 	if err := retryOnEtcdError(func() error {
@@ -22,6 +24,8 @@ func TestRetryOnEtcdErrorRetry(t *testing.T) {
 }
 
 func TestRetryOnEtcdErrorDifferentError(t *testing.T) {
+	t.Parallel()
+
 	calls := 0
 
 	if err := retryOnEtcdError(func() error {
@@ -38,6 +42,8 @@ func TestRetryOnEtcdErrorDifferentError(t *testing.T) {
 }
 
 func TestRetryOnEtcdErrorNoError(t *testing.T) {
+	t.Parallel()
+
 	calls := 0
 
 	if err := retryOnEtcdError(func() error {
@@ -54,6 +60,8 @@ func TestRetryOnEtcdErrorNoError(t *testing.T) {
 }
 
 func TestRetryOnEtcdErrorTranscientError(t *testing.T) {
+	t.Parallel()
+
 	calls := 0
 
 	if err := retryOnEtcdError(func() error {

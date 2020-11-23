@@ -15,6 +15,8 @@ import (
 
 // ToExported() tests.
 func TestToExported(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			container: &container{
@@ -49,6 +51,8 @@ func TestToExported(t *testing.T) {
 
 // CheckState() tests.
 func TestContainersStateCheckStateFailStatus(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
@@ -85,6 +89,8 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 }
 
 func TestContainersStateCheckStateGone(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
@@ -123,7 +129,11 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 }
 
 // RemoveContainer() tests.
-func TestRemoveContainerDontStopStopped(t *testing.T) { //nolint:dupl
+//
+//nolint:dupl
+func TestRemoveContainerDontStopStopped(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			hooks: &Hooks{},
@@ -163,6 +173,8 @@ func TestRemoveContainerDontStopStopped(t *testing.T) { //nolint:dupl
 }
 
 func TestRemoveContainerDontRemoveMissing(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			hooks: &Hooks{},
@@ -195,7 +207,10 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 	}
 }
 
-func TestRemoveContainerPropagateStopError(t *testing.T) { //nolint:dupl
+//nolint:dupl
+func TestRemoveContainerPropagateStopError(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			hooks: &Hooks{},
@@ -235,6 +250,8 @@ func TestRemoveContainerPropagateStopError(t *testing.T) { //nolint:dupl
 }
 
 func TestRemoveContainerPropagateDeleteError(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
 			hooks: &Hooks{},
@@ -275,6 +292,8 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 
 // createAndStart() tests.
 func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
+	t.Parallel()
+
 	c := containersState{}
 
 	if err := c.CreateAndStart("foo"); err == nil {

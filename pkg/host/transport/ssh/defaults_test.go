@@ -12,6 +12,8 @@ const (
 )
 
 func TestBuildConfig(t *testing.T) { //nolint:funlen
+	t.Parallel()
+
 	cases := []struct {
 		config   *Config
 		defaults *Config
@@ -388,6 +390,8 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen
 		c := c
 
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			t.Parallel()
+
 			if nc := BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
 				t.Fatalf("expected %+v, got %+v", c.result, nc)
 			}

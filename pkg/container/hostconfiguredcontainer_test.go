@@ -17,6 +17,8 @@ import (
 
 // withHook() tests.
 func TestWithHook(t *testing.T) {
+	t.Parallel()
+
 	action := false
 
 	if err := withHook(nil, func() error {
@@ -33,6 +35,8 @@ func TestWithHook(t *testing.T) {
 }
 
 func TestWithPreHook(t *testing.T) {
+	t.Parallel()
+
 	pre := false
 
 	f := Hook(func() error {
@@ -53,6 +57,8 @@ func TestWithPreHook(t *testing.T) {
 }
 
 func TestWithPostHook(t *testing.T) {
+	t.Parallel()
+
 	post := false
 
 	f := Hook(func() error {
@@ -73,6 +79,8 @@ func TestWithPostHook(t *testing.T) {
 }
 
 func TestConnectAndForward(t *testing.T) {
+	t.Parallel()
+
 	addr := &net.UnixAddr{
 		Name: "@foo",
 		Net:  "unix",
@@ -105,6 +113,8 @@ func TestConnectAndForward(t *testing.T) {
 
 // Status() tests.
 func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		container: &container{},
 	}
@@ -115,6 +125,8 @@ func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 }
 
 func TestHostConfiguredContainerStatus(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -142,6 +154,8 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 
 // createConfigurationContainer() tests.
 func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		container: &container{
 			base: base{
@@ -161,6 +175,8 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 
 // removeConfigurationContainer() tests.
 func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
+	t.Parallel()
+
 	deleted := false
 	i := foo
 
@@ -200,6 +216,8 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 }
 
 func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -219,6 +237,8 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 
 // statMounts() tests.
 func TestStatMountsNoMounts(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		container: &container{},
 	}
@@ -229,6 +249,8 @@ func TestStatMountsNoMounts(t *testing.T) {
 }
 
 func TestStatMountsRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -259,6 +281,8 @@ func TestStatMountsRuntimeError(t *testing.T) {
 }
 
 func TestStatMounts(t *testing.T) {
+	t.Parallel()
+
 	m := map[string]os.FileMode{
 		"/etc": os.ModeDir,
 	}
@@ -299,6 +323,8 @@ func TestStatMounts(t *testing.T) {
 
 // createMissingMounts() tests.
 func TestCreateMissingMountpointsStatFail(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -329,6 +355,8 @@ func TestCreateMissingMountpointsStatFail(t *testing.T) {
 }
 
 func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -361,6 +389,8 @@ func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
 }
 
 func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -393,6 +423,8 @@ func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 }
 
 func TestCreateMissingMountpointsCopyFail(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
@@ -426,6 +458,8 @@ func TestCreateMissingMountpointsCopyFail(t *testing.T) {
 }
 
 func TestCreateMissingMountpoints(t *testing.T) {
+	t.Parallel()
+
 	called := false
 
 	f := []*types.File{
@@ -480,6 +514,8 @@ func TestCreateMissingMountpoints(t *testing.T) {
 
 // dirMounts() tests.
 func TestDirMounts(t *testing.T) {
+	t.Parallel()
+
 	m := types.Mount{
 		Source: "/etc/",
 		Target: "/etc",
@@ -508,6 +544,8 @@ func TestDirMounts(t *testing.T) {
 
 // withForwardedRuntime() tests.
 func TestWithForwardedRuntimeFailForward(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		container: &container{
 			base: base{
@@ -526,6 +564,8 @@ func TestWithForwardedRuntimeFailForward(t *testing.T) {
 }
 
 func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -545,6 +585,8 @@ func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
 }
 
 func TestWithForwardedRuntime(t *testing.T) {
+	t.Parallel()
+
 	r := &runtime.Fake{}
 
 	h := &hostConfiguredContainer{
@@ -570,6 +612,8 @@ func TestWithForwardedRuntime(t *testing.T) {
 
 // Create() tests.
 func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -610,6 +654,8 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 }
 
 func TestHostConfiguredContainerCreateFail(t *testing.T) {
+	t.Parallel()
+
 	fail := false
 
 	h := &hostConfiguredContainer{
@@ -660,6 +706,8 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 }
 
 func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
+	t.Parallel()
+
 	fail := false
 
 	h := &hostConfiguredContainer{
@@ -710,6 +758,8 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 }
 
 func TestHostConfiguredContainerCreate(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -759,6 +809,8 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 
 // updateConfigurationStatus() tests.
 func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -785,6 +837,8 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 }
 
 func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",
@@ -823,6 +877,8 @@ func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.
 }
 
 func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",
@@ -866,6 +922,8 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 }
 
 func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	h := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",

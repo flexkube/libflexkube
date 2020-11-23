@@ -5,6 +5,8 @@ import (
 )
 
 func TestGetter(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	g, err := NewGetter([]byte(kubeconfig))

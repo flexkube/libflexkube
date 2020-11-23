@@ -6,6 +6,8 @@ import (
 )
 
 func TestValidateError(t *testing.T) {
+	t.Parallel()
+
 	err := func() error {
 		errors := ValidateError{
 			fmt.Errorf("first error"),

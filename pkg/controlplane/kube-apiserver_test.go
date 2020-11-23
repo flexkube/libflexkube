@@ -19,6 +19,8 @@ const (
 )
 
 func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
@@ -67,7 +69,11 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 }
 
 // Validate() tests.
-func TestKubeAPIServerValidate(t *testing.T) { //nolint:funlen
+//
+//nolint:funlen
+func TestKubeAPIServerValidate(t *testing.T) {
+	t.Parallel()
+
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
@@ -199,6 +205,8 @@ func TestKubeAPIServerValidate(t *testing.T) { //nolint:funlen
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			err := c.Config.Validate()
 			if !c.Error && err != nil {
 				t.Errorf("didn't expect error, got: %v", err)
@@ -212,6 +220,8 @@ func TestKubeAPIServerValidate(t *testing.T) { //nolint:funlen
 }
 
 func TestKubeAPIServerConfigFiles(t *testing.T) {
+	t.Parallel()
+
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
 
@@ -260,6 +270,8 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 
 // New() tests.
 func TestKubeAPIServerNewEmptyHost(t *testing.T) {
+	t.Parallel()
+
 	c := &KubeAPIServer{}
 
 	k, err := c.New()

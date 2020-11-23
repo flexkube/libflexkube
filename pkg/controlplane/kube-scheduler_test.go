@@ -11,6 +11,8 @@ import (
 )
 
 func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	pki := utiltest.GeneratePKI(t)
 
 	ks := &KubeScheduler{
@@ -49,6 +51,8 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 
 // New() tests.
 func TestKubeSchedulerNewEmptyHost(t *testing.T) {
+	t.Parallel()
+
 	ks := &KubeScheduler{}
 
 	k, err := ks.New()
@@ -62,7 +66,11 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 }
 
 // Validate() tests.
-func TestKubeSchedulerValidate(t *testing.T) { //nolint:funlen
+//
+//nolint:funlen
+func TestKubeSchedulerValidate(t *testing.T) {
+	t.Parallel()
+
 	pki := utiltest.GeneratePKI(t)
 
 	hostConfig := &host.Host{
@@ -121,6 +129,8 @@ func TestKubeSchedulerValidate(t *testing.T) { //nolint:funlen
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			err := c.Config.Validate()
 			if !c.Error && err != nil {
 				t.Errorf("didn't expect error, got: %v", err)

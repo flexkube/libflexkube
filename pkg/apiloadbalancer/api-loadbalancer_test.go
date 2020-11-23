@@ -8,6 +8,8 @@ import (
 )
 
 func TestToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	kk := &APILoadBalancer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
@@ -37,6 +39,8 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 // Validate() tests.
 func TestValidateRequireServers(t *testing.T) {
+	t.Parallel()
+
 	kk := &APILoadBalancer{
 		BindAddress: "0.0.0.0:6434",
 		Host: host.Host{
@@ -50,6 +54,8 @@ func TestValidateRequireServers(t *testing.T) {
 }
 
 func TestValidateRequireBindAddress(t *testing.T) {
+	t.Parallel()
+
 	kk := &APILoadBalancer{
 		Servers: []string{"foo"},
 		Host: host.Host{
@@ -64,6 +70,8 @@ func TestValidateRequireBindAddress(t *testing.T) {
 
 // New() tests.
 func TestNewValidate(t *testing.T) {
+	t.Parallel()
+
 	kk := &APILoadBalancer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},

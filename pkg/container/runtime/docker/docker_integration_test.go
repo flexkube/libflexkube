@@ -16,6 +16,8 @@ import (
 
 // Create() tests.
 func TestContainerCreate(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
@@ -28,6 +30,8 @@ func TestContainerCreate(t *testing.T) {
 }
 
 func TestContainerCreateDelete(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
@@ -45,6 +49,8 @@ func TestContainerCreateDelete(t *testing.T) {
 }
 
 func TestContainerCreateNonExistingImage(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	cc := &types.ContainerConfig{
@@ -57,6 +63,8 @@ func TestContainerCreateNonExistingImage(t *testing.T) {
 }
 
 func TestContainerCreatePullImage(t *testing.T) {
+	t.Parallel()
+
 	// Don't use default version of image, to have better chance it can be removed
 	image := "gcr.io/etcd-development/etcd:v3.3.0"
 
@@ -79,6 +87,8 @@ func TestContainerCreatePullImage(t *testing.T) {
 }
 
 func TestContainerCreateWithArgs(t *testing.T) {
+	t.Parallel()
+
 	args := []string{"--logger=zap"}
 
 	r, d := getDockerRuntime(t)
@@ -105,6 +115,8 @@ func TestContainerCreateWithArgs(t *testing.T) {
 }
 
 func TestContainerCreateWithEntrypoint(t *testing.T) {
+	t.Parallel()
+
 	entrypoint := []string{"/bin/bash"}
 
 	r, d := getDockerRuntime(t)
@@ -131,6 +143,8 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 
 // Start() tests.
 func TestContainerStart(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
@@ -149,6 +163,8 @@ func TestContainerStart(t *testing.T) {
 
 // Stop() tests.
 func TestContainerStop(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
@@ -171,6 +187,8 @@ func TestContainerStop(t *testing.T) {
 
 // Status() tests.
 func TestContainerStatus(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	c := &types.ContainerConfig{
@@ -188,6 +206,8 @@ func TestContainerStatus(t *testing.T) {
 }
 
 func TestContainerStatusNonExistent(t *testing.T) {
+	t.Parallel()
+
 	r, _ := getDockerRuntime(t)
 
 	status, err := r.Status("nonexistent")
@@ -241,6 +261,8 @@ func deleteImage(t *testing.T, image string) {
 
 // imageID() tests.
 func TestImageID(t *testing.T) {
+	t.Parallel()
+
 	_, d := getDockerRuntime(t)
 
 	image := "haproxy:2.0.7-alpine"
@@ -261,6 +283,8 @@ func TestImageID(t *testing.T) {
 }
 
 func TestImageIDMissing(t *testing.T) {
+	t.Parallel()
+
 	_, d := getDockerRuntime(t)
 
 	image := "wrk2:latest"
@@ -279,6 +303,8 @@ func TestImageIDMissing(t *testing.T) {
 
 // pullImage() tests.
 func TestPullImage(t *testing.T) {
+	t.Parallel()
+
 	_, d := getDockerRuntime(t)
 
 	image := "busybox:latest"
@@ -309,6 +335,8 @@ func TestPullImage(t *testing.T) {
 }
 
 func TestContainerEnv(t *testing.T) {
+	t.Parallel()
+
 	env := map[string]string{"foo": "bar"}
 	envSlice := []string{"foo=bar", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
 
