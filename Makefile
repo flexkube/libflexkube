@@ -31,7 +31,7 @@ BINARY_IMAGE=flexkube/libflexkube
 
 # godox            - Triggers on TODOs in the code, which is fine to put.
 # lll              - As some lines are long because of the type names, and breaking it down decreases redability.
-# testpackage      - Disabled until tests are splitted and moved to the right file names.
+# testpackage      - Disabled until tests are split and moved to the right file names.
 # goerr113         - Disabled until we implement some error types and migrate to use them.
 # gci              - As we use formatting rules from different linter and they are conflicting.
 # exhaustivestruct - To be able to make use of Go zero-value feature.
@@ -150,7 +150,7 @@ update:
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate
 
 .PHONY: codespell-pr
 codespell-pr:
