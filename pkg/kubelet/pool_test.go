@@ -58,6 +58,8 @@ kubelets:
 
 // New() tests.
 func TestPoolNewValidate(t *testing.T) {
+	t.Parallel()
+
 	y := `
 ssh:
   address: localhost
@@ -78,11 +80,15 @@ kubelets:
 
 // FromYaml() tests.
 func TestPoolFromYaml(t *testing.T) {
+	t.Parallel()
+
 	GetPool(t)
 }
 
 // StateToYaml() tests.
 func TestPoolStateToYAML(t *testing.T) {
+	t.Parallel()
+
 	p := GetPool(t)
 
 	if _, err := p.StateToYaml(); err != nil {
@@ -92,6 +98,8 @@ func TestPoolStateToYAML(t *testing.T) {
 
 // CheckCurrentState() tests.
 func TestPoolCheckCurrentState(t *testing.T) {
+	t.Parallel()
+
 	p := GetPool(t)
 
 	if err := p.CheckCurrentState(); err != nil {
@@ -101,6 +109,8 @@ func TestPoolCheckCurrentState(t *testing.T) {
 
 // Containers() tests.
 func TestPoolContainers(t *testing.T) {
+	t.Parallel()
+
 	p := GetPool(t)
 
 	if c := p.Containers(); c == nil {
@@ -110,6 +120,8 @@ func TestPoolContainers(t *testing.T) {
 
 // Deploy() tests.
 func TestPoolDeploy(t *testing.T) {
+	t.Parallel()
+
 	p := GetPool(t)
 
 	if err := p.Deploy(); err == nil {
@@ -118,6 +130,8 @@ func TestPoolDeploy(t *testing.T) {
 }
 
 func TestPoolPropagateExtraMounts(t *testing.T) {
+	t.Parallel()
+
 	p := GetPool(t).(*pool)
 
 	found := false
@@ -150,6 +164,8 @@ func TestPoolPropagateExtraMounts(t *testing.T) {
 }
 
 func TestPoolPKIIntegration(t *testing.T) {
+	t.Parallel()
+
 	pk := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}
@@ -186,6 +202,8 @@ func TestPoolPKIIntegration(t *testing.T) {
 }
 
 func TestPoolNoKubelets(t *testing.T) {
+	t.Parallel()
+
 	pk := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}

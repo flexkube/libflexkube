@@ -6,6 +6,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	d := &Config{}
 
 	di, err := d.New()
@@ -19,6 +21,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
+
 	d := &Config{}
 
 	if err := d.Validate(); err != nil {
@@ -27,6 +31,8 @@ func TestValidate(t *testing.T) {
 }
 
 func TestForwardUnixSocket(t *testing.T) {
+	t.Parallel()
+
 	d := &direct{}
 	p := "/foo"
 
@@ -36,6 +42,8 @@ func TestForwardUnixSocket(t *testing.T) {
 }
 
 func TestConnect(t *testing.T) {
+	t.Parallel()
+
 	d := &direct{}
 	if _, err := d.Connect(); err != nil {
 		t.Fatalf("Connect should always work, got: %v", err)
@@ -43,6 +51,8 @@ func TestConnect(t *testing.T) {
 }
 
 func TestForwardTCP(t *testing.T) {
+	t.Parallel()
+
 	d := &direct{}
 	a := "localhost:80"
 
@@ -52,6 +62,8 @@ func TestForwardTCP(t *testing.T) {
 }
 
 func TestForwardTCPBadAddress(t *testing.T) {
+	t.Parallel()
+
 	d := &direct{}
 	a := "localhost"
 

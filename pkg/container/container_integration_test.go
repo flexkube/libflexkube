@@ -15,6 +15,8 @@ import (
 
 // Create() tests.
 func TestDockerCreateNonExistingImage(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -36,6 +38,8 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 }
 
 func TestDockerCreate(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -58,6 +62,8 @@ func TestDockerCreate(t *testing.T) {
 
 // Status() tests.
 func TestDockerStatus(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -84,6 +90,8 @@ func TestDockerStatus(t *testing.T) {
 }
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -118,6 +126,8 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 
 // Start() tests.
 func TestDockerStart(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -145,6 +155,8 @@ func TestDockerStart(t *testing.T) {
 
 // Stop() tests.
 func TestDockerStop(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -176,6 +188,8 @@ func TestDockerStop(t *testing.T) {
 
 // Delete() tests.
 func TestDockerDelete(t *testing.T) {
+	t.Parallel()
+
 	cc := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},

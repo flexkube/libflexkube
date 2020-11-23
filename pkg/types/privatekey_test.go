@@ -16,6 +16,8 @@ type Foo struct {
 }
 
 func TestPrivateKeyParse(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
 		YAML  string
 		Error bool
@@ -34,6 +36,8 @@ func TestPrivateKeyParse(t *testing.T) {
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			bar := &Foo{}
 
 			err := yaml.Unmarshal([]byte(c.YAML), bar)
@@ -58,6 +62,8 @@ func TestPrivateKeyParse(t *testing.T) {
 }
 
 func TestParsePrivateKeyPKCS1(t *testing.T) {
+	t.Parallel()
+
 	d := fmt.Sprintf("bar: |\n%s", util.Indent(strings.TrimSpace(utiltest.GeneratePKCS1PrivateKey(t)), "  "))
 
 	if err := yaml.Unmarshal([]byte(d), &Foo{}); err != nil {
@@ -66,6 +72,8 @@ func TestParsePrivateKeyPKCS1(t *testing.T) {
 }
 
 func TestParsePrivateKeyEC(t *testing.T) {
+	t.Parallel()
+
 	d := fmt.Sprintf("bar: |\n%s", util.Indent(strings.TrimSpace(utiltest.GenerateECPrivateKey(t)), "  "))
 
 	if err := yaml.Unmarshal([]byte(d), &Foo{}); err != nil {
@@ -74,12 +82,16 @@ func TestParsePrivateKeyEC(t *testing.T) {
 }
 
 func TestParsePrivateKeyBad(t *testing.T) {
+	t.Parallel()
+
 	if err := parsePrivateKey([]byte("notpem")); err == nil {
 		t.Fatalf("parsing not PEM format should fail")
 	}
 }
 
 func TestPrivateKeyPickNil(t *testing.T) {
+	t.Parallel()
+
 	var c PrivateKey
 
 	d := PrivateKey("bar")
@@ -91,6 +103,8 @@ func TestPrivateKeyPickNil(t *testing.T) {
 }
 
 func TestPrivateKeyPick(t *testing.T) {
+	t.Parallel()
+
 	d := PrivateKey("foo")
 	e := PrivateKey("baz")
 

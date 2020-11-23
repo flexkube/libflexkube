@@ -24,7 +24,11 @@ import (
 )
 
 // FromYAML() tests.
+//
+//nolint:funlen
 func TestClusterFromYaml(t *testing.T) {
+	t.Parallel()
+
 	c := `
 ssh:
   user: "core"
@@ -89,6 +93,8 @@ members:
 
 // New() tests.
 func TestNewValidateFail(t *testing.T) {
+	t.Parallel()
+
 	config := &Cluster{}
 
 	if _, err := config.New(); err == nil {
@@ -98,6 +104,8 @@ func TestNewValidateFail(t *testing.T) {
 
 // Validate() tests.
 func TestValidateValidateMembers(t *testing.T) {
+	t.Parallel()
+
 	config := &Cluster{
 		Members: map[string]Member{
 			"foo": {},
@@ -110,6 +118,8 @@ func TestValidateValidateMembers(t *testing.T) {
 }
 
 func TestValidateValidatePass(t *testing.T) {
+	t.Parallel()
+
 	cert := utiltest.GenerateX509Certificate(t)
 	key := utiltest.GenerateRSAPrivateKey(t)
 
@@ -132,6 +142,8 @@ func TestValidateValidatePass(t *testing.T) {
 }
 
 func TestValidateValidateBadCACertificate(t *testing.T) {
+	t.Parallel()
+
 	cert := utiltest.GenerateX509Certificate(t)
 	key := utiltest.GenerateRSAPrivateKey(t)
 
@@ -156,6 +168,8 @@ func TestValidateValidateBadCACertificate(t *testing.T) {
 
 // getExistingEndpoints() tests.
 func TestExistingEndpointsNoEndpoints(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{}
 	if len(c.getExistingEndpoints()) != 0 {
 		t.Fatalf("No endpoints should be returned for empty cluster")
@@ -163,6 +177,8 @@ func TestExistingEndpointsNoEndpoints(t *testing.T) {
 }
 
 func TestExistingEndpoints(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{
 		containers: getContainers(t),
 		members: map[string]*member{
@@ -183,6 +199,8 @@ func TestExistingEndpoints(t *testing.T) {
 
 // firstMember() tests.
 func TestFirstMemberNoMembers(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{}
 
 	if _, err := c.firstMember(); err == nil {
@@ -191,6 +209,8 @@ func TestFirstMemberNoMembers(t *testing.T) {
 }
 
 func TestFirstMember(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{
 		members: map[string]*member{
 			"foo": {},
@@ -241,6 +261,8 @@ func getFakeHostConfiguredContainer() *container.HostConfiguredContainer {
 
 // getClient() tests.
 func TestGetClientEmptyCluster(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{}
 	if _, err := c.getClient(); err == nil {
 		t.Fatalf("Getting client on empty cluster should fail")
@@ -248,6 +270,8 @@ func TestGetClientEmptyCluster(t *testing.T) {
 }
 
 func TestGetClientForwardFail(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{
 		containers: getContainers(t),
 		members: map[string]*member{
@@ -273,6 +297,8 @@ func TestGetClientForwardFail(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{
 		containers: getContainers(t),
 		members: map[string]*member{
@@ -296,6 +322,8 @@ func TestGetClient(t *testing.T) {
 
 // membersToRemove() tests.
 func TestMembersToRemove(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
@@ -324,6 +352,8 @@ func TestMembersToRemove(t *testing.T) {
 
 // membersToAdd() tests.
 func TestMembersToAdd(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
 			"bar": getFakeHostConfiguredContainer(),
@@ -352,6 +382,8 @@ func TestMembersToAdd(t *testing.T) {
 
 // updateMembers() tests.
 func TestUpdateMembersNoUpdates(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
@@ -390,6 +422,8 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 }
 
 func TestUpdateMembersRemoveMember(t *testing.T) {
+	t.Parallel()
+
 	c := &cluster{
 		containers: getContainers(t),
 		members: map[string]*member{
@@ -430,6 +464,8 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 }
 
 func TestUpdateMembersAddMember(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		DesiredState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
@@ -476,6 +512,8 @@ func TestUpdateMembersAddMember(t *testing.T) {
 
 // Deploy() tests.
 func TestDeploy(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		DesiredState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
@@ -503,6 +541,8 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployUpdateMembers(t *testing.T) {
+	t.Parallel()
+
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
 			"bar": getFakeHostConfiguredContainer(),
@@ -533,6 +573,8 @@ func TestDeployUpdateMembers(t *testing.T) {
 }
 
 func TestClusterNewPKIIntegration(t *testing.T) {
+	t.Parallel()
+
 	pki := &pki.PKI{
 		Etcd: &pki.Etcd{
 			Peers: map[string]string{

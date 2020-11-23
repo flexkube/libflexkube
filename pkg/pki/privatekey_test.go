@@ -8,6 +8,8 @@ import (
 )
 
 func TestPrivateKeyParse(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
 		key string
 		err bool
@@ -42,6 +44,8 @@ aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
 		c := c
 
 		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+
 			err := pki.ValidatePrivateKey(c.key)
 
 			if c.err && err == nil {

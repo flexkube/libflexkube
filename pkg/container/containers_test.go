@@ -22,6 +22,8 @@ const (
 
 // New() tests.
 func TestContainersNew(t *testing.T) {
+	t.Parallel()
+
 	GetContainers(t)
 }
 
@@ -55,6 +57,8 @@ func GetContainers(t *testing.T) ContainersInterface {
 
 // Containers() tests.
 func TestContainersContainers(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{}
 
 	if !reflect.DeepEqual(c, c.Containers()) {
@@ -64,6 +68,8 @@ func TestContainersContainers(t *testing.T) {
 
 // CheckCurrentState() tests.
 func TestContainersCheckCurrentStateNew(t *testing.T) {
+	t.Parallel()
+
 	c := GetContainers(t)
 
 	if err := c.CheckCurrentState(); err != nil {
@@ -73,6 +79,8 @@ func TestContainersCheckCurrentStateNew(t *testing.T) {
 
 // CurrentStateToYaml() tests.
 func TestContainersCurrentStateToYAML(t *testing.T) {
+	t.Parallel()
+
 	c := GetContainers(t)
 
 	_, err := c.StateToYaml()
@@ -83,6 +91,8 @@ func TestContainersCurrentStateToYAML(t *testing.T) {
 
 // ToExported() tests.
 func TestContainersToExported(t *testing.T) {
+	t.Parallel()
+
 	c := GetContainers(t)
 
 	c.ToExported()
@@ -90,12 +100,16 @@ func TestContainersToExported(t *testing.T) {
 
 // FromYaml() tests.
 func TestContainersFromYamlBad(t *testing.T) {
+	t.Parallel()
+
 	if _, err := FromYaml([]byte{}); err == nil {
 		t.Fatalf("Creating containers from empty YAML should fail")
 	}
 }
 
 func TestContainersFromYaml(t *testing.T) {
+	t.Parallel()
+
 	y := `
 desiredState:
  foo:
@@ -116,6 +130,8 @@ desiredState:
 
 // filesToUpdate() tests.
 func TestFilesToUpdateEmpty(t *testing.T) {
+	t.Parallel()
+
 	expected := []string{foo}
 
 	d := hostConfiguredContainer{
@@ -131,6 +147,8 @@ func TestFilesToUpdateEmpty(t *testing.T) {
 
 // Validate() tests.
 func TestValidateEmpty(t *testing.T) {
+	t.Parallel()
+
 	cc := &Containers{}
 
 	if err := cc.Validate(); err == nil {
@@ -139,6 +157,8 @@ func TestValidateEmpty(t *testing.T) {
 }
 
 func TestValidateNil(t *testing.T) {
+	t.Parallel()
+
 	var cc Containers
 
 	if err := cc.Validate(); err == nil {
@@ -147,6 +167,8 @@ func TestValidateNil(t *testing.T) {
 }
 
 func TestValidateNoContainers(t *testing.T) {
+	t.Parallel()
+
 	cc := &Containers{
 		DesiredState:  ContainersState{},
 		PreviousState: ContainersState{},
@@ -158,6 +180,8 @@ func TestValidateNoContainers(t *testing.T) {
 }
 
 func TestValidateBadDesiredContainers(t *testing.T) {
+	t.Parallel()
+
 	cc := &Containers{
 		DesiredState: ContainersState{
 			foo: &HostConfiguredContainer{},
@@ -171,6 +195,8 @@ func TestValidateBadDesiredContainers(t *testing.T) {
 }
 
 func TestValidateBadCurrentContainers(t *testing.T) {
+	t.Parallel()
+
 	cc := &Containers{
 		DesiredState: ContainersState{},
 		PreviousState: ContainersState{
@@ -185,6 +211,8 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 
 // isUpdatable() tests.
 func TestIsUpdatableWithoutCurrentState(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{},
@@ -197,6 +225,8 @@ func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 }
 
 func TestIsUpdatableToBeDeleted(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{
 			foo: &hostConfiguredContainer{},
@@ -209,6 +239,8 @@ func TestIsUpdatableToBeDeleted(t *testing.T) {
 }
 
 func TestIsUpdatable(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{},
@@ -225,6 +257,8 @@ func TestIsUpdatable(t *testing.T) {
 
 // diffHost() tests.
 func TestDiffHostNotUpdatable(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{
 			foo: &hostConfiguredContainer{},
@@ -237,6 +271,8 @@ func TestDiffHostNotUpdatable(t *testing.T) {
 }
 
 func TestDiffHostNoDiff(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -261,6 +297,8 @@ func TestDiffHostNoDiff(t *testing.T) {
 }
 
 func TestDiffHost(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -288,6 +326,8 @@ func TestDiffHost(t *testing.T) {
 
 // diffContainer() tests.
 func TestDiffContainerNotUpdatable(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{
 			foo: &hostConfiguredContainer{},
@@ -300,6 +340,8 @@ func TestDiffContainerNotUpdatable(t *testing.T) {
 }
 
 func TestDiffContainerNoDiff(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -332,6 +374,8 @@ func TestDiffContainerNoDiff(t *testing.T) {
 }
 
 func TestDiffContainer(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -366,6 +410,8 @@ func TestDiffContainer(t *testing.T) {
 }
 
 func TestDiffContainerRuntimeConfig(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -403,6 +449,8 @@ func TestDiffContainerRuntimeConfig(t *testing.T) {
 
 // ensureRunning() tests.
 func TestEnsureRunningNonExistent(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{},
 	}
@@ -413,6 +461,8 @@ func TestEnsureRunningNonExistent(t *testing.T) {
 }
 
 func TestEnsureRunning(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -445,6 +495,8 @@ func TestEnsureRunning(t *testing.T) {
 
 // ensureExists() tests.
 func TestEnsureExistsAlreadyExists(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{
 			foo: &hostConfiguredContainer{
@@ -466,6 +518,8 @@ func TestEnsureExistsAlreadyExists(t *testing.T) {
 }
 
 func TestEnsureExistsFailCreate(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
@@ -499,6 +553,8 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 }
 
 func TestEnsureExistsFailStart(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
@@ -544,6 +600,8 @@ func TestEnsureExistsFailStart(t *testing.T) {
 }
 
 func TestEnsureExist(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
@@ -590,6 +648,8 @@ func TestEnsureExist(t *testing.T) {
 
 // ensureHost() tests.
 func TestEnsureHostNoDiff(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -612,7 +672,10 @@ func TestEnsureHostNoDiff(t *testing.T) {
 	}
 }
 
-func TestEnsureHostFailStart(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestEnsureHostFailStart(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -686,7 +749,10 @@ func TestEnsureHostFailStart(t *testing.T) { //nolint:funlen
 	}
 }
 
-func TestEnsureHost(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestEnsureHost(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -762,6 +828,8 @@ func TestEnsureHost(t *testing.T) { //nolint:funlen
 
 // ensureContainer() tests.
 func TestEnsureContainerNoDiff(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -788,7 +856,10 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 	}
 }
 
-func TestEnsureContainerFailStart(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestEnsureContainerFailStart(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -866,7 +937,10 @@ func TestEnsureContainerFailStart(t *testing.T) { //nolint:funlen
 	}
 }
 
-func TestEnsureContainer(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestEnsureContainer(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -946,6 +1020,8 @@ func TestEnsureContainer(t *testing.T) { //nolint:funlen
 
 // recreate() tests.
 func TestRecreateNonExistent(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{}
 	if err := c.recreate(foo); err == nil {
 		t.Fatalf("Recreating on empty containers should fail")
@@ -954,6 +1030,8 @@ func TestRecreateNonExistent(t *testing.T) {
 
 // Deploy() tests.
 func TestDeployNoCurrentState(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{}
 	if err := c.Deploy(); err == nil {
 		t.Fatalf("Execute without current state should fail")
@@ -962,6 +1040,8 @@ func TestDeployNoCurrentState(t *testing.T) {
 
 // hasUpdates() tests.
 func TestHasUpdatesHost(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -998,6 +1078,8 @@ func TestHasUpdatesHost(t *testing.T) {
 }
 
 func TestHasUpdatesConfig(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1033,6 +1115,8 @@ func TestHasUpdatesConfig(t *testing.T) {
 }
 
 func TestHasUpdatesContainer(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1067,6 +1151,8 @@ func TestHasUpdatesContainer(t *testing.T) {
 }
 
 func TestHasUpdatesNoUpdates(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1100,6 +1186,8 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 
 // ensureConfigured() tests.
 func TestEnsureConfiguredDisposable(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{},
 		currentState: containersState{
@@ -1115,6 +1203,8 @@ func TestEnsureConfiguredDisposable(t *testing.T) {
 }
 
 func TestEnsureConfiguredNoUpdates(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1133,7 +1223,10 @@ func TestEnsureConfiguredNoUpdates(t *testing.T) {
 	}
 }
 
-func TestEnsureConfigured(t *testing.T) { //nolint:funlen
+//nolint:funlen
+func TestEnsureConfigured(t *testing.T) {
+	t.Parallel()
+
 	called := false
 
 	f := foo
@@ -1220,7 +1313,10 @@ func TestEnsureConfigured(t *testing.T) { //nolint:funlen
 	}
 }
 
+//nolint:funlen
 func TestEnsureConfiguredFreshState(t *testing.T) {
+	t.Parallel()
+
 	called := false
 
 	f := foo
@@ -1284,6 +1380,8 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 }
 
 func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
+	t.Parallel()
+
 	f := foo
 
 	cf := map[string]string{
@@ -1333,6 +1431,8 @@ func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 
 // selectRuntime() tests.
 func TestSelectRuntime(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtimeConfig: &docker.Config{},
@@ -1350,6 +1450,8 @@ func TestSelectRuntime(t *testing.T) {
 
 // DesiredState() tests.
 func TestContainersDesiredStateEmpty(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{}
 
 	e := ContainersState{}
@@ -1360,6 +1462,8 @@ func TestContainersDesiredStateEmpty(t *testing.T) {
 }
 
 func TestContainersDesiredStateOldID(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1410,6 +1514,8 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 }
 
 func TestContainersDesiredStateStatusRunning(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{
 			foo: &hostConfiguredContainer{
@@ -1459,7 +1565,11 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 }
 
 // updateExistingContainers() tests.
-func TestUpdateExistingContainersRemoveAllOld(t *testing.T) { //nolint:funlen
+//
+//nolint:funlen
+func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
+	t.Parallel()
+
 	c := &containers{
 		desiredState: containersState{},
 		currentState: containersState{
@@ -1537,6 +1647,8 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) { //nolint:funlen
 
 // ensureCurrentContainer() tests.
 func TestEnsureCurrentContainer(t *testing.T) {
+	t.Parallel()
+
 	hcc := hostConfiguredContainer{
 		hooks: &Hooks{},
 		host: host.Host{
@@ -1575,6 +1687,8 @@ func TestEnsureCurrentContainer(t *testing.T) {
 }
 
 func TestEnsureCurrentContainerNonExisting(t *testing.T) {
+	t.Parallel()
+
 	hcc := hostConfiguredContainer{
 		hooks: &Hooks{},
 		host: host.Host{

@@ -15,8 +15,6 @@ import (
 )
 
 func getClientConfig(t *testing.T) *client.Config {
-	t.Parallel()
-
 	p := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}
@@ -33,6 +31,8 @@ func getClientConfig(t *testing.T) *client.Config {
 }
 
 func TestToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	cc := getClientConfig(t)
 
 	kk := &Kubelet{
@@ -208,6 +208,8 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		tc := tc
 
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			t.Parallel()
+
 			cc := getClientConfig(t)
 
 			k := &Kubelet{
@@ -229,6 +231,8 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 }
 
 func TestKubeletIncludeExtraMounts(t *testing.T) {
+	t.Parallel()
+
 	em := containertypes.Mount{
 		Source: "/tmp/",
 		Target: "/foo",

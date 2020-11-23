@@ -10,6 +10,8 @@ import (
 
 // New() tests.
 func TestConfigNewBadKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	config := &release.Config{
 		// Put content of your kubeconfig file here.
 		Kubeconfig: "",
@@ -96,11 +98,15 @@ func newRelease(t *testing.T) release.Release {
 }
 
 func TestConfigNew(t *testing.T) {
+	t.Parallel()
+
 	newRelease(t)
 }
 
 // Validate() tests.
 func TestConfigValidateEmptyNamespace(t *testing.T) {
+	t.Parallel()
+
 	c := newConfig(t)
 	c.Namespace = ""
 
@@ -110,6 +116,8 @@ func TestConfigValidateEmptyNamespace(t *testing.T) {
 }
 
 func TestConfigValidateEmptyName(t *testing.T) {
+	t.Parallel()
+
 	c := newConfig(t)
 	c.Name = ""
 
@@ -119,6 +127,8 @@ func TestConfigValidateEmptyName(t *testing.T) {
 }
 
 func TestConfigValidateEmptyChart(t *testing.T) {
+	t.Parallel()
+
 	c := newConfig(t)
 	c.Chart = ""
 
@@ -128,6 +138,8 @@ func TestConfigValidateEmptyChart(t *testing.T) {
 }
 
 func TestConfigValidateBadValues(t *testing.T) {
+	t.Parallel()
+
 	c := newConfig(t)
 	c.Values = "asd"
 
@@ -138,6 +150,8 @@ func TestConfigValidateBadValues(t *testing.T) {
 
 // ValidateChart() tests.
 func TestReleaseValidateChartBad(t *testing.T) {
+	t.Parallel()
+
 	r := newRelease(t)
 
 	if err := r.ValidateChart(); err == nil {

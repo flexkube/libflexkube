@@ -6,7 +6,7 @@ import (
 
 const (
 	// EtcdCACN is a default CN for etcd CA certificate, as recommended by
-	// https://kubernetes.io/docs/setup/best-practices/certificates/.
+	// the https://kubernetes.io/docs/setup/best-practices/certificates/.
 	EtcdCACN = "etcd-ca"
 )
 

@@ -14,42 +14,56 @@ const (
 )
 
 func TestPickStringLast(t *testing.T) {
+	t.Parallel()
+
 	if v := PickString("", "", expectedValueString); v != expectedValueString {
 		t.Fatalf("expected %s, got %s", expectedValueString, v)
 	}
 }
 
 func TestPickStringNoValue(t *testing.T) {
+	t.Parallel()
+
 	if v := PickString(""); v != "" {
 		t.Fatalf("expected '%s', got '%s'", "", v)
 	}
 }
 
 func TestPickStringFirst(t *testing.T) {
+	t.Parallel()
+
 	if v := PickString(expectedValueString, "bar"); v != expectedValueString {
 		t.Fatalf("expected %s, got %s", expectedValueString, v)
 	}
 }
 
 func TestPickIntLast(t *testing.T) {
+	t.Parallel()
+
 	if v := PickInt(0, 0, expectedValueInt); v != expectedValueInt {
 		t.Fatalf("expected %d, got %d", expectedValueInt, v)
 	}
 }
 
 func TestPickIntNoValue(t *testing.T) {
+	t.Parallel()
+
 	if v := PickInt(0); v != 0 {
 		t.Fatalf("expected %d, got %d", 0, v)
 	}
 }
 
 func TestPickIntFirst(t *testing.T) {
+	t.Parallel()
+
 	if v := PickInt(expectedValueInt, 5); v != expectedValueInt {
 		t.Fatalf("expected %d, got %d", expectedValueInt, v)
 	}
 }
 
 func TestIndent(t *testing.T) {
+	t.Parallel()
+
 	expected := "   foo"
 	if a := Indent("foo", "   "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
@@ -57,6 +71,8 @@ func TestIndent(t *testing.T) {
 }
 
 func TestIndentWithNewline(t *testing.T) {
+	t.Parallel()
+
 	expected := "  foo\n  bar\n"
 	if a := Indent("foo\nbar\n", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
@@ -64,6 +80,8 @@ func TestIndentWithNewline(t *testing.T) {
 }
 
 func TestIndentEmpty(t *testing.T) {
+	t.Parallel()
+
 	expected := ""
 	if a := Indent("", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
@@ -71,6 +89,8 @@ func TestIndentEmpty(t *testing.T) {
 }
 
 func TestIndentEmptyText(t *testing.T) {
+	t.Parallel()
+
 	expected := ""
 	if a := Indent("", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
@@ -78,6 +98,8 @@ func TestIndentEmptyText(t *testing.T) {
 }
 
 func TestIndentEmptyIndent(t *testing.T) {
+	t.Parallel()
+
 	expected := "foo\nbar"
 	if a := Indent("foo\nbar", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
@@ -85,6 +107,8 @@ func TestIndentEmptyIndent(t *testing.T) {
 }
 
 func TestJoinSorted(t *testing.T) {
+	t.Parallel()
+
 	expected := "baz/doh|foo/bar"
 
 	values := map[string]string{
@@ -98,6 +122,8 @@ func TestJoinSorted(t *testing.T) {
 }
 
 func TestPickStringSlice(t *testing.T) {
+	t.Parallel()
+
 	expected := []string{"foo"}
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
@@ -105,6 +131,8 @@ func TestPickStringSlice(t *testing.T) {
 }
 
 func TestPickStringMap(t *testing.T) {
+	t.Parallel()
+
 	expected := map[string]string{"foo": "bar"}
 	if v := PickStringMap(map[string]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
@@ -112,6 +140,8 @@ func TestPickStringMap(t *testing.T) {
 }
 
 func TestPickStringSliceEmpty(t *testing.T) {
+	t.Parallel()
+
 	expected := []string{}
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
@@ -119,6 +149,8 @@ func TestPickStringSliceEmpty(t *testing.T) {
 }
 
 func TestPickStringMapEmpty(t *testing.T) {
+	t.Parallel()
+
 	expected := map[string]string{}
 	if v := PickStringMap(map[string]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
@@ -126,6 +158,8 @@ func TestPickStringMapEmpty(t *testing.T) {
 }
 
 func TestKeysStringMap(t *testing.T) {
+	t.Parallel()
+
 	expected := []string{"baz", "foo"}
 	m := map[string]string{
 		"foo": "bar",

@@ -5,6 +5,8 @@ import (
 )
 
 func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	c, err := NewClient([]byte(kubeconfig))
@@ -24,6 +26,8 @@ func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
 }
 
 func TestWaitForNodeFakeKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	c, err := NewClient([]byte(kubeconfig))
@@ -37,6 +41,8 @@ func TestWaitForNodeFakeKubeconfig(t *testing.T) {
 }
 
 func TestLabelNodeFakeKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	c, err := NewClient([]byte(kubeconfig))
@@ -55,6 +61,8 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 
 // Ping() tests.
 func TestPingFakeKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	c, err := NewClient([]byte(kubeconfig))
@@ -75,6 +83,8 @@ func TestPingFakeKubeconfig(t *testing.T) {
 
 // CheckNodeReady() tests.
 func TestCheckNodeReadyFakeKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	kubeconfig := GetKubeconfig(t)
 
 	c, err := NewClient([]byte(kubeconfig))

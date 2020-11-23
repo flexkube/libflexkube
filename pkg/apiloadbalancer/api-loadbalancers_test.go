@@ -7,6 +7,8 @@ import (
 )
 
 func TestPoolNoInstancesDefined(t *testing.T) {
+	t.Parallel()
+
 	a := &APILoadBalancers{}
 
 	if err := a.Validate(); err == nil {
@@ -41,6 +43,8 @@ servers:
 
 // New() tests.
 func TestLoadBalancersNewValidate(t *testing.T) {
+	t.Parallel()
+
 	y := `
 ssh:
   address: localhost
@@ -60,11 +64,14 @@ apiLoadBalancers:
 
 // FromYaml() tests.
 func TestLoadBalancersFromYaml(t *testing.T) {
+	t.Parallel()
 	GetLoadBalancers(t)
 }
 
 // StateToYaml() tests.
 func TestLoadBalancersStateToYAML(t *testing.T) {
+	t.Parallel()
+
 	p := GetLoadBalancers(t)
 
 	if _, err := p.StateToYaml(); err != nil {
@@ -74,6 +81,8 @@ func TestLoadBalancersStateToYAML(t *testing.T) {
 
 // CheckCurrentState() tests.
 func TestLoadBalancersCheckCurrentState(t *testing.T) {
+	t.Parallel()
+
 	p := GetLoadBalancers(t)
 
 	if err := p.CheckCurrentState(); err != nil {
@@ -83,6 +92,8 @@ func TestLoadBalancersCheckCurrentState(t *testing.T) {
 
 // Deploy() tests.
 func TestLoadBalancersDeploy(t *testing.T) {
+	t.Parallel()
+
 	p := GetLoadBalancers(t)
 
 	if err := p.Deploy(); err == nil {
@@ -92,6 +103,8 @@ func TestLoadBalancersDeploy(t *testing.T) {
 
 // Containers() tests.
 func TestLoadBalancersContainers(t *testing.T) {
+	t.Parallel()
+
 	p := GetLoadBalancers(t)
 
 	if c := p.Containers(); c == nil {

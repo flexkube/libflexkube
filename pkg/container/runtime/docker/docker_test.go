@@ -25,6 +25,8 @@ import (
 
 // New() tests.
 func TestNewClient(t *testing.T) {
+	t.Parallel()
+
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
 	c := &Config{}
@@ -41,6 +43,8 @@ func TestNewClient(t *testing.T) {
 
 // getDockerClient() tests.
 func TestNewClientWithHost(t *testing.T) {
+	t.Parallel()
+
 	config := &Config{
 		Host: "unix:///foo.sock",
 	}
@@ -57,6 +61,8 @@ func TestNewClientWithHost(t *testing.T) {
 
 // sanitizeImageName() tests.
 func TestSanitizeImageName(t *testing.T) {
+	t.Parallel()
+
 	e := "foo:latest"
 
 	if g := sanitizeImageName("foo"); g != e {
@@ -65,6 +71,8 @@ func TestSanitizeImageName(t *testing.T) {
 }
 
 func TestSanitizeImageNameWithTag(t *testing.T) {
+	t.Parallel()
+
 	e := "foo:v0.1.0"
 
 	if g := sanitizeImageName(e); g != e {
@@ -74,6 +82,8 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 
 // Status() tests.
 func TestStatus(t *testing.T) {
+	t.Parallel()
+
 	es := "running"
 
 	d := &docker{
@@ -106,6 +116,8 @@ func TestStatus(t *testing.T) {
 }
 
 func TestStatusNotFound(t *testing.T) {
+	t.Parallel()
+
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
@@ -126,6 +138,8 @@ func TestStatusNotFound(t *testing.T) {
 }
 
 func TestStatusRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
@@ -142,6 +156,8 @@ func TestStatusRuntimeError(t *testing.T) {
 
 // Copy() tests.
 func TestCopyRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
@@ -158,6 +174,8 @@ func TestCopyRuntimeError(t *testing.T) {
 
 // Read() tests.
 func TestReadRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	p := defaultPath
 
 	d := &docker{
@@ -184,6 +202,8 @@ const (
 )
 
 func TestRead(t *testing.T) {
+	t.Parallel()
+
 	p := defaultPath
 
 	d := &docker{
@@ -218,6 +238,8 @@ func TestRead(t *testing.T) {
 }
 
 func TestReadFileMissing(t *testing.T) {
+	t.Parallel()
+
 	p := defaultPath
 
 	d := &docker{
@@ -253,6 +275,8 @@ DT71fav/qfm/u1/vAAAAAAAAAAAAAAAAAABYbwIOFGnRACgAAA==`)
 }
 
 func TestReadVerifyTarArchive(t *testing.T) {
+	t.Parallel()
+
 	p := defaultPath
 
 	d := &docker{
@@ -271,6 +295,8 @@ func TestReadVerifyTarArchive(t *testing.T) {
 
 // tarToFiles() tests.
 func TestTarToFiles(t *testing.T) {
+	t.Parallel()
+
 	fs, err := tarToFiles(testTar(t))
 	if err != nil {
 		t.Fatalf("Reading should succeed, got: %v", err)
@@ -292,6 +318,8 @@ func TestTarToFiles(t *testing.T) {
 
 // filesToTar() tests.
 func TestFilesToTar(t *testing.T) {
+	t.Parallel()
+
 	tn := "test"
 	f := &types.File{
 		Content: "foo\n",
@@ -335,6 +363,8 @@ func TestFilesToTar(t *testing.T) {
 }
 
 func TestFilesToTarNumericUserGroup(t *testing.T) {
+	t.Parallel()
+
 	tn := 1001
 	f := &types.File{
 		Content: "foo\n",
@@ -367,6 +397,8 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 
 // Create() tests.
 func TestCreatePullImageFail(t *testing.T) {
+	t.Parallel()
+
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
@@ -381,9 +413,9 @@ func TestCreatePullImageFail(t *testing.T) {
 	}
 }
 
-func TestCreateBuildPortsFail(t *testing.T) {}
-
 func TestCreateSetUser(t *testing.T) {
+	t.Parallel()
+
 	c := &types.ContainerConfig{
 		User: "test",
 	}
@@ -413,6 +445,8 @@ func TestCreateSetUser(t *testing.T) {
 }
 
 func TestCreateSetUserGroup(t *testing.T) {
+	t.Parallel()
+
 	c := &types.ContainerConfig{
 		User:  "test",
 		Group: "bar",
@@ -445,6 +479,8 @@ func TestCreateSetUserGroup(t *testing.T) {
 }
 
 func TestCreateRuntimeFail(t *testing.T) {
+	t.Parallel()
+
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
@@ -465,10 +501,10 @@ func TestCreateRuntimeFail(t *testing.T) {
 	}
 }
 
-func TestCreate(t *testing.T) {}
-
 // DefaultConfig() tests.
 func TestDefaultConfig(t *testing.T) {
+	t.Parallel()
+
 	if DefaultConfig().Host != client.DefaultDockerHost {
 		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, DefaultConfig().Host)
 	}
@@ -476,6 +512,8 @@ func TestDefaultConfig(t *testing.T) {
 
 // GetAddress() tests.
 func TestGetAddressNilConfig(t *testing.T) {
+	t.Parallel()
+
 	var c *Config
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
@@ -484,6 +522,8 @@ func TestGetAddressNilConfig(t *testing.T) {
 }
 
 func TestGetAddressEmptyConfig(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{}
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
@@ -492,6 +532,8 @@ func TestGetAddressEmptyConfig(t *testing.T) {
 }
 
 func TestGetAddress(t *testing.T) {
+	t.Parallel()
+
 	f := "foo"
 	c := &Config{
 		Host: f,
@@ -504,6 +546,8 @@ func TestGetAddress(t *testing.T) {
 
 // convertContainerConfig() tests.
 func TestConvertContainerConfigEnvVariables(t *testing.T) {
+	t.Parallel()
+
 	c := &types.ContainerConfig{
 		Env: map[string]string{"foo": "bar"},
 	}

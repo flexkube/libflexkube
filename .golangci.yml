@@ -1,0 +1,8 @@
+issues:
+  exclude-rules:
+    - linters:
+      - paralleltest
+      text: "does not use range value in test Run"
+    - linters:
+      - godot
+      source: "(front proxy CA certificate,|certificate, as recommended by)"

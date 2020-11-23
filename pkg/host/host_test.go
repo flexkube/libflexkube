@@ -10,6 +10,8 @@ import (
 
 // New() tests.
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	h := BuildConfig(Host{
 		SSHConfig: &ssh.Config{
 			Address:  "localhost",
@@ -23,6 +25,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewValidate(t *testing.T) {
+	t.Parallel()
+
 	h := &Host{}
 
 	if _, err := h.New(); err == nil {
@@ -32,6 +36,8 @@ func TestNewValidate(t *testing.T) {
 
 // Validate() tests.
 func TestValidate(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		Host    *Host
 		Message string
@@ -63,6 +69,8 @@ func TestValidate(t *testing.T) {
 		c := c
 
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+			t.Parallel()
+
 			err := c.Host.Validate()
 			if c.Error && err == nil {
 				t.Fatalf(c.Message)
@@ -76,6 +84,8 @@ func TestValidate(t *testing.T) {
 
 // Connect() tests.
 func TestConnect(t *testing.T) {
+	t.Parallel()
+
 	h := Host{
 		DirectConfig: &direct.Config{},
 	}
@@ -92,6 +102,8 @@ func TestConnect(t *testing.T) {
 
 // ForwardUnixSocket() tests.
 func TestForwardUnixSocket(t *testing.T) {
+	t.Parallel()
+
 	h := Host{
 		DirectConfig: &direct.Config{},
 	}
@@ -113,6 +125,8 @@ func TestForwardUnixSocket(t *testing.T) {
 
 // ForwardTCP() tests.
 func TestForwardTCP(t *testing.T) {
+	t.Parallel()
+
 	h := Host{
 		DirectConfig: &direct.Config{},
 	}
@@ -134,6 +148,8 @@ func TestForwardTCP(t *testing.T) {
 
 // BuildConfig() tests.
 func TestBuildConfigDirectByDefault(t *testing.T) {
+	t.Parallel()
+
 	h := BuildConfig(Host{}, Host{})
 	if err := h.Validate(); err != nil {
 		t.Errorf("Config returned by default should be valid, got: %v", err)
@@ -144,7 +160,9 @@ func TestBuildConfigDirectByDefault(t *testing.T) {
 	}
 }
 
-func TestBuildConfigFirstPriotityDirect(t *testing.T) {
+func TestBuildConfigFirstPriorityDirect(t *testing.T) {
+	t.Parallel()
+
 	c := Host{
 		DirectConfig: &direct.Config{},
 	}
@@ -164,6 +182,8 @@ func TestBuildConfigFirstPriotityDirect(t *testing.T) {
 }
 
 func TestBuildConfigFirstPriotitySSH(t *testing.T) {
+	t.Parallel()
+
 	c := Host{
 		SSHConfig: &ssh.Config{
 			Address:  "foo",
@@ -186,6 +206,8 @@ func TestBuildConfigFirstPriotitySSH(t *testing.T) {
 }
 
 func TestBuildConfigSSH(t *testing.T) {
+	t.Parallel()
+
 	u := Host{
 		SSHConfig: &ssh.Config{
 			Address: "foo",

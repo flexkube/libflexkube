@@ -15,6 +15,8 @@ import (
 )
 
 func TestNewCluster(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			NewCluster: true,
@@ -42,6 +44,8 @@ func TestNewCluster(t *testing.T) {
 }
 
 func TestExistingCluster(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			NewCluster: false,
@@ -70,6 +74,8 @@ func TestExistingCluster(t *testing.T) {
 
 // peerURLs() tests.
 func TestPeerURLs(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			PeerAddress: "1.1.1.1",
@@ -84,6 +90,8 @@ func TestPeerURLs(t *testing.T) {
 
 // forwardEndpoints() tests.
 func TestForwardEndpoints(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			PeerAddress: "127.0.0.1",
@@ -104,6 +112,8 @@ func TestForwardEndpoints(t *testing.T) {
 }
 
 func TestForwardEndpointsFail(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			PeerAddress: "127.0.0.1",
@@ -120,6 +130,8 @@ func TestForwardEndpointsFail(t *testing.T) {
 
 // getID() tests.
 func TestGetIDFailToListMembers(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
@@ -134,6 +146,8 @@ func TestGetIDFailToListMembers(t *testing.T) {
 }
 
 func TestGetIDNotFound(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{}, nil
@@ -153,6 +167,8 @@ func TestGetIDNotFound(t *testing.T) {
 }
 
 func TestGetIDByName(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -183,6 +199,8 @@ func TestGetIDByName(t *testing.T) {
 }
 
 func TestGetIDByPeerURL(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -215,6 +233,8 @@ func TestGetIDByPeerURL(t *testing.T) {
 
 // getEtcdClient() tests.
 func TestGetEtcdClientNoEndpoints(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			CACertificate: utiltest.GenerateX509Certificate(t),
@@ -227,6 +247,8 @@ func TestGetEtcdClientNoEndpoints(t *testing.T) {
 }
 
 func TestGetEtcdClient(t *testing.T) {
+	t.Parallel()
+
 	m := &member{
 		config: &Member{
 			PeerCertificate: "",
@@ -247,6 +269,8 @@ const testID = 1
 
 // remove() tests.
 func TestRemove(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -276,6 +300,8 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveNonExistent(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -295,6 +321,8 @@ func TestRemoveNonExistent(t *testing.T) {
 }
 
 func TestRemoveMemberFail(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -328,6 +356,8 @@ func TestRemoveMemberFail(t *testing.T) {
 }
 
 func TestRemoveGetIDFail(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
@@ -343,6 +373,8 @@ func TestRemoveGetIDFail(t *testing.T) {
 
 // addMember() tests.
 func TestAddMember(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -370,6 +402,8 @@ func TestAddMember(t *testing.T) {
 }
 
 func TestAddMemberAlreadyExists(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -399,6 +433,8 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 }
 
 func TestAddMemberFail(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
@@ -426,6 +462,8 @@ func TestAddMemberFail(t *testing.T) {
 }
 
 func TestAddGetIDFail(t *testing.T) {
+	t.Parallel()
+
 	f := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")

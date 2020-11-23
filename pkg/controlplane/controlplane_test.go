@@ -98,6 +98,8 @@ func controlplaneYAML(t *testing.T) string {
 }
 
 func TestControlplaneFromYaml(t *testing.T) {
+	t.Parallel()
+
 	co, err := FromYaml([]byte(controlplaneYAML(t)))
 	if err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
@@ -122,6 +124,8 @@ func TestControlplaneFromYaml(t *testing.T) {
 
 // New() tests.
 func TestControlplaneNewValidate(t *testing.T) {
+	t.Parallel()
+
 	c := &Controlplane{}
 
 	if _, err := c.New(); err == nil {
@@ -130,6 +134,8 @@ func TestControlplaneNewValidate(t *testing.T) {
 }
 
 func TestControlplaneDestroyNoState(t *testing.T) {
+	t.Parallel()
+
 	y := controlplaneYAML(t)
 
 	y += `destroy: true`
@@ -140,6 +146,8 @@ func TestControlplaneDestroyNoState(t *testing.T) {
 }
 
 func TestControlplaneDestroyValidateState(t *testing.T) {
+	t.Parallel()
+
 	y := controlplaneYAML(t)
 
 	y += `destroy: true
@@ -153,6 +161,8 @@ state:
 }
 
 func TestControlplaneDestroyValidState(t *testing.T) {
+	t.Parallel()
+
 	y := `destroy: true
 state:
   foo:
@@ -176,6 +186,8 @@ state:
 }
 
 func TestControlplaneNewPKIIntegration(t *testing.T) {
+	t.Parallel()
+
 	pki := &pki.PKI{
 		Etcd: &pki.Etcd{
 			ClientCNs: []string{"kube-apiserver", "root"},

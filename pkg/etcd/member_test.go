@@ -15,6 +15,8 @@ const (
 )
 
 func TestMemberToHostConfiguredContainer(t *testing.T) {
+	t.Parallel()
+
 	cert := utiltest.GenerateX509Certificate(t)
 	privateKey := utiltest.GenerateRSAPrivateKey(t)
 
@@ -72,6 +74,8 @@ func validMember(t *testing.T) *etcd.Member {
 //
 //nolint:funlen
 func TestValidate(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
 		mutator     func(m *etcd.Member) *etcd.Member
 		expectError bool
@@ -150,6 +154,8 @@ func TestValidate(t *testing.T) {
 		p := p
 
 		t.Run(c, func(t *testing.T) {
+			t.Parallel()
+
 			m := p.mutator(validMember(t))
 			err := m.Validate()
 

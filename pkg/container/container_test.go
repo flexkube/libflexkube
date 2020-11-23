@@ -13,12 +13,16 @@ import (
 
 // New() tests.
 func TestNewEmptyConfiguration(t *testing.T) {
+	t.Parallel()
+
 	if _, err := (&Container{}).New(); err == nil {
 		t.Errorf("Creating container with wrong configuration should fail")
 	}
 }
 
 func TestNewGoodConfiguration(t *testing.T) {
+	t.Parallel()
+
 	c := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -35,6 +39,8 @@ func TestNewGoodConfiguration(t *testing.T) {
 
 // Validate() tests.
 func TestValidateNoName(t *testing.T) {
+	t.Parallel()
+
 	c := &Container{
 		Config: types.ContainerConfig{},
 	}
@@ -44,6 +50,8 @@ func TestValidateNoName(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
+
 	c := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
@@ -59,6 +67,8 @@ func TestValidate(t *testing.T) {
 }
 
 func TestValidateUnsupportedRuntime(t *testing.T) {
+	t.Parallel()
+
 	c := &Container{
 		Config: types.ContainerConfig{
 			Name:  "foo",
@@ -71,6 +81,8 @@ func TestValidateUnsupportedRuntime(t *testing.T) {
 }
 
 func TestValidateRequireImage(t *testing.T) {
+	t.Parallel()
+
 	c := &Container{
 		Config: types.ContainerConfig{
 			Name: "foo",
@@ -83,6 +95,8 @@ func TestValidateRequireImage(t *testing.T) {
 
 // selectRuntime() tests.
 func TestSelectDockerRuntime(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtimeConfig: &docker.Config{},
@@ -100,6 +114,8 @@ func TestSelectDockerRuntime(t *testing.T) {
 
 // FromStatus() tests.
 func TestFromStatusValid(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{
@@ -113,6 +129,8 @@ func TestFromStatusValid(t *testing.T) {
 }
 
 func TestFromStatusNoID(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{},
@@ -125,6 +143,8 @@ func TestFromStatusNoID(t *testing.T) {
 
 // Status() tests.
 func TestStatus(t *testing.T) {
+	t.Parallel()
+
 	c := &containerInstance{
 		base: base{
 			runtime: runtime.Fake{
@@ -142,6 +162,8 @@ func TestStatus(t *testing.T) {
 
 // UpdateStatus() tests.
 func TestContainerUpdateStatusEmptyStatus(t *testing.T) {
+	t.Parallel()
+
 	c := &container{}
 
 	if err := c.UpdateStatus(); err == nil {
@@ -150,6 +172,8 @@ func TestContainerUpdateStatusEmptyStatus(t *testing.T) {
 }
 
 func TestContainerUpdateStatusFail(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtime: runtime.Fake{
@@ -169,6 +193,8 @@ func TestContainerUpdateStatusFail(t *testing.T) {
 }
 
 func TestContainerUpdateStatus(t *testing.T) {
+	t.Parallel()
+
 	ns := types.ContainerStatus{
 		ID:     "foo",
 		Status: "running",
@@ -199,6 +225,8 @@ func TestContainerUpdateStatus(t *testing.T) {
 
 // Start() tests.
 func TestContainerStartBadState(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{},
@@ -211,6 +239,8 @@ func TestContainerStartBadState(t *testing.T) {
 }
 
 func TestContainerStartRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtime: runtime.Fake{
@@ -231,6 +261,8 @@ func TestContainerStartRuntimeError(t *testing.T) {
 }
 
 func TestContainerStart(t *testing.T) {
+	t.Parallel()
+
 	ns := types.ContainerStatus{
 		ID:     "foo",
 		Status: "running",
@@ -264,6 +296,8 @@ func TestContainerStart(t *testing.T) {
 
 // Stop() tests.
 func TestContainerStopBadState(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{},
@@ -276,6 +310,8 @@ func TestContainerStopBadState(t *testing.T) {
 }
 
 func TestContainerStopRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtime: runtime.Fake{
@@ -296,6 +332,8 @@ func TestContainerStopRuntimeError(t *testing.T) {
 }
 
 func TestContainerStop(t *testing.T) {
+	t.Parallel()
+
 	ns := types.ContainerStatus{
 		ID:     "foo",
 		Status: "stopped",
@@ -329,6 +367,8 @@ func TestContainerStop(t *testing.T) {
 
 // Delete() tests.
 func TestContainerDeleteBadState(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{},
@@ -341,6 +381,8 @@ func TestContainerDeleteBadState(t *testing.T) {
 }
 
 func TestContainerDeleteRuntimeError(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtime: runtime.Fake{
@@ -361,6 +403,8 @@ func TestContainerDeleteRuntimeError(t *testing.T) {
 }
 
 func TestContainerDelete(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			runtime: runtime.Fake{
@@ -386,6 +430,8 @@ func TestContainerDelete(t *testing.T) {
 
 // SetStatus() tests.
 func TestContainerSetStatus(t *testing.T) {
+	t.Parallel()
+
 	c := &container{
 		base: base{
 			status: types.ContainerStatus{

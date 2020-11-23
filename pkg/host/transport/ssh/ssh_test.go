@@ -25,7 +25,15 @@ const (
 	authMethods      = 1
 )
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestNew(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -41,6 +49,10 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestNewSetPassword(t *testing.T) {
 	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
 		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
@@ -66,7 +78,15 @@ func TestNewSetPassword(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestNewSetPrivateKey(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -88,6 +108,8 @@ func TestNewSetPrivateKey(t *testing.T) {
 }
 
 func TestNewValidate(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{}
 	if _, err := c.New(); err == nil {
 		t.Fatalf("creating new SSH object should validate it")
@@ -96,6 +118,8 @@ func TestNewValidate(t *testing.T) {
 
 // Validate() tests.
 func TestValidateRequireAddress(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		User:              "root",
 		Password:          "foo",
@@ -109,7 +133,15 @@ func TestValidateRequireAddress(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestValidateRequireAuth(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -124,6 +156,8 @@ func TestValidateRequireAuth(t *testing.T) {
 }
 
 func TestValidateRequireUser(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		Password:          "foo",
@@ -137,21 +171,9 @@ func TestValidateRequireUser(t *testing.T) {
 	}
 }
 
-func TestValidateRequireAuthMethod(t *testing.T) {
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require at least one authentication method")
-	}
-}
-
 func TestValidateRequireConnectionTimeout(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:       "localhost",
 		User:          "root",
@@ -166,6 +188,8 @@ func TestValidateRequireConnectionTimeout(t *testing.T) {
 }
 
 func TestValidateRequireRetryTimeout(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -180,6 +204,8 @@ func TestValidateRequireRetryTimeout(t *testing.T) {
 }
 
 func TestValidateRequireRetryInterval(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -194,6 +220,8 @@ func TestValidateRequireRetryInterval(t *testing.T) {
 }
 
 func TestValidateRequirePort(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -208,6 +236,8 @@ func TestValidateRequirePort(t *testing.T) {
 }
 
 func TestValidateParseConnectionTimeout(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -223,6 +253,8 @@ func TestValidateParseConnectionTimeout(t *testing.T) {
 }
 
 func TestValidateParseRetryTimeout(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -238,6 +270,8 @@ func TestValidateParseRetryTimeout(t *testing.T) {
 }
 
 func TestValidateParseRetryInterval(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -253,6 +287,8 @@ func TestValidateParseRetryInterval(t *testing.T) {
 }
 
 func TestValidateParsePrivateKey(t *testing.T) {
+	t.Parallel()
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -284,6 +320,8 @@ func generateRSAPrivateKey(t *testing.T) string {
 }
 
 func TestHandleClientLocalRemote(t *testing.T) {
+	t.Parallel()
+
 	server, client := net.Pipe()
 
 	remoteServer, remoteClient := net.Pipe()
@@ -304,6 +342,8 @@ func TestHandleClientLocalRemote(t *testing.T) {
 }
 
 func TestHandleClientRemoteLocal(t *testing.T) {
+	t.Parallel()
+
 	server, client := net.Pipe()
 
 	remoteServer, remoteClient := net.Pipe()
@@ -324,6 +364,8 @@ func TestHandleClientRemoteLocal(t *testing.T) {
 }
 
 func TestHandleClientBiDirectional(t *testing.T) {
+	t.Parallel()
+
 	server, client := net.Pipe()
 
 	remoteServer, remoteClient := net.Pipe()
@@ -356,6 +398,8 @@ func TestHandleClientBiDirectional(t *testing.T) {
 }
 
 func TestExtractPath(t *testing.T) {
+	t.Parallel()
+
 	expectedPath := "/tmp/foo.sock"
 
 	p, err := extractPath(fmt.Sprintf("unix://%s", expectedPath))
@@ -369,12 +413,16 @@ func TestExtractPath(t *testing.T) {
 }
 
 func TestExtractPathMalformed(t *testing.T) {
+	t.Parallel()
+
 	if _, err := extractPath("ddd\t"); err == nil {
 		t.Fatalf("extracting malformed path should fail")
 	}
 }
 
 func TestExtractPathTCP(t *testing.T) {
+	t.Parallel()
+
 	if _, err := extractPath("tcp://localhost:25"); err == nil {
 		t.Fatalf("extracting path with unsupported scheme should fail")
 	}
@@ -382,6 +430,8 @@ func TestExtractPathTCP(t *testing.T) {
 
 // randomUnixSocket() tests.
 func TestRandomUnixSocket(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	unixAddr, err := d.randomUnixSocket()
@@ -399,6 +449,8 @@ func TestRandomUnixSocket(t *testing.T) {
 }
 
 func TestRandomUnixSocketBadUUID(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 	d.uuid = func() (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("happened")
@@ -411,6 +463,8 @@ func TestRandomUnixSocketBadUUID(t *testing.T) {
 
 // forwardConnection() tests.
 func TestForwardConnection(t *testing.T) {
+	t.Parallel()
+
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("unable to listen on random TCP port: %v", err)
@@ -451,6 +505,8 @@ func TestForwardConnection(t *testing.T) {
 }
 
 func TestForwardConnectionBadType(t *testing.T) {
+	t.Parallel()
+
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("unable to listen on random TCP port: %v", err)
@@ -476,6 +532,8 @@ func TestForwardConnectionBadType(t *testing.T) {
 }
 
 func TestForwardConnectionClosedListener(t *testing.T) {
+	t.Parallel()
+
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("unable to listen on random TCP port: %v", err)
@@ -498,7 +556,16 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 }
 
 // Connect() tests.
+//
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestConnect(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -526,7 +593,15 @@ func TestConnect(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestConnectFail(t *testing.T) {
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+
 	c := &Config{
 		Address:           "localhost",
 		User:              "root",
@@ -556,6 +631,8 @@ func TestConnectFail(t *testing.T) {
 
 // ForwardTCP() tests.
 func TestForwardTCP(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	d.listener = func(n, a string) (net.Listener, error) {
@@ -573,6 +650,8 @@ func TestForwardTCP(t *testing.T) {
 }
 
 func TestForwardTCPFailListen(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	d.listener = func(n, a string) (net.Listener, error) {
@@ -585,6 +664,8 @@ func TestForwardTCPFailListen(t *testing.T) {
 }
 
 func TestForwardTCPValidateAddress(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	d.listener = func(n, a string) (net.Listener, error) {
@@ -598,6 +679,8 @@ func TestForwardTCPValidateAddress(t *testing.T) {
 
 // ForwardUnixSocket() tests.
 func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	d.uuid = func() (uuid.UUID, error) {
@@ -610,6 +693,8 @@ func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 }
 
 func TestForwardUnixSocketCantListen(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	d.listener = func(n, a string) (net.Listener, error) {
@@ -622,6 +707,8 @@ func TestForwardUnixSocketCantListen(t *testing.T) {
 }
 
 func TestForwardUnixSocketBadPath(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	if _, err := d.ForwardUnixSocket("foo\t"); err == nil {
@@ -630,6 +717,8 @@ func TestForwardUnixSocketBadPath(t *testing.T) {
 }
 
 func TestForwardUnixSocket(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	if _, err := d.ForwardUnixSocket("unix:///foo"); err != nil {
@@ -638,6 +727,8 @@ func TestForwardUnixSocket(t *testing.T) {
 }
 
 func TestForwardUnixSocketEnsureUnique(t *testing.T) {
+	t.Parallel()
+
 	d := newConnected("localhost:80", nil).(*sshConnected)
 
 	a, err := d.ForwardUnixSocket("unix:///foo")
@@ -655,6 +746,10 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestNewBadSSHAgentEnv(t *testing.T) {
 	if err := os.Setenv(SSHAuthSockEnv, "foo"); err != nil {
 		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
@@ -675,6 +770,8 @@ func TestNewBadSSHAgentEnv(t *testing.T) {
 }
 
 func TestNewSSHAgent(t *testing.T) {
+	t.Parallel()
+
 	a := agent.NewKeyring()
 
 	addr := &net.UnixAddr{
@@ -721,6 +818,8 @@ func TestNewSSHAgent(t *testing.T) {
 }
 
 func TestNewSSHAgentWrongSocket(t *testing.T) {
+	t.Parallel()
+
 	addr := &net.UnixAddr{
 		Name: "@bar",
 		Net:  "unix",
