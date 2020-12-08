@@ -57,14 +57,55 @@ EOF
     Domains=~.
   EOF
 
+  containerd_config = <<-EOF
+# persistent data location
+root = \\"/var/lib/containerd\\"
+# runtime state information
+state = \\"/run/docker/libcontainerd/containerd\\"
+# set containerd as a subreaper on linux when it is not running as PID 1
+subreaper = true
+# set containerd's OOM score
+oom_score = -999
+# CRI plugin listens on a TCP port by default
+disabled_plugins = []
+
+# grpc configuration
+[grpc]
+address = \\"/run/docker/libcontainerd/docker-containerd.sock\\"
+# socket uid
+uid = 0
+# socket gid
+gid = 0
+
+[plugins.linux]
+# shim binary name/path
+shim = \\"containerd-shim\\"
+# runtime binary name/path
+runtime = \\"runc\\"
+# do not use a shim when starting containers, saves on memory but
+# live restore is not supported
+no_shim = false
+# display shim logs in the containerd daemon's log output
+shim_debug = true
+  EOF
+
+  containerd_override = <<-EOF
+    [Service]
+    Environment=CONTAINERD_CONFIG=/etc/containerd/config.toml
+    ExecStart=
+    ExecStart=/usr/bin/env PATH=\\${TORCX_BINDIR}:\\${PATH} \\${TORCX_BINDIR}/containerd --config \\${CONTAINERD_CONFIG}
+  EOF
+
   common_provisioning_script = <<-EOF
     mkdir -p /etc/systemd/resolved.conf.d && echo "#{resolved_config}" | sudo tee /etc/systemd/resolved.conf.d/dns_servers.conf >/dev/null
+    mkdir -p /etc/systemd/system/containerd.service.d && echo "#{containerd_override}" | sudo tee /etc/systemd/system/containerd.service.d/10-use-custom-config.conf >/dev/null
+    mkdir -p /etc/containerd && echo "#{containerd_config}" | sudo tee /etc/containerd/config.toml >/dev/null
     sudo systemctl daemon-reload
-    sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
+    sudo systemctl enable iptables-store iptables-restore docker containerd systemd-timesyncd
     sudo systemctl mask update-engine locksmithd
     sudo systemctl stop update-engine locksmithd
     sudo systemctl start docker systemd-timesyncd iptables-store
-    sudo systemctl restart systemd-networkd systemd-resolved
+    sudo systemctl restart systemd-networkd systemd-resolved containerd
   EOF
 
   # Controllers.
