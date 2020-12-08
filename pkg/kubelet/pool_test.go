@@ -31,6 +31,8 @@ extraMounts:
 kubernetesCACertificate: |
   {{.}}
 waitForNodeReady: false
+extraArgs:
+- --baz
 kubelets:
 - networkPlugin: cni
   name: foo
@@ -39,6 +41,8 @@ kubelets:
   extraMounts:
   - source: /doh/
     target: /tmp
+  extraArgs:
+  - --bar
 `
 
 	var buf bytes.Buffer
@@ -160,6 +164,46 @@ func TestPoolPropagateExtraMounts(t *testing.T) {
 
 	if !found {
 		t.Fatalf("kubelet doh should have directly configured extra mount")
+	}
+}
+
+func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *testing.T) {
+	t.Parallel()
+
+	p := GetPool(t).(*pool)
+
+	found := false
+
+	for _, v := range p.containers.DesiredState()["0"].Container.Config.Args {
+		if v == "--baz" {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("kubelet foo should have propagated extra arguments")
+	}
+}
+
+func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
+	t.Parallel()
+
+	p := GetPool(t).(*pool)
+
+	found := false
+
+	for _, arg := range p.containers.DesiredState()["1"].Container.Config.Args {
+		if arg == "--bar" {
+			found = true
+		}
+
+		if arg == "--baz" {
+			t.Errorf("kubelet doh should not have propagated arguments")
+		}
+	}
+
+	if !found {
+		t.Fatalf("kubelet doh should have directly configured extra arguments")
 	}
 }
 

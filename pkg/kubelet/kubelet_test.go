@@ -280,3 +280,51 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 		t.Fatalf("extra mount should be included in generated mounts")
 	}
 }
+
+func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testing.T) {
+	t.Parallel()
+
+	extraArg := "--foo"
+
+	cc := getClientConfig(t)
+
+	kk := &Kubelet{
+		BootstrapConfig:         cc,
+		Name:                    "foo",
+		NetworkPlugin:           "cni",
+		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
+		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
+		Host: host.Host{
+			DirectConfig: &direct.Config{},
+		},
+		Labels: map[string]string{
+			"foo": "bar",
+		},
+		Taints: map[string]string{
+			"foo": "bar",
+		},
+		PrivilegedLabels: map[string]string{
+			"baz": "bar",
+		},
+		AdminConfig:   cc,
+		ClusterDNSIPs: []string{"10.0.0.1"},
+		ExtraArgs:     []string{extraArg},
+	}
+
+	k, err := kk.New()
+	if err != nil {
+		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
+	}
+
+	found := false
+
+	for _, arg := range k.(*kubelet).args() {
+		if arg == extraArg {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Fatalf("extra arguments should be included in generated arguments")
+	}
+}
