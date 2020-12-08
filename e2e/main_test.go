@@ -496,13 +496,79 @@ etcdctl user add --no-password=true prometheus
 	}
 
 	// TLS bootstrapping.
-	values := fmt.Sprintf(`
+	tlsBootstrapValues := fmt.Sprintf(`
 tokens:
 - token-id: %s
   token-secret: %s
 `, bootstrapTokenID, bootstrapTokenSecret)
 
-	files["./values/tls-bootstrapping.yaml"] = values
+	files["./values/tls-bootstrapping.yaml"] = tlsBootstrapValues
+
+	kubeProxyValues, err := r.TemplateFromFile("./templates/kube-proxy-values.yaml.tmpl")
+	if err != nil {
+		t.Fatalf("Executing kube-proxy values template: %v", err)
+	}
+
+	files["./values/kube-proxy.yaml"] = kubeProxyValues
+
+	calicoValues := `
+podCIDR: 10.1.0.0/16
+flexVolumePluginDir: /var/lib/kubelet/volumeplugins
+`
+
+	files["./values/calico.yaml"] = calicoValues
+
+	kubeAPIServerValues, err := r.TemplateFromFile("./templates/kube-apiserver-values.yaml.tmpl")
+	if err != nil {
+		t.Fatalf("Executing template: %v", err)
+	}
+
+	files["./values/kube-apiserver.yaml"] = kubeAPIServerValues
+
+	kubernetesValues, err := r.TemplateFromFile("./templates/kubernetes-values.yaml.tmpl")
+	if err != nil {
+		t.Fatalf("Executing Kubernetes values template: %v", err)
+	}
+
+	files["./values/kubernetes.yaml"] = kubernetesValues
+
+	coreDNSValues := `
+rbac:
+  pspEnable: true
+service:
+  clusterIP: 11.0.0.10
+nodeSelector:
+  node-role.kubernetes.io/master: ""
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+`
+	files["./values/coredns.yaml"] = coreDNSValues
+
+	metricsServerValues := `
+rbac:
+  pspEnabled: true
+args:
+- --kubelet-preferred-address-types=InternalIP
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+tolerations:
+- key: node-role.kubernetes.io/master
+  operator: Exists
+  effect: NoSchedule
+resources:
+  requests:
+    memory: 20Mi
+`
+	files["./values/metrics-server.yaml"] = metricsServerValues
+
+	for file, content := range files {
+		if err := ioutil.WriteFile(file, []byte(content), 0o600); err != nil {
+			t.Fatalf("Writing file %q: %v", file, err)
+		}
+	}
 
 	config := &release.Config{
 		Kubeconfig: k,
@@ -510,7 +576,7 @@ tokens:
 		Name:       "tls-bootstrapping",
 		Version:    testConfig.Charts.TLSBootstrapping.Version,
 		Chart:      testConfig.Charts.TLSBootstrapping.Source,
-		Values:     values,
+		Values:     tlsBootstrapValues,
 	}
 
 	rel, err := config.New()
@@ -530,20 +596,13 @@ tokens:
 	}
 
 	// Kube-proxy.
-	values, err = r.TemplateFromFile("./templates/kube-proxy-values.yaml.tmpl")
-	if err != nil {
-		t.Fatalf("Executing kube-proxy values template: %v", err)
-	}
-
-	files["./values/kube-proxy.yaml"] = values
-
 	config = &release.Config{
 		Kubeconfig: k,
 		Namespace:  "kube-system",
 		Name:       "kube-proxy",
 		Version:    testConfig.Charts.KubeProxy.Version,
 		Chart:      testConfig.Charts.KubeProxy.Source,
-		Values:     values,
+		Values:     kubeProxyValues,
 		Wait:       true,
 	}
 
@@ -557,47 +616,33 @@ tokens:
 	}
 
 	// Calico.
-	values = `
-podCIDR: 10.1.0.0/16
-flexVolumePluginDir: /var/lib/kubelet/volumeplugins
-`
-
-	files["./values/calico.yaml"] = values
-
 	config = &release.Config{
 		Kubeconfig: k,
 		Namespace:  "kube-system",
 		Name:       "calico",
 		Version:    testConfig.Charts.Calico.Version,
 		Chart:      testConfig.Charts.Calico.Source,
-		Values:     values,
+		Values:     calicoValues,
 		Wait:       true,
 	}
 
 	rel, err = config.New()
 	if err != nil {
-		t.Fatalf("Creating TLS bootstrapping release object: %v", err)
+		t.Fatalf("Creating Calico release object: %v", err)
 	}
 
 	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing TLS bootstrapping release %q: %v", config.Name, err)
+		t.Fatalf("Installing Calico release %q: %v", config.Name, err)
 	}
 
 	// kube-apiserver.
-	values, err = r.TemplateFromFile("./templates/kube-apiserver-values.yaml.tmpl")
-	if err != nil {
-		t.Fatalf("Executing template: %v", err)
-	}
-
-	files["./values/kube-apiserver.yaml"] = values
-
 	config = &release.Config{
 		Kubeconfig: k,
 		Namespace:  "kube-system",
 		Name:       "kube-apiserver",
 		Version:    testConfig.Charts.KubeAPIServer.Version,
 		Chart:      testConfig.Charts.KubeAPIServer.Source,
-		Values:     values,
+		Values:     kubeAPIServerValues,
 		Wait:       true,
 	}
 
@@ -611,20 +656,13 @@ flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 	}
 
 	// Kubernetes.
-	values, err = r.TemplateFromFile("./templates/kubernetes-values.yaml.tmpl")
-	if err != nil {
-		t.Fatalf("Executing Kubernetes values template: %v", err)
-	}
-
-	files["./values/kubernetes.yaml"] = values
-
 	config = &release.Config{
 		Kubeconfig: k,
 		Namespace:  "kube-system",
 		Name:       "kubernetes",
 		Version:    testConfig.Charts.Kubernetes.Version,
 		Chart:      testConfig.Charts.Kubernetes.Source,
-		Values:     values,
+		Values:     kubernetesValues,
 		Wait:       true,
 	}
 
@@ -638,27 +676,13 @@ flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 	}
 
 	// CoreDNS.
-	values = `
-rbac:
-  pspEnable: true
-service:
-  clusterIP: 11.0.0.10
-nodeSelector:
-  node-role.kubernetes.io/master: ""
-tolerations:
-  - key: node-role.kubernetes.io/master
-    operator: Exists
-    effect: NoSchedule
-`
-	files["./values/coredns.yaml"] = values
-
 	config = &release.Config{
 		Kubeconfig: k,
 		Namespace:  "kube-system",
 		Name:       "coredns",
 		Version:    testConfig.Charts.CoreDNS.Version,
 		Chart:      testConfig.Charts.CoreDNS.Source,
-		Values:     values,
+		Values:     coreDNSValues,
 		Wait:       true,
 	}
 
@@ -669,44 +693,6 @@ tolerations:
 
 	if err := rel.InstallOrUpgrade(); err != nil {
 		t.Fatalf("Installing CoreDNS release %q: %v", config.Name, err)
-	}
-
-	// Metrics server.
-	values = `
-rbac:
-  pspEnabled: true
-args:
-- --kubelet-preferred-address-types=InternalIP
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
-tolerations:
-- key: node-role.kubernetes.io/master
-  operator: Exists
-  effect: NoSchedule
-resources:
-  requests:
-    memory: 20Mi
-`
-	files["./values/metrics-server.yaml"] = values
-
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "metrics-server",
-		Version:    testConfig.Charts.MetricsServer.Version,
-		Chart:      testConfig.Charts.MetricsServer.Source,
-		Values:     values,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating Metrics server release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing Metrics server release %q: %v", config.Name, err)
 	}
 
 	// Kubelet-rubber-stamp.
@@ -728,10 +714,24 @@ resources:
 		t.Fatalf("Installing Kubelet rubber stamp release %q: %v", config.Name, err)
 	}
 
-	for file, content := range files {
-		if err := ioutil.WriteFile(file, []byte(content), 0o600); err != nil {
-			t.Fatalf("Writing file %q: %v", file, err)
-		}
+	// Metrics server.
+	config = &release.Config{
+		Kubeconfig: k,
+		Namespace:  "kube-system",
+		Name:       "metrics-server",
+		Version:    testConfig.Charts.MetricsServer.Version,
+		Chart:      testConfig.Charts.MetricsServer.Source,
+		Values:     metricsServerValues,
+		Wait:       true,
+	}
+
+	rel, err = config.New()
+	if err != nil {
+		t.Fatalf("Creating Metrics server release object: %v", err)
+	}
+
+	if err := rel.InstallOrUpgrade(); err != nil {
+		t.Fatalf("Installing Metrics server release %q: %v", config.Name, err)
 	}
 }
 
