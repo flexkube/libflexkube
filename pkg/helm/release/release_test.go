@@ -9,9 +9,9 @@ import (
 )
 
 // New() tests.
+//
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigNewBadKubeconfig(t *testing.T) {
-	t.Parallel()
-
 	config := &release.Config{
 		// Put content of your kubeconfig file here.
 		Kubeconfig: "",
@@ -97,16 +97,15 @@ func newRelease(t *testing.T) release.Release {
 	return r
 }
 
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigNew(t *testing.T) {
-	t.Parallel()
-
 	newRelease(t)
 }
 
 // Validate() tests.
+//
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigValidateEmptyNamespace(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Namespace = ""
 
@@ -115,9 +114,8 @@ func TestConfigValidateEmptyNamespace(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigValidateEmptyName(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Name = ""
 
@@ -126,9 +124,8 @@ func TestConfigValidateEmptyName(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigValidateEmptyChart(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Chart = ""
 
@@ -137,9 +134,8 @@ func TestConfigValidateEmptyChart(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestConfigValidateBadValues(t *testing.T) {
-	t.Parallel()
-
 	c := newConfig(t)
 	c.Values = "asd"
 
@@ -149,6 +145,8 @@ func TestConfigValidateBadValues(t *testing.T) {
 }
 
 // ValidateChart() tests.
+//
+//nolint:paralleltest // Helm client is not thread-safe.
 func TestReleaseValidateChartBad(t *testing.T) {
 	t.Parallel()
 
