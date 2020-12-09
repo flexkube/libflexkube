@@ -2,8 +2,8 @@ serverKey: |
 {{ .State.PKI.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey | toString | trim | indent 2 }}
 serverCertificate: |
 {{ .State.PKI.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate | toString | trim | indent 2 }}
-serviceAccountPublicKey: |
-{{ .State.PKI.Kubernetes.ServiceAccountCertificate.PublicKey | toString | trim | indent 2 }}
+serviceAccountPrivateKey: |
+{{ .State.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey | toString | trim | indent 2 }}
 caCertificate: |
 {{ .State.PKI.Kubernetes.CA.X509Certificate | toString | trim | indent 2 }}
 frontProxyClientKey: |

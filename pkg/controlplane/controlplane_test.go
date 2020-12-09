@@ -30,7 +30,7 @@ kubeAPIServer:
     {{.Certificate}}
   kubeletClientKey: |
     {{.PrivateKey}}
-  serviceAccountPublicKey: foo
+  serviceAccountPrivateKey: foo
   serviceCIDR: 11.0.0.0/24
   etcdCACertificate: |
     {{.Certificate}}
