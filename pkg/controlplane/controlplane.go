@@ -224,7 +224,7 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 	}
 
 	if p := c.PKI.Kubernetes.ServiceAccountCertificate; p != nil {
-		k.ServiceAccountPublicKey = util.PickString(k.ServiceAccountPublicKey, p.PublicKey)
+		k.ServiceAccountPrivateKey = util.PickString(k.ServiceAccountPrivateKey, string(p.PrivateKey))
 	}
 
 	p := c.PKI.Kubernetes.KubeAPIServer

@@ -30,9 +30,9 @@ type KubeAPIServer struct {
 	// It must match certificate defined in APIServerCertificate field.
 	APIServerKey types.PrivateKey `json:"apiServerKey"`
 
-	// ServiceAccountPublicKey stores PEM encoded public certificate, which will be used
-	// to validate service account tokens.
-	ServiceAccountPublicKey string `json:"serviceAccountPublicKey"`
+	// ServiceAccountPrivateKey stores PEM encoded private key, which will be used
+	// to sign and validate service account tokens.
+	ServiceAccountPrivateKey string `json:"serviceAccountPrivateKey"`
 
 	// BindAddress defines IP address where kube-apiserver process should listen for
 	// incoming requests.
@@ -103,7 +103,7 @@ type kubeAPIServer struct {
 	host                     host.Host
 	apiServerCertificate     string
 	apiServerKey             string
-	serviceAccountPublicKey  string
+	serviceAccountPrivateKey string
 	bindAddress              string
 	advertiseAddress         string
 	etcdServers              []string
@@ -123,35 +123,35 @@ const (
 	containerConfigPath = "/etc/kubernetes/pki"
 	containerName       = "kube-apiserver"
 
-	clientCAFile              = "ca.crt"
-	tlsCertFile               = "apiserver.crt"
-	tlsPrivateKeyFile         = "apiserver.key"
-	serviceAccountKeyFile     = "service-account.crt"
-	requestheaderClientCAFile = "front-proxy-ca.crt"
-	proxyClientCertFile       = "front-proxy-client.crt"
-	proxyClientKeyFile        = "front-proxy-client.key"
-	kubeletClientCertificate  = "apiserver-kubelet-client.crt"
-	kubeletClientKey          = "apiserver-kubelet-client.key"
-	etcdCAFile                = "etcd/ca.crt"
-	etcdCertificate           = "apiserver-etcd-client.crt"
-	etcdKeyfile               = "apiserver-etcd-client.key"
+	clientCAFile                 = "ca.crt"
+	tlsCertFile                  = "apiserver.crt"
+	tlsPrivateKeyFile            = "apiserver.key"
+	serviceAccountPrivateKeyFile = "service-account.key"
+	requestheaderClientCAFile    = "front-proxy-ca.crt"
+	proxyClientCertFile          = "front-proxy-client.crt"
+	proxyClientKeyFile           = "front-proxy-client.key"
+	kubeletClientCertificate     = "apiserver-kubelet-client.crt"
+	kubeletClientKey             = "apiserver-kubelet-client.key"
+	etcdCAFile                   = "etcd/ca.crt"
+	etcdCertificate              = "apiserver-etcd-client.crt"
+	etcdKeyfile                  = "apiserver-etcd-client.key"
 )
 
 // configFiles returns map of file for kube-apiserver.
 func (k *kubeAPIServer) configFiles() map[string]string {
 	m := map[string]string{
-		clientCAFile:              string(k.common.KubernetesCACertificate),
-		tlsCertFile:               k.apiServerCertificate,
-		tlsPrivateKeyFile:         k.apiServerKey,
-		serviceAccountKeyFile:     k.serviceAccountPublicKey,
-		requestheaderClientCAFile: string(k.common.FrontProxyCACertificate),
-		proxyClientCertFile:       k.frontProxyCertificate,
-		proxyClientKeyFile:        k.frontProxyKey,
-		kubeletClientCertificate:  k.kubeletClientCertificate,
-		kubeletClientKey:          k.kubeletClientKey,
-		etcdCAFile:                k.etcdCACertificate,
-		etcdCertificate:           k.etcdClientCertificate,
-		etcdKeyfile:               k.etcdClientKey,
+		clientCAFile:                 string(k.common.KubernetesCACertificate),
+		tlsCertFile:                  k.apiServerCertificate,
+		tlsPrivateKeyFile:            k.apiServerKey,
+		serviceAccountPrivateKeyFile: k.serviceAccountPrivateKey,
+		requestheaderClientCAFile:    string(k.common.FrontProxyCACertificate),
+		proxyClientCertFile:          k.frontProxyCertificate,
+		proxyClientKeyFile:           k.frontProxyKey,
+		kubeletClientCertificate:     k.kubeletClientCertificate,
+		kubeletClientKey:             k.kubeletClientKey,
+		etcdCAFile:                   k.etcdCACertificate,
+		etcdCertificate:              k.etcdClientCertificate,
+		etcdKeyfile:                  k.etcdClientKey,
 	}
 
 	r := map[string]string{}
@@ -183,7 +183,7 @@ func (k *kubeAPIServer) args() []string {
 		// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
 		"--authorization-mode=RBAC,Node",
 		// Required to validate service account tokens created by controller manager.
-		fmt.Sprintf("--service-account-key-file=%s", path.Join(containerConfigPath, serviceAccountKeyFile)),
+		fmt.Sprintf("--service-account-key-file=%s", path.Join(containerConfigPath, serviceAccountPrivateKeyFile)),
 		// IP address which will be added to the kubernetes.default service endpoint.
 		fmt.Sprintf("--advertise-address=%s", k.advertiseAddress),
 		// For static api-server use non-standard port, so haproxy can use standard one.
@@ -214,6 +214,9 @@ func (k *kubeAPIServer) args() []string {
 		"--target-ram-mb=512",
 		// Use SO_REUSEPORT, so multiple instances can run on the same controller for smooth upgrades.
 		"--permit-port-sharing=true",
+		// New flags required for TokenRequest feature.
+		"--service-account-issuer=https://kubernetes.default.svc",
+		fmt.Sprintf("--service-account-signing-key-file=%s", path.Join(containerConfigPath, serviceAccountPrivateKeyFile)),
 	}
 }
 
@@ -262,7 +265,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 		host:                     *k.Host,
 		apiServerCertificate:     string(k.APIServerCertificate),
 		apiServerKey:             string(k.APIServerKey),
-		serviceAccountPublicKey:  k.ServiceAccountPublicKey,
+		serviceAccountPrivateKey: k.ServiceAccountPrivateKey,
 		bindAddress:              k.BindAddress,
 		advertiseAddress:         k.AdvertiseAddress,
 		etcdServers:              k.EtcdServers,
