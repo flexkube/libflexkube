@@ -127,6 +127,9 @@ type Pool struct {
 
 	// WaitForNodeReady controls, if deploy should wait until node becomes ready.
 	WaitForNodeReady bool `json:"waitForNodeReady,omitempty"`
+
+	// ExtraArgs defines additional flags which will be added to the kubelet process.
+	ExtraArgs []string `json:"extraArgs,omitempty"`
 }
 
 // pool is a validated version of Pool.
@@ -186,6 +189,10 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 
 	if len(k.ExtraMounts) == 0 {
 		k.ExtraMounts = p.ExtraMounts
+	}
+
+	if len(k.ExtraArgs) == 0 {
+		k.ExtraArgs = p.ExtraArgs
 	}
 
 	k.Host = host.BuildConfig(k.Host, host.Host{

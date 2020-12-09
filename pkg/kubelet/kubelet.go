@@ -113,6 +113,9 @@ type Kubelet struct {
 
 	// WaitForNodeReady controls, if deploy should wait until node becomes ready.
 	WaitForNodeReady bool `json:"waitForNodeReady,omitempty"`
+
+	// ExtraArgs defines additional flags which will be added to the kubelet process.
+	ExtraArgs []string `json:"extraArgs,omitempty"`
 }
 
 // kubelet is a validated, executable version of Kubelet.
@@ -425,7 +428,7 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen
 }
 
 func (k *kubelet) args() []string {
-	a := []string{
+	a := append([]string{
 		// Tell kubelet to use config file.
 		"--config=/etc/kubernetes/kubelet.yaml",
 		// Specify kubeconfig file for kubelet. This enabled API server mode and
@@ -448,7 +451,7 @@ func (k *kubelet) args() []string {
 		//
 		// TODO This flag should only be set if Docker is used as container runtime.
 		"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
-	}
+	}, k.config.ExtraArgs...)
 
 	if len(k.config.Labels) > 0 {
 		a = append(a, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.config.Labels, "=", ",")))

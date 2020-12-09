@@ -18,3 +18,4 @@ flatcar_production_qemu_image.img.bz2
 pool
 test-config.yaml
 /flexkube
+.terraform.lock.hcl
