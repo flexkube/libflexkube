@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2020-12-11
+
+### Added
+
+- It is now possible to pass extra flags to kubelet container via 'extraFlags' field in kubelet and pool configuration.
+  This combined with extra mounts allows to switch kubelet to use containerd as a container runtime instead of now
+  deprecated Docker.
+
+### Changed
+
+- Improved handling situations when node hosting a container is gone. Previously trying to apply configuration
+  in such situation would result in an error, which forced user to either get a host back or to manually
+  modify the state to get rid of old container.
+
+  Now, if host cannot be reached and checking hits timeout, obtained error message will be included in the
+  container state and then user can decide if they want to proceed or not. If container is going to be removed
+  or replaced then it will simply be ignored and removed from the state.
+
+  This should allow more graceful handling of situations, where automation tools like Terraform removes the VM
+  running the containers before Flexkube has a chance to clean them up gracefully.
+
+- Due to Kubernetes version update, controlplane parameter for kube-apiserver 'serviceAccountPublicKey' has been
+  replaced with 'serviceAccountPrivateKey', as kube-apiserver now requires private key and public key can be
+  derived from private one. For users using PKI integration, there is no expected changes.
+
+  The same change has been made to kube-apiserver Helm chart, so users should update their values file templates.
+
+- Default Kubernetes version is now v1.20.0.
+- Default HAProxy version is now 2.3.2.
+- Default etcd version is now v3.4.14.
+- Default Calico version is now v3.17.1.
+- Go version used for building the binaries is now 1.15.6.
+- Various e2e tests improvements.
+
 ## [0.4.3] - 2020-09-20
 
 ### Fixed
