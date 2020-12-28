@@ -51,6 +51,8 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 }
 
 func validMember(t *testing.T) *etcd.Member {
+	t.Helper()
+
 	cert := utiltest.GenerateX509Certificate(t)
 	privateKey := utiltest.GenerateRSAPrivateKey(t)
 

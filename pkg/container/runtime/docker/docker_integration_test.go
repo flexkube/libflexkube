@@ -221,6 +221,8 @@ func TestContainerStatusNonExistent(t *testing.T) {
 }
 
 func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
+	t.Helper()
+
 	dc := &Config{}
 
 	r, err := dc.New()
@@ -232,6 +234,8 @@ func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
 }
 
 func getDockerClient(t *testing.T) *client.Client {
+	t.Helper()
+
 	c, err := (&Config{}).getDockerClient()
 	if err != nil {
 		t.Fatalf("Failed creating Docker client: %v", err)
@@ -241,6 +245,8 @@ func getDockerClient(t *testing.T) *client.Client {
 }
 
 func deleteImage(t *testing.T, image string) {
+	t.Helper()
+
 	_, d := getDockerRuntime(t)
 
 	id, err := d.imageID(image)

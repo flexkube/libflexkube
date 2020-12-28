@@ -264,7 +264,8 @@ func (r *release) Exists() (bool, error) {
 func retryOnEtcdError(f func() error) error {
 	var err error
 
-	for i := 0; i < 3; i++ {
+	maxAttempts := 3
+	for i := 0; i < maxAttempts; i++ {
 		err = f()
 		if err == nil {
 			return nil
@@ -274,10 +275,10 @@ func retryOnEtcdError(f func() error) error {
 			continue
 		}
 
-		return err //nolint:wrapcheck
+		return fmt.Errorf("non etcdserver error occurred: %w", err)
 	}
 
-	return err //nolint:wrapcheck
+	return fmt.Errorf("giving up after %d attempts: %w", maxAttempts, err)
 }
 
 // Uninstall removes the release from the cluster. This function is idempotent.

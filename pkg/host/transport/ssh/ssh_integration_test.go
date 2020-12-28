@@ -80,6 +80,7 @@ func TestPrivateKeyAuth(t *testing.T) {
 }
 
 func withPrivateKey(t *testing.T) transport.Interface {
+	t.Helper()
 	t.Parallel()
 
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
@@ -144,6 +145,8 @@ func TestForwardUnixSocketFull(t *testing.T) {
 }
 
 func runServer(t *testing.T, expectedMessage, response string) {
+	t.Helper()
+
 	l, err := net.Listen("unix", testServerAddr)
 	if err != nil {
 		// Can't use t.Fatalf from go routine. use fmt.Printf + t.Fail() instead

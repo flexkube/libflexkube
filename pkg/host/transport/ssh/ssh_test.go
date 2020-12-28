@@ -304,6 +304,8 @@ func TestValidateParsePrivateKey(t *testing.T) {
 }
 
 func generateRSAPrivateKey(t *testing.T) string {
+	t.Helper()
+
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("generating key failed: %v", err)

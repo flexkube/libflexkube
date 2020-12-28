@@ -14,6 +14,8 @@ import (
 )
 
 func GetPool(t *testing.T) types.Resource {
+	t.Helper()
+
 	y := `
 ssh:
   address: localhost

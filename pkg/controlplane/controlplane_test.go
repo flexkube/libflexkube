@@ -73,6 +73,8 @@ ssh:
 `
 
 func controlplaneYAML(t *testing.T) string {
+	t.Helper()
+
 	pki := utiltest.GeneratePKI(t)
 
 	data := struct {

@@ -57,6 +57,8 @@ type e2eConfig struct {
 }
 
 func parseInt(t *testing.T, envVar string, defaultValue int) int {
+	t.Helper()
+
 	iRaw := util.PickString(os.Getenv(envVar), fmt.Sprintf("%d", defaultValue))
 
 	i, err := strconv.Atoi(iRaw)
@@ -68,6 +70,8 @@ func parseInt(t *testing.T, envVar string, defaultValue int) int {
 }
 
 func absPath(t *testing.T, path string) string {
+	t.Helper()
+
 	p, err := filepath.Abs(path)
 	if err != nil {
 		t.Fatalf("Converting path %q to absolute: %v", path, err)
@@ -77,6 +81,8 @@ func absPath(t *testing.T, path string) string {
 }
 
 func defaultE2EConfig(t *testing.T) e2eConfig {
+	t.Helper()
+
 	return e2eConfig{
 		ControllersCount:  parseInt(t, "TF_VAR_controllers_count", 1),
 		WorkersCount:      parseInt(t, "TF_VAR_workers_count", 0),

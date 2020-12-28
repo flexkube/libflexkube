@@ -11,6 +11,8 @@ import (
 )
 
 func validValidator(t *testing.T) validator {
+	t.Helper()
+
 	pki := utiltest.GeneratePKI(t)
 
 	hostConfig := &host.Host{

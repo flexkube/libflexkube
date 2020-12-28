@@ -228,6 +228,8 @@ func TestFirstMember(t *testing.T) {
 }
 
 func getContainers(t *testing.T) container.ContainersInterface {
+	t.Helper()
+
 	cc := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),

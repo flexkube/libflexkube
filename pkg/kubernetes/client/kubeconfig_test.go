@@ -14,6 +14,8 @@ import (
 
 // GetKubeconfig returns content of fake kubeconfig file for testing.
 func GetKubeconfig(t *testing.T) string {
+	t.Helper()
+
 	pki := utiltest.GeneratePKI(t)
 
 	y := fmt.Sprintf(`server: %s
