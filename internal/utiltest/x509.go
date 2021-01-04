@@ -31,18 +31,24 @@ type PKI struct {
 // GenerateX509Certificate generates random X.509 certificate and
 // returns it as string in PEM format.
 func GenerateX509Certificate(t *testing.T) string {
+	t.Helper()
+
 	return GeneratePKI(t).Certificate
 }
 
 // GenerateRSAPrivateKey generates RSA private key and returns it
 // as string in PEM format.
 func GenerateRSAPrivateKey(t *testing.T) string {
+	t.Helper()
+
 	return GeneratePKI(t).PrivateKey
 }
 
 // GeneratePKCS1PrivateKey generates RSA private key in PKCS1 format,
 // PEM encoded.
 func GeneratePKCS1PrivateKey(t *testing.T) string {
+	t.Helper()
+
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("Failed to generate RSA key: %v", err)
@@ -60,6 +66,8 @@ func GeneratePKCS1PrivateKey(t *testing.T) string {
 
 // GenerateECPrivateKey generates EC private key, PEM encoded.
 func GenerateECPrivateKey(t *testing.T) string {
+	t.Helper()
+
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatalf("Failed generating ECDSA key: %v", err)
@@ -80,6 +88,8 @@ func GenerateECPrivateKey(t *testing.T) string {
 
 // GeneratePKI generates PKI struct.
 func GeneratePKI(t *testing.T) *PKI {
+	t.Helper()
+
 	p, err := GeneratePKIErr()
 	if err != nil {
 		t.Fatalf("failed generating fake PKI: %v", err)

@@ -40,6 +40,8 @@ labels:
 }
 
 func newConfig(t *testing.T) *release.Config {
+	t.Helper()
+
 	pki := &pki.PKI{
 		Certificate: pki.Certificate{
 			RSABits: 512,
@@ -87,6 +89,8 @@ labels:
 }
 
 func newRelease(t *testing.T) release.Release {
+	t.Helper()
+
 	config := newConfig(t)
 
 	r, err := config.New()
@@ -148,8 +152,6 @@ func TestConfigValidateBadValues(t *testing.T) {
 //
 //nolint:paralleltest // Helm client is not thread-safe.
 func TestReleaseValidateChartBad(t *testing.T) {
-	t.Parallel()
-
 	r := newRelease(t)
 
 	if err := r.ValidateChart(); err == nil {

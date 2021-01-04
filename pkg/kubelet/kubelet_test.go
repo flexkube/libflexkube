@@ -15,6 +15,8 @@ import (
 )
 
 func getClientConfig(t *testing.T) *client.Config {
+	t.Helper()
+
 	p := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}

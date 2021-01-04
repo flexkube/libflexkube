@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.33.0
+GOLANGCI_LINT_VERSION=v1.34.1
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -271,7 +271,7 @@ vagrant-conformance: vagrant-e2e-run vagrant-conformance-run vagrant-conformance
 
 .PHONY: vagrant-conformance-copy-results
 vagrant-conformance-copy-results:
-	ssh core@127.0.0.1 -o StrictHostKeyChecking=no -p 2222 sudo -i ~/.vagrant.d/insecure_private_key chmod +w /home/core/libflexkube/*.tar.gz
+	ssh core@127.0.0.1 -o StrictHostKeyChecking=no -p 2222 -i ~/.vagrant.d/insecure_private_key sudo chmod +w /home/core/libflexkube/*.tar.gz
 	scp -P 2222 -o StrictHostKeyChecking=no -i ~/.vagrant.d/insecure_private_key core@127.0.0.1:/home/core/libflexkube/*.tar.gz ./
 
 .PHONY: libvirt-apply

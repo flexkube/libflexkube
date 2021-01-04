@@ -6,3 +6,9 @@ issues:
     - linters:
       - godot
       source: "(front proxy CA certificate,|certificate, as recommended by)"
+    - linters:
+      - forbidigo
+      text: "use of `fmt.Printf` forbidden by pattern"
+    - linters:
+      - forbidigo
+      text: "use of `fmt.Println` forbidden by pattern"

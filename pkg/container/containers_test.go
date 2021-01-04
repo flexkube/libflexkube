@@ -28,6 +28,8 @@ func TestContainersNew(t *testing.T) {
 }
 
 func GetContainers(t *testing.T) ContainersInterface {
+	t.Helper()
+
 	cc := &Containers{
 		DesiredState: ContainersState{
 			foo: &HostConfiguredContainer{

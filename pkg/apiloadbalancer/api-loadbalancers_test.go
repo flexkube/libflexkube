@@ -19,6 +19,8 @@ func TestPoolNoInstancesDefined(t *testing.T) {
 }
 
 func GetLoadBalancers(t *testing.T) types.Resource {
+	t.Helper()
+
 	y := `
 ssh:
   address: localhost
