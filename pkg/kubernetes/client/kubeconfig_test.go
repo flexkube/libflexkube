@@ -60,13 +60,13 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 
 	cases := []struct {
 		f   func(*Config)
-		err func(error, *testing.T)
+		err func(*testing.T, error)
 	}{
 		{
 			func(c *Config) {
 				c.CACertificate = "ddd"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig with bad CA Certificate should be invalid")
 				}
@@ -76,7 +76,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			func(c *Config) {
 				c.ClientCertificate = "dfoo"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig with bad client certificate should be invalid")
 				}
@@ -86,7 +86,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			func(c *Config) {
 				c.ClientKey = "ffoo"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig with bad client key should be invalid")
 				}
@@ -97,7 +97,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 				pki := utiltest.GeneratePKI(t)
 				c.ClientKey = types.PrivateKey(pki.PrivateKey)
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig with not matching client key should be invalid")
 				}
@@ -105,7 +105,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 		},
 		{
 			func(c *Config) {},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
 				}
@@ -117,7 +117,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 				c.ClientKey = ""
 				c.Token = "doo"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Errorf("config with only token set should be valid, got: %v", err)
 				}
@@ -128,7 +128,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 				c.ClientCertificate = ""
 				c.Token = "roo"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("config with token and client key set should not be valid")
 				}
@@ -139,7 +139,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 				c.ClientKey = ""
 				c.Token = "fnoo"
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("config with token and client certificate set should be valid")
 				}
@@ -166,7 +166,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 
 			_, err := config.ToYAMLString()
 
-			c.err(err, t)
+			c.err(t, err)
 		})
 	}
 }
@@ -193,13 +193,13 @@ func TestValidate(t *testing.T) { //nolint:funlen
 
 	cases := []struct {
 		f   func(*Config)
-		err func(error, *testing.T)
+		err func(*testing.T, error)
 	}{
 		{
 			func(c *Config) {
 				c.Server = ""
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig without defined server should be invalid")
 				}
@@ -209,7 +209,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			func(c *Config) {
 				c.CACertificate = ""
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig without defined CA Certificate should be invalid")
 				}
@@ -219,7 +219,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			func(c *Config) {
 				c.ClientCertificate = ""
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig without defined client certificate should be invalid")
 				}
@@ -229,7 +229,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			func(c *Config) {
 				c.ClientKey = ""
 			},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Errorf("Kubeconfig without defined client key should be invalid")
 				}
@@ -238,7 +238,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 
 		{
 			func(c *Config) {},
-			func(err error, t *testing.T) {
+			func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
 				}
@@ -263,7 +263,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 
 			c.f(config)
 
-			c.err(config.Validate(), t)
+			c.err(t, config.Validate())
 		})
 	}
 }

@@ -85,7 +85,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 	}{
 		{
 			MutationF: func(k *Kubelet) {},
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Fatalf("validation of kubelet should pass, got: %v", err)
 				}
@@ -93,7 +93,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.Name = "" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when name is not set")
 				}
@@ -101,11 +101,11 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) {},
-			TestF:     func(t *testing.T, err error) {},
+			TestF:     func(t *testing.T, err error) {}, //nolint:thelper
 		},
 		{
 			MutationF: func(k *Kubelet) { k.KubernetesCACertificate = "" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when kubernetes CA certificate is not set")
 				}
@@ -113,7 +113,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.BootstrapConfig.Server = "" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when bootstrap config is invalid")
 				}
@@ -121,7 +121,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.VolumePluginDir = "" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when volume plugin dir is empty")
 				}
@@ -134,7 +134,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 				}
 				k.AdminConfig = nil
 			},
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when privileged labels are configured and admin config is not")
 				}
@@ -145,7 +145,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 				k.WaitForNodeReady = true
 				k.AdminConfig = nil
 			},
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when waitForNodeReady is true and admin config is not set")
 				}
@@ -153,7 +153,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.AdminConfig = k.BootstrapConfig },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when admin config is defined and there is no privileged labels")
 				}
@@ -166,7 +166,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 				}
 				k.AdminConfig = &client.Config{}
 			},
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when admin config is wrong")
 				}
@@ -174,7 +174,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.PodCIDR = "foo" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is 'cni' and pod CIDR is set")
 				}
@@ -182,7 +182,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.NetworkPlugin = KubenetNetworkPlugin },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is 'kubelet' and pod CIDR is empty")
 				}
@@ -190,7 +190,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.NetworkPlugin = "doh" },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is invalid")
 				}
@@ -198,7 +198,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen
 		},
 		{
 			MutationF: func(k *Kubelet) { k.Host.DirectConfig = nil },
-			TestF: func(t *testing.T, err error) {
+			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when host is invalid")
 				}
