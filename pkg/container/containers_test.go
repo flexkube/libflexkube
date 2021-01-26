@@ -85,8 +85,7 @@ func TestContainersCurrentStateToYAML(t *testing.T) {
 
 	c := GetContainers(t)
 
-	_, err := c.StateToYaml()
-	if err != nil {
+	if _, err := c.StateToYaml(); err != nil {
 		t.Fatalf("Getting current state in YAML format should work, got: %v", err)
 	}
 }
@@ -134,7 +133,7 @@ desiredState:
 func TestFilesToUpdateEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{foo}
+	expected := []string{foo} //nolint:ifshort
 
 	d := hostConfiguredContainer{
 		configFiles: map[string]string{

@@ -220,7 +220,7 @@ func TestBuildConfigSSH(t *testing.T) {
 		},
 	}
 
-	h := BuildConfig(u, d)
+	h := BuildConfig(u, d) //nolint:ifshort
 
 	if h.SSHConfig.Port != 33 || h.SSHConfig.Address != "foo" {
 		t.Fatalf("BuildConfig should merge ssh config, got: %+v", h)

@@ -47,8 +47,7 @@ func Run(args []string) int {
 		},
 	}
 
-	err := app.Run(args)
-	if err != nil {
+	if err := app.Run(args); err != nil {
 		fmt.Printf("Execution failed: %v\n", err)
 
 		return 1

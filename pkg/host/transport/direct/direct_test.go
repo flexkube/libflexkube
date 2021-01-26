@@ -34,7 +34,7 @@ func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
 	d := &direct{}
-	p := "/foo"
+	p := "/foo" //nolint:ifshort
 
 	if fp, _ := d.ForwardUnixSocket(p); fp != p {
 		t.Fatalf("expected '%s', got '%s'", p, fp)
@@ -54,7 +54,7 @@ func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
 	d := &direct{}
-	a := "localhost:80"
+	a := "localhost:80" //nolint:ifshort
 
 	if fa, _ := d.ForwardTCP(a); fa != a {
 		t.Fatalf("expected '%s', got '%s'", a, fa)

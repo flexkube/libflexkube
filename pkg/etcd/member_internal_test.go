@@ -82,7 +82,7 @@ func TestPeerURLs(t *testing.T) {
 		},
 	}
 
-	e := "https://1.1.1.1:2380"
+	e := "https://1.1.1.1:2380" //nolint:ifshort
 	if urls := m.peerURLs(); urls[0] != e {
 		t.Fatalf("expected %s, got %s", e, urls[0])
 	}

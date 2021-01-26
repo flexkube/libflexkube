@@ -64,8 +64,7 @@ func TestPickIntFirst(t *testing.T) {
 func TestIndent(t *testing.T) {
 	t.Parallel()
 
-	expected := "   foo"
-	if a := Indent("foo", "   "); a != expected {
+	if a, expected := Indent("foo", "   "), "   foo"; a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
 }
@@ -73,7 +72,7 @@ func TestIndent(t *testing.T) {
 func TestIndentWithNewline(t *testing.T) {
 	t.Parallel()
 
-	expected := "  foo\n  bar\n"
+	expected := "  foo\n  bar\n" //nolint:ifshort
 	if a := Indent("foo\nbar\n", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -82,7 +81,7 @@ func TestIndentWithNewline(t *testing.T) {
 func TestIndentEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := ""
+	expected := "" //nolint:ifshort
 	if a := Indent("", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -91,7 +90,7 @@ func TestIndentEmpty(t *testing.T) {
 func TestIndentEmptyText(t *testing.T) {
 	t.Parallel()
 
-	expected := ""
+	expected := "" //nolint:ifshort
 	if a := Indent("", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -100,7 +99,7 @@ func TestIndentEmptyText(t *testing.T) {
 func TestIndentEmptyIndent(t *testing.T) {
 	t.Parallel()
 
-	expected := "foo\nbar"
+	expected := "foo\nbar" //nolint:ifshort
 	if a := Indent("foo\nbar", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -109,7 +108,7 @@ func TestIndentEmptyIndent(t *testing.T) {
 func TestJoinSorted(t *testing.T) {
 	t.Parallel()
 
-	expected := "baz/doh|foo/bar"
+	expected := "baz/doh|foo/bar" //nolint:ifshort
 
 	values := map[string]string{
 		"foo": "bar",
@@ -124,7 +123,7 @@ func TestJoinSorted(t *testing.T) {
 func TestPickStringSlice(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{"foo"}
+	expected := []string{"foo"} //nolint:ifshort
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
 	}
@@ -142,7 +141,7 @@ func TestPickStringMap(t *testing.T) {
 func TestPickStringSliceEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{}
+	expected := []string{} //nolint:ifshort
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
 	}
