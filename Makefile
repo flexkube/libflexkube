@@ -29,14 +29,6 @@ BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v 
 
 BINARY_IMAGE=flexkube/libflexkube
 
-# godox            - Triggers on TODOs in the code, which is fine to put.
-# lll              - As some lines are long because of the type names, and breaking it down decreases redability.
-# testpackage      - Disabled until tests are split and moved to the right file names.
-# goerr113         - Disabled until we implement some error types and migrate to use them.
-# gci              - As we use formatting rules from different linter and they are conflicting.
-# exhaustivestruct - To be able to make use of Go zero-value feature.
-DISABLED_LINTERS=godox,lll,testpackage,goerr113,gci,exhaustivestruct
-
 TERRAFORM_BIN=$(TERRAFORM_ENV) /usr/bin/terraform
 
 CONTROLLERS=$(shell (grep CONTROLLERS .env 2>/dev/null || echo "1") | cut -d= -f2 2>/dev/null)
@@ -141,12 +133,19 @@ test-conformance-clean:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all --disable=$(DISABLED_LINTERS) --max-same-issues=0 --max-issues-per-linter=0 --build-tags integration,e2e --timeout 10m --exclude-use-default=false --sort-results $(GO_PACKAGES)
+	golangci-lint run $(GO_PACKAGES)
 
 .PHONY: update
 update:
 	$(GOGET) -u $(GO_PACKAGES)
 	$(GOMOD) tidy
+
+.PHONY: update-linters
+update-linters:
+	# Remove all enabled linters.
+	sed -i '/^  enable:/q0' .golangci.yml
+	# Then add all possible linters to config.
+	golangci-lint linters | grep -E '^\S+:' | cut -d: -f1 | sort | sed 's/^/    - /g' | grep -v -E "($$(grep '^  disable:' -A 100 .golangci.yml  | grep -E '    - \S+$$' | awk '{print $$2}' | tr \\n '|' | sed 's/|$$//g'))" >> .golangci.yml
 
 .PHONY: codespell
 codespell:
