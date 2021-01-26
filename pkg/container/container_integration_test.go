@@ -45,7 +45,7 @@ func TestDockerCreate(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -69,7 +69,7 @@ func TestDockerStatus(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -97,7 +97,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -133,7 +133,7 @@ func TestDockerStart(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -162,7 +162,7 @@ func TestDockerStop(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -195,7 +195,7 @@ func TestDockerDelete(t *testing.T) {
 			Docker: &docker.Config{},
 		},
 		Config: types.ContainerConfig{
-			Name:  randomContainerName(),
+			Name:  randomContainerName(t),
 			Image: defaults.EtcdImage,
 		},
 	}
@@ -215,12 +215,13 @@ func TestDockerDelete(t *testing.T) {
 	}
 }
 
-func randomContainerName() string {
+func randomContainerName(t *testing.T) string {
+	t.Helper()
+
 	token := make([]byte, 32)
 
-	_, err := rand.Read(token)
-	if err != nil {
-		panic(err)
+	if _, err := rand.Read(token); err != nil {
+		t.Fatalf("Generating random container name: %v", err)
 	}
 
 	return fmt.Sprintf("foo-%x", sha256.Sum256(token))
