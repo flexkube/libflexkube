@@ -1,0 +1,24 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    container: golangci/golangci-lint:v1.36.0
+    steps:
+      - uses: actions/checkout@v2
+      - run: make all-cover
+  codespell:
+    name: Codespell
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v2.3.3
+      - uses: codespell-project/actions-codespell@master
+        with:
+          skip: .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources
+          ignore_words_list: uptodate
+          check_filenames: true
+          check_hidden: true
