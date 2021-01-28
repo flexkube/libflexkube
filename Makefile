@@ -43,7 +43,7 @@ TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count
 
 VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 
-PROFILEFILE=c.out
+COVERPROFILE=c.out
 
 .PHONY: all
 all: build build-test test lint
@@ -95,7 +95,7 @@ test-integration: build-test
 
 .PHONY: test-cover
 test-cover: build-test
-	$(GOTEST) -run $(GO_TESTS) -coverprofile=$(PROFILEFILE) $(GO_PACKAGES)
+	$(GOTEST) -run $(GO_TESTS) -coverprofile=$(COVERPROFILE) $(GO_PACKAGES)
 
 .PHONY: test-mutate
 test-mutate: install-go-mutesting
@@ -103,7 +103,7 @@ test-mutate: install-go-mutesting
 
 .PHONY: cover-browse
 cover-browse:
-	go tool cover -html=$(PROFILEFILE)
+	go tool cover -html=$(COVERPROFILE)
 
 .PHONY: test-cover-browse
 test-cover-browse: test-cover cover-browse
@@ -162,7 +162,7 @@ format:
 	goimports -l -w $$(find . -name '*.go' | grep -v '^./vendor')
 
 .PHONY: codecov
-codecov: PROFILEFILE=coverage.txt
+codecov: COVERPROFILE=coverage.txt
 codecov: SHELL=/bin/bash
 codecov: test-cover
 codecov:
