@@ -166,7 +166,7 @@ test-cover-upload-codecov:
 .PHONY: test-cover-upload-codeclimate
 test-cover-upload-codeclimate: test-cover
 test-cover-upload-codeclimate:
-	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m) --exit-code $(EXIT_CODE)
+	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m)
 
 .PHONY: test-cover-upload
 test-cover-upload: test-cover-upload-codecov test-cover-upload-codeclimate
