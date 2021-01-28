@@ -157,10 +157,6 @@ codespell-pr:
 	git diff master..HEAD | grep -v ^- | codespell -
 	git log master..HEAD | codespell -
 
-.PHONY: format
-format:
-	goimports -l -w $$(find . -name '*.go' | grep -v '^./vendor')
-
 .PHONY: codecov
 codecov: SHELL=/bin/bash
 codecov: test-cover
