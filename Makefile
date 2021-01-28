@@ -157,19 +157,19 @@ codespell-pr:
 	git diff master..HEAD | grep -v ^- | codespell -
 	git log master..HEAD | codespell -
 
-.PHONY: codecov
-codecov: SHELL=/bin/bash
-codecov: test-cover
-codecov:
+.PHONY: test-cover-upload-codecov
+test-cover-upload-codecov: SHELL=/bin/bash
+test-cover-upload-codecov: test-cover
+test-cover-upload-codecov:
 	bash <(curl -s https://codecov.io/bash) -f $(COVERPROFILE)
 
-.PHONY: codeclimate
-codeclimate: test-cover
-codeclimate:
+.PHONY: test-cover-upload-codeclimate
+test-cover-upload-codeclimate: test-cover
+test-cover-upload-codeclimate:
 	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m) --exit-code $(EXIT_CODE)
 
-.PHONY: cover-upload
-cover-upload: codecov codeclimate
+.PHONY: test-cover-upload
+test-cover-upload: test-cover-upload-codecov test-cover-upload-codeclimate
 
 .PHONY: install-golangci-lint
 install-golangci-lint:

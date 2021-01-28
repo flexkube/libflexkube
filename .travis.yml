@@ -23,4 +23,4 @@ script:
   - make all-cover
 
 after_script:
-  - make cover-upload EXIT_CODE=$TRAVIS_TEST_RESULT
+  - make test-cover-upload EXIT_CODE=$TRAVIS_TEST_RESULT
