@@ -163,14 +163,10 @@ codecov: test-cover
 codecov:
 	bash <(curl -s https://codecov.io/bash) -f $(COVERPROFILE)
 
-.PHONY: codeclimate-prepare
-codeclimate-prepare:
-	cc-test-reporter before-build
-
 .PHONY: codeclimate
-codeclimate: codeclimate-prepare test-cover
+codeclimate: test-cover
 codeclimate:
-	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build --exit-code $(EXIT_CODE)
+	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m) --exit-code $(EXIT_CODE)
 
 .PHONY: cover-upload
 cover-upload: codecov
