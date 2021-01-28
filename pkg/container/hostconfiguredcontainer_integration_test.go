@@ -26,7 +26,7 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	t.Parallel()
 
 	p := "/tmp/foo"
-	f := path.Join(p, randomContainerName())
+	f := path.Join(p, randomContainerName(t))
 
 	h := &HostConfiguredContainer{
 		Host: host.Host{

@@ -63,7 +63,7 @@ func TestNewClientWithHost(t *testing.T) {
 func TestSanitizeImageName(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:latest"
+	e := "foo:latest" //nolint:ifshort
 
 	if g := sanitizeImageName("foo"); g != e {
 		t.Fatalf("Expected '%s', got '%s'", e, g)
@@ -73,7 +73,7 @@ func TestSanitizeImageName(t *testing.T) {
 func TestSanitizeImageNameWithTag(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:v0.1.0"
+	e := "foo:v0.1.0" //nolint:ifshort
 
 	if g := sanitizeImageName(e); g != e {
 		t.Fatalf("Expected '%s', got '%s'", e, g)
@@ -84,7 +84,7 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 func TestStatus(t *testing.T) {
 	t.Parallel()
 
-	es := "running"
+	es := "running" //nolint:ifshort
 
 	d := &docker{
 		ctx: context.Background(),

@@ -1,0 +1,28 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: golangci/golangci-lint:v1.36.0
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # Required for Codecov report uploading.
+          fetch-depth: 0
+      - run: make install-cc-test-reporter BIN_PATH=/usr/local/bin
+      - run: make build build-test lint
+      - run: make test-cover-upload
+  codespell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: codespell-project/actions-codespell@master
+        with:
+          skip: .git,go.sum
+          ignore_words_list: uptodate
+          check_filenames: true
+          check_hidden: true
