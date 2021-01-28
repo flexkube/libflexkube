@@ -43,6 +43,8 @@ TERRAFORM_ENV=TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) TF_VAR_controllers_count
 
 VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 
+PROFILEFILE=c.out
+
 .PHONY: all
 all: build build-test test lint
 
@@ -104,7 +106,6 @@ cover-browse:
 	go tool cover -html=$(PROFILEFILE)
 
 .PHONY: test-cover-browse
-test-cover-browse: PROFILEFILE=c.out
 test-cover-browse: test-cover cover-browse
 
 .PHONY: test-e2e-run
@@ -172,7 +173,6 @@ codeclimate-prepare:
 	cc-test-reporter before-build
 
 .PHONY: codeclimate
-codeclimate: PROFILEFILE=c.out
 codeclimate: codeclimate-prepare test-cover
 codeclimate:
 	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build --exit-code $(EXIT_CODE)
