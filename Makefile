@@ -162,11 +162,10 @@ format:
 	goimports -l -w $$(find . -name '*.go' | grep -v '^./vendor')
 
 .PHONY: codecov
-codecov: COVERPROFILE=coverage.txt
 codecov: SHELL=/bin/bash
 codecov: test-cover
 codecov:
-	bash <(curl -s https://codecov.io/bash)
+	bash <(curl -s https://codecov.io/bash) -f $(COVERPROFILE)
 
 .PHONY: codeclimate-prepare
 codeclimate-prepare:
