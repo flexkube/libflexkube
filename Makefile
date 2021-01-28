@@ -74,7 +74,7 @@ build-test:
 
 .PHONY: clean
 clean:
-	rm -r ./bin c.out coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/state.yaml 2>/dev/null || true
+	rm -r ./bin $(COVERPROFILE) coverage.txt kubeconfig local-testing/resources local-testing/values local-testing/state.yaml 2>/dev/null || true
 	make vagrant-destroy || true
 
 .PHONY: test
