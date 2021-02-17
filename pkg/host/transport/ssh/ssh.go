@@ -150,6 +150,14 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("port must be set"))
 	}
 
+	errors = append(errors, d.validateDurations()...)
+
+	return errors.Return()
+}
+
+func (d *Config) validateDurations() util.ValidateError {
+	var errors util.ValidateError
+
 	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {
 		errors = append(errors, fmt.Errorf("unable to parse connection timeout: %w", err))
@@ -167,7 +175,7 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("unable to parse private key: %w", err))
 	}
 
-	return errors.Return()
+	return errors
 }
 
 // Connect opens SSH connection to configured host.

@@ -59,6 +59,14 @@ func (v validator) validate(validateKubeconfig bool) error {
 		}
 	}
 
+	errors = append(errors, v.validateHost()...)
+
+	return errors.Return()
+}
+
+func (v validator) validateHost() util.ValidateError {
+	var errors util.ValidateError
+
 	if v.Host == nil {
 		errors = append(errors, fmt.Errorf("host must be defined"))
 	}
@@ -69,5 +77,5 @@ func (v validator) validate(validateKubeconfig bool) error {
 		}
 	}
 
-	return errors.Return()
+	return errors
 }

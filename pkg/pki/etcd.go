@@ -52,17 +52,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 		servers = e.Peers
 	}
 
-	if e.PeerCertificates == nil && len(e.Peers) != 0 {
-		e.PeerCertificates = map[string]*Certificate{}
-	}
-
-	if e.ServerCertificates == nil && len(servers) != 0 {
-		e.ServerCertificates = map[string]*Certificate{}
-	}
-
-	if e.ClientCertificates == nil && len(e.ClientCNs) != 0 {
-		e.ClientCertificates = map[string]*Certificate{}
-	}
+	e.initializeCertificatesMaps(servers)
 
 	cr := &certificateRequest{
 		Target: e.CA,
@@ -93,6 +83,20 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 	crs = append(crs, e.crsFromMap(&defaultCertificate, e.ClientCertificates, clientCNsMap, false)...)
 
 	return buildAndGenerate(crs...)
+}
+
+func (e *Etcd) initializeCertificatesMaps(servers map[string]string) {
+	if e.PeerCertificates == nil && len(e.Peers) != 0 {
+		e.PeerCertificates = map[string]*Certificate{}
+	}
+
+	if e.ServerCertificates == nil && len(servers) != 0 {
+		e.ServerCertificates = map[string]*Certificate{}
+	}
+
+	if e.ClientCertificates == nil && len(e.ClientCNs) != 0 {
+		e.ClientCertificates = map[string]*Certificate{}
+	}
 }
 
 // certificateFromCNIPMap produces a certificate from given common name and IP address.

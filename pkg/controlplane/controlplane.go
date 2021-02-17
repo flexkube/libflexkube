@@ -206,17 +206,7 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 	k := &c.KubeAPIServer
 
 	if p := c.PKI.Etcd; p != nil {
-		if p.CA != nil {
-			k.EtcdCACertificate = k.EtcdCACertificate.Pick(p.CA.X509Certificate)
-		}
-
-		// "root" and "kube-apiserver" are common CNs for etcd client certificate for kube-apiserver.
-		for _, cn := range []string{"root", "kube-apiserver"} {
-			if c, ok := p.ClientCertificates[cn]; ok {
-				k.EtcdClientCertificate = k.EtcdClientCertificate.Pick(c.X509Certificate)
-				k.EtcdClientKey = k.EtcdClientKey.Pick(c.PrivateKey)
-			}
-		}
+		c.mergeEtcdCertificatesFromPKI(*p)
 	}
 
 	if c.PKI.Kubernetes == nil {
@@ -231,6 +221,36 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 	if p == nil {
 		return
 	}
+
+	c.mergeKubeAPIServerCertificatesFromPKI(*p)
+}
+
+// mergeEtcdCertificatesFromPKI merges given etcd certificates from PKI into
+// KubeAPIServer field.
+func (c *Controlplane) mergeEtcdCertificatesFromPKI(p pki.Etcd) {
+	if c.PKI == nil {
+		return
+	}
+
+	k := &c.KubeAPIServer
+
+	if p.CA != nil {
+		k.EtcdCACertificate = k.EtcdCACertificate.Pick(p.CA.X509Certificate)
+	}
+
+	// "root" and "kube-apiserver" are common CNs for etcd client certificate for kube-apiserver.
+	for _, cn := range []string{"root", "kube-apiserver"} {
+		if c, ok := p.ClientCertificates[cn]; ok {
+			k.EtcdClientCertificate = k.EtcdClientCertificate.Pick(c.X509Certificate)
+			k.EtcdClientKey = k.EtcdClientKey.Pick(c.PrivateKey)
+		}
+	}
+}
+
+// mergeKubeAPIServerCertificatesFromPKI merges given kube-apiserver certificates from PKI into
+// KubeAPIServer field.
+func (c *Controlplane) mergeKubeAPIServerCertificatesFromPKI(p pki.KubeAPIServer) {
+	k := &c.KubeAPIServer
 
 	if c := p.ServerCertificate; c != nil {
 		k.APIServerCertificate = k.APIServerCertificate.Pick(c.X509Certificate)
@@ -383,6 +403,26 @@ func (c *Controlplane) Validate() error {
 		return errors.Return()
 	}
 
+	containersState, controlplaneComponentsErrors := c.controlplaneComponentsToContainersState()
+	errors = append(errors, controlplaneComponentsErrors...)
+
+	// If there were any errors while creating objects, it's not safe to proceed.
+	if len(errors) > 0 {
+		return errors.Return()
+	}
+
+	cc.DesiredState = containersState
+
+	if _, err = cc.New(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to generate containers configuration: %w", err))
+	}
+
+	return errors.Return()
+}
+
+func (c *Controlplane) controlplaneComponentsToContainersState() (container.ContainersState, util.ValidateError) {
+	var errors util.ValidateError
+
 	kasHcc, err := validateControlplaneComponent(&c.KubeAPIServer, "kube-apiserver")
 	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to verify kube-apiserver configuration: %w", err))
@@ -398,22 +438,11 @@ func (c *Controlplane) Validate() error {
 		errors = append(errors, fmt.Errorf("failed to verify kube-scheduler configuration: %w", err))
 	}
 
-	// If there were any errors while creating objects, it's not safe to proceed.
-	if len(errors) > 0 {
-		return errors.Return()
-	}
-
-	cc.DesiredState = container.ContainersState{
+	return container.ContainersState{
 		"kube-apiserver":          kasHcc,
 		"kube-controller-manager": kcmHcc,
 		"kube-scheduler":          ksHcc,
-	}
-
-	if _, err = cc.New(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to generate containers configuration: %w", err))
-	}
-
-	return errors.Return()
+	}, errors
 }
 
 // FromYaml allows to restore controlplane configuration and state from YAML format.

@@ -128,7 +128,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,gocyclo,paralleltest
+//nolint:funlen,gocognit,gocyclo,paralleltest,cyclop
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 

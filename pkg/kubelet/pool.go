@@ -137,38 +137,46 @@ type pool struct {
 	containers container.ContainersInterface
 }
 
+// pkiIntegration merges certificates from PKI into pool configuration.
 func (p *Pool) pkiIntegration() {
-	if p.PKI != nil && p.PKI.Kubernetes != nil {
-		if p.PKI.Kubernetes.CA != nil && p.KubernetesCACertificate == "" {
-			p.KubernetesCACertificate = p.PKI.Kubernetes.CA.X509Certificate
-		}
+	if p.PKI == nil || p.PKI.Kubernetes == nil {
+		return
+	}
 
-		if p.AdminConfig != nil && p.AdminConfig.ClientCertificate == "" && p.PKI.Kubernetes.AdminCertificate != nil {
-			p.AdminConfig.ClientCertificate = p.PKI.Kubernetes.AdminCertificate.X509Certificate
-		}
+	if p.PKI.Kubernetes.CA != nil && p.KubernetesCACertificate == "" {
+		p.KubernetesCACertificate = p.PKI.Kubernetes.CA.X509Certificate
+	}
 
-		if p.AdminConfig != nil && p.AdminConfig.ClientKey == "" && p.PKI.Kubernetes.AdminCertificate != nil {
-			p.AdminConfig.ClientKey = p.PKI.Kubernetes.AdminCertificate.PrivateKey
-		}
+	if p.AdminConfig == nil {
+		return
+	}
+
+	if p.AdminConfig.ClientCertificate == "" && p.PKI.Kubernetes.AdminCertificate != nil {
+		p.AdminConfig.ClientCertificate = p.PKI.Kubernetes.AdminCertificate.X509Certificate
+	}
+
+	if p.AdminConfig.ClientKey == "" && p.PKI.Kubernetes.AdminCertificate != nil {
+		p.AdminConfig.ClientKey = p.PKI.Kubernetes.AdminCertificate.PrivateKey
 	}
 }
 
+// kubeletPKIIntegration merges certificates from PKI into given kubelet configuration.
 func (p *Pool) kubeletPKIIntegration(k *Kubelet) {
 	k.KubernetesCACertificate = types.Certificate(util.PickString(string(k.KubernetesCACertificate), string(p.KubernetesCACertificate)))
 
-	if k.BootstrapConfig == nil && p.BootstrapConfig != nil {
+	if p.BootstrapConfig != nil && k.BootstrapConfig == nil {
 		k.BootstrapConfig = p.BootstrapConfig
 	}
 
-	if k.AdminConfig == nil && p.AdminConfig != nil {
+	if p.AdminConfig != nil && k.AdminConfig == nil {
 		k.AdminConfig = p.AdminConfig
 	}
 
-	if k.BootstrapConfig != nil && k.BootstrapConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
+	if k.BootstrapConfig != nil && k.BootstrapConfig.CACertificate == "" {
 		k.BootstrapConfig.CACertificate = p.KubernetesCACertificate
 	}
 
-	if k.AdminConfig != nil && k.AdminConfig.CACertificate == "" && p.KubernetesCACertificate != "" {
+	if k.AdminConfig != nil && k.AdminConfig.CACertificate == "" {
 		k.AdminConfig.CACertificate = p.KubernetesCACertificate
 	}
 }
