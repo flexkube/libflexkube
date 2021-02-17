@@ -42,10 +42,12 @@ linters:
   enable:
     - asciicheck
     - bodyclose
+    - cyclop
     - deadcode
     - depguard
     - dogsled
     - dupl
+    - durationcheck
     - errcheck
     - errorlint
     - exhaustive
@@ -81,6 +83,7 @@ linters:
     - paralleltest
     - prealloc
     - predeclared
+    - revive
     - rowserrcheck
     - scopelint
     - sqlclosecheck

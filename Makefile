@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.36.0
+GOLANGCI_LINT_VERSION=v1.37.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -147,6 +147,12 @@ update-linters:
 	sed -i '/^  enable:/q0' .golangci.yml
 	# Then add all possible linters to config.
 	golangci-lint linters | grep -E '^\S+:' | cut -d: -f1 | sort | sed 's/^/    - /g' | grep -v -E "($$(grep '^  disable:' -A 100 .golangci.yml  | grep -E '    - \S+$$' | awk '{print $$2}' | tr \\n '|' | sed 's/|$$//g'))" >> .golangci.yml
+
+.PHONY: test-update-linters
+test-update-linters:
+	@test -z "$$(git status --porcelain)" || (echo "Working directory must be clean to perform this check."; exit 1)
+	make update-linters
+	@test -z "$$(git status --porcelain)" || (echo "Linter configuration outdated. Run 'make update-linters' and commit generated changes to fix."; exit 1)
 
 .PHONY: codespell
 codespell:

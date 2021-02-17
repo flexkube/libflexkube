@@ -141,54 +141,6 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 	return nk, nil
 }
 
-// validateBootstrapConfig validates bootstrap config.
-func (k *Kubelet) validateBootstrapConfig() error {
-	if k.BootstrapConfig == nil {
-		return fmt.Errorf("bootstrapConfig must be set")
-	}
-
-	if err := k.BootstrapConfig.Validate(); err != nil {
-		return fmt.Errorf("failed validating bootstrap config: %w", err)
-	}
-
-	if _, err := k.BootstrapConfig.ToYAMLString(); err != nil {
-		return fmt.Errorf("failed to generate bootstrap kubeconfig: %w", err)
-	}
-
-	return nil
-}
-
-// validateAdminConfig validates admin config and related parameters.
-func (k *Kubelet) validateAdminConfig() error {
-	var errors util.ValidateError
-
-	if k.AdminConfig == nil && len(k.PrivilegedLabels) > 0 {
-		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
-	}
-
-	if k.AdminConfig == nil && k.WaitForNodeReady {
-		errors = append(errors, fmt.Errorf("waitForNodeReady requested, but adminConfig is not set"))
-	}
-
-	if k.AdminConfig != nil && (!k.WaitForNodeReady && len(k.PrivilegedLabels) == 0) {
-		errors = append(errors, fmt.Errorf("adminConfig set but not used"))
-	}
-
-	if k.AdminConfig == nil {
-		return errors.Return()
-	}
-
-	if err := k.AdminConfig.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("failed validating admin config: %w", err))
-	}
-
-	if _, err := k.AdminConfig.ToYAMLString(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to generate admin kubeconfig: %w", err))
-	}
-
-	return errors.Return()
-}
-
 // Validate validates kubelet configuration.
 func (k *Kubelet) Validate() error {
 	var errors util.ValidateError
@@ -206,9 +158,7 @@ func (k *Kubelet) Validate() error {
 		errors = append(errors, fmt.Errorf("kubernetesCACertificate can't be empty"))
 	}
 
-	if err := k.validateBootstrapConfig(); err != nil {
-		errors = append(errors, err)
-	}
+	errors = append(errors, k.validateBootstrapConfig()...)
 
 	if k.VolumePluginDir == "" {
 		errors = append(errors, fmt.Errorf("volumePluginDir can't be empty"))
@@ -217,6 +167,86 @@ func (k *Kubelet) Validate() error {
 	if err := k.validateAdminConfig(); err != nil {
 		errors = append(errors, err)
 	}
+
+	errors = append(errors, k.validateNetworkPlugin()...)
+
+	if err := k.Host.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
+	}
+
+	if k.Name == "" {
+		errors = append(errors, fmt.Errorf("name can't be empty"))
+	}
+
+	return errors.Return()
+}
+
+// validateBootstrapConfig validates bootstrap config.
+func (k *Kubelet) validateBootstrapConfig() util.ValidateError {
+	var errors util.ValidateError
+
+	if k.BootstrapConfig == nil {
+		errors = append(errors, fmt.Errorf("bootstrapConfig must be set"))
+
+		return errors
+	}
+
+	if err := k.BootstrapConfig.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("failed validating bootstrap config: %w", err))
+
+		return errors
+	}
+
+	if _, err := k.BootstrapConfig.ToYAMLString(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to generate bootstrap kubeconfig: %w", err))
+	}
+
+	return errors
+}
+
+// validateAdminConfig validates admin config and related parameters.
+func (k *Kubelet) validateAdminConfig() error {
+	var errors util.ValidateError
+
+	if k.AdminConfig == nil {
+		errors = append(errors, k.adminConfigRequired()...)
+
+		return errors.Return()
+	}
+
+	if !k.WaitForNodeReady && len(k.PrivilegedLabels) == 0 {
+		errors = append(errors, fmt.Errorf("adminConfig set but not used"))
+	}
+
+	if err := k.AdminConfig.Validate(); err != nil {
+		errors = append(errors, fmt.Errorf("failed validating admin config: %w", err))
+	}
+
+	if _, err := k.AdminConfig.ToYAMLString(); err != nil {
+		errors = append(errors, fmt.Errorf("failed to generate admin kubeconfig: %w", err))
+	}
+
+	return errors.Return()
+}
+
+// adminConfigRequired returns validation errors which should be used when AdminConfig is not defined.
+func (k *Kubelet) adminConfigRequired() util.ValidateError {
+	var errors util.ValidateError
+
+	if len(k.PrivilegedLabels) > 0 {
+		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
+	}
+
+	if k.WaitForNodeReady {
+		errors = append(errors, fmt.Errorf("waitForNodeReady requested, but adminConfig is not set"))
+	}
+
+	return errors
+}
+
+// validateNetworkPlugin validates NetworkPlugin and related required fields.
+func (k *Kubelet) validateNetworkPlugin() util.ValidateError {
+	var errors util.ValidateError
 
 	switch k.NetworkPlugin {
 	case "cni":
@@ -231,15 +261,7 @@ func (k *Kubelet) Validate() error {
 		errors = append(errors, fmt.Errorf("networkPlugin must be either 'cni' or 'kubenet'"))
 	}
 
-	if err := k.Host.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
-	}
-
-	if k.Name == "" {
-		errors = append(errors, fmt.Errorf("name can't be empty"))
-	}
-
-	return errors.Return()
+	return errors
 }
 
 // config return kubelet configuration file content in YAML format.

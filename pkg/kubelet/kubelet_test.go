@@ -76,7 +76,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 }
 
 // Validate() tests.
-func TestKubeletValidate(t *testing.T) { //nolint:funlen
+func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 	t.Parallel()
 
 	cases := []struct {

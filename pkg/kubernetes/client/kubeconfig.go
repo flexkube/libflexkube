@@ -53,6 +53,27 @@ func (c *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("server is empty"))
 	}
 
+	if c.CACertificate == "" {
+		errors = append(errors, fmt.Errorf("ca certificate is empty"))
+	}
+
+	errors = append(errors, c.validateAuth()...)
+
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		return append(errors, fmt.Errorf("marshaling config should succeed, got: %w", err))
+	}
+
+	if err := yaml.Unmarshal(b, c); err != nil {
+		return append(errors, fmt.Errorf("certificate validation failed: %w", err))
+	}
+
+	return errors.Return()
+}
+
+func (c *Config) validateAuth() util.ValidateError {
+	var errors util.ValidateError
+
 	if c.ClientCertificate == "" && c.Token == "" {
 		errors = append(errors, fmt.Errorf("either client certificate or token must be set"))
 	}
@@ -69,20 +90,7 @@ func (c *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("client key should not be set together with token"))
 	}
 
-	if c.CACertificate == "" {
-		errors = append(errors, fmt.Errorf("ca certificate is empty"))
-	}
-
-	b, err := yaml.Marshal(c)
-	if err != nil {
-		return append(errors, fmt.Errorf("marshaling config should succeed, got: %w", err))
-	}
-
-	if err := yaml.Unmarshal(b, c); err != nil {
-		return append(errors, fmt.Errorf("certificate validation failed: %w", err))
-	}
-
-	return errors.Return()
+	return errors
 }
 
 // ToYAMLString converts given configuration to kubeconfig format as YAML text.

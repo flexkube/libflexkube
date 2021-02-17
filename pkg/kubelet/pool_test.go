@@ -135,7 +135,7 @@ func TestPoolDeploy(t *testing.T) {
 	}
 }
 
-func TestPoolPropagateExtraMounts(t *testing.T) {
+func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 	t.Parallel()
 
 	p := GetPool(t).(*pool)
