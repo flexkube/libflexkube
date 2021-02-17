@@ -14,7 +14,7 @@ jobs:
           # Required for Codecov report uploading.
           fetch-depth: 0
       - run: make install-cc-test-reporter BIN_PATH=/usr/local/bin
-      - run: make build build-test lint
+      - run: make build build-test test-update-linters lint
       - run: make test-cover-upload
   codespell:
     runs-on: ubuntu-latest
