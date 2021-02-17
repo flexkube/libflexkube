@@ -148,6 +148,12 @@ update-linters:
 	# Then add all possible linters to config.
 	golangci-lint linters | grep -E '^\S+:' | cut -d: -f1 | sort | sed 's/^/    - /g' | grep -v -E "($$(grep '^  disable:' -A 100 .golangci.yml  | grep -E '    - \S+$$' | awk '{print $$2}' | tr \\n '|' | sed 's/|$$//g'))" >> .golangci.yml
 
+.PHONY: test-update-linters
+test-update-linters:
+	@test -z "$$(git status --porcelain)" || (echo "Working directory must be clean to perform this check."; exit 1)
+	make update-linters
+	@test -z "$$(git status --porcelain)" || (echo "Linter configuration outdated. Run 'make update-linters' and commit generated changes to fix."; exit 1)
+
 .PHONY: codespell
 codespell:
 	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate
