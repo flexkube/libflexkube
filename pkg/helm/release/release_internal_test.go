@@ -28,16 +28,24 @@ func TestRetryOnEtcdErrorDifferentError(t *testing.T) {
 
 	calls := 0
 
-	if err := retryOnEtcdError(func() error {
+	expectedError := fmt.Errorf("expected error")
+
+	err := retryOnEtcdError(func() error {
 		calls++
 
-		return fmt.Errorf("err")
-	}); err == nil {
+		return expectedError
+	})
+	if err == nil {
 		t.Errorf("retry should return error if all attempts failed")
 	}
 
 	if calls != 1 {
 		t.Errorf("function should be called only once if the error returned is not etcd error")
+	}
+
+	// Helm errors cannot be unwrapped.
+	if err != expectedError { //nolint:errorlint
+		t.Fatalf("retrying did not retain original error, got: %v", err)
 	}
 }
 
