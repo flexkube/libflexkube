@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.1] - 2021-02-19
+
+### Fixed
+
+- Logic for running conformance tests, they should be now more robust.
+
+### Changed
+
+- Default Kubernetes version is now v1.20.3.
+- Default HAProxy version is now 2.3.5.
+- Switched CI from Travis to GitHub Actions. This results in faster updates to PR statuses.
+
 ## [0.5.0] - 2020-12-11
 
 ### Added
@@ -332,6 +345,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.5.1]: https://github.com/flexkube/libflexkube/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/flexkube/libflexkube/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/flexkube/libflexkube/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/flexkube/libflexkube/compare/v0.4.1...v0.4.2
