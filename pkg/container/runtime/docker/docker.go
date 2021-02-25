@@ -287,18 +287,16 @@ func filesToTar(files []*types.File) (io.Reader, error) {
 			Mode:    f.Mode,
 			Size:    int64(len(f.Content)),
 			ModTime: time.Now(),
+			Uname:   f.User,
+			Gname:   f.Group,
 		}
 
 		if uid, err := strconv.Atoi(f.User); err == nil {
 			h.Uid = uid
-		} else {
-			h.Uname = f.User
 		}
 
 		if gid, err := strconv.Atoi(f.Group); err == nil {
 			h.Gid = gid
-		} else {
-			h.Gname = f.Group
 		}
 
 		if err := tw.WriteHeader(h); err != nil {
