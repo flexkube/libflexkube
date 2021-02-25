@@ -224,7 +224,7 @@ func (p *Pool) New() (types.Resource, error) {
 
 	cc := &container.Containers{
 		PreviousState: p.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	for i := range p.Kubelets {
@@ -251,7 +251,7 @@ func (p *Pool) Validate() error {
 
 	cc := &container.Containers{
 		PreviousState: p.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	for i := range p.Kubelets {
