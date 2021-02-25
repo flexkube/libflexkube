@@ -102,8 +102,8 @@ shim_debug = true
     mkdir -p /etc/containerd && echo "#{containerd_config}" | sudo tee /etc/containerd/config.toml >/dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable iptables-store iptables-restore docker containerd systemd-timesyncd
-    sudo systemctl mask update-engine locksmithd
     sudo systemctl stop update-engine locksmithd
+    sudo systemctl mask update-engine locksmithd
     sudo systemctl start docker systemd-timesyncd iptables-store
     sudo systemctl restart systemd-networkd systemd-resolved containerd
   EOF
