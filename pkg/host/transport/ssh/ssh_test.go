@@ -25,14 +25,20 @@ const (
 	authMethods      = 1
 )
 
+func unsetSSHAuthSockEnv(t *testing.T) {
+	t.Helper()
+
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+}
+
 // This test may access SSHAuthSockEnv environment variable,
 // which is global variable, so to keep things stable, don't run it in parallel.
 //
 //nolint:paralleltest
 func TestNew(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -54,9 +60,7 @@ func TestNew(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewSetPassword(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -83,9 +87,7 @@ func TestNewSetPassword(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewSetPrivateKey(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -138,9 +140,7 @@ func TestValidateRequireAddress(t *testing.T) {
 //
 //nolint:paralleltest
 func TestValidateRequireAuth(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -564,9 +564,7 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 //
 //nolint:paralleltest
 func TestConnect(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -600,9 +598,7 @@ func TestConnect(t *testing.T) {
 //
 //nolint:paralleltest
 func TestConnectFail(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -753,9 +749,7 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewBadSSHAgentEnv(t *testing.T) {
-	if err := os.Setenv(SSHAuthSockEnv, "foo"); err != nil {
-		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
