@@ -18,8 +18,12 @@ import (
 // share /run with the host).
 const testServerAddr = "/run/test.sock"
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPasswordAuth(t *testing.T) {
-	t.Parallel()
+	unsetSSHAuthSockEnv(t)
 
 	pass, err := ioutil.ReadFile("/home/core/.password")
 	if err != nil {
@@ -46,8 +50,12 @@ func TestPasswordAuth(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPasswordAuthFail(t *testing.T) {
-	t.Parallel()
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -69,9 +77,11 @@ func TestPasswordAuthFail(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPrivateKeyAuth(t *testing.T) {
-	t.Parallel()
-
 	s := withPrivateKey(t)
 
 	if _, err := s.Connect(); err != nil {
@@ -81,7 +91,8 @@ func TestPrivateKeyAuth(t *testing.T) {
 
 func withPrivateKey(t *testing.T) transport.Interface {
 	t.Helper()
-	t.Parallel()
+
+	unsetSSHAuthSockEnv(t)
 
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
@@ -106,9 +117,11 @@ func withPrivateKey(t *testing.T) transport.Interface {
 	return ssh
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestForwardUnixSocketFull(t *testing.T) {
-	t.Parallel()
-
 	ssh := withPrivateKey(t)
 	expectedMessage := "foo"
 	expectedResponse := "bar"
