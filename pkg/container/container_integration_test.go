@@ -55,9 +55,16 @@ func TestDockerCreate(t *testing.T) {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	if _, err := c.Create(); err != nil {
+	ci, err := c.Create()
+	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
+
+	t.Cleanup(func() {
+		if err := ci.Delete(); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Status() tests.
@@ -87,6 +94,12 @@ func TestDockerStatus(t *testing.T) {
 	if _, err := ci.Status(); err != nil {
 		t.Fatalf("Checking container status should succeed, got: %v", err)
 	}
+
+	t.Cleanup(func() {
+		if err := ci.Delete(); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 func TestDockerStatusNonExistingContainer(t *testing.T) {
@@ -112,6 +125,8 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
+	originalCIID := ci.(*containerInstance).status.ID
+
 	ci.(*containerInstance).status.ID = ""
 
 	status, err := ci.Status()
@@ -122,6 +137,14 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 	if status.ID != "" {
 		t.Fatalf("Container ID for non existing container should be empty")
 	}
+
+	ci.(*containerInstance).status.ID = originalCIID
+
+	t.Cleanup(func() {
+		if err := ci.Delete(); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Start() tests.
@@ -151,6 +174,19 @@ func TestDockerStart(t *testing.T) {
 	if err := ci.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
+
+	t.Cleanup(func() {
+		if err := ci.Stop(); err != nil {
+			t.Logf("Stopping container should succeed, got: %v", err)
+
+			// Deleting not stopped container will fail, so return early.
+			return
+		}
+
+		if err := ci.Delete(); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Stop() tests.
@@ -184,6 +220,12 @@ func TestDockerStop(t *testing.T) {
 	if err := ci.Stop(); err != nil {
 		t.Fatalf("Stopping container should succeed, got: %v", err)
 	}
+
+	t.Cleanup(func() {
+		if err := ci.Delete(); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Delete() tests.
