@@ -34,7 +34,7 @@ type kubeScheduler struct {
 
 // ToHostConfiguredContainer converts kubeScheduler into generic container struct.
 func (k *kubeScheduler) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	configFiles := make(map[string]string)
+	configFiles := map[string]string{}
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-scheduler/kubeconfig"] = k.kubeconfig
 	configFiles["/etc/kubernetes/kube-scheduler/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
