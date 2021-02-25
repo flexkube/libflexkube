@@ -37,7 +37,7 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 				Docker: &docker.Config{},
 			},
 			Config: types.ContainerConfig{
-				Name:  "foo",
+				Name:  randomContainerName(t),
 				Image: "nginx",
 				Mounts: []types.Mount{
 					{
