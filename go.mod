@@ -1,6 +1,6 @@
 module github.com/flexkube/libflexkube
 
-go 1.15
+go 1.16
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
