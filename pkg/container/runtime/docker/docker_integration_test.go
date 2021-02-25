@@ -24,9 +24,16 @@ func TestContainerCreate(t *testing.T) {
 		Image: defaults.EtcdImage,
 	}
 
-	if _, err := r.Create(cc); err != nil {
+	ci, err := r.Create(cc)
+	if err != nil {
 		t.Errorf("Creating container should succeed, got: %s", err)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(ci); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 func TestContainerCreateDelete(t *testing.T) {
@@ -112,6 +119,12 @@ func TestContainerCreateWithArgs(t *testing.T) {
 	if !reflect.DeepEqual(data.Args, args) {
 		t.Fatalf("Container created with args set should have args set\nExpected: %+v\nGot: %+v\n", args, data.Args)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 func TestContainerCreateWithEntrypoint(t *testing.T) {
@@ -139,6 +152,12 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
 		t.Fatalf("Container created with entrypoint set should have entrypoint set\nExpected: %+v\nGot: %+v\n", entrypoint[0], data.Path)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Start() tests.
@@ -159,6 +178,19 @@ func TestContainerStart(t *testing.T) {
 	if err := r.Start(id); err != nil {
 		t.Errorf("Starting container should work, got: %s", err)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Stop(id); err != nil {
+			t.Logf("Stopping container should succeed, got: %v", err)
+
+			// Deleting not stopped container will fail, so return early.
+			return
+		}
+
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Stop() tests.
@@ -183,6 +215,12 @@ func TestContainerStop(t *testing.T) {
 	if err := r.Stop(id); err != nil {
 		t.Errorf("Stopping container should work, got: %s", err)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 // Status() tests.
@@ -203,6 +241,12 @@ func TestContainerStatus(t *testing.T) {
 	if _, err = r.Status(id); err != nil {
 		t.Errorf("Getting container status should work, got: %s", err)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }
 
 func TestContainerStatusNonExistent(t *testing.T) {
@@ -366,4 +410,10 @@ func TestContainerEnv(t *testing.T) {
 	if !reflect.DeepEqual(data.Config.Env, envSlice) {
 		t.Fatalf("Container created with environment variables set should have environment variables set\nExpected: %+v\nGot: %+v\n", envSlice, data.Config.Env)
 	}
+
+	t.Cleanup(func() {
+		if err := r.Delete(id); err != nil {
+			t.Logf("Removing container should succeed, got: %v", err)
+		}
+	})
 }

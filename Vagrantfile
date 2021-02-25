@@ -51,11 +51,18 @@ EOF
   end
 
   # Also don't use Virtualbox DNS server, as it does not support TCP queries it seems and this makes CoreDNS complains.
-  resolved_config = <<-EOF
-    [Resolve]
-    DNS=8.8.8.8 8.8.4.4
-    Domains=~.
-  EOF
+  network_config = <<-EOF
+[Match]
+Name=eth0
+
+[Network]
+DHCP=yes
+DNS=8.8.8.8
+DNS=8.8.4.4
+
+[DHCP]
+UseDNS=false
+EOF
 
   containerd_config = <<-EOF
 # persistent data location
@@ -97,15 +104,15 @@ shim_debug = true
   EOF
 
   common_provisioning_script = <<-EOF
-    mkdir -p /etc/systemd/resolved.conf.d && echo "#{resolved_config}" | sudo tee /etc/systemd/resolved.conf.d/dns_servers.conf >/dev/null
+    mkdir -p /etc/systemd/network && echo "#{network_config}" | sudo tee /etc/systemd/network/10-virtualbox.network >/dev/null
     mkdir -p /etc/systemd/system/containerd.service.d && echo "#{containerd_override}" | sudo tee /etc/systemd/system/containerd.service.d/10-use-custom-config.conf >/dev/null
     mkdir -p /etc/containerd && echo "#{containerd_config}" | sudo tee /etc/containerd/config.toml >/dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable iptables-store iptables-restore docker containerd systemd-timesyncd
-    sudo systemctl mask update-engine locksmithd
     sudo systemctl stop update-engine locksmithd
+    sudo systemctl mask update-engine locksmithd
     sudo systemctl start docker systemd-timesyncd iptables-store
-    sudo systemctl restart systemd-networkd systemd-resolved containerd
+    sudo systemctl restart systemd-networkd containerd
   EOF
 
   # Controllers.

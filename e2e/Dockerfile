@@ -1,8 +1,8 @@
-FROM golang:1.15.6-alpine3.12
+FROM golang:1.16-alpine3.13
 
 RUN apk add -U make bash bash-completion vim coreutils
 
-RUN wget https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
+RUN wget https://get.helm.sh/helm-v3.5.2-linux-amd64.tar.gz -O - | tar -xzvf - linux-amd64/helm && \
     mv linux-amd64/helm /usr/local/bin/
 
 RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(wget -q -O- https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \

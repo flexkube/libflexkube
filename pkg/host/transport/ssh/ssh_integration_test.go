@@ -3,6 +3,7 @@
 package ssh
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -18,8 +19,12 @@ import (
 // share /run with the host).
 const testServerAddr = "/run/test.sock"
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPasswordAuth(t *testing.T) {
-	t.Parallel()
+	unsetSSHAuthSockEnv(t)
 
 	pass, err := ioutil.ReadFile("/home/core/.password")
 	if err != nil {
@@ -46,8 +51,12 @@ func TestPasswordAuth(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPasswordAuthFail(t *testing.T) {
-	t.Parallel()
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -69,9 +78,11 @@ func TestPasswordAuthFail(t *testing.T) {
 	}
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestPrivateKeyAuth(t *testing.T) {
-	t.Parallel()
-
 	s := withPrivateKey(t)
 
 	if _, err := s.Connect(); err != nil {
@@ -81,7 +92,8 @@ func TestPrivateKeyAuth(t *testing.T) {
 
 func withPrivateKey(t *testing.T) transport.Interface {
 	t.Helper()
-	t.Parallel()
+
+	unsetSSHAuthSockEnv(t)
 
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
@@ -106,45 +118,48 @@ func withPrivateKey(t *testing.T) transport.Interface {
 	return ssh
 }
 
+// This test may access SSHAuthSockEnv environment variable,
+// which is global variable, so to keep things stable, don't run it in parallel.
+//
+//nolint:paralleltest
 func TestForwardUnixSocketFull(t *testing.T) {
-	t.Parallel()
-
 	ssh := withPrivateKey(t)
-	expectedMessage := "foo"
-	expectedResponse := "bar"
 
 	c, err := ssh.Connect()
 	if err != nil {
 		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 
-	s, err := c.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
+	randomRequest, _ := testMessage(t)
+	randomResponse, _ := testMessage(t)
+
+	go runServer(t, randomRequest, randomResponse)
+
+	localSocket, err := c.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
 	if err != nil {
 		t.Fatalf("forwarding should succeed, got: %v", err)
 	}
 
-	go runServer(t, expectedMessage, expectedResponse)
-
-	conn, err := net.Dial("unix", strings.ReplaceAll(s, "unix://", ""))
+	conn, err := net.Dial("unix", strings.ReplaceAll(localSocket, "unix://", ""))
 	if err != nil {
-		t.Fatalf("opening connection to %s should succeed, got: %v", s, err)
+		t.Fatalf("opening connection to %s should succeed, got: %v", localSocket, err)
 	}
 
-	fmt.Fprint(conn, expectedMessage)
-
-	buf := make([]byte, 1024)
-
-	_, err = conn.Read(buf)
-	if err != nil {
-		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	if _, err := conn.Write(randomRequest); err != nil {
+		t.Fatalf("Writing data to connection: %v", err)
 	}
 
-	if reflect.DeepEqual(string(buf), expectedResponse) {
-		t.Fatalf("bad response. expected '%s', got '%s'", expectedResponse, string(buf))
+	response, err := ioutil.ReadAll(conn)
+	if err != nil {
+		t.Fatalf("Reading data from connection should succeed, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(response, randomResponse) {
+		t.Fatalf("Bad response. expected '%+v', got '%+v'", randomResponse, response)
 	}
 }
 
-func runServer(t *testing.T, expectedMessage, response string) {
+func prepareTestSocket(t *testing.T) net.Listener {
 	t.Helper()
 
 	l, err := net.Listen("unix", testServerAddr)
@@ -156,12 +171,31 @@ func runServer(t *testing.T, expectedMessage, response string) {
 		t.Fail()
 	}
 
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			fmt.Printf("failed closing local listener: %v\n", err)
+		}
+
+		if err := os.Remove(testServerAddr); err != nil {
+			fmt.Printf("Failed removing UNIX socket %q: %v\n", testServerAddr, err)
+		}
+	})
+
 	// We may SSH into host as unprivileged user, so make sure we are allowed to access the
 	// socket file.
-	if err := os.Chmod(testServerAddr, 0o600); err != nil {
+	if err := os.Chmod(testServerAddr, 0o777); err != nil {
 		fmt.Printf("socket chmod should succeed, got: %v\n", err)
 		t.Fail()
 	}
+
+	return l
+}
+
+// This function is actually part of the test.
+//
+//nolint:thelper
+func runServer(t *testing.T, expectedRequest, response []byte) {
+	l := prepareTestSocket(t)
 
 	conn, err := l.Accept()
 	if err != nil {
@@ -169,29 +203,36 @@ func runServer(t *testing.T, expectedMessage, response string) {
 		t.Fail()
 	}
 
-	buf := make([]byte, 1024)
+	expectedRequestLength := len(expectedRequest)
 
-	_, err = conn.Read(buf)
+	receivedRequest := make([]byte, expectedRequestLength*2)
+
+	bytesRead, err := conn.Read(receivedRequest)
 	if err != nil {
 		fmt.Printf("reading data from connection should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
-	if reflect.DeepEqual(string(buf), expectedMessage) {
-		fmt.Printf("bad message. expected '%s', got '%s'\n", expectedMessage, string(buf))
+	if bytesRead != expectedRequestLength {
+		fmt.Printf("%d differs from %d\n", bytesRead, expectedRequestLength)
 		t.Fail()
 	}
 
-	if _, err := conn.Write([]byte(response)); err != nil {
+	// Get rid of any extra null bytes before comparison, as we have more in slice than we read.
+	receivedRequest = bytes.TrimRight(receivedRequest, "\x00")
+
+	if !reflect.DeepEqual(receivedRequest, expectedRequest) {
+		fmt.Printf("Bad request. expected '%+v', got '%+v'\n", expectedRequest, receivedRequest)
+		t.Fail()
+	}
+
+	if _, err := conn.Write(response); err != nil {
 		fmt.Printf("writing response should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
 	if err := conn.Close(); err != nil {
-		t.Logf("failed closing connection: %v", err)
-	}
-
-	if err := l.Close(); err != nil {
-		t.Logf("failed closing local listener: %v", err)
+		fmt.Printf("failed closing connection: %v\n", err)
+		t.Fail()
 	}
 }

@@ -1,11 +1,14 @@
 package ssh
 
 import (
-	"crypto/rand"
+	"bytes"
+	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"reflect"
@@ -20,19 +23,23 @@ import (
 )
 
 const (
-	expectedMessage  = "foo"
-	expectedResponse = "bar"
-	authMethods      = 1
+	authMethods = 1
 )
+
+func unsetSSHAuthSockEnv(t *testing.T) {
+	t.Helper()
+
+	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
+		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
+	}
+}
 
 // This test may access SSHAuthSockEnv environment variable,
 // which is global variable, so to keep things stable, don't run it in parallel.
 //
 //nolint:paralleltest
 func TestNew(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -54,9 +61,7 @@ func TestNew(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewSetPassword(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -83,9 +88,7 @@ func TestNewSetPassword(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewSetPrivateKey(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -138,9 +141,7 @@ func TestValidateRequireAddress(t *testing.T) {
 //
 //nolint:paralleltest
 func TestValidateRequireAuth(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -306,7 +307,7 @@ func TestValidateParsePrivateKey(t *testing.T) {
 func generateRSAPrivateKey(t *testing.T) string {
 	t.Helper()
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("generating key failed: %v", err)
 	}
@@ -321,6 +322,26 @@ func generateRSAPrivateKey(t *testing.T) string {
 	return string(pem.EncodeToMemory(&privBlock))
 }
 
+const maxTestMessageLength = 1024
+
+func testMessage(t *testing.T) ([]byte, int) {
+	t.Helper()
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	// We must have at least 1 byte message.
+	length := rand.Intn(maxTestMessageLength) + 1
+
+	message := make([]byte, length)
+	if _, err := rand.Read(message); err != nil {
+		t.Fatalf("generating message: %v", err)
+	}
+
+	message = bytes.Trim(message, "\x00")
+
+	return message, len(message)
+}
+
 func TestHandleClientLocalRemote(t *testing.T) {
 	t.Parallel()
 
@@ -330,16 +351,23 @@ func TestHandleClientLocalRemote(t *testing.T) {
 
 	go handleClient(server, remoteServer)
 
-	fmt.Fprint(client, expectedMessage)
+	expectedMessage, _ := testMessage(t)
 
-	buf := make([]byte, 1024)
+	if _, err := client.Write(expectedMessage); err != nil {
+		t.Fatalf("Writing to local client failed: %v", err)
+	}
 
-	if _, err := remoteClient.Read(buf); err != nil {
+	if err := client.Close(); err != nil {
+		t.Fatalf("Closing local client failed: %v", err)
+	}
+
+	readMessage, err := ioutil.ReadAll(remoteClient)
+	if err != nil {
 		t.Fatalf("reading data from connection should succeed, got: %v", err)
 	}
 
-	if reflect.DeepEqual(string(buf), expectedMessage) {
-		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	if !reflect.DeepEqual(readMessage, expectedMessage) {
+		t.Fatalf("bad response. expected '%+v', got '%+v'", expectedMessage, readMessage)
 	}
 }
 
@@ -352,16 +380,23 @@ func TestHandleClientRemoteLocal(t *testing.T) {
 
 	go handleClient(server, remoteServer)
 
-	fmt.Fprint(remoteClient, expectedMessage)
+	expectedMessage, _ := testMessage(t)
 
-	buf := make([]byte, 1024)
+	if _, err := remoteClient.Write(expectedMessage); err != nil {
+		t.Fatalf("Writing to remote client failed: %v", err)
+	}
 
-	if _, err := client.Read(buf); err != nil {
+	if err := remoteClient.Close(); err != nil {
+		t.Fatalf("Closing remote client failed: %v", err)
+	}
+
+	readMessage, err := ioutil.ReadAll(client)
+	if err != nil {
 		t.Fatalf("reading data from connection should succeed, got: %v", err)
 	}
 
-	if reflect.DeepEqual(string(buf), expectedMessage) {
-		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	if !reflect.DeepEqual(readMessage, expectedMessage) {
+		t.Fatalf("bad response. expected:\n '%+v'\n got:\n '%+v'", expectedMessage, readMessage)
 	}
 }
 
@@ -374,28 +409,48 @@ func TestHandleClientBiDirectional(t *testing.T) {
 
 	go handleClient(server, remoteServer)
 
-	fmt.Fprint(client, expectedMessage)
+	randomRequest, requestLength := testMessage(t)
 
-	buf := make([]byte, 1024)
-
-	if _, err := remoteClient.Read(buf); err != nil {
-		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	if _, err := client.Write(randomRequest); err != nil {
+		t.Fatalf("Writing to local client failed: %v", err)
 	}
 
-	if reflect.DeepEqual(string(buf), expectedMessage) {
-		t.Fatalf("bad response. expected '%s', got '%s'", expectedMessage, string(buf))
+	// Read twice as much data as we send to make sure we don't send any extra garbage.
+	receivedRequest := make([]byte, requestLength*2)
+
+	bytesRead, err := remoteClient.Read(receivedRequest)
+	if err != nil {
+		t.Fatalf("Reading data from connection should succeed, got: %v", err)
 	}
 
-	fmt.Fprint(remoteClient, expectedResponse)
-
-	buf = make([]byte, 1024)
-
-	if _, err := client.Read(buf); err != nil {
-		t.Fatalf("reading data from connection should succeed, got: %v", err)
+	if bytesRead != requestLength {
+		t.Fatalf("%d differs from %d", bytesRead, requestLength)
 	}
 
-	if reflect.DeepEqual(string(buf), expectedResponse) {
-		t.Fatalf("bad response. expected '%s', got '%s'", expectedResponse, string(buf))
+	// Get rid of any extra null bytes before comparison, as we have more in slice than we read.
+	receivedRequest = bytes.TrimRight(receivedRequest, "\x00")
+
+	if !reflect.DeepEqual(randomRequest, receivedRequest) {
+		t.Fatalf("Bad response. expected '%+v', got '%+v'", randomRequest, receivedRequest)
+	}
+
+	randomResponse, _ := testMessage(t)
+
+	if _, err := remoteClient.Write(randomResponse); err != nil {
+		t.Fatalf("Writing to remote client failed: %v", err)
+	}
+
+	if err := remoteClient.Close(); err != nil {
+		t.Fatalf("Closing remote client failed: %v", err)
+	}
+
+	receivedResponse, err := ioutil.ReadAll(client)
+	if err != nil {
+		t.Fatalf("Reading data from connection should succeed, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(randomResponse, receivedResponse) {
+		t.Fatalf("Bad response. expected '%+v', got '%+v'", randomResponse, receivedResponse)
 	}
 }
 
@@ -484,10 +539,15 @@ func TestForwardConnection(t *testing.T) {
 		t.Fatalf("failed opening connection to listener: %v", err)
 	}
 
-	data := []byte("FOO")
+	randomRequest, _ := testMessage(t)
 
-	if _, err := conn.Write(data); err != nil {
+	if _, err := conn.Write(randomRequest); err != nil {
 		t.Fatalf("failed writing to connection: %v", err)
+	}
+
+	// Close connection so we can use ReadAll().
+	if err := conn.Close(); err != nil {
+		t.Fatalf("Closing connection failed: %v", err)
 	}
 
 	c, err := r.Accept()
@@ -495,14 +555,13 @@ func TestForwardConnection(t *testing.T) {
 		t.Fatalf("failed accepting forwarded connection: %v", err)
 	}
 
-	buf := make([]byte, 3)
-
-	if _, err := c.Read(buf); err != nil {
+	readData, err := ioutil.ReadAll(c)
+	if err != nil {
 		t.Fatalf("failed reading data from connection: %v", err)
 	}
 
-	if !reflect.DeepEqual(buf, data) {
-		t.Fatalf("Expected data to be '%s', got '%s'", string(data), string(buf))
+	if !reflect.DeepEqual(readData, randomRequest) {
+		t.Fatalf("Expected data to be '%+v', got '%+v'", randomRequest, readData)
 	}
 }
 
@@ -564,9 +623,7 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 //
 //nolint:paralleltest
 func TestConnect(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -600,9 +657,7 @@ func TestConnect(t *testing.T) {
 //
 //nolint:paralleltest
 func TestConnectFail(t *testing.T) {
-	if err := os.Unsetenv(SSHAuthSockEnv); err != nil {
-		t.Fatalf("failed unsetting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -753,9 +808,7 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 //
 //nolint:paralleltest
 func TestNewBadSSHAgentEnv(t *testing.T) {
-	if err := os.Setenv(SSHAuthSockEnv, "foo"); err != nil {
-		t.Fatalf("failed setting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	unsetSSHAuthSockEnv(t)
 
 	c := &Config{
 		Address:           "localhost",
@@ -789,15 +842,15 @@ func TestNewSSHAgent(t *testing.T) {
 	go func() {
 		c, err := l.Accept()
 		if err != nil {
-			t.Logf("accepting connection failed: %v", err)
+			fmt.Printf("Accepting connection failed: %v\n", err)
 		}
 
 		if err := agent.ServeAgent(a, c); err != nil {
-			t.Logf("serving agent failed: %v", err)
+			fmt.Printf("Serving agent failed: %v\n", err)
 		}
 
 		if err := l.Close(); err != nil {
-			t.Logf("closing listener failed: %v", err)
+			fmt.Printf("Closing listener failed: %v\n", err)
 		}
 	}()
 

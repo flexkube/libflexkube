@@ -158,7 +158,7 @@ func (c *Cluster) New() (types.Resource, error) {
 
 	cc := container.Containers{
 		PreviousState: c.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	cluster := &cluster{
@@ -204,7 +204,7 @@ func (c *Cluster) Validate() error {
 
 	cc := container.Containers{
 		PreviousState: c.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	for n, m := range c.Members {

@@ -100,7 +100,7 @@ func (k *kubeControllerManager) args() []string {
 // TODO refactor this method, to have a generic method, which takes host as an argument and returns you
 // a HostConfiguredContainer with hyperkube image configured, initialized configFiles map etc.
 func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	configFiles := make(map[string]string)
+	configFiles := map[string]string{}
 	// TODO put all those path in a single place. Perhaps make them configurable with defaults too
 	configFiles["/etc/kubernetes/kube-controller-manager/kubeconfig"] = k.kubeconfig
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/service-account.key"] = k.serviceAccountPrivateKey

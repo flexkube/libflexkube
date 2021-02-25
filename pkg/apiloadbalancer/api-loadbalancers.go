@@ -139,7 +139,7 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 
 	cc := &container.Containers{
 		PreviousState: a.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	for i, lb := range a.APILoadBalancers {
@@ -165,7 +165,7 @@ func (a *APILoadBalancers) Validate() error {
 
 	cc := &container.Containers{
 		PreviousState: a.State,
-		DesiredState:  make(container.ContainersState),
+		DesiredState:  container.ContainersState{},
 	}
 
 	for i, lb := range a.APILoadBalancers {
