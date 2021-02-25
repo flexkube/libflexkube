@@ -13,8 +13,6 @@ func TestPoolNoInstancesDefined(t *testing.T) {
 
 	if err := a.Validate(); err == nil {
 		t.Fatal("validate should fail if there is no instances defined and the state is empty")
-	} else {
-		t.Log(err)
 	}
 }
 
