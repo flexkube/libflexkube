@@ -248,7 +248,7 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 func handleClient(client net.Conn, remote io.ReadWriter) {
 	defer func() {
 		if err := client.Close(); err != nil {
-			fmt.Printf("failed closing client connection: %v", err)
+			fmt.Printf("failed closing client connection: %v\n", err)
 		}
 	}()
 
@@ -279,7 +279,7 @@ func handleClient(client net.Conn, remote io.ReadWriter) {
 func forwardConnection(l net.Listener, connection dialer, remoteAddress, connectionType string) {
 	defer func() {
 		if err := l.Close(); err != nil {
-			fmt.Printf("failed closing listener: %v", err)
+			fmt.Printf("failed closing listener: %v\n", err)
 		}
 	}()
 

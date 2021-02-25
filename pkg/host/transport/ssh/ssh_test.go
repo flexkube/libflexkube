@@ -789,15 +789,15 @@ func TestNewSSHAgent(t *testing.T) {
 	go func() {
 		c, err := l.Accept()
 		if err != nil {
-			t.Logf("accepting connection failed: %v", err)
+			fmt.Printf("Accepting connection failed: %v\n", err)
 		}
 
 		if err := agent.ServeAgent(a, c); err != nil {
-			t.Logf("serving agent failed: %v", err)
+			fmt.Printf("Serving agent failed: %v\n", err)
 		}
 
 		if err := l.Close(); err != nil {
-			t.Logf("closing listener failed: %v", err)
+			fmt.Printf("Closing listener failed: %v\n", err)
 		}
 	}()
 
