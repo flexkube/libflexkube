@@ -213,11 +213,12 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 		},
 	}
 
+	initialClusterTokenArgument := "--initial-cluster-state=existing"
 	if m.config.NewCluster {
-		c.Config.Args = append(c.Config.Args, "--initial-cluster-token=etcd-cluster-2")
-	} else {
-		c.Config.Args = append(c.Config.Args, "--initial-cluster-state=existing")
+		initialClusterTokenArgument = "--initial-cluster-token=etcd-cluster-2"
 	}
+
+	c.Config.Args = append(c.Config.Args, initialClusterTokenArgument)
 
 	return &container.HostConfiguredContainer{
 		Host:        m.config.Host,
