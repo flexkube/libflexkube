@@ -288,7 +288,7 @@ func (m *hostConfiguredContainer) withConfigurationContainer(action func() error
 
 	defer func() {
 		if err := m.removeConfigurationContainer(); err != nil {
-			fmt.Printf("Removing configuration container failed: %v", err)
+			fmt.Printf("Removing configuration container failed: %v\n", err)
 		}
 	}()
 
