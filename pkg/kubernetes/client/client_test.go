@@ -1,7 +1,11 @@
 package client
 
 import (
+	"errors"
 	"testing"
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
@@ -59,8 +63,8 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 	}
 }
 
-// Ping() tests.
-func TestPingFakeKubeconfig(t *testing.T) {
+// PingWait() tests.
+func TestPingWaitFakeKubeconfig(t *testing.T) {
 	t.Parallel()
 
 	kubeconfig := GetKubeconfig(t)
@@ -70,14 +74,8 @@ func TestPingFakeKubeconfig(t *testing.T) {
 		t.Fatalf("Failed creating client: %v", err)
 	}
 
-	e, err := c.(*client).Ping()
-
-	if e == true {
-		t.Errorf("Ping should never return true with fake kubeconfig")
-	}
-
-	if err != nil {
-		t.Errorf("Ping should swallow all errors and just return boolean value")
+	if err := c.PingWait(1*time.Second, 1*time.Second); !errors.Is(err, wait.ErrWaitTimeout) {
+		t.Fatalf("Ping with fake config should always timeout, got: %v", err)
 	}
 }
 
