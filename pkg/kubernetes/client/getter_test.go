@@ -1,7 +1,9 @@
-package client
+package client_test
 
 import (
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 func TestGetter(t *testing.T) {
@@ -9,7 +11,7 @@ func TestGetter(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	g, err := NewGetter([]byte(kubeconfig))
+	g, err := client.NewGetter([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Creating getter should work, got: %v", err)
 	}

@@ -1,4 +1,4 @@
-package client
+package client_test
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
@@ -13,7 +15,7 @@ func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -34,7 +36,7 @@ func TestWaitForNodeFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -49,7 +51,7 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -69,7 +71,7 @@ func TestPingWaitFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -85,7 +87,7 @@ func TestCheckNodeReadyFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
