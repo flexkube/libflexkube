@@ -1,7 +1,13 @@
-package client
+package client_test
 
 import (
+	"errors"
 	"testing"
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
@@ -9,7 +15,7 @@ func TestCheckNodeExistsFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -30,7 +36,7 @@ func TestWaitForNodeFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -45,7 +51,7 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -59,25 +65,19 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 	}
 }
 
-// Ping() tests.
-func TestPingFakeKubeconfig(t *testing.T) {
+// PingWait() tests.
+func TestPingWaitFakeKubeconfig(t *testing.T) {
 	t.Parallel()
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
 
-	e, err := c.(*client).Ping()
-
-	if e == true {
-		t.Errorf("Ping should never return true with fake kubeconfig")
-	}
-
-	if err != nil {
-		t.Errorf("Ping should swallow all errors and just return boolean value")
+	if err := c.PingWait(1*time.Second, 1*time.Second); !errors.Is(err, wait.ErrWaitTimeout) {
+		t.Fatalf("Ping with fake config should always timeout, got: %v", err)
 	}
 }
 
@@ -87,7 +87,7 @@ func TestCheckNodeReadyFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := NewClient([]byte(kubeconfig))
+	c, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}

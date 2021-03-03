@@ -1,4 +1,4 @@
-package client
+package client_test
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -32,7 +33,7 @@ clientKey: |
 		strings.TrimSpace(util.Indent(pki.PrivateKey, "  ")),
 	)
 
-	c := &Config{}
+	c := &client.Config{}
 
 	if err := yaml.Unmarshal([]byte(y), c); err != nil {
 		t.Fatalf("unmarshaling config should succeed, got: %v", err)
@@ -59,11 +60,11 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
 	cases := []struct {
-		f   func(*Config)
+		f   func(*client.Config)
 		err func(*testing.T, error)
 	}{
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.CACertificate = "ddd"
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -73,7 +74,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientCertificate = "dfoo"
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -83,7 +84,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientKey = "ffoo"
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -93,7 +94,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				pki := utiltest.GeneratePKI(t)
 				c.ClientKey = types.PrivateKey(pki.PrivateKey)
 			},
@@ -104,7 +105,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {},
+			func(c *client.Config) {},
 			func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
@@ -112,7 +113,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientCertificate = ""
 				c.ClientKey = ""
 				c.Token = "doo"
@@ -124,7 +125,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientCertificate = ""
 				c.Token = "roo"
 			},
@@ -135,7 +136,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientKey = ""
 				c.Token = "fnoo"
 			},
@@ -155,7 +156,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen
 
 			pki := utiltest.GeneratePKI(t)
 
-			config := &Config{
+			config := &client.Config{
 				Server:            "localhost",
 				CACertificate:     types.Certificate(pki.Certificate),
 				ClientCertificate: types.Certificate(pki.Certificate),
@@ -176,7 +177,7 @@ func TestToYAMLStringValidate(t *testing.T) {
 
 	pki := utiltest.GeneratePKI(t)
 
-	c := &Config{
+	c := &client.Config{
 		CACertificate:     types.Certificate(pki.Certificate),
 		ClientCertificate: types.Certificate(pki.Certificate),
 		ClientKey:         types.PrivateKey(pki.PrivateKey),
@@ -192,11 +193,11 @@ func TestValidate(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
 	cases := []struct {
-		f   func(*Config)
+		f   func(*client.Config)
 		err func(*testing.T, error)
 	}{
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.Server = ""
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -206,7 +207,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.CACertificate = ""
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -216,7 +217,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientCertificate = ""
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -226,7 +227,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 			},
 		},
 		{
-			func(c *Config) {
+			func(c *client.Config) {
 				c.ClientKey = ""
 			},
 			func(t *testing.T, err error) { //nolint:thelper
@@ -237,7 +238,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 		},
 
 		{
-			func(c *Config) {},
+			func(c *client.Config) {},
 			func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
@@ -254,7 +255,7 @@ func TestValidate(t *testing.T) { //nolint:funlen
 
 			pki := utiltest.GeneratePKI(t)
 
-			config := &Config{
+			config := &client.Config{
 				Server:            "localhost",
 				CACertificate:     types.Certificate(pki.Certificate),
 				ClientCertificate: types.Certificate(pki.Certificate),

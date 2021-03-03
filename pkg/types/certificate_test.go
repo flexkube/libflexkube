@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"fmt"
@@ -9,13 +9,14 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 func TestCertificateParse(t *testing.T) {
 	t.Parallel()
 
 	type Foo struct {
-		Bar Certificate `json:"bar"`
+		Bar types.Certificate `json:"bar"`
 	}
 
 	cases := map[string]struct {
@@ -64,10 +65,10 @@ func TestCertificateParse(t *testing.T) {
 func TestCertificatePickNil(t *testing.T) {
 	t.Parallel()
 
-	var c Certificate
+	var c types.Certificate
 
-	d := Certificate("bar")
-	e := Certificate("baz")
+	d := types.Certificate("bar")
+	e := types.Certificate("baz")
 
 	if c.Pick(d, e) != "bar" {
 		t.Fatalf("first non empty certificate should be picked")
@@ -77,8 +78,8 @@ func TestCertificatePickNil(t *testing.T) {
 func TestCertificatePick(t *testing.T) {
 	t.Parallel()
 
-	d := Certificate("foo")
-	e := Certificate("baz")
+	d := types.Certificate("foo")
+	e := types.Certificate("baz")
 
 	if d.Pick(e) != "foo" {
 		t.Fatalf("first non empty certificate should be picked")

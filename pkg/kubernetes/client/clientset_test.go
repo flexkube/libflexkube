@@ -1,7 +1,9 @@
-package client
+package client_test
 
 import (
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 )
 
 func TestNewClientset(t *testing.T) {
@@ -9,7 +11,7 @@ func TestNewClientset(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	if _, err := NewClientset([]byte(kubeconfig)); err != nil {
+	if _, err := client.NewClientset([]byte(kubeconfig)); err != nil {
 		t.Fatalf("Creating clientset should work, got: %v", err)
 	}
 }

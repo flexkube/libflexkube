@@ -1,4 +1,4 @@
-package types
+package types_test
 
 import (
 	"fmt"
@@ -9,10 +9,11 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/types"
 )
 
 type Foo struct {
-	Bar PrivateKey `json:"bar"`
+	Bar types.PrivateKey `json:"bar"`
 }
 
 func TestPrivateKeyParse(t *testing.T) {
@@ -84,7 +85,13 @@ func TestParsePrivateKeyEC(t *testing.T) {
 func TestParsePrivateKeyBad(t *testing.T) {
 	t.Parallel()
 
-	if err := parsePrivateKey([]byte("notpem")); err == nil {
+	privateKey := `---
+bar: |
+  -----BEGIN RSA PRIVATE KEY-----
+  Zm9vCg==
+  -----END RSA PRIVATE KEY-----
+`
+	if err := yaml.Unmarshal([]byte(privateKey), &Foo{}); err == nil {
 		t.Fatalf("parsing not PEM format should fail")
 	}
 }
@@ -92,10 +99,10 @@ func TestParsePrivateKeyBad(t *testing.T) {
 func TestPrivateKeyPickNil(t *testing.T) {
 	t.Parallel()
 
-	var c PrivateKey
+	var c types.PrivateKey
 
-	d := PrivateKey("bar")
-	e := PrivateKey("baz")
+	d := types.PrivateKey("bar")
+	e := types.PrivateKey("baz")
 
 	if c.Pick(d, e) != "bar" {
 		t.Fatalf("first non empty private key should be picked")
@@ -105,8 +112,8 @@ func TestPrivateKeyPickNil(t *testing.T) {
 func TestPrivateKeyPick(t *testing.T) {
 	t.Parallel()
 
-	d := PrivateKey("foo")
-	e := PrivateKey("baz")
+	d := types.PrivateKey("foo")
+	e := types.PrivateKey("baz")
 
 	if d.Pick(e) != "foo" {
 		t.Fatalf("first non empty private key should be picked")

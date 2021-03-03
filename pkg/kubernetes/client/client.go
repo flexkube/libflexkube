@@ -42,7 +42,7 @@ type Client interface {
 	LabelNode(name string, labels map[string]string) error
 
 	// PingWait waits until API server becomes available.
-	PingWait() error
+	PingWait(pollInterval, retryTimeout time.Duration) error
 }
 
 type client struct {
@@ -61,14 +61,14 @@ func NewClient(kubeconfig []byte) (Client, error) {
 }
 
 // PingWait waits for Kubernetes API to become available.
-func (c *client) PingWait() error {
-	return wait.PollImmediate(PollInterval, RetryTimeout, c.Ping)
+func (c *client) PingWait(pollInterval, retryTimeout time.Duration) error {
+	return wait.PollImmediate(pollInterval, retryTimeout, c.ping)
 }
 
-// Ping checks availability of Kubernetes API by fetching all Roles in kube-system namespace.
+// ping checks availability of Kubernetes API by fetching all Roles in kube-system namespace.
 // We use Roles, as helm client sometimes fails, even if API is already available,
 // saying that this type of object is not recognized.
-func (c *client) Ping() (bool, error) {
+func (c *client) ping() (bool, error) {
 	if _, err := c.RbacV1().Roles("").List(context.TODO(), metav1.ListOptions{}); err != nil {
 		return false, nil
 	}

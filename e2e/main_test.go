@@ -1,6 +1,6 @@
 // +build e2e
 
-package main
+package main_test
 
 import (
 	"fmt"

@@ -171,7 +171,7 @@ func (r *release) ValidateChart() error {
 
 // Install installs configured chart as release. Equivalent of 'helm install'.
 func (r *release) Install() error {
-	if err := r.client.PingWait(); err != nil {
+	if err := r.client.PingWait(client.PollInterval, client.RetryTimeout); err != nil {
 		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
 	}
 
@@ -198,7 +198,7 @@ func (r *release) Install() error {
 
 // Upgrade upgrades already existing release. Equivalent of 'helm upgrade'.
 func (r *release) Upgrade() error {
-	if err := r.client.PingWait(); err != nil {
+	if err := r.client.PingWait(client.PollInterval, client.RetryTimeout); err != nil {
 		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
 	}
 
@@ -237,7 +237,7 @@ func (r *release) InstallOrUpgrade() error {
 
 // Exists checks if configured release exists.
 func (r *release) Exists() (bool, error) {
-	if err := r.client.PingWait(); err != nil {
+	if err := r.client.PingWait(client.PollInterval, client.RetryTimeout); err != nil {
 		return false, fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
 	}
 
