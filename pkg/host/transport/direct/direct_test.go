@@ -1,29 +1,29 @@
-package direct
+package direct_test
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/host/transport"
+	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-func TestNew(t *testing.T) {
-	t.Parallel()
+func newDirect(t *testing.T) transport.Interface {
+	t.Helper()
 
-	d := &Config{}
+	d := &direct.Config{}
 
 	di, err := d.New()
 	if err != nil {
 		t.Fatalf("should return new object without errors, got: %v", err)
 	}
 
-	if !reflect.DeepEqual(di, &direct{}) {
-		t.Fatalf("should be equal to empty struct, got: %+v", di)
-	}
+	return di
 }
 
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
-	d := &Config{}
+	d := &direct.Config{}
 
 	if err := d.Validate(); err != nil {
 		t.Fatalf("validation should always pass, got: %v", err)
@@ -33,10 +33,15 @@ func TestValidate(t *testing.T) {
 func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := &direct{}
+	d := newDirect(t)
 	p := "/foo" //nolint:ifshort
 
-	if fp, _ := d.ForwardUnixSocket(p); fp != p {
+	dc, err := d.Connect()
+	if err != nil {
+		t.Fatalf("Connecting: %v", err)
+	}
+
+	if fp, _ := dc.ForwardUnixSocket(p); fp != p {
 		t.Fatalf("expected '%s', got '%s'", p, fp)
 	}
 }
@@ -44,7 +49,8 @@ func TestForwardUnixSocket(t *testing.T) {
 func TestConnect(t *testing.T) {
 	t.Parallel()
 
-	d := &direct{}
+	d := newDirect(t)
+
 	if _, err := d.Connect(); err != nil {
 		t.Fatalf("Connect should always work, got: %v", err)
 	}
@@ -53,10 +59,15 @@ func TestConnect(t *testing.T) {
 func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
-	d := &direct{}
+	d := newDirect(t)
 	a := "localhost:80" //nolint:ifshort
 
-	if fa, _ := d.ForwardTCP(a); fa != a {
+	dc, err := d.Connect()
+	if err != nil {
+		t.Fatalf("Connecting: %v", err)
+	}
+
+	if fa, _ := dc.ForwardTCP(a); fa != a {
 		t.Fatalf("expected '%s', got '%s'", a, fa)
 	}
 }
@@ -64,10 +75,16 @@ func TestForwardTCP(t *testing.T) {
 func TestForwardTCPBadAddress(t *testing.T) {
 	t.Parallel()
 
-	d := &direct{}
+	d := newDirect(t)
+
+	dc, err := d.Connect()
+	if err != nil {
+		t.Fatalf("Connecting: %v", err)
+	}
+
 	a := "localhost"
 
-	if _, err := d.ForwardTCP(a); err == nil {
+	if _, err := dc.ForwardTCP(a); err == nil {
 		t.Fatalf("TCP forwarding should fail when forwarding bad address")
 	}
 }

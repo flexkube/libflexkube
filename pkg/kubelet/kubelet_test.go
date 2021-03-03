@@ -1,4 +1,4 @@
-package kubelet
+package kubelet_test
 
 import (
 	"reflect"
@@ -9,6 +9,7 @@ import (
 	containertypes "github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/host"
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
+	"github.com/flexkube/libflexkube/pkg/kubelet"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -37,7 +38,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 
 	cc := getClientConfig(t)
 
-	kk := &Kubelet{
+	kk := &kubelet.Kubelet{
 		BootstrapConfig:         cc,
 		Name:                    "fooz",
 		NetworkPlugin:           "cni",
@@ -80,11 +81,11 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 	t.Parallel()
 
 	cases := []struct {
-		MutationF func(k *Kubelet)
+		MutationF func(k *kubelet.Kubelet)
 		TestF     func(t *testing.T, er error)
 	}{
 		{
-			MutationF: func(k *Kubelet) {},
+			MutationF: func(k *kubelet.Kubelet) {},
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err != nil {
 					t.Fatalf("validation of kubelet should pass, got: %v", err)
@@ -92,7 +93,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.Name = "" },
+			MutationF: func(k *kubelet.Kubelet) { k.Name = "" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when name is not set")
@@ -100,11 +101,11 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) {},
+			MutationF: func(k *kubelet.Kubelet) {},
 			TestF:     func(t *testing.T, err error) {}, //nolint:thelper
 		},
 		{
-			MutationF: func(k *Kubelet) { k.KubernetesCACertificate = "" },
+			MutationF: func(k *kubelet.Kubelet) { k.KubernetesCACertificate = "" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when kubernetes CA certificate is not set")
@@ -112,7 +113,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.BootstrapConfig.Server = "" },
+			MutationF: func(k *kubelet.Kubelet) { k.BootstrapConfig.Server = "" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when bootstrap config is invalid")
@@ -120,7 +121,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.VolumePluginDir = "" },
+			MutationF: func(k *kubelet.Kubelet) { k.VolumePluginDir = "" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when volume plugin dir is empty")
@@ -128,7 +129,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) {
+			MutationF: func(k *kubelet.Kubelet) {
 				k.PrivilegedLabels = map[string]string{
 					"foo": "bar",
 				}
@@ -141,7 +142,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) {
+			MutationF: func(k *kubelet.Kubelet) {
 				k.WaitForNodeReady = true
 				k.AdminConfig = nil
 			},
@@ -152,7 +153,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.AdminConfig = k.BootstrapConfig },
+			MutationF: func(k *kubelet.Kubelet) { k.AdminConfig = k.BootstrapConfig },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when admin config is defined and there is no privileged labels")
@@ -160,7 +161,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) {
+			MutationF: func(k *kubelet.Kubelet) {
 				k.PrivilegedLabels = map[string]string{
 					"foo": "bar",
 				}
@@ -173,7 +174,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.PodCIDR = "foo" },
+			MutationF: func(k *kubelet.Kubelet) { k.PodCIDR = "foo" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is 'cni' and pod CIDR is set")
@@ -181,7 +182,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.NetworkPlugin = KubenetNetworkPlugin },
+			MutationF: func(k *kubelet.Kubelet) { k.NetworkPlugin = kubelet.KubenetNetworkPlugin },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is 'kubelet' and pod CIDR is empty")
@@ -189,7 +190,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.NetworkPlugin = "doh" },
+			MutationF: func(k *kubelet.Kubelet) { k.NetworkPlugin = "doh" },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when network plugin is invalid")
@@ -197,7 +198,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 			},
 		},
 		{
-			MutationF: func(k *Kubelet) { k.Host.DirectConfig = nil },
+			MutationF: func(k *kubelet.Kubelet) { k.Host.DirectConfig = nil },
 			TestF: func(t *testing.T, err error) { //nolint:thelper
 				if err == nil {
 					t.Fatalf("validation of kubelet should fail when host is invalid")
@@ -214,7 +215,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop
 
 			cc := getClientConfig(t)
 
-			k := &Kubelet{
+			k := &kubelet.Kubelet{
 				BootstrapConfig:         cc,
 				Name:                    "foo",
 				NetworkPlugin:           "cni",
@@ -242,7 +243,7 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 
 	cc := getClientConfig(t)
 
-	kk := &Kubelet{
+	kk := &kubelet.Kubelet{
 		BootstrapConfig:         cc,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
@@ -272,7 +273,12 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 
 	found := false
 
-	for _, v := range k.(*kubelet).mounts() {
+	hcc, err := k.ToHostConfiguredContainer()
+	if err != nil {
+		t.Fatalf("Converting kubelet to HostConfiguredContainer: %v", err)
+	}
+
+	for _, v := range hcc.Container.Config.Mounts {
 		if reflect.DeepEqual(v, em) {
 			found = true
 		}
@@ -290,7 +296,7 @@ func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testi
 
 	cc := getClientConfig(t)
 
-	kk := &Kubelet{
+	kk := &kubelet.Kubelet{
 		BootstrapConfig:         cc,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
@@ -320,7 +326,12 @@ func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testi
 
 	found := false
 
-	for _, arg := range k.(*kubelet).args() {
+	hcc, err := k.ToHostConfiguredContainer()
+	if err != nil {
+		t.Fatalf("Converting kubelet to HostConfiguredContainer: %v", err)
+	}
+
+	for _, arg := range hcc.Container.Config.Args {
 		if arg == extraArg {
 			found = true
 		}

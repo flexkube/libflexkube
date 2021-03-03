@@ -68,6 +68,8 @@ func (c *client) PingWait(pollInterval, retryTimeout time.Duration) error {
 // ping checks availability of Kubernetes API by fetching all Roles in kube-system namespace.
 // We use Roles, as helm client sometimes fails, even if API is already available,
 // saying that this type of object is not recognized.
+//
+//nolint:nilerr // Ignore errors here, as we only poke cluster to make sure it's functional.
 func (c *client) ping() (bool, error) {
 	if _, err := c.RbacV1().Roles("").List(context.TODO(), metav1.ListOptions{}); err != nil {
 		return false, nil
@@ -105,7 +107,7 @@ func (c *client) CheckNodeReady(name string) func() (bool, error) {
 	return func() (bool, error) {
 		n, err := c.CoreV1().Nodes().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
-			return false, nil
+			return false, nil //nolint:nilerr // Ignore all errors, node should eventually come up.
 		}
 
 		for _, condition := range n.Status.Conditions {

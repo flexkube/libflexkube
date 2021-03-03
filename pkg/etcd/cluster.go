@@ -174,7 +174,12 @@ func (c *Cluster) New() (types.Resource, error) {
 
 		cc.DesiredState[n] = hcc
 
-		cluster.members[n] = mem.(*member)
+		internalMember, ok := mem.(*member)
+		if !ok {
+			return nil, fmt.Errorf("converting member to internal version")
+		}
+
+		cluster.members[n] = internalMember
 	}
 
 	co, _ := cc.New()
