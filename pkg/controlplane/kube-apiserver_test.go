@@ -259,12 +259,12 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 		t.Fatalf("kubeAPIServer object should be created, got: %v", err)
 	}
 
-	k, ok := ki.(*kubeAPIServer)
-	if !ok {
-		t.Fatalf("converting kube-apiserver to internal version")
+	hcc, err := ki.ToHostConfiguredContainer()
+	if err != nil {
+		t.Fatalf("Converting kube-apiserver to host configured container: %v", err)
 	}
 
-	for k := range k.configFiles() {
+	for k := range hcc.ConfigFiles {
 		if !strings.Contains(k, hostConfigPath) {
 			t.Fatalf("all config files paths should contain %s, got: %s", hostConfigPath, k)
 		}
