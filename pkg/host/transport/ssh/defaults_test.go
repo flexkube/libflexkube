@@ -1,9 +1,11 @@
-package ssh
+package ssh_test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
 )
 
 const (
@@ -15,372 +17,372 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
 	cases := []struct {
-		config   *Config
-		defaults *Config
-		result   *Config
+		config   *ssh.Config
+		defaults *ssh.Config
+		result   *ssh.Config
 	}{
 		// All defaults
 		{
 			nil,
 			nil,
-			&Config{
-				Port:              Port,
-				User:              User,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				Port:              ssh.Port,
+				User:              ssh.User,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// PrivateKey
 		{
-			&Config{
+			&ssh.Config{
 				PrivateKey: "foo",
 			},
 			nil,
-			&Config{
+			&ssh.Config{
 				PrivateKey:        "foo",
-				Port:              Port,
-				User:              User,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				PrivateKey: "foo",
 			},
-			&Config{
+			&ssh.Config{
 				PrivateKey: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				PrivateKey:        "foo",
-				Port:              Port,
-				User:              User,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				PrivateKey: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				PrivateKey:        "bar",
-				Port:              Port,
-				User:              User,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// User
 		{
-			&Config{
+			&ssh.Config{
 				User: "foo",
 			},
 			nil,
-			&Config{
+			&ssh.Config{
 				User:              "foo",
-				Port:              Port,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				User: "foo",
 			},
-			&Config{
+			&ssh.Config{
 				User: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				User:              "foo",
-				Port:              Port,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				User: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				User:              "bar",
-				Port:              Port,
-				ConnectionTimeout: ConnectionTimeout,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// ConnectionTimeout
 		{
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "foo",
 			},
 			nil,
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "foo",
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "foo",
 			},
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "foo",
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "bar",
 			},
-			&Config{
+			&ssh.Config{
 				ConnectionTimeout: "bar",
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// Port
 		{
-			&Config{
+			&ssh.Config{
 				Port: customPort,
 			},
 			nil,
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
 				Port:              customPort,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				Port: customPort,
 			},
-			&Config{
+			&ssh.Config{
 				Port: 44,
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
 				Port:              customPort,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				Port: customPort,
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
 				Port:              customPort,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// RetryTimeout
 		{
-			&Config{
+			&ssh.Config{
 				RetryTimeout: "20s",
 			},
 			nil,
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
 				RetryTimeout:      "20s",
-				RetryInterval:     RetryInterval,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				RetryTimeout: "20s",
 			},
-			&Config{
+			&ssh.Config{
 				RetryTimeout: "40s",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
 				RetryTimeout:      "20s",
-				RetryInterval:     RetryInterval,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				RetryTimeout: "40s",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
 				RetryTimeout:      "40s",
-				RetryInterval:     RetryInterval,
+				RetryInterval:     ssh.RetryInterval,
 			},
 		},
 
 		// RetryInterval
 		{
-			&Config{
+			&ssh.Config{
 				RetryInterval: "5s",
 			},
 			nil,
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
 				RetryInterval:     "5s",
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				RetryInterval: "5s",
 			},
-			&Config{
+			&ssh.Config{
 				RetryInterval: "10s",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
 				RetryInterval:     "5s",
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				RetryInterval: "5s",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
 				RetryInterval:     "5s",
 			},
 		},
 
 		// Address
 		{
-			&Config{
+			&ssh.Config{
 				Address: "localhost",
 			},
 			nil,
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Address:           "localhost",
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				Address: "localhost",
 			},
-			&Config{
+			&ssh.Config{
 				Address: "foo",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Address:           "localhost",
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				Address: "localhost",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Address:           "localhost",
 			},
 		},
 
 		// Password
 		{
-			&Config{
+			&ssh.Config{
 				Password: "foo",
 			},
 			nil,
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Password:          "foo",
 			},
 		},
 		{
-			&Config{
+			&ssh.Config{
 				Password: "foo",
 			},
-			&Config{
+			&ssh.Config{
 				Password: "bar",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Password:          "foo",
 			},
 		},
 		{
 			nil,
-			&Config{
+			&ssh.Config{
 				Password: "foo",
 			},
-			&Config{
-				ConnectionTimeout: ConnectionTimeout,
-				Port:              Port,
-				User:              User,
-				RetryTimeout:      RetryTimeout,
-				RetryInterval:     RetryInterval,
+			&ssh.Config{
+				ConnectionTimeout: ssh.ConnectionTimeout,
+				Port:              ssh.Port,
+				User:              ssh.User,
+				RetryTimeout:      ssh.RetryTimeout,
+				RetryInterval:     ssh.RetryInterval,
 				Password:          "foo",
 			},
 		},
@@ -392,7 +394,7 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			if nc := BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
+			if nc := ssh.BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
 				t.Fatalf("expected %+v, got %+v", c.result, nc)
 			}
 		})
