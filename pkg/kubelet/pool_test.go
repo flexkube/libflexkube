@@ -1,4 +1,4 @@
-package kubelet
+package kubelet_test
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/internal/utiltest"
+	"github.com/flexkube/libflexkube/pkg/kubelet"
 	"github.com/flexkube/libflexkube/pkg/kubernetes/client"
 	"github.com/flexkube/libflexkube/pkg/pki"
 	"github.com/flexkube/libflexkube/pkg/types"
@@ -54,7 +55,7 @@ kubelets:
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
 
-	p, err := FromYaml(buf.Bytes())
+	p, err := kubelet.FromYaml(buf.Bytes())
 	if err != nil {
 		t.Fatalf("Creating pool from YAML should succeed, got: %v", err)
 	}
@@ -79,7 +80,7 @@ kubelets:
   name: foo
 `
 
-	if _, err := FromYaml([]byte(y)); err == nil {
+	if _, err := kubelet.FromYaml([]byte(y)); err == nil {
 		t.Fatalf("Creating pool from bad YAML should fail")
 	}
 }
@@ -138,11 +139,11 @@ func TestPoolDeploy(t *testing.T) {
 func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 	t.Parallel()
 
-	p := GetPool(t).(*pool)
+	p := GetPool(t)
 
 	found := false
 
-	for _, v := range p.containers.DesiredState()["0"].Container.Config.Mounts {
+	for _, v := range p.Containers().DesiredState()["0"].Container.Config.Mounts {
 		if v.Source == "/foo/" && v.Target == "/bar" {
 			found = true
 		}
@@ -154,7 +155,7 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 
 	found = false
 
-	for _, v := range p.containers.DesiredState()["1"].Container.Config.Mounts {
+	for _, v := range p.Containers().DesiredState()["1"].Container.Config.Mounts {
 		if v.Source == "/doh/" && v.Target == "/tmp" {
 			found = true
 		}
@@ -172,11 +173,11 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t).(*pool)
+	p := GetPool(t)
 
 	found := false
 
-	for _, v := range p.containers.DesiredState()["0"].Container.Config.Args {
+	for _, v := range p.Containers().DesiredState()["0"].Container.Config.Args {
 		if v == "--baz" {
 			found = true
 		}
@@ -190,11 +191,11 @@ func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *
 func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t).(*pool)
+	p := GetPool(t)
 
 	found := false
 
-	for _, arg := range p.containers.DesiredState()["1"].Container.Config.Args {
+	for _, arg := range p.Containers().DesiredState()["1"].Container.Config.Args {
 		if arg == "--bar" {
 			found = true
 		}
@@ -220,7 +221,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 		t.Fatalf("generating PKI: %v", err)
 	}
 
-	p := &Pool{
+	p := &kubelet.Pool{
 		PKI: pk,
 		AdminConfig: &client.Config{
 			Server: "foo",
@@ -230,7 +231,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 			Token:  "bar",
 		},
 		WaitForNodeReady: true,
-		Kubelets: []Kubelet{
+		Kubelets: []kubelet.Kubelet{
 			{
 				Name:            "foo",
 				VolumePluginDir: "foo",
@@ -258,7 +259,7 @@ func TestPoolNoKubelets(t *testing.T) {
 		t.Fatalf("generating PKI: %v", err)
 	}
 
-	p := &Pool{
+	p := &kubelet.Pool{
 		PKI: pk,
 		BootstrapConfig: &client.Config{
 			Server: "bar",
