@@ -485,11 +485,22 @@ func TestExtractPathTCP(t *testing.T) {
 	}
 }
 
+func testNewConnected(t *testing.T) *sshConnected {
+	t.Helper()
+
+	c, ok := newConnected("localhost:80", nil).(*sshConnected)
+	if !ok {
+		t.Fatalf("converting connected to internal state")
+	}
+
+	return c
+}
+
 // randomUnixSocket() tests.
 func TestRandomUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	unixAddr, err := d.randomUnixSocket()
 	if err != nil {
@@ -508,7 +519,7 @@ func TestRandomUnixSocket(t *testing.T) {
 func TestRandomUnixSocketBadUUID(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 	d.uuid = func() (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("happened")
 	}
@@ -641,7 +652,10 @@ func TestConnect(t *testing.T) {
 		t.Fatalf("creating new SSH object should succeed, got: %s", err)
 	}
 
-	ss := s.(*ssh)
+	ss, ok := s.(*ssh)
+	if !ok {
+		t.Fatalf("Converting SSH to internal SSH object")
+	}
 
 	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
 		return nil, nil
@@ -675,7 +689,10 @@ func TestConnectFail(t *testing.T) {
 		t.Fatalf("creating new SSH object should succeed, got: %s", err)
 	}
 
-	ss := s.(*ssh)
+	ss, ok := s.(*ssh)
+	if !ok {
+		t.Fatalf("Converting SSH to internal SSH object")
+	}
 
 	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
 		return nil, fmt.Errorf("expected")
@@ -690,7 +707,7 @@ func TestConnectFail(t *testing.T) {
 func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	d.listener = func(n, a string) (net.Listener, error) {
 		l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -709,7 +726,7 @@ func TestForwardTCP(t *testing.T) {
 func TestForwardTCPFailListen(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
@@ -723,7 +740,7 @@ func TestForwardTCPFailListen(t *testing.T) {
 func TestForwardTCPValidateAddress(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
@@ -738,7 +755,7 @@ func TestForwardTCPValidateAddress(t *testing.T) {
 func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	d.uuid = func() (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("happened")
@@ -752,7 +769,7 @@ func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 func TestForwardUnixSocketCantListen(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	d.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
@@ -766,7 +783,7 @@ func TestForwardUnixSocketCantListen(t *testing.T) {
 func TestForwardUnixSocketBadPath(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	if _, err := d.ForwardUnixSocket("foo\t"); err == nil {
 		t.Fatalf("Forwarding with invalid unix socket name should fail")
@@ -776,7 +793,7 @@ func TestForwardUnixSocketBadPath(t *testing.T) {
 func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	if _, err := d.ForwardUnixSocket("unix:///foo"); err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
@@ -786,7 +803,7 @@ func TestForwardUnixSocket(t *testing.T) {
 func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 	t.Parallel()
 
-	d := newConnected("localhost:80", nil).(*sshConnected)
+	d := testNewConnected(t)
 
 	a, err := d.ForwardUnixSocket("unix:///foo")
 	if err != nil {

@@ -39,6 +39,10 @@ linters:
     - gci
     # To be able to make use of Go zero-value feature.
     - exhaustivestruct
+    # This linter has been deprecated.
+    - interfacer
+    # This linter has been deprecated.
+    - maligned
   enable:
     - asciicheck
     - bodyclose
@@ -53,6 +57,7 @@ linters:
     - exhaustive
     - exportloopref
     - forbidigo
+    - forcetypeassert
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -70,13 +75,13 @@ linters:
     - gomodguard
     - goprintffuncname
     - ifshort
+    - importas
     - ineffassign
-    - interfacer
     - makezero
-    - maligned
     - misspell
     - nakedret
     - nestif
+    - nilerr
     - nlreturn
     - noctx
     - nolintlint
@@ -95,6 +100,7 @@ linters:
     - unconvert
     - unparam
     - varcheck
+    - wastedassign
     - whitespace
     - wrapcheck
     - wsl

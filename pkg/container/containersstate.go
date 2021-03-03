@@ -46,10 +46,15 @@ func (s ContainersState) New() (ContainersStateInterface, error) {
 	for name, container := range s {
 		m, err := container.New()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("creating new container object: %w", err)
 		}
 
-		state[name] = m.(*hostConfiguredContainer)
+		hcc, ok := m.(*hostConfiguredContainer)
+		if !ok {
+			return nil, fmt.Errorf("converting container to internal version")
+		}
+
+		state[name] = hcc
 	}
 
 	return state, nil
