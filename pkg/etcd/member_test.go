@@ -20,7 +20,7 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 	cert := utiltest.GenerateX509Certificate(t)
 	privateKey := utiltest.GenerateRSAPrivateKey(t)
 
-	kas := &etcd.Member{
+	kas := &etcd.MemberConfig{
 		Name:              nonEmptyString,
 		PeerAddress:       nonEmptyString,
 		CACertificate:     cert,
@@ -50,13 +50,13 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-func validMember(t *testing.T) *etcd.Member {
+func validMember(t *testing.T) *etcd.MemberConfig {
 	t.Helper()
 
 	cert := utiltest.GenerateX509Certificate(t)
 	privateKey := utiltest.GenerateRSAPrivateKey(t)
 
-	return &etcd.Member{
+	return &etcd.MemberConfig{
 		Name:              nonEmptyString,
 		PeerAddress:       nonEmptyString,
 		CACertificate:     cert,
@@ -79,15 +79,15 @@ func TestValidate(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		mutator     func(m *etcd.Member) *etcd.Member
+		mutator     func(m *etcd.MemberConfig) *etcd.MemberConfig
 		expectError bool
 	}{
 		"valid": {
-			func(m *etcd.Member) *etcd.Member { return m },
+			func(m *etcd.MemberConfig) *etcd.MemberConfig { return m },
 			false,
 		},
 		"peer address": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.PeerAddress = ""
 
 				return m
@@ -95,7 +95,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"member name": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.Name = ""
 
 				return m
@@ -103,7 +103,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"CA certificate": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.CACertificate = nonEmptyString
 
 				return m
@@ -111,7 +111,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"peer certificate": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.PeerCertificate = nonEmptyString
 
 				return m
@@ -119,7 +119,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"server certificate": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.ServerCertificate = nonEmptyString
 
 				return m
@@ -127,7 +127,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"peer key": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.PeerKey = nonEmptyString
 
 				return m
@@ -135,7 +135,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"server key": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.ServerKey = nonEmptyString
 
 				return m
@@ -143,7 +143,7 @@ func TestValidate(t *testing.T) {
 			true,
 		},
 		"bad host": {
-			func(m *etcd.Member) *etcd.Member {
+			func(m *etcd.MemberConfig) *etcd.MemberConfig {
 				m.Host.DirectConfig = nil
 
 				return m
