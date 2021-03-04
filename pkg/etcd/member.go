@@ -18,8 +18,8 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-// Member represents single etcd member.
-type Member struct {
+// MemberConfig represents single etcd member.
+type MemberConfig struct {
 	// Name defines the name of the etcd member. It is used for --name flag.
 	//
 	// Example values: etcd01, infra2, member3
@@ -127,9 +127,19 @@ type Member struct {
 	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
 }
 
-// member is a validated, executable version of Member.
+// Member represents functionality provided by validated MemberConfig.
+type Member interface {
+	container.ResourceInstance
+
+	peerAddress() string
+	add(cli etcdClient) error
+	forwardEndpoints(endpoints []string) ([]string, error)
+	getEtcdClient(endpoints []string) (etcdClient, error)
+}
+
+// member is a validated, executable version of MemberConfig.
 type member struct {
-	config *Member
+	config *MemberConfig
 }
 
 func (m *member) configFiles() map[string]string {
@@ -227,8 +237,12 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 	}, nil
 }
 
-// New validates Member configuration and returns it's usable version.
-func (m *Member) New() (container.ResourceInstance, error) {
+func (m *member) peerAddress() string {
+	return m.config.PeerAddress
+}
+
+// New validates MemberConfig and returns Member interface.
+func (m *MemberConfig) New() (Member, error) {
 	if err := m.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
 	}
@@ -241,7 +255,7 @@ func (m *Member) New() (container.ResourceInstance, error) {
 }
 
 // Validate validates etcd member configuration.
-func (m *Member) Validate() error {
+func (m *MemberConfig) Validate() error {
 	var errors util.ValidateError
 
 	nonEmptyFields := map[string]string{

@@ -18,7 +18,7 @@ func TestNewCluster(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			NewCluster: true,
 		},
 	}
@@ -47,7 +47,7 @@ func TestExistingCluster(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			NewCluster: false,
 		},
 	}
@@ -77,7 +77,7 @@ func TestPeerURLs(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerAddress: "1.1.1.1",
 		},
 	}
@@ -93,7 +93,7 @@ func TestForwardEndpoints(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerAddress: "127.0.0.1",
 			Host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -115,7 +115,7 @@ func TestForwardEndpointsFail(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerAddress: "127.0.0.1",
 			Host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -183,7 +183,7 @@ func TestGetIDByName(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			Name: "etcd-foo",
 		},
 	}
@@ -216,7 +216,7 @@ func TestGetIDByPeerURL(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerAddress: "foo",
 		},
 	}
@@ -236,7 +236,7 @@ func TestGetEtcdClientNoEndpoints(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			CACertificate: utiltest.GenerateX509Certificate(t),
 		},
 	}
@@ -250,7 +250,7 @@ func TestGetEtcdClient(t *testing.T) {
 	t.Parallel()
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerCertificate: "",
 			PeerKey:         "",
 			CACertificate:   utiltest.GenerateX509Certificate(t),
@@ -289,7 +289,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			Name: "foo",
 		},
 	}
@@ -341,7 +341,7 @@ func TestRemoveMemberFail(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			Name: "foo",
 		},
 	}
@@ -393,7 +393,7 @@ func TestAddMember(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{},
+		config: &MemberConfig{},
 	}
 
 	if err := m.add(f); err != nil {
@@ -422,7 +422,7 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{
+		config: &MemberConfig{
 			PeerAddress: "foo",
 		},
 	}
@@ -453,7 +453,7 @@ func TestAddMemberFail(t *testing.T) {
 	}
 
 	m := &member{
-		config: &Member{},
+		config: &MemberConfig{},
 	}
 
 	if err := m.add(f); err == nil {

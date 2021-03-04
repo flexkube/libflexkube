@@ -75,7 +75,7 @@ type Cluster struct {
 	// If there is no state defined, this list must not be empty.
 	//
 	// If state is defined and list of members is empty, all created containers will be removed.
-	Members map[string]Member `json:"members,omitempty"`
+	Members map[string]MemberConfig `json:"members,omitempty"`
 
 	// PKI field allows to use PKI resource for managing all etcd certificates. It will be used for
 	// members configuration, if they don't have certificates defined.
@@ -93,11 +93,11 @@ type Cluster struct {
 // cluster is executable version of Cluster, with validated fields and calculated containers.
 type cluster struct {
 	containers container.ContainersInterface
-	members    map[string]*member
+	members    map[string]Member
 }
 
 // propagateMember fills given Member's empty fields with fields from Cluster.
-func (c *Cluster) propagateMember(i string, m *Member) {
+func (c *Cluster) propagateMember(i string, m *MemberConfig) {
 	initialClusterArr := []string{}
 	peerCertAllowedCNArr := []string{}
 
@@ -162,7 +162,7 @@ func (c *Cluster) New() (types.Resource, error) {
 	}
 
 	cluster := &cluster{
-		members: map[string]*member{},
+		members: map[string]Member{},
 	}
 
 	for n, m := range c.Members {
@@ -174,12 +174,7 @@ func (c *Cluster) New() (types.Resource, error) {
 
 		cc.DesiredState[n] = hcc
 
-		internalMember, ok := mem.(*member)
-		if !ok {
-			return nil, fmt.Errorf("converting member to internal version")
-		}
-
-		cluster.members[n] = internalMember
+		cluster.members[n] = mem
 	}
 
 	co, _ := cc.New()
@@ -268,26 +263,18 @@ func (c *cluster) getExistingEndpoints() []string {
 			continue
 		}
 
-		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.config.PeerAddress))
+		endpoints = append(endpoints, fmt.Sprintf("%s:2379", m.peerAddress()))
 	}
 
 	return endpoints
 }
 
-func (c *cluster) firstMember() (*member, error) {
-	var m *member
-
+func (c *cluster) firstMember() (Member, error) {
 	for i := range c.members {
-		m = c.members[i]
-
-		break
+		return c.members[i], nil
 	}
 
-	if m == nil {
-		return nil, fmt.Errorf("no members defined")
-	}
-
-	return m, nil
+	return nil, fmt.Errorf("no members defined")
 }
 
 func (c *cluster) getClient() (etcdClient, error) {
@@ -343,7 +330,7 @@ func (c *cluster) membersToAdd() []string {
 func (c *cluster) updateMembers(cli etcdClient) error {
 	for _, name := range c.membersToRemove() {
 		m := &member{
-			config: &Member{
+			config: &MemberConfig{
 				Name: name,
 			},
 		}

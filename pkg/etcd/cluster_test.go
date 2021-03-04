@@ -107,7 +107,7 @@ func TestValidateValidateMembers(t *testing.T) {
 	t.Parallel()
 
 	config := &Cluster{
-		Members: map[string]Member{
+		Members: map[string]MemberConfig{
 			"foo": {},
 		},
 	}
@@ -124,7 +124,7 @@ func TestValidateValidatePass(t *testing.T) {
 	key := utiltest.GenerateRSAPrivateKey(t)
 
 	config := &Cluster{
-		Members: map[string]Member{
+		Members: map[string]MemberConfig{
 			"foo": {
 				PeerCertificate:   cert,
 				PeerKey:           key,
@@ -149,7 +149,7 @@ func TestValidateValidateBadCACertificate(t *testing.T) {
 
 	config := &Cluster{
 		CACertificate: "doh",
-		Members: map[string]Member{
+		Members: map[string]MemberConfig{
 			"foo": {
 				PeerCertificate:   cert,
 				PeerKey:           key,
@@ -181,9 +181,9 @@ func TestExistingEndpoints(t *testing.T) {
 
 	c := &cluster{
 		containers: getContainers(t),
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					PeerAddress: "1.1.1.1",
 				},
 			},
@@ -212,8 +212,8 @@ func TestFirstMember(t *testing.T) {
 	t.Parallel()
 
 	c := &cluster{
-		members: map[string]*member{
-			"foo": {},
+		members: map[string]Member{
+			"foo": &member{},
 		},
 	}
 
@@ -276,9 +276,9 @@ func TestGetClientForwardFail(t *testing.T) {
 
 	c := &cluster{
 		containers: getContainers(t),
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					Host: host.Host{
 						SSHConfig: ssh.BuildConfig(&ssh.Config{
 							Address:           "localhost",
@@ -303,9 +303,9 @@ func TestGetClient(t *testing.T) {
 
 	c := &cluster{
 		containers: getContainers(t),
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					PeerCertificate: "",
 					PeerKey:         "",
 					CACertificate:   utiltest.GenerateX509Certificate(t),
@@ -402,9 +402,9 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 
 	c := &cluster{
 		containers: co,
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					PeerCertificate: "",
 					PeerKey:         "",
 					CACertificate:   utiltest.GenerateX509Certificate(t),
@@ -428,9 +428,9 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 
 	c := &cluster{
 		containers: getContainers(t),
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					Name:            "foo",
 					PeerCertificate: "",
 					PeerKey:         "",
@@ -481,9 +481,9 @@ func TestUpdateMembersAddMember(t *testing.T) {
 
 	c := &cluster{
 		containers: co,
-		members: map[string]*member{
-			"foo": {
-				config: &Member{
+		members: map[string]Member{
+			"foo": &member{
+				config: &MemberConfig{
 					Name:            "foo",
 					PeerCertificate: "",
 					PeerKey:         "",
@@ -529,7 +529,7 @@ func TestDeploy(t *testing.T) {
 
 	c := &cluster{
 		containers: co,
-		members:    map[string]*member{},
+		members:    map[string]Member{},
 	}
 
 	err = c.Deploy()
@@ -561,7 +561,7 @@ func TestDeployUpdateMembers(t *testing.T) {
 
 	c := &cluster{
 		containers: co,
-		members:    map[string]*member{},
+		members:    map[string]Member{},
 	}
 
 	err = c.Deploy()
@@ -591,7 +591,7 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 
 	c := &Cluster{
 		PKI: pki,
-		Members: map[string]Member{
+		Members: map[string]MemberConfig{
 			"test": {
 				PeerAddress: "127.0.0.1",
 			},

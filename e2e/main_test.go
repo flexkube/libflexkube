@@ -160,7 +160,7 @@ func TestE2e(t *testing.T) {
 	controllerIPs := []string{}
 	controllerNames := []string{}
 	servers := []string{}
-	members := map[string]etcd.Member{}
+	members := map[string]etcd.MemberConfig{}
 	controllerLBs := []apiloadbalancer.APILoadBalancer{}
 	etcdServers := []string{}
 	controllerKubelets := []kubelet.Kubelet{}
@@ -203,7 +203,7 @@ func TestE2e(t *testing.T) {
 			},
 		}
 
-		members[name] = etcd.Member{
+		members[name] = etcd.MemberConfig{
 			Name:          name,
 			PeerAddress:   ip,
 			ServerAddress: ip,
