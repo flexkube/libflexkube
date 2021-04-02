@@ -12,12 +12,14 @@ issues:
   max-same-issues: 0
   max-issues-per-linter: 0
   exclude-rules:
+    # False positive: https://github.com/kunwardeep/paralleltest/issues/8.
     - linters:
       - paralleltest
       text: "does not use range value in test Run"
     - linters:
       - godot
       source: "(front proxy CA certificate,|certificate, as recommended by)"
+    # Allow packages to print output to the user until we introduce loggers.
     - linters:
       - forbidigo
       text: "use of `fmt.Printf` forbidden by pattern"
