@@ -188,7 +188,7 @@ func (r *release) Install() error {
 	if err := retryOnEtcdError(func() error {
 		_, err = client.Run(chart, r.values)
 
-		return err //nolint:wrapcheck
+		return err
 	}); err != nil {
 		return fmt.Errorf("installing a release failed: %w", err)
 	}
@@ -212,7 +212,7 @@ func (r *release) Upgrade() error {
 	if err := retryOnEtcdError(func() error {
 		_, err := client.Run(r.name, chart, r.values)
 
-		return err //nolint:wrapcheck
+		return err
 	}); err != nil {
 		return fmt.Errorf("upgrading a release failed: %w", err)
 	}
@@ -247,7 +247,7 @@ func (r *release) Exists() (bool, error) {
 	err := retryOnEtcdError(func() error {
 		_, err := histClient.Run(r.name)
 
-		return err //nolint:wrapcheck
+		return err
 	})
 
 	if err == driver.ErrReleaseNotFound { //nolint:errorlint
@@ -298,7 +298,7 @@ func (r *release) Uninstall() error {
 	if err := retryOnEtcdError(func() error {
 		_, err := client.Run(r.name)
 
-		return err //nolint:wrapcheck
+		return err
 	}); err != nil {
 		return fmt.Errorf("uninstalling a release failed: %w", err)
 	}

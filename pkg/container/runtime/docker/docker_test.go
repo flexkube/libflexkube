@@ -84,7 +84,7 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 func TestStatus(t *testing.T) {
 	t.Parallel()
 
-	es := "running" //nolint:ifshort
+	es := "running"
 
 	d := &docker{
 		ctx: context.Background(),

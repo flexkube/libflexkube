@@ -26,6 +26,18 @@ issues:
     - linters:
       - forbidigo
       text: "use of `fmt.Println` forbidden by pattern"
+    # Allow replacements to force specific versions of dependencies.
+    - linters:
+      - gomoddirectives
+      text: "replacement are not allowed"
+    # Allow some errors to be not wrapped, as it is not ambiguous where they come from.
+    - linters:
+      - wrapcheck
+      text: "error returned from external package is unwrapped"
+    # Allow wrapping function which return errors.
+    - linters:
+      - wrapcheck
+      text: "error returned from interface method should be wrapped"
 
 linters:
   disable:
@@ -45,6 +57,8 @@ linters:
     - interfacer
     # This linter has been deprecated.
     - maligned
+    # This linter has been deprecated.
+    - scopelint
   enable:
     - asciicheck
     - bodyclose
@@ -74,6 +88,7 @@ linters:
     - goimports
     - golint
     - gomnd
+    - gomoddirectives
     - gomodguard
     - goprintffuncname
     - ifshort
@@ -92,7 +107,6 @@ linters:
     - predeclared
     - revive
     - rowserrcheck
-    - scopelint
     - sqlclosecheck
     - structcheck
     - stylecheck

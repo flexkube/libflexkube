@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.38.0
+    container: golangci/golangci-lint:v1.39.0
     steps:
       - uses: actions/checkout@v2
         with:
