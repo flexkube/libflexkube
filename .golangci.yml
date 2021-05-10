@@ -38,6 +38,10 @@ issues:
     - linters:
       - wrapcheck
       text: "error returned from interface method should be wrapped"
+    # Allow certain abbreviations in JSON fields for better readability.
+    - linters:
+      - tagliatelle
+      text: "(CIDR|CA|DNS|API|CN|SSH).+(Cidr|Ca|Dns|Api|Cn|Ssh)"
 
 linters:
   disable:
@@ -105,11 +109,13 @@ linters:
     - paralleltest
     - prealloc
     - predeclared
+    - promlinter
     - revive
     - rowserrcheck
     - sqlclosecheck
     - structcheck
     - stylecheck
+    - tagliatelle
     - thelper
     - tparallel
     - typecheck
