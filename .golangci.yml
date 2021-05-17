@@ -63,6 +63,8 @@ linters:
     - maligned
     # This linter has been deprecated.
     - scopelint
+    # This linter has been deprecated.
+    - golint
   enable:
     - asciicheck
     - bodyclose
@@ -90,7 +92,6 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    - golint
     - gomnd
     - gomoddirectives
     - gomodguard
