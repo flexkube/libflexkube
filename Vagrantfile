@@ -136,6 +136,7 @@ shim_debug = true
           ".git/",
           "bin/",
           "e2e/config.yaml",
+          "e2e/test-config.yaml",
           "e2e/state.yaml",
           "e2e/resources",
           "e2e/values",
