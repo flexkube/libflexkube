@@ -98,7 +98,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 			},
 			Kubernetes: chart{
 				Source:  "flexkube/kubernetes",
-				Version: "0.4.8",
+				Version: "0.4.9",
 			},
 			KubeProxy: chart{
 				Source:  "flexkube/kube-proxy",
