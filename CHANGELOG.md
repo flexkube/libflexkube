@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2021-05-24
+
+### Fixed
+
+- Missing newline in removing container configuration log message.
+- Running e2e tests using Vagrant when having local e2e test configuration.
+
+### Changed
+
+- `etcd.Member` struct has been renamed to `etcd.MemberConfig` and `etcd.Member` is now an
+  interface due to internal refactoring.
+- Updated Go dependencies to latest versions.
+- Default Kubernetes version is now v1.21.1.
+- Default HAProxy version is now 2.3.10.
+- Default etcd version is now v3.4.16.
+- Vagrant is now using Docker again instead of containerd as container runtime due to some conformance tests failing.
 
 ## [0.5.1] - 2021-02-19
 
@@ -345,6 +361,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
+[0.6.0]: https://github.com/flexkube/libflexkube/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/flexkube/libflexkube/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/flexkube/libflexkube/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/flexkube/libflexkube/compare/v0.4.2...v0.4.3
