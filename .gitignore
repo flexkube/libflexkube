@@ -19,3 +19,5 @@ pool
 test-config.yaml
 /flexkube
 .terraform.lock.hcl
+/e2e/resources
+/e2e/values
