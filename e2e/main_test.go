@@ -127,7 +127,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,gocyclo,paralleltest,cyclop
+//nolint:funlen,gocognit,paralleltest,cyclop
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 
@@ -560,14 +560,7 @@ resources:
 		Values:     tlsBootstrapValues,
 	}
 
-	rel, err := config.New()
-	if err != nil {
-		t.Fatalf("Creating TLS bootstrapping release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing TLS bootstrapping release %q: %v", config.Name, err)
-	}
+	installOrUpgradeRelease(t, config)
 
 	// Deploy kubelets.
 	for k := range r.KubeletPools {
@@ -576,143 +569,88 @@ resources:
 		}
 	}
 
-	// Kube-proxy.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "kube-proxy",
-		Version:    testConfig.Charts.KubeProxy.Version,
-		Chart:      testConfig.Charts.KubeProxy.Source,
-		Values:     kubeProxyValues,
-		Wait:       true,
+	releases := []*release.Config{
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "kube-proxy",
+			Version:    testConfig.Charts.KubeProxy.Version,
+			Chart:      testConfig.Charts.KubeProxy.Source,
+			Values:     kubeProxyValues,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "calico",
+			Version:    testConfig.Charts.Calico.Version,
+			Chart:      testConfig.Charts.Calico.Source,
+			Values:     calicoValues,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "kube-apiserver",
+			Version:    testConfig.Charts.KubeAPIServer.Version,
+			Chart:      testConfig.Charts.KubeAPIServer.Source,
+			Values:     kubeAPIServerValues,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "kubernetes",
+			Version:    testConfig.Charts.Kubernetes.Version,
+			Chart:      testConfig.Charts.Kubernetes.Source,
+			Values:     kubernetesValues,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "coredns",
+			Version:    testConfig.Charts.CoreDNS.Version,
+			Chart:      testConfig.Charts.CoreDNS.Source,
+			Values:     coreDNSValues,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "kubelet-rubber-stamp",
+			Version:    testConfig.Charts.KubeletRubberStamp.Version,
+			Chart:      testConfig.Charts.KubeletRubberStamp.Source,
+			Wait:       true,
+		},
+		{
+			Kubeconfig: k,
+			Namespace:  "kube-system",
+			Name:       "metrics-server",
+			Version:    testConfig.Charts.MetricsServer.Version,
+			Chart:      testConfig.Charts.MetricsServer.Source,
+			Values:     metricsServerValues,
+			Wait:       true,
+		},
 	}
 
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating kube-proxy release object: %v", err)
+	for _, r := range releases {
+		installOrUpgradeRelease(t, r)
 	}
+}
+
+func installOrUpgradeRelease(t *testing.T, config *release.Config) {
+	t.Helper()
+
+	rel, err := config.New()
+	if err != nil {
+		t.Fatalf("Creating %q release object: %v", config.Name, err)
+	}
+
+	t.Logf("Installing release %q", config.Name)
 
 	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing kube-proxy release %q: %v", config.Name, err)
-	}
-
-	// Calico.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "calico",
-		Version:    testConfig.Charts.Calico.Version,
-		Chart:      testConfig.Charts.Calico.Source,
-		Values:     calicoValues,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating Calico release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing Calico release %q: %v", config.Name, err)
-	}
-
-	// kube-apiserver.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "kube-apiserver",
-		Version:    testConfig.Charts.KubeAPIServer.Version,
-		Chart:      testConfig.Charts.KubeAPIServer.Source,
-		Values:     kubeAPIServerValues,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing release %q: %v", config.Name, err)
-	}
-
-	// Kubernetes.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "kubernetes",
-		Version:    testConfig.Charts.Kubernetes.Version,
-		Chart:      testConfig.Charts.Kubernetes.Source,
-		Values:     kubernetesValues,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating Kubernetes release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing Kubernetes release %q: %v", config.Name, err)
-	}
-
-	// CoreDNS.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "coredns",
-		Version:    testConfig.Charts.CoreDNS.Version,
-		Chart:      testConfig.Charts.CoreDNS.Source,
-		Values:     coreDNSValues,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating CoreDNS release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing CoreDNS release %q: %v", config.Name, err)
-	}
-
-	// Kubelet-rubber-stamp.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "kubelet-rubber-stamp",
-		Version:    testConfig.Charts.KubeletRubberStamp.Version,
-		Chart:      testConfig.Charts.KubeletRubberStamp.Source,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating Kubelet rubber stamp release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing Kubelet rubber stamp release %q: %v", config.Name, err)
-	}
-
-	// Metrics server.
-	config = &release.Config{
-		Kubeconfig: k,
-		Namespace:  "kube-system",
-		Name:       "metrics-server",
-		Version:    testConfig.Charts.MetricsServer.Version,
-		Chart:      testConfig.Charts.MetricsServer.Source,
-		Values:     metricsServerValues,
-		Wait:       true,
-	}
-
-	rel, err = config.New()
-	if err != nil {
-		t.Fatalf("Creating Metrics server release object: %v", err)
-	}
-
-	if err := rel.InstallOrUpgrade(); err != nil {
-		t.Fatalf("Installing Metrics server release %q: %v", config.Name, err)
+		t.Fatalf("Installing %q release: %v", config.Name, err)
 	}
 }
 
