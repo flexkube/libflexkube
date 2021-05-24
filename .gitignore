@@ -1,21 +1,43 @@
+# All coverage files.
 coverage.txt
 c.out
+
+# All CLI config and state files, except examples.
 state.yaml
 config.yaml
 !examples/**/config.yaml
+
+# Terraform-related directories.
 terraform.tfstate*
 .terraform
-bin
-.vagrant
-kubeconfig
-.terraform.tfstate.lock.info
-.env
-*.tar.gz
 crash.log
+.terraform.tfstate.lock.info
+*.auto.tfvars
+.terraform.lock.hcl
+
+# Built binaries
+/bin
+/flexkube
+
+# Vagrant-related directories.
+.vagrant
+
+# Generated kubeconfig files.
+kubeconfig
+
+# Local make settings.
+.env
+
+# Conformance test artifacts.
+*.tar.gz
+
+# Downloaded Flatcar images
 flatcar_production_qemu_image.img
 flatcar_production_qemu_image.img.bz2
-*.auto.tfvars
-pool
+
+# Local test configs
 test-config.yaml
-/flexkube
-.terraform.lock.hcl
+
+# e2e artifacts.
+/e2e/resources
+/e2e/values

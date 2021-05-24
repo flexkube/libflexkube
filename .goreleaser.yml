@@ -39,3 +39,7 @@ archives:
 
 signs:
 - artifacts: all
+  args: ["-u", "{{ .Env.GPG_FINGERPRINT  }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
+source:
+  enabled: true
