@@ -257,11 +257,11 @@ func TestE2e(t *testing.T) {
 
 	kubeletExtraMounts := []types.Mount{
 		{
-			Source: "/run/docker/libcontainerd/",
-			Target: "/run/docker/libcontainerd",
+			Source: "/run/containerd/",
+			Target: "/run/containerd",
 		},
 		{
-			Source: "/var/lib/containerd",
+			Source: "/var/lib/containerd/",
 			Target: "/var/lib/containerd",
 		},
 		{
@@ -272,7 +272,7 @@ func TestE2e(t *testing.T) {
 
 	kubeletExtraArgs := []string{
 		"--container-runtime=remote",
-		"--container-runtime-endpoint=unix:///run/docker/libcontainerd/docker-containerd.sock",
+		"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
 	}
 
 	// Generate PKI.
