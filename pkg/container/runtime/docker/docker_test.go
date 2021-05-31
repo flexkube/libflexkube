@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 	"github.com/google/go-cmp/cmp"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
@@ -425,7 +426,7 @@ func TestCreateSetUser(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != c.User {
 					t.Fatalf("configured user should be %s, got %s", c.User, config.User)
 				}
@@ -459,7 +460,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != e {
 					t.Fatalf("configured user should be %s, got %s", e, config.User)
 				}
@@ -486,7 +487,7 @@ func TestCreateRuntimeFail(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
 			},
 			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
