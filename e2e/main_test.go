@@ -18,6 +18,7 @@ import (
 	"github.com/flexkube/libflexkube/cli/flexkube"
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
 	"github.com/flexkube/libflexkube/pkg/etcd"
 	"github.com/flexkube/libflexkube/pkg/helm/release"
@@ -254,6 +255,26 @@ func TestE2e(t *testing.T) {
 	networkPlugin := "cni"
 	hairpinMode := "hairpin-veth"
 
+	kubeletExtraMounts := []types.Mount{
+		{
+			Source: "/run/docker/libcontainerd/",
+			Target: "/run/docker/libcontainerd",
+		},
+		{
+			Source: "/var/lib/containerd",
+			Target: "/var/lib/containerd",
+		},
+		{
+			Source: "/run/torcx/unpack/docker/bin/containerd-shim-runc-v2",
+			Target: "/usr/bin/containerd-shim-runc-v2",
+		},
+	}
+
+	kubeletExtraArgs := []string{
+		"--container-runtime=remote",
+		"--container-runtime-endpoint=unix:///run/docker/libcontainerd/docker-containerd.sock",
+	}
+
 	// Generate PKI.
 	r := &flexkube.Resource{
 		Confirmed: true,
@@ -338,8 +359,10 @@ func TestE2e(t *testing.T) {
 				Taints: map[string]string{
 					"node-role.kubernetes.io/master": "NoSchedule",
 				},
-				SSH:      sshConfig,
-				Kubelets: controllerKubelets,
+				SSH:         sshConfig,
+				Kubelets:    controllerKubelets,
+				ExtraMounts: kubeletExtraMounts,
+				ExtraArgs:   kubeletExtraArgs,
 			},
 		},
 		State: &flexkube.ResourceState{},
@@ -368,8 +391,10 @@ func TestE2e(t *testing.T) {
 			AdminConfig: &client.Config{
 				Server: fmt.Sprintf("%s:%d", controllerIPs[0], testConfig.APIPort),
 			},
-			SSH:      sshConfig,
-			Kubelets: workerKubelets,
+			SSH:         sshConfig,
+			Kubelets:    workerKubelets,
+			ExtraMounts: kubeletExtraMounts,
+			ExtraArgs:   kubeletExtraArgs,
 		}
 
 		r.APILoadBalancerPools["workers"] = &apiloadbalancer.APILoadBalancers{
