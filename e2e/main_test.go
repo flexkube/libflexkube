@@ -46,15 +46,23 @@ type charts struct {
 }
 
 type e2eConfig struct {
-	ControllersCount  int    `json:"controllersCount"`
-	NodesCIDR         string `json:"nodesCIDR"`
-	FlatcarChannel    string `json:"flatcarChannel"`
-	WorkersCount      int    `json:"workersCount"`
-	APIPort           int    `json:"apiPort"`
-	NodeSSHPort       int    `json:"nodeSSHPort"`
-	SSHPrivateKeyPath string `json:"sshPrivatekeyPath"`
-	Charts            charts `json:"charts"`
+	ControllersCount  int              `json:"controllersCount"`
+	NodesCIDR         string           `json:"nodesCIDR"`
+	FlatcarChannel    string           `json:"flatcarChannel"`
+	WorkersCount      int              `json:"workersCount"`
+	APIPort           int              `json:"apiPort"`
+	NodeSSHPort       int              `json:"nodeSSHPort"`
+	SSHPrivateKeyPath string           `json:"sshPrivatekeyPath"`
+	Charts            charts           `json:"charts"`
+	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
 }
+
+type ContainerRuntime string
+
+const (
+	Docker     ContainerRuntime = "docker"
+	Containerd ContainerRuntime = "containerd"
+)
 
 func parseInt(t *testing.T, envVar string, defaultValue int) int {
 	t.Helper()
@@ -91,6 +99,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		APIPort:           8443,
 		NodeSSHPort:       22,
 		SSHPrivateKeyPath: "/root/.ssh/id_rsa",
+		ContainerRuntime:  Containerd,
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
@@ -128,7 +137,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,paralleltest,cyclop
+//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 
@@ -255,24 +264,29 @@ func TestE2e(t *testing.T) {
 	networkPlugin := "cni"
 	hairpinMode := "hairpin-veth"
 
-	kubeletExtraMounts := []types.Mount{
-		{
-			Source: "/run/containerd/",
-			Target: "/run/containerd",
-		},
-		{
-			Source: "/var/lib/containerd/",
-			Target: "/var/lib/containerd",
-		},
-		{
-			Source: "/run/torcx/unpack/docker/bin/containerd-shim-runc-v2",
-			Target: "/usr/bin/containerd-shim-runc-v2",
-		},
-	}
+	kubeletExtraMounts := []types.Mount{}
+	kubeletExtraArgs := []string{}
 
-	kubeletExtraArgs := []string{
-		"--container-runtime=remote",
-		"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
+	if testConfig.ContainerRuntime == Containerd {
+		kubeletExtraMounts = append(kubeletExtraMounts, []types.Mount{
+			{
+				Source: "/run/containerd/",
+				Target: "/run/containerd",
+			},
+			{
+				Source: "/var/lib/containerd/",
+				Target: "/var/lib/containerd",
+			},
+			{
+				Source: "/run/torcx/unpack/docker/bin/containerd-shim-runc-v2",
+				Target: "/usr/bin/containerd-shim-runc-v2",
+			},
+		}...)
+
+		kubeletExtraArgs = append(kubeletExtraArgs, []string{
+			"--container-runtime=remote",
+			"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
+		}...)
 	}
 
 	// Generate PKI.
@@ -356,9 +370,6 @@ func TestE2e(t *testing.T) {
 				AdminConfig: &client.Config{
 					Server: fmt.Sprintf("%s:%d", controllerIPs[0], testConfig.APIPort),
 				},
-				Taints: map[string]string{
-					"node-role.kubernetes.io/master": "NoSchedule",
-				},
 				SSH:         sshConfig,
 				Kubelets:    controllerKubelets,
 				ExtraMounts: kubeletExtraMounts,
@@ -404,6 +415,10 @@ func TestE2e(t *testing.T) {
 			Servers:          servers,
 			SSH:              sshConfig,
 			APILoadBalancers: workerLBs,
+		}
+
+		r.KubeletPools["controller"].Taints = map[string]string{
+			"node-role.kubernetes.io/master": "NoSchedule",
 		}
 	}
 
