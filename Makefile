@@ -64,6 +64,10 @@ build-bin:
 build-docker:
 	docker build -t $(BINARY_IMAGE) .
 
+.PHONY: build-integration
+build-integration:
+	docker build -t $(INTEGRATION_IMAGE) integration
+
 .PHONY: build-e2e
 build-e2e:
 	docker build -t $(E2E_IMAGE) e2e
