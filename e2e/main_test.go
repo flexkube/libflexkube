@@ -55,6 +55,7 @@ type e2eConfig struct {
 	SSHPrivateKeyPath string           `json:"sshPrivatekeyPath"`
 	Charts            charts           `json:"charts"`
 	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
+	CIDRIPsOffset     int              `json:"cidrIPsOffset"`
 }
 
 type ContainerRuntime string
@@ -100,6 +101,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		NodeSSHPort:       22,
 		SSHPrivateKeyPath: "/root/.ssh/id_rsa",
 		ContainerRuntime:  Containerd,
+		CIDRIPsOffset:     2,
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
@@ -178,7 +180,7 @@ func TestE2e(t *testing.T) {
 
 	for i := 0; i < testConfig.WorkersCount; i++ {
 		name := fmt.Sprintf("worker%02d", i+1)
-		ip := ips[i+2+10]
+		ip := ips[i+testConfig.CIDRIPsOffset+10]
 
 		host := host.Host{
 			SSHConfig: &ssh.Config{
@@ -199,7 +201,7 @@ func TestE2e(t *testing.T) {
 
 	for i := 0; i < testConfig.ControllersCount; i++ {
 		name := fmt.Sprintf("controller%02d", i+1)
-		ip := ips[i+2]
+		ip := ips[i+testConfig.CIDRIPsOffset]
 
 		controllerNames = append(controllerNames, name)
 		controllerIPs = append(controllerIPs, ip)
