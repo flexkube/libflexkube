@@ -24,6 +24,21 @@ jobs:
       - run: make install-cc-test-reporter BIN_PATH=/usr/local/bin
       - run: make build build-test test-update-linters lint
       - run: make test-cover-upload
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-docker
+  build-integration-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-integration
+  build-e2e-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-e2e
   e2e:
     runs-on: ubuntu-latest
     steps:
