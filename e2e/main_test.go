@@ -56,6 +56,7 @@ type e2eConfig struct {
 	Charts            charts           `json:"charts"`
 	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
 	CIDRIPsOffset     int              `json:"cidrIPsOffset"`
+	KubeletExtraArgs  []string         `json:"kubeletExtraArgs"`
 }
 
 type ContainerRuntime string
@@ -267,7 +268,7 @@ func TestE2e(t *testing.T) {
 	hairpinMode := "hairpin-veth"
 
 	kubeletExtraMounts := []types.Mount{}
-	kubeletExtraArgs := []string{}
+	kubeletExtraArgs := testConfig.KubeletExtraArgs
 
 	if testConfig.ContainerRuntime == Containerd {
 		kubeletExtraMounts = append(kubeletExtraMounts, []types.Mount{
