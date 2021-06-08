@@ -1,0 +1,24 @@
+---
+version: "2.1"
+services:
+  generate-keys:
+    image: ghcr.io/linuxserver/openssh-server
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'test -f /root/.ssh/id_rsa || ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""'
+    volumes:
+      - ./keys:/root/.ssh
+  openssh-server:
+    image: ghcr.io/linuxserver/openssh-server
+    environment:
+      - USER_NAME=core
+      - PUID=0
+      - PGID=0
+      - PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
+      - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
+    volumes:
+      - ./keys:/root/.ssh
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 2222:2222

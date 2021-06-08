@@ -24,6 +24,52 @@ jobs:
       - run: make install-cc-test-reporter BIN_PATH=/usr/local/bin
       - run: make build build-test test-update-linters lint
       - run: make test-cover-upload
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-docker
+  build-integration-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-integration
+  build-e2e-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build-e2e
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - uses: actions/checkout@v2
+      - name: Fetch dependencies and configure tests
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          docker-compose -f e2e/docker-compose.yml up -d
+          cat <<EOF > e2e/test-config.yaml
+            sshPrivateKeyPath: $(pwd)/e2e/keys/id_rsa
+            nodesCIDR: 172.17.0.0/24
+            nodeSSHPort: 2222
+            workersCount: 0
+            containerRuntime: docker
+            cidrIPsOffset: 1
+            kubeletExtraArgs: [--fail-swap-on=false]
+          EOF
+          helm repo add flexkube https://flexkube.github.io/charts/
+          sudo chown $(whoami): e2e/keys/id_rsa
+      - run: make test-e2e
   codespell:
     runs-on: ubuntu-latest
     steps:

@@ -67,7 +67,7 @@ EOF
   common_provisioning_script = <<-EOF
     mkdir -p /etc/systemd/network && echo "#{network_config}" | sudo tee /etc/systemd/network/10-virtualbox.network >/dev/null
     sudo systemctl daemon-reload
-    sudo systemctl enable iptables-store iptables-restore docker systemd-timesyncd
+    sudo systemctl enable iptables-store iptables-restore docker containerd systemd-timesyncd
     sudo systemctl stop update-engine locksmithd
     sudo systemctl mask update-engine locksmithd
     sudo systemctl start docker systemd-timesyncd iptables-store

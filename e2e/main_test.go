@@ -18,6 +18,7 @@ import (
 	"github.com/flexkube/libflexkube/cli/flexkube"
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/apiloadbalancer"
+	"github.com/flexkube/libflexkube/pkg/container/types"
 	"github.com/flexkube/libflexkube/pkg/controlplane"
 	"github.com/flexkube/libflexkube/pkg/etcd"
 	"github.com/flexkube/libflexkube/pkg/helm/release"
@@ -45,15 +46,25 @@ type charts struct {
 }
 
 type e2eConfig struct {
-	ControllersCount  int    `json:"controllersCount"`
-	NodesCIDR         string `json:"nodesCIDR"`
-	FlatcarChannel    string `json:"flatcarChannel"`
-	WorkersCount      int    `json:"workersCount"`
-	APIPort           int    `json:"apiPort"`
-	NodeSSHPort       int    `json:"nodeSSHPort"`
-	SSHPrivateKeyPath string `json:"sshPrivatekeyPath"`
-	Charts            charts `json:"charts"`
+	ControllersCount  int              `json:"controllersCount"`
+	NodesCIDR         string           `json:"nodesCIDR"`
+	FlatcarChannel    string           `json:"flatcarChannel"`
+	WorkersCount      int              `json:"workersCount"`
+	APIPort           int              `json:"apiPort"`
+	NodeSSHPort       int              `json:"nodeSSHPort"`
+	SSHPrivateKeyPath string           `json:"sshPrivatekeyPath"`
+	Charts            charts           `json:"charts"`
+	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
+	CIDRIPsOffset     int              `json:"cidrIPsOffset"`
+	KubeletExtraArgs  []string         `json:"kubeletExtraArgs"`
 }
+
+type ContainerRuntime string
+
+const (
+	Docker     ContainerRuntime = "docker"
+	Containerd ContainerRuntime = "containerd"
+)
 
 func parseInt(t *testing.T, envVar string, defaultValue int) int {
 	t.Helper()
@@ -90,6 +101,8 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		APIPort:           8443,
 		NodeSSHPort:       22,
 		SSHPrivateKeyPath: "/root/.ssh/id_rsa",
+		ContainerRuntime:  Containerd,
+		CIDRIPsOffset:     2,
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
@@ -109,11 +122,11 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 			},
 			CoreDNS: chart{
 				Source:  "flexkube/coredns",
-				Version: "2.0.2",
+				Version: "2.0.3",
 			},
 			MetricsServer: chart{
 				Source:  "flexkube/metrics-server",
-				Version: "3.0.4",
+				Version: "3.0.5",
 			},
 			KubeletRubberStamp: chart{
 				Source:  "flexkube/kubelet-rubber-stamp",
@@ -127,7 +140,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,paralleltest,cyclop
+//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 
@@ -168,7 +181,7 @@ func TestE2e(t *testing.T) {
 
 	for i := 0; i < testConfig.WorkersCount; i++ {
 		name := fmt.Sprintf("worker%02d", i+1)
-		ip := ips[i+2+10]
+		ip := ips[i+testConfig.CIDRIPsOffset+10]
 
 		host := host.Host{
 			SSHConfig: &ssh.Config{
@@ -189,7 +202,7 @@ func TestE2e(t *testing.T) {
 
 	for i := 0; i < testConfig.ControllersCount; i++ {
 		name := fmt.Sprintf("controller%02d", i+1)
-		ip := ips[i+2]
+		ip := ips[i+testConfig.CIDRIPsOffset]
 
 		controllerNames = append(controllerNames, name)
 		controllerIPs = append(controllerIPs, ip)
@@ -253,6 +266,31 @@ func TestE2e(t *testing.T) {
 
 	networkPlugin := "cni"
 	hairpinMode := "hairpin-veth"
+
+	kubeletExtraMounts := []types.Mount{}
+	kubeletExtraArgs := testConfig.KubeletExtraArgs
+
+	if testConfig.ContainerRuntime == Containerd {
+		kubeletExtraMounts = append(kubeletExtraMounts, []types.Mount{
+			{
+				Source: "/run/containerd/",
+				Target: "/run/containerd",
+			},
+			{
+				Source: "/var/lib/containerd/",
+				Target: "/var/lib/containerd",
+			},
+			{
+				Source: "/run/torcx/unpack/docker/bin/containerd-shim-runc-v2",
+				Target: "/usr/bin/containerd-shim-runc-v2",
+			},
+		}...)
+
+		kubeletExtraArgs = append(kubeletExtraArgs, []string{
+			"--container-runtime=remote",
+			"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
+		}...)
+	}
 
 	// Generate PKI.
 	r := &flexkube.Resource{
@@ -335,11 +373,10 @@ func TestE2e(t *testing.T) {
 				AdminConfig: &client.Config{
 					Server: fmt.Sprintf("%s:%d", controllerIPs[0], testConfig.APIPort),
 				},
-				Taints: map[string]string{
-					"node-role.kubernetes.io/master": "NoSchedule",
-				},
-				SSH:      sshConfig,
-				Kubelets: controllerKubelets,
+				SSH:         sshConfig,
+				Kubelets:    controllerKubelets,
+				ExtraMounts: kubeletExtraMounts,
+				ExtraArgs:   kubeletExtraArgs,
 			},
 		},
 		State: &flexkube.ResourceState{},
@@ -368,8 +405,10 @@ func TestE2e(t *testing.T) {
 			AdminConfig: &client.Config{
 				Server: fmt.Sprintf("%s:%d", controllerIPs[0], testConfig.APIPort),
 			},
-			SSH:      sshConfig,
-			Kubelets: workerKubelets,
+			SSH:         sshConfig,
+			Kubelets:    workerKubelets,
+			ExtraMounts: kubeletExtraMounts,
+			ExtraArgs:   kubeletExtraArgs,
 		}
 
 		r.APILoadBalancerPools["workers"] = &apiloadbalancer.APILoadBalancers{
@@ -379,6 +418,10 @@ func TestE2e(t *testing.T) {
 			Servers:          servers,
 			SSH:              sshConfig,
 			APILoadBalancers: workerLBs,
+		}
+
+		r.KubeletPools["controller"].Taints = map[string]string{
+			"node-role.kubernetes.io/master": "NoSchedule",
 		}
 	}
 
