@@ -20,6 +20,7 @@ import (
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container/runtime"
@@ -43,7 +44,7 @@ type Config struct {
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
 type dockerClient interface { //nolint:dupl
-	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
 	ContainerInspect(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
@@ -215,7 +216,7 @@ func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	}
 
 	// Create container.
-	c, err := d.cli.ContainerCreate(d.ctx, dockerConfig, hostConfig, &networktypes.NetworkingConfig{}, config.Name)
+	c, err := d.cli.ContainerCreate(d.ctx, dockerConfig, hostConfig, &networktypes.NetworkingConfig{}, nil, config.Name)
 	if err != nil {
 		return "", fmt.Errorf("creating container: %w", err)
 	}

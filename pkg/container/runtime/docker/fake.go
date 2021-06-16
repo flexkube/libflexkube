@@ -8,12 +8,13 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // FakeClient is a mock of Docker client, which should be used only for testing.
 type FakeClient struct { //nolint:dupl
 	// ContainerCreateF will be called by ContainerCreate.
-	ContainerCreateF func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+	ContainerCreateF func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 
 	// ContainerStartF will be called by ContainerStart.
 	ContainerStartF func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
@@ -44,8 +45,8 @@ type FakeClient struct { //nolint:dupl
 }
 
 // ContainerCreate mocks Docker client ContainerCreate().
-func (f *FakeClient) ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
-	return f.ContainerCreateF(ctx, config, hostConfig, networkingConfig, containerName)
+func (f *FakeClient) ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+	return f.ContainerCreateF(ctx, config, hostConfig, networkingConfig, platform, containerName)
 }
 
 // ContainerStart mocks Docker client ContainerStart().
