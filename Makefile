@@ -103,7 +103,7 @@ test-cover: build-test
 
 .PHONY: test-mutate
 test-mutate: install-go-mutesting
-	go-mutesting $(GO_PACKAGES)
+	go-mutesting --verbose $(GO_PACKAGES)
 
 .PHONY: cover-browse
 cover-browse:
