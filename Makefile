@@ -109,6 +109,16 @@ test-mutate: install-go-mutesting
 test-working-tree-clean:
 	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
 
+.PHONY: test-changelog
+test-changelog: test-working-tree-clean
+	make format-changelog
+	@test -z "$$(git status --porcelain)" || (echo "Please run 'make format-changelog' and commit generated changes."; git diff; exit 1)
+
+.PHONY: format-changelog
+format-changelog:
+	changelog fmt -o CHANGELOG.md.fmt
+	mv CHANGELOG.md.fmt CHANGELOG.md
+
 .PHONY: cover-browse
 cover-browse:
 	go tool cover -html=$(COVERPROFILE)
@@ -199,6 +209,11 @@ install-ci: install-golangci-lint install-cc-test-reporter
 .PHONY: install-go-mutesting
 install-go-mutesting:
 	GO111MODULE=off go get github.com/Stebalien/go-mutesting/cmd/go-mutesting
+
+.PHONY: install-changelog
+install-changelog:
+	go get github.com/rcmachado/changelog@0.7.0
+	go mod tidy
 
 .PHONY: vagrant-up
 vagrant-up:
