@@ -49,7 +49,9 @@ func GenerateRSAPrivateKey(t *testing.T) string {
 func GeneratePKCS1PrivateKey(t *testing.T) string {
 	t.Helper()
 
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	keyBits := 2048
+
+	priv, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
 		t.Fatalf("Failed to generate RSA key: %v", err)
 	}
@@ -101,7 +103,7 @@ func GeneratePKI(t *testing.T) *PKI {
 // generateX509Certificate generates X.509 certificate in DER format using given RSA private key.
 func generateX509Certificate(priv *rsa.PrivateKey) ([]byte, error) {
 	// Generate serial number for X.509 certificate.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -153,8 +155,10 @@ func encodePKI(priv *rsa.PrivateKey, pub []byte) (*PKI, error) {
 
 // GeneratePKIErr generates fake PKI X.509 key pair sutiable for tests.
 func GeneratePKIErr() (*PKI, error) {
+	keyBits := 2048
+
 	// Generate RSA private key.
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	priv, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate RSA key: %w", err)
 	}

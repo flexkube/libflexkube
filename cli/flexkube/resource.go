@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -409,7 +410,9 @@ func (r *Resource) StateToFile(actionErr error) error {
 		rb = []byte{}
 	}
 
-	if err := ioutil.WriteFile("state.yaml", rb, 0o600); err != nil {
+	readWriteOwnerOnly := 0o600
+
+	if err := ioutil.WriteFile("state.yaml", rb, fs.FileMode(readWriteOwnerOnly)); err != nil {
 		if actionErr == nil {
 			return fmt.Errorf("failed writing new state to file: %w", err)
 		}

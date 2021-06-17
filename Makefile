@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.40.1
+GOLANGCI_LINT_VERSION=v1.41.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -103,7 +103,34 @@ test-cover: build-test
 
 .PHONY: test-mutate
 test-mutate: install-go-mutesting
-	go-mutesting $(GO_PACKAGES)
+	go-mutesting --verbose $(GO_PACKAGES)
+
+.PHONY: test-vagrant
+test-vagrant:
+	vagrant validate --ignore-provider
+
+.PHONY: test-terraform
+test-terraform:
+	terraform -chdir=libvirt validate
+
+.PHONY: test-working-tree-clean
+test-working-tree-clean:
+	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
+
+.PHONY: test-tidy
+test-tidy: test-working-tree-clean
+	go mod tidy
+	@test -z "$$(git status --porcelain)" || (echo "Please run 'go mod tidy' and commit generated changes."; git diff; exit 1)
+
+.PHONY: test-changelog
+test-changelog: test-working-tree-clean
+	make format-changelog
+	@test -z "$$(git status --porcelain)" || (echo "Please run 'make format-changelog' and commit generated changes."; git diff; exit 1)
+
+.PHONY: format-changelog
+format-changelog:
+	changelog fmt -o CHANGELOG.md.fmt
+	mv CHANGELOG.md.fmt CHANGELOG.md
 
 .PHONY: cover-browse
 cover-browse:
@@ -153,8 +180,7 @@ update-linters:
 	golangci-lint linters | grep -E '^\S+:' | cut -d: -f1 | sort | sed 's/^/    - /g' | grep -v -E "($$(grep '^  disable:' -A 100 .golangci.yml  | grep -E '    - \S+$$' | awk '{print $$2}' | tr \\n '|' | sed 's/|$$//g'))" >> .golangci.yml
 
 .PHONY: test-update-linters
-test-update-linters:
-	@test -z "$$(git status --porcelain)" || (echo "Working directory must be clean to perform this check."; exit 1)
+test-update-linters: test-working-tree-clean
 	make update-linters
 	@test -z "$$(git status --porcelain)" || (echo "Linter configuration outdated. Run 'make update-linters' and commit generated changes to fix."; exit 1)
 
@@ -195,7 +221,12 @@ install-ci: install-golangci-lint install-cc-test-reporter
 
 .PHONY: install-go-mutesting
 install-go-mutesting:
-	GO111MODULE=off go get github.com/AntonStoeckl/go-mutesting/cmd/go-mutesting
+	GO111MODULE=off go get github.com/Stebalien/go-mutesting/cmd/go-mutesting
+
+.PHONY: install-changelog
+install-changelog:
+	go get github.com/rcmachado/changelog@0.7.0
+	go mod tidy
 
 .PHONY: vagrant-up
 vagrant-up:

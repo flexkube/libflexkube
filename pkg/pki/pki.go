@@ -421,7 +421,7 @@ func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
 
 func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
 	// Generate serial number for X.509 certificate.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {

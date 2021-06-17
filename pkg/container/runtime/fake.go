@@ -89,7 +89,7 @@ func (c FakeConfig) GetAddress() string {
 }
 
 // SetAddress implements runtime.Config interface.
-func (c FakeConfig) SetAddress(a string) {
+func (c *FakeConfig) SetAddress(a string) {
 	c.Address = a
 }
 
