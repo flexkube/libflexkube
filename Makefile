@@ -109,6 +109,10 @@ test-mutate: install-go-mutesting
 test-vagrant:
 	vagrant validate --ignore-provider
 
+.PHONY: test-terraform
+test-terraform:
+	terraform -chdir=libvirt validate
+
 .PHONY: test-working-tree-clean
 test-working-tree-clean:
 	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
