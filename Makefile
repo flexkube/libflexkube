@@ -105,6 +105,10 @@ test-cover: build-test
 test-mutate: install-go-mutesting
 	go-mutesting --verbose $(GO_PACKAGES)
 
+.PHONY: test-vagrant
+test-vagrant:
+	vagrant validate --ignore-provider
+
 .PHONY: test-working-tree-clean
 test-working-tree-clean:
 	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
