@@ -109,6 +109,11 @@ test-mutate: install-go-mutesting
 test-working-tree-clean:
 	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
 
+.PHONY: test-tidy
+test-tidy: test-working-tree-clean
+	go mod tidy
+	@test -z "$$(git status --porcelain)" || (echo "Please run 'go mod tidy' and commit generated changes."; git diff; exit 1)
+
 .PHONY: test-changelog
 test-changelog: test-working-tree-clean
 	make format-changelog
