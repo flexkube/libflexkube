@@ -21,9 +21,9 @@ jobs:
         with:
           # Required for Codecov report uploading.
           fetch-depth: 0
-      - run: make install-cc-test-reporter BIN_PATH=/usr/local/bin
-      - run: make build build-test test-update-linters lint
-      - run: make test-cover-upload
+      - name: Install required binaries
+        run: make install-cc-test-reporter install-changelog BIN_PATH=/usr/local/bin
+      - run: make build build-test test-update-linters lint test-cover-upload test-changelog
   build-docker:
     runs-on: ubuntu-latest
     steps:
