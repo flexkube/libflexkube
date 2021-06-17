@@ -105,6 +105,10 @@ test-cover: build-test
 test-mutate: install-go-mutesting
 	go-mutesting --verbose $(GO_PACKAGES)
 
+.PHONY: test-working-tree-clean
+test-working-tree-clean:
+	@test -z "$$(git status --porcelain)" || (echo "Commit all changes before running this target"; exit 1)
+
 .PHONY: cover-browse
 cover-browse:
 	go tool cover -html=$(COVERPROFILE)
@@ -153,8 +157,7 @@ update-linters:
 	golangci-lint linters | grep -E '^\S+:' | cut -d: -f1 | sort | sed 's/^/    - /g' | grep -v -E "($$(grep '^  disable:' -A 100 .golangci.yml  | grep -E '    - \S+$$' | awk '{print $$2}' | tr \\n '|' | sed 's/|$$//g'))" >> .golangci.yml
 
 .PHONY: test-update-linters
-test-update-linters:
-	@test -z "$$(git status --porcelain)" || (echo "Working directory must be clean to perform this check."; exit 1)
+test-update-linters: test-working-tree-clean
 	make update-linters
 	@test -z "$$(git status --porcelain)" || (echo "Linter configuration outdated. Run 'make update-linters' and commit generated changes to fix."; exit 1)
 
