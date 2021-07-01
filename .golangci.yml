@@ -62,8 +62,6 @@ linters:
     # This linter has been deprecated.
     - maligned
     # This linter has been deprecated.
-    - scopelint
-    # This linter has been deprecated.
     - golint
   enable:
     - asciicheck
@@ -113,6 +111,7 @@ linters:
     - promlinter
     - revive
     - rowserrcheck
+    - scopelint
     - sqlclosecheck
     - structcheck
     - stylecheck
