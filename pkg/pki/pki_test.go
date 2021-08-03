@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/pkg/pki"
 )
@@ -312,26 +313,32 @@ func TestGenerateUpdateIPs(t *testing.T) {
 	}
 }
 
-func TestGenerateDontRecreate(t *testing.T) {
+func Test_Generate_does_not_change_PKI_when_there_is_no_configuration_changes(t *testing.T) {
 	t.Parallel()
 
-	// First, generate valid PKI.
 	pki := &pki.PKI{}
 
 	if err := pki.Generate(); err != nil {
 		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
-	// Save content of generated certificate.
-	cert := pki.RootCA.X509Certificate
+	// Save original PKI state as bytes for easy comparison.
+	pkiBytes, err := yaml.Marshal(pki)
+	if err != nil {
+		t.Fatalf("Encoding PKI into YAML: %v", err)
+	}
 
-	// Generate again.
 	if err := pki.Generate(); err != nil {
 		t.Fatalf("Re-generating PKI certificates should succeed, got: %v", err)
 	}
 
-	if cert != pki.RootCA.X509Certificate {
-		t.Fatalf("With no configuration changes, certificates should not be rotated")
+	pkiBytesAfterRegenerate, err := yaml.Marshal(pki)
+	if err != nil {
+		t.Fatalf("Encoding PKI into YAML: %v", err)
+	}
+
+	if diff := cmp.Diff(pkiBytes, pkiBytesAfterRegenerate); diff != "" {
+		t.Fatalf("Unexpected PKI diff: \n%s", diff)
 	}
 }
 
