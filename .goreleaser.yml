@@ -6,6 +6,8 @@ builds:
   - -extldflags '-static'
   - -s
   - -w
+  flags:
+  - -trimpath
   goarch:
   - amd64
   goos:

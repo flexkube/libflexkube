@@ -8,7 +8,7 @@ GOTEST=$(GOCMD) test -covermode=atomic
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GORUN=$(GOCMD) run
-GOBUILD=$(GOCMD) build -v -ldflags $(LD_FLAGS)
+GOBUILD=$(GOCMD) build -v -ldflags $(LD_FLAGS) -trimpath
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
 GOLANGCI_LINT_VERSION=v1.41.1
