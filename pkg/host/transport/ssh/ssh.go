@@ -79,13 +79,12 @@ type dialer interface {
 // New validates SSH configuration and returns new instance of transport interface.
 func (d *Config) New() (transport.Interface, error) {
 	if err := d.Validate(); err != nil {
-		return nil, fmt.Errorf("ssh host validation failed: %w", err)
+		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
-	// Validate checks parsing, so we can skip error checking here.
-	ct, _ := time.ParseDuration(d.ConnectionTimeout)
-	rt, _ := time.ParseDuration(d.RetryTimeout)
-	ri, _ := time.ParseDuration(d.RetryInterval)
+	ct, _ := time.ParseDuration(d.ConnectionTimeout) //nolint:errcheck // This is checked in Validate().
+	rt, _ := time.ParseDuration(d.RetryTimeout)      //nolint:errcheck // This is checked in Validate().
+	ri, _ := time.ParseDuration(d.RetryInterval)     //nolint:errcheck // This is checked in Validate().
 
 	s := &ssh{
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
@@ -101,7 +100,8 @@ func (d *Config) New() (transport.Interface, error) {
 		s.auth = append(s.auth, gossh.Password(d.Password))
 	}
 
-	if signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" {
+	if d.PrivateKey != "" {
+		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)) //nolint:errcheck // This is checked in Validate().
 		s.auth = append(s.auth, gossh.PublicKeys(signer))
 	}
 
@@ -111,7 +111,7 @@ func (d *Config) New() (transport.Interface, error) {
 	if authSock := os.Getenv(SSHAuthSockEnv); authSock != "" {
 		authConn, err := net.Dial("unix", authSock)
 		if err != nil {
-			return nil, fmt.Errorf("dialing SSH agent failed: %w", err)
+			return nil, fmt.Errorf("dialing SSH agent: %w", err)
 		}
 		// TODO: We should close the authSock with Close() after we finish using it,
 		// but it is not trivial at the moment, so we just let the dying process to
@@ -121,7 +121,7 @@ func (d *Config) New() (transport.Interface, error) {
 
 		signers, err := agent.NewClient(authConn).Signers()
 		if err != nil {
-			return nil, fmt.Errorf("getting public keys from SSH agent failed: %w", err)
+			return nil, fmt.Errorf("getting public keys from SSH agent: %w", err)
 		}
 
 		s.auth = append(s.auth, gossh.PublicKeys(signers...))
@@ -132,7 +132,7 @@ func (d *Config) New() (transport.Interface, error) {
 
 // Validate validates given configuration.
 func (d *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if d.Address == "" {
 		errors = append(errors, fmt.Errorf("address must be set"))
@@ -146,6 +146,10 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("at least one authentication method must be available"))
 	}
 
+	if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" && err != nil {
+		errors = append(errors, fmt.Errorf("parsing private key: %w", err))
+	}
+
 	if d.Port == 0 {
 		errors = append(errors, fmt.Errorf("port must be set"))
 	}
@@ -155,24 +159,20 @@ func (d *Config) Validate() error {
 	return errors.Return()
 }
 
-func (d *Config) validateDurations() util.ValidateError {
-	var errors util.ValidateError
+func (d *Config) validateDurations() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {
-		errors = append(errors, fmt.Errorf("unable to parse connection timeout: %w", err))
+		errors = append(errors, fmt.Errorf("parsing connection timeout: %w", err))
 	}
 
 	if _, err := time.ParseDuration(d.RetryTimeout); err != nil {
-		errors = append(errors, fmt.Errorf("unable to parse retry timeout: %w", err))
+		errors = append(errors, fmt.Errorf("parsing retry timeout: %w", err))
 	}
 
 	if _, err := time.ParseDuration(d.RetryInterval); err != nil {
-		errors = append(errors, fmt.Errorf("unable to parse retry interval: %w", err))
-	}
-
-	if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" && err != nil {
-		errors = append(errors, fmt.Errorf("unable to parse private key: %w", err))
+		errors = append(errors, fmt.Errorf("parsing retry interval: %w", err))
 	}
 
 	return errors
@@ -224,17 +224,17 @@ func newConnected(address string, connection dialer) transport.Connected {
 func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 	unixAddr, err := d.randomUnixSocket()
 	if err != nil {
-		return "", fmt.Errorf("failed generating random socket to listen: %w", err)
+		return "", fmt.Errorf("generating random socket to listen: %w", err)
 	}
 
 	localSock, err := d.listener("unix", unixAddr.String())
 	if err != nil {
-		return "", fmt.Errorf("unable to listen on address '%s':%w", unixAddr, err)
+		return "", fmt.Errorf("listening on address %q: %w", unixAddr, err)
 	}
 
 	path, err = extractPath(path)
 	if err != nil {
-		return "", fmt.Errorf("failed parsing path %s: %w", path, err)
+		return "", fmt.Errorf("parsing path %q: %w", path, err)
 	}
 
 	// Schedule accepting connections and return.
@@ -245,14 +245,14 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 
 // handleClient is responsible for copying incoming and outgoing data going
 // through the forwarded connection.
-func handleClient(client io.ReadWriteCloser, remote io.ReadWriteCloser) {
+func handleClient(client, remote io.ReadWriteCloser) {
 	defer func() {
 		if err := client.Close(); err != nil {
-			fmt.Printf("failed closing client connection: %v\n", err)
+			fmt.Printf("Failed closing client connection: %v\n", err)
 		}
 
 		if err := remote.Close(); err != nil {
-			fmt.Printf("closing remote: %v\n", err)
+			fmt.Printf("Closing remote: %v\n", err)
 		}
 	}()
 
@@ -261,7 +261,7 @@ func handleClient(client io.ReadWriteCloser, remote io.ReadWriteCloser) {
 	// Start remote -> local data transfer.
 	go func() {
 		if _, err := io.Copy(client, remote); err != nil {
-			fmt.Printf("error while copy remote->local: %s\n", err)
+			fmt.Printf("Error while copy remote->local: %s\n", err)
 		}
 		chDone <- true
 	}()
@@ -269,7 +269,7 @@ func handleClient(client io.ReadWriteCloser, remote io.ReadWriteCloser) {
 	// Start local -> remote data transfer.
 	go func() {
 		if _, err := io.Copy(remote, client); err != nil {
-			fmt.Printf("error while copy local->remote: %s\n", err)
+			fmt.Printf("Error while copy local->remote: %s\n", err)
 		}
 		chDone <- true
 	}()
@@ -283,7 +283,7 @@ func handleClient(client io.ReadWriteCloser, remote io.ReadWriteCloser) {
 func forwardConnection(l net.Listener, connection dialer, remoteAddress, connectionType string) {
 	defer func() {
 		if err := l.Close(); err != nil {
-			fmt.Printf("failed closing listener: %v\n", err)
+			fmt.Printf("Failed closing listener: %v\n", err)
 		}
 	}()
 
@@ -291,7 +291,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		// Accept connection from the client.
 		c, err := l.Accept()
 		if err != nil {
-			fmt.Printf("failed to accept connection: %v\n", err)
+			fmt.Printf("Failed to accept connection: %v\n", err)
 			// Handle error (and then for example indicate acceptor is down).
 			return
 		}
@@ -299,7 +299,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		// Open remote connection.
 		remoteSock, err := connection.Dial(connectionType, remoteAddress)
 		if err != nil {
-			fmt.Printf("failed to open remote connection: %v\n", err)
+			fmt.Printf("Failed to open remote connection: %v\n", err)
 
 			return
 		}
@@ -314,7 +314,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 func extractPath(path string) (string, error) {
 	url, err := url.Parse(path)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse path %s: %w", path, err)
+		return "", fmt.Errorf("parsing path %q: %w", path, err)
 	}
 
 	if url.Scheme != "unix" {
@@ -331,7 +331,7 @@ func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 	// we should cache and reuse the connections.
 	id, err := d.uuid()
 	if err != nil {
-		return nil, fmt.Errorf("unable to generate random UUID for abstract UNIX socket: %w", err)
+		return nil, fmt.Errorf("generating random UUID for abstract UNIX socket: %w", err)
 	}
 
 	return &net.UnixAddr{
@@ -344,12 +344,12 @@ func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 // connections to local address to remote address using estabilshed SSH tunnel.
 func (d *sshConnected) ForwardTCP(address string) (string, error) {
 	if _, _, err := net.SplitHostPort(address); err != nil {
-		return "", fmt.Errorf("failed to validate address '%s': %w", address, err)
+		return "", fmt.Errorf("validating address %q: %w", address, err)
 	}
 
 	localConn, err := d.listener("tcp", "127.0.0.1:0")
 	if err != nil {
-		return "", fmt.Errorf("unable to listen on random TCP port: %w", err)
+		return "", fmt.Errorf("listening on random TCP port: %w", err)
 	}
 
 	// Schedule accepting connections and return.

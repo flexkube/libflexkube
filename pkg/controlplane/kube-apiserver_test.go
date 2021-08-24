@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	// securePort is a TLS port used for testing.
+	// TLS port used for testing.
 	securePort = 6443
 
-	// nonEmptyString is a string used for testing.
+	// Non empty string used for testing.
 	nonEmptyString = "foo"
 )
 
@@ -51,7 +51,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 
 	o, err := kas.New()
 	if err != nil {
-		t.Fatalf("new should not return error, got: %v", err)
+		t.Fatalf("New should not return error, got: %v", err)
 	}
 
 	hcc, err := o.ToHostConfiguredContainer()
@@ -68,11 +68,8 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 	}
 }
 
-// Validate() tests.
-//
-//nolint:funlen
-func TestKubeAPIServerValidate(t *testing.T) {
-	t.Parallel()
+func validKubeAPIServer(t *testing.T) *KubeAPIServer {
+	t.Helper()
 
 	cert := types.Certificate(utiltest.GenerateX509Certificate(t))
 	privateKey := types.PrivateKey(utiltest.GenerateRSAPrivateKey(t))
@@ -86,118 +83,62 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		FrontProxyCACertificate: cert,
 	}
 
+	return &KubeAPIServer{
+		Common:                   common,
+		APIServerCertificate:     cert,
+		APIServerKey:             privateKey,
+		ServiceAccountPrivateKey: nonEmptyString,
+		BindAddress:              nonEmptyString,
+		AdvertiseAddress:         nonEmptyString,
+		EtcdServers:              []string{nonEmptyString},
+		ServiceCIDR:              nonEmptyString,
+		SecurePort:               securePort,
+		FrontProxyCertificate:    cert,
+		FrontProxyKey:            privateKey,
+		KubeletClientKey:         privateKey,
+		EtcdCACertificate:        cert,
+		EtcdClientCertificate:    cert,
+		EtcdClientKey:            privateKey,
+		Host:                     hostConfig,
+		KubeletClientCertificate: cert,
+	}
+}
+
+// Validate() tests.
+func TestKubeAPIServerValidate(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
-		Config *KubeAPIServer
-		Error  bool
+		MutateF func(*KubeAPIServer)
+		Error   bool
 	}{
 		"require kubeletClientCertificate": {
-			Config: &KubeAPIServer{
-				Common:                   common,
-				APIServerCertificate:     cert,
-				APIServerKey:             privateKey,
-				ServiceAccountPrivateKey: nonEmptyString,
-				BindAddress:              nonEmptyString,
-				AdvertiseAddress:         nonEmptyString,
-				EtcdServers:              []string{nonEmptyString},
-				ServiceCIDR:              nonEmptyString,
-				SecurePort:               securePort,
-				FrontProxyCertificate:    cert,
-				FrontProxyKey:            privateKey,
-				KubeletClientKey:         privateKey,
-				EtcdCACertificate:        cert,
-				EtcdClientCertificate:    cert,
-				EtcdClientKey:            privateKey,
-				Host:                     hostConfig,
+			MutateF: func(k *KubeAPIServer) {
+				k.KubeletClientCertificate = ""
 			},
 			Error: true,
 		},
 		"validate kubeletClientCertificate": {
-			Config: &KubeAPIServer{
-				Common:                   common,
-				APIServerCertificate:     cert,
-				APIServerKey:             privateKey,
-				ServiceAccountPrivateKey: nonEmptyString,
-				BindAddress:              nonEmptyString,
-				AdvertiseAddress:         nonEmptyString,
-				EtcdServers:              []string{nonEmptyString},
-				ServiceCIDR:              nonEmptyString,
-				SecurePort:               securePort,
-				FrontProxyCertificate:    cert,
-				FrontProxyKey:            privateKey,
-				KubeletClientKey:         privateKey,
-				EtcdCACertificate:        cert,
-				EtcdClientCertificate:    cert,
-				EtcdClientKey:            privateKey,
-				Host:                     hostConfig,
-				KubeletClientCertificate: nonEmptyString,
+			MutateF: func(k *KubeAPIServer) {
+				k.KubeletClientCertificate = nonEmptyString
 			},
 			Error: true,
 		},
 		"require at least one etcd server": {
-			Config: &KubeAPIServer{
-				Common:                   common,
-				APIServerCertificate:     cert,
-				APIServerKey:             privateKey,
-				ServiceAccountPrivateKey: nonEmptyString,
-				BindAddress:              nonEmptyString,
-				AdvertiseAddress:         nonEmptyString,
-				EtcdServers:              []string{},
-				ServiceCIDR:              nonEmptyString,
-				SecurePort:               securePort,
-				FrontProxyCertificate:    cert,
-				FrontProxyKey:            privateKey,
-				KubeletClientKey:         privateKey,
-				EtcdCACertificate:        cert,
-				EtcdClientCertificate:    cert,
-				EtcdClientKey:            privateKey,
-				Host:                     hostConfig,
-				KubeletClientCertificate: cert,
+			MutateF: func(k *KubeAPIServer) {
+				k.EtcdServers = []string{}
 			},
 			Error: true,
 		},
 		"validate host": {
-			Config: &KubeAPIServer{
-				Common:                   common,
-				APIServerCertificate:     cert,
-				APIServerKey:             privateKey,
-				ServiceAccountPrivateKey: nonEmptyString,
-				BindAddress:              nonEmptyString,
-				AdvertiseAddress:         nonEmptyString,
-				EtcdServers:              []string{nonEmptyString},
-				ServiceCIDR:              nonEmptyString,
-				SecurePort:               securePort,
-				FrontProxyCertificate:    cert,
-				FrontProxyKey:            privateKey,
-				KubeletClientKey:         privateKey,
-				EtcdCACertificate:        cert,
-				EtcdClientCertificate:    cert,
-				EtcdClientKey:            privateKey,
-				Host:                     &host.Host{},
-				KubeletClientCertificate: cert,
+			MutateF: func(k *KubeAPIServer) {
+				k.Host = &host.Host{}
 			},
 			Error: true,
 		},
 		"valid": {
-			Config: &KubeAPIServer{
-				Common:                   common,
-				APIServerCertificate:     cert,
-				APIServerKey:             privateKey,
-				ServiceAccountPrivateKey: nonEmptyString,
-				BindAddress:              nonEmptyString,
-				AdvertiseAddress:         nonEmptyString,
-				EtcdServers:              []string{nonEmptyString},
-				ServiceCIDR:              nonEmptyString,
-				SecurePort:               securePort,
-				FrontProxyCertificate:    cert,
-				FrontProxyKey:            privateKey,
-				KubeletClientKey:         privateKey,
-				EtcdCACertificate:        cert,
-				EtcdClientCertificate:    cert,
-				EtcdClientKey:            privateKey,
-				Host:                     hostConfig,
-				KubeletClientCertificate: cert,
-			},
-			Error: false,
+			MutateF: func(_ *KubeAPIServer) {},
+			Error:   false,
 		},
 	}
 
@@ -207,13 +148,16 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
 
-			err := c.Config.Validate()
+			config := validKubeAPIServer(t)
+			c.MutateF(config)
+
+			err := config.Validate()
 			if !c.Error && err != nil {
-				t.Errorf("didn't expect error, got: %v", err)
+				t.Errorf("Didn't expect error, got: %v", err)
 			}
 
 			if c.Error && err == nil {
-				t.Errorf("expected error")
+				t.Errorf("Expected error")
 			}
 		})
 	}
@@ -256,7 +200,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 
 	ki, err := c.New()
 	if err != nil {
-		t.Fatalf("kubeAPIServer object should be created, got: %v", err)
+		t.Fatalf("KubeAPIServer object should be created, got: %v", err)
 	}
 
 	hcc, err := ki.ToHostConfiguredContainer()
@@ -266,7 +210,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 
 	for k := range hcc.ConfigFiles {
 		if !strings.Contains(k, hostConfigPath) {
-			t.Fatalf("all config files paths should contain %s, got: %s", hostConfigPath, k)
+			t.Fatalf("All config files paths should contain %s, got: %s", hostConfigPath, k)
 		}
 	}
 }

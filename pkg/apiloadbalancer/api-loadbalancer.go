@@ -134,7 +134,7 @@ const (
 	// ContainerName is a default name for load balancer container.
 	ContainerName = "api-loadbalancer-haproxy"
 
-	// containerConfigPath is a path inside the container, where configuration
+	// Path inside the container, where configuration
 	// stored on the host filesystem should be mapped into.
 	containerConfigPath = "/usr/local/etc/haproxy/haproxy.cfg"
 )
@@ -146,7 +146,7 @@ const (
 func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	config, err := a.config()
 	if err != nil {
-		return nil, fmt.Errorf("failed generating config: %w", err)
+		return nil, fmt.Errorf("generating config: %w", err)
 	}
 
 	c := container.Container{
@@ -185,7 +185,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 // TODO: I think we shouldn't fill the default values here. Maybe do it one level up?
 func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 	if err := a.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate API Load balancer configuration: %w", err)
+		return nil, fmt.Errorf("validating API Load balancer configuration: %w", err)
 	}
 
 	na := &apiLoadBalancer{

@@ -23,12 +23,12 @@ type PrivateKey string
 func (p *PrivateKey) UnmarshalJSON(data []byte) error {
 	up, err := strconv.Unquote(string(data))
 	if err != nil {
-		return fmt.Errorf("failed to unquote string: %w", err)
+		return fmt.Errorf("unquoting string: %w", err)
 	}
 
 	der, _ := pem.Decode([]byte(up))
 	if der == nil {
-		return fmt.Errorf("failed to decode PEM format")
+		return fmt.Errorf("decoding PEM format")
 	}
 
 	if err := parsePrivateKey(der.Bytes); err != nil {
@@ -55,7 +55,7 @@ func parsePrivateKey(b []byte) error {
 		return nil
 	}
 
-	return fmt.Errorf("unable to parse private key")
+	return fmt.Errorf("given key is not a valid PKCS8, PKCS1 or EC private key")
 }
 
 // Pick returns first non-empty private key from given list, including

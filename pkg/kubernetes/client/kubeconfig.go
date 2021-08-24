@@ -47,7 +47,7 @@ type Config struct {
 
 // Validate validates Config struct.
 func (c *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c.Server == "" {
 		errors = append(errors, fmt.Errorf("server is empty"))
@@ -61,18 +61,18 @@ func (c *Config) Validate() error {
 
 	b, err := yaml.Marshal(c)
 	if err != nil {
-		return append(errors, fmt.Errorf("marshaling config should succeed, got: %w", err))
+		return append(errors, fmt.Errorf("marshaling config: %w", err))
 	}
 
 	if err := yaml.Unmarshal(b, c); err != nil {
-		return append(errors, fmt.Errorf("certificate validation failed: %w", err))
+		return append(errors, fmt.Errorf("unmarshaling config: %w", err))
 	}
 
 	return errors.Return()
 }
 
-func (c *Config) validateAuth() util.ValidateError {
-	var errors util.ValidateError
+func (c *Config) validateAuth() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if c.ClientCertificate == "" && c.Token == "" {
 		errors = append(errors, fmt.Errorf("either client certificate or token must be set"))
@@ -96,12 +96,12 @@ func (c *Config) validateAuth() util.ValidateError {
 // ToYAMLString converts given configuration to kubeconfig format as YAML text.
 func (c *Config) ToYAMLString() (string, error) {
 	if err := c.Validate(); err != nil {
-		return "", fmt.Errorf("failed validating config: %w", err)
+		return "", fmt.Errorf("validating config: %w", err)
 	}
 
 	kubeconfig, err := c.renderKubeconfig()
 	if err != nil {
-		return "", fmt.Errorf("failed rendering kubeconfig: %w", err)
+		return "", fmt.Errorf("rendering kubeconfig: %w", err)
 	}
 
 	// Parse generated kubeconfig with Kubernetes client, to make sure everything is correct.
@@ -160,7 +160,7 @@ contexts:
 	tpl := template.Must(template.New("t").Parse(t))
 
 	if err := tpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("failed executing template: %w", err)
+		return "", fmt.Errorf("executing template: %w", err)
 	}
 
 	return buf.String(), nil

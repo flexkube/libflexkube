@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	// customPort is a port, which differs from default SSH port.
+	// Custom port for testing, which differs from default SSH port.
 	customPort = 33
 )
 
-func TestBuildConfig(t *testing.T) { //nolint:funlen
+func TestBuildConfig(t *testing.T) { //nolint:funlen // Just many test cases.
 	t.Parallel()
 
 	cases := []struct {
@@ -395,7 +395,7 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen
 			t.Parallel()
 
 			if nc := ssh.BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
-				t.Fatalf("expected %+v, got %+v", c.result, nc)
+				t.Fatalf("Expected %+v, got %+v", c.result, nc)
 			}
 		})
 	}

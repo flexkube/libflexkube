@@ -133,7 +133,7 @@ desiredState:
 func TestFilesToUpdateEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{foo} //nolint:ifshort
+	expected := []string{foo} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	d := hostConfiguredContainer{
 		configFiles: map[string]string{
@@ -163,7 +163,7 @@ func TestValidateNil(t *testing.T) {
 	var cc Containers
 
 	if err := cc.Validate(); err == nil {
-		t.Fatalf("nil containers object shouldn't be valid")
+		t.Fatalf("Nil containers object shouldn't be valid")
 	}
 }
 
@@ -465,15 +465,6 @@ func TestEnsureRunning(t *testing.T) {
 	t.Parallel()
 
 	c := &containers{
-		desiredState: containersState{
-			foo: &hostConfiguredContainer{
-				container: &container{
-					base: base{
-						config: types.ContainerConfig{},
-					},
-				},
-			},
-		},
 		currentState: containersState{
 			foo: &hostConfiguredContainer{
 				container: &container{
@@ -521,6 +512,11 @@ func TestEnsureExistsAlreadyExists(t *testing.T) {
 func TestEnsureExistsFailCreate(t *testing.T) {
 	t.Parallel()
 
+	failingCreateRuntime := fakeRuntime()
+	failingCreateRuntime.CreateF = func(config *types.ContainerConfig) (string, error) {
+		return "", fmt.Errorf("create fail")
+	}
+
 	c := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
@@ -530,14 +526,8 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 				},
 				container: &container{
 					base: base{
-						config: types.ContainerConfig{},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return "", fmt.Errorf("create fail")
-								},
-							},
-						},
+						config:        types.ContainerConfig{},
+						runtimeConfig: asRuntime(failingCreateRuntime),
 					},
 				},
 			},
@@ -566,25 +556,8 @@ func TestEnsureExistsFailStart(t *testing.T) {
 				},
 				container: &container{
 					base: base{
-						config: types.ContainerConfig{},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StartF: func(id string) error {
-									return fmt.Errorf("start fail")
-								},
-							},
-						},
+						config:        types.ContainerConfig{},
+						runtimeConfig: asRuntime(failingStartRuntime()),
 					},
 				},
 			},
@@ -596,7 +569,7 @@ func TestEnsureExistsFailStart(t *testing.T) {
 	}
 
 	if _, ok := c.currentState[foo]; !ok {
-		t.Fatalf("ensureExists should save state of created container even if starting failed")
+		t.Fatalf("EnsureExists should save state of created container even if starting failed")
 	}
 }
 
@@ -613,25 +586,8 @@ func TestEnsureExist(t *testing.T) {
 				},
 				container: &container{
 					base: base{
-						config: types.ContainerConfig{},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StartF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						config:        types.ContainerConfig{},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -643,7 +599,7 @@ func TestEnsureExist(t *testing.T) {
 	}
 
 	if _, ok := c.currentState[foo]; !ok {
-		t.Fatalf("ensureExists should save state of created container when creation succeeds")
+		t.Fatalf("EnsureExists should save state of created container when creation succeeds")
 	}
 }
 
@@ -673,7 +629,6 @@ func TestEnsureHostNoDiff(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func TestEnsureHostFailStart(t *testing.T) {
 	t.Parallel()
 
@@ -688,24 +643,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 				},
 				container: &container{
 					base: base{
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								StartF: func(id string) error {
-									return fmt.Errorf("start fails")
-								},
-							},
-						},
+						runtimeConfig: asRuntime(failingStartRuntime()),
 					},
 				},
 			},
@@ -720,21 +658,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 						status: types.ContainerStatus{
 							ID: foo,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: foo,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -746,11 +670,10 @@ func TestEnsureHostFailStart(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure host should persist state changes even if process fails")
+		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
 
-//nolint:funlen
 func TestEnsureHost(t *testing.T) {
 	t.Parallel()
 
@@ -765,24 +688,7 @@ func TestEnsureHost(t *testing.T) {
 				},
 				container: &container{
 					base: base{
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								StartF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -797,21 +703,7 @@ func TestEnsureHost(t *testing.T) {
 						status: types.ContainerStatus{
 							ID: foo,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: foo,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -823,7 +715,7 @@ func TestEnsureHost(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure host should persist state changes even if process fails")
+		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
 
@@ -857,7 +749,6 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func TestEnsureContainerFailStart(t *testing.T) {
 	t.Parallel()
 
@@ -873,24 +764,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: foo,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								StartF: func(id string) error {
-									return fmt.Errorf("start fails")
-								},
-							},
-						},
+						runtimeConfig: asRuntime(failingStartRuntime()),
 					},
 				},
 			},
@@ -908,21 +782,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: bar,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: foo,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -934,11 +794,10 @@ func TestEnsureContainerFailStart(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure container should persist state changes even if process fails")
+		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
 
-//nolint:funlen
 func TestEnsureContainer(t *testing.T) {
 	t.Parallel()
 
@@ -954,24 +813,7 @@ func TestEnsureContainer(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: foo,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return foo, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: bar,
-									}, nil
-								},
-								StartF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -989,21 +831,7 @@ func TestEnsureContainer(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: bar,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										ID: foo,
-									}, nil
-								},
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -1015,7 +843,7 @@ func TestEnsureContainer(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure container should persist state changes even if process fails")
+		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
 
@@ -1224,7 +1052,6 @@ func TestEnsureConfiguredNoUpdates(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func TestEnsureConfigured(t *testing.T) {
 	t.Parallel()
 
@@ -1247,33 +1074,7 @@ func TestEnsureConfigured(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: f,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return f, nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{}, nil
-								},
-								CopyF: func(id string, files []*types.File) error {
-									if id != f {
-										t.Errorf("should copy to configuration container '%s', not to '%s'", f, id)
-									}
-
-									if len(files) != len(cf) {
-										t.Fatalf("should copy just one file")
-									}
-
-									if files[0].Content != bar {
-										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
-									}
-
-									called = true
-
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, f, cf)),
 					},
 				},
 			},
@@ -1289,16 +1090,7 @@ func TestEnsureConfigured(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: f,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return f, nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{}, nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
@@ -1310,11 +1102,10 @@ func TestEnsureConfigured(t *testing.T) {
 	}
 
 	if !called {
-		t.Fatalf("should call Copy on container")
+		t.Fatalf("Should call Copy on container")
 	}
 }
 
-//nolint:funlen
 func TestEnsureConfiguredFreshState(t *testing.T) {
 	t.Parallel()
 
@@ -1337,33 +1128,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 						config: types.ContainerConfig{
 							Image: f,
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return f, nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{}, nil
-								},
-								CopyF: func(id string, files []*types.File) error {
-									if id != f {
-										t.Errorf("should copy to configuration container '%s', not to '%s'", f, id)
-									}
-
-									if len(files) != len(cf) {
-										t.Fatalf("should copy just one file")
-									}
-
-									if files[0].Content != bar {
-										t.Fatalf("expected content 'bar', got '%s'", files[0].Content)
-									}
-
-									called = true
-
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, f, cf)),
 					},
 				},
 			},
@@ -1376,7 +1141,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 	}
 
 	if !called {
-		t.Fatalf("should call Copy on container")
+		t.Fatalf("Should call Copy on container")
 	}
 }
 
@@ -1441,11 +1206,11 @@ func TestSelectRuntime(t *testing.T) {
 	}
 
 	if err := c.selectRuntime(); err != nil {
-		t.Fatalf("selecting runtime should succeed, got: %v", err)
+		t.Fatalf("Selecting runtime should succeed, got: %v", err)
 	}
 
 	if c.base.runtime == nil {
-		t.Fatalf("selectRuntime should set container runtime")
+		t.Fatalf("SelectRuntime should set container runtime")
 	}
 }
 
@@ -1566,16 +1331,29 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 }
 
 // updateExistingContainers() tests.
-//
-//nolint:funlen
 func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 	t.Parallel()
+
+	fooRuntime := fakeRuntime()
+	fooRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+		return types.ContainerStatus{
+			Status: "running",
+			ID:     "foo",
+		}, nil
+	}
+
+	barRuntime := fakeRuntime()
+	barRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+		return types.ContainerStatus{
+			Status: "running",
+			ID:     "bar",
+		}, nil
+	}
 
 	c := &containers{
 		desiredState: containersState{},
 		currentState: containersState{
 			foo: &hostConfiguredContainer{
-				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -1585,27 +1363,11 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 							Status: "running",
 							ID:     "foo",
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										Status: "running",
-										ID:     "foo",
-									}, nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(fooRuntime),
 					},
 				},
 			},
 			bar: &hostConfiguredContainer{
-				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -1615,22 +1377,7 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 							Status: "running",
 							ID:     "bar",
 						},
-						runtimeConfig: &runtime.FakeConfig{
-							Runtime: &runtime.Fake{
-								DeleteF: func(id string) error {
-									return nil
-								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
-									return types.ContainerStatus{
-										Status: "running",
-										ID:     "bar",
-									}, nil
-								},
-								StopF: func(id string) error {
-									return nil
-								},
-							},
-						},
+						runtimeConfig: asRuntime(barRuntime),
 					},
 				},
 			},
@@ -1679,11 +1426,11 @@ func TestEnsureCurrentContainer(t *testing.T) {
 
 	_, err := c.ensureCurrentContainer(foo, hcc)
 	if err == nil {
-		t.Fatalf("ensure stopped container should try to start the container and fail")
+		t.Fatalf("Ensure stopped container should try to start the container and fail")
 	}
 
 	if !strings.Contains(err.Error(), "Is the docker daemon running?") {
-		t.Fatalf("ensuring stopped container should fail to contact non existing runtime, got: %v", err)
+		t.Fatalf("Ensuring stopped container should fail to contact non existing runtime, got: %v", err)
 	}
 }
 
@@ -1718,10 +1465,71 @@ func TestEnsureCurrentContainerNonExisting(t *testing.T) {
 	}
 
 	if _, err := c.ensureCurrentContainer(foo, hcc); err != nil {
-		t.Fatalf("ensure stopped container should not fail on non-existing container, got: %v", err)
+		t.Fatalf("Ensure stopped container should not fail on non-existing container, got: %v", err)
 	}
 
 	if len(c.currentState) > 0 {
-		t.Fatalf("ensuring removed container should remove it from current state to trigger creation")
+		t.Fatalf("Ensuring removed container should remove it from current state to trigger creation")
+	}
+}
+
+func fakeRuntime() *runtime.Fake {
+	return &runtime.Fake{
+		CreateF: func(config *types.ContainerConfig) (string, error) {
+			return foo, nil
+		},
+		StatusF: func(id string) (types.ContainerStatus, error) {
+			return types.ContainerStatus{
+				ID: bar,
+			}, nil
+		},
+		DeleteF: func(id string) error {
+			return nil
+		},
+		StartF: func(id string) error {
+			return nil
+		},
+		StopF: func(id string) error {
+			return nil
+		},
+	}
+}
+
+func failingStartRuntime() *runtime.Fake {
+	r := fakeRuntime()
+	r.StartF = func(string) error {
+		return fmt.Errorf("starting")
+	}
+
+	return r
+}
+
+//nolint:thelper // This is actually a test function.
+func testCopyingRuntime(t *testing.T, called *bool, containerID string, config map[string]string) *runtime.Fake {
+	r := fakeRuntime()
+	r.CopyF = func(id string, files []*types.File) error {
+		if id != containerID {
+			t.Errorf("Should copy to configuration container %q, not to %q", containerID, id)
+		}
+
+		if len(files) != len(config) {
+			t.Fatalf("Should copy just one file")
+		}
+
+		if files[0].Content != bar {
+			t.Fatalf("Expected content 'bar', got %q", files[0].Content)
+		}
+
+		*called = true
+
+		return nil
+	}
+
+	return r
+}
+
+func asRuntime(r *runtime.Fake) *runtime.FakeConfig {
+	return &runtime.FakeConfig{
+		Runtime: r,
 	}
 }

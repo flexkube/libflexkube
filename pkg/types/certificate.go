@@ -22,16 +22,16 @@ type Certificate string
 func (c *Certificate) UnmarshalJSON(data []byte) error {
 	p, err := strconv.Unquote(string(data))
 	if err != nil {
-		return fmt.Errorf("failed to unquote string: %w", err)
+		return fmt.Errorf("unquoting string: %w", err)
 	}
 
 	der, _ := pem.Decode([]byte(p))
 	if der == nil {
-		return fmt.Errorf("failed to decode PEM format")
+		return fmt.Errorf("decoding PEM format")
 	}
 
 	if _, err := x509.ParseCertificate(der.Bytes); err != nil {
-		return fmt.Errorf("failed to parse certificate: %w", err)
+		return fmt.Errorf("parsing certificate: %w", err)
 	}
 
 	*c = Certificate(p)

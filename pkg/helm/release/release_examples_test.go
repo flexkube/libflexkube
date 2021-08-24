@@ -32,13 +32,13 @@ labels:
 
 	r, err := config.New()
 	if err != nil {
-		fmt.Printf("creating release object failed: %v\n", err)
+		fmt.Printf("Creating release object failed: %v\n", err)
 
 		return
 	}
 
 	if err := r.Install(); err != nil {
-		fmt.Printf("installing release failed: %v\n", err)
+		fmt.Printf("Installing release failed: %v\n", err)
 
 		return
 	}

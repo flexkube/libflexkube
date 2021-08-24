@@ -7,7 +7,7 @@ builds:
   - -s
   - -w
   flags:
-  - -buildmode=exe
+  - -trimpath
   goarch:
   - amd64
   goos:

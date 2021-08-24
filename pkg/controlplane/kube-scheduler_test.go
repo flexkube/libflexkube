@@ -32,7 +32,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 
 	o, err := ks.New()
 	if err != nil {
-		t.Fatalf("new should not return error, got: %v", err)
+		t.Fatalf("New should not return error, got: %v", err)
 	}
 
 	hcc, err := o.ToHostConfiguredContainer()
@@ -57,17 +57,17 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 
 	k, err := ks.New()
 	if err == nil {
-		t.Errorf("attempting to create kube-scheduler from empty config should fail")
+		t.Errorf("Attempting to create kube-scheduler from empty config should fail")
 	}
 
 	if k != nil {
-		t.Fatalf("failed attempt of creating kube-scheduler should not return kube-scheduler object")
+		t.Fatalf("Failed attempt of creating kube-scheduler should not return kube-scheduler object")
 	}
 }
 
 // Validate() tests.
 //
-//nolint:funlen
+//nolint:funlen // Just many test cases.
 func TestKubeSchedulerValidate(t *testing.T) {
 	t.Parallel()
 
@@ -133,11 +133,11 @@ func TestKubeSchedulerValidate(t *testing.T) {
 
 			err := c.Config.Validate()
 			if !c.Error && err != nil {
-				t.Errorf("didn't expect error, got: %v", err)
+				t.Errorf("Didn't expect error, got: %v", err)
 			}
 
 			if c.Error && err == nil {
-				t.Errorf("expected error")
+				t.Errorf("Expected error")
 			}
 		})
 	}

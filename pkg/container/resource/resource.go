@@ -40,7 +40,7 @@ func (c *Containers) New() (types.Resource, error) {
 
 	ci, err := co.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed creating containers object: %w", err)
+		return nil, fmt.Errorf("creating containers object: %w", err)
 	}
 
 	return &containers{

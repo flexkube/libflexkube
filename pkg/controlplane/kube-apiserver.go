@@ -257,7 +257,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 	}
 
 	if err := k.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
+		return nil, fmt.Errorf("validating Kubernetes API server configuration: %w", err)
 	}
 
 	return &kubeAPIServer{
@@ -285,7 +285,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 //
 // TODO: Add validation of certificates if specified.
 func (k *KubeAPIServer) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	v := validator{
 		Common: k.Common,

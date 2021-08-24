@@ -71,7 +71,7 @@ func TestCertificatePickNil(t *testing.T) {
 	e := types.Certificate("baz")
 
 	if c.Pick(d, e) != "bar" {
-		t.Fatalf("first non empty certificate should be picked")
+		t.Fatalf("First non empty certificate should be picked")
 	}
 }
 
@@ -82,6 +82,6 @@ func TestCertificatePick(t *testing.T) {
 	e := types.Certificate("baz")
 
 	if d.Pick(e) != "foo" {
-		t.Fatalf("first non empty certificate should be picked")
+		t.Fatalf("First non empty certificate should be picked")
 	}
 }

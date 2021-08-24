@@ -136,7 +136,7 @@ func (c *Container) New() (Interface, error) {
 	}
 
 	if err := nc.selectRuntime(); err != nil {
-		return nil, fmt.Errorf("unable to determine container runtime: %w", err)
+		return nil, fmt.Errorf("determining container runtime: %w", err)
 	}
 
 	return nc, nil
@@ -167,7 +167,7 @@ func (c *container) selectRuntime() error {
 	// TODO once we add more runtimes, if there is more than one defined, return an error here.
 	r, err := c.runtimeConfig.New()
 	if err != nil {
-		return fmt.Errorf("selecting container runtime failed: %w", err)
+		return fmt.Errorf("selecting container runtime: %w", err)
 	}
 
 	c.runtime = r
@@ -179,7 +179,7 @@ func (c *container) selectRuntime() error {
 func (c *container) Create() (InstanceInterface, error) {
 	id, err := c.runtime.Create(&c.config)
 	if err != nil {
-		return nil, fmt.Errorf("creating container failed: %w", err)
+		return nil, fmt.Errorf("creating container: %w", err)
 	}
 
 	return &containerInstance{
@@ -217,12 +217,12 @@ func (c *container) RuntimeConfig() runtime.Config {
 func (c *container) UpdateStatus() error {
 	ci, err := c.FromStatus()
 	if err != nil {
-		return fmt.Errorf("failed creating container instance: %w", err)
+		return fmt.Errorf("creating container instance: %w", err)
 	}
 
 	s, err := ci.Status()
 	if err != nil {
-		return fmt.Errorf("failed checking container status: %w", err)
+		return fmt.Errorf("checking container status: %w", err)
 	}
 
 	c.status = s

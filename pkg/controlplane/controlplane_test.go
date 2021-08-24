@@ -143,7 +143,7 @@ func TestControlplaneDestroyNoState(t *testing.T) {
 	y += `destroy: true`
 
 	if _, err := FromYaml([]byte(y)); err == nil {
-		t.Fatalf("creating controlplane config to destroy without state should fail")
+		t.Fatalf("Creating controlplane config to destroy without state should fail")
 	}
 }
 
@@ -158,7 +158,7 @@ state:
 `
 
 	if _, err := FromYaml([]byte(y)); err == nil {
-		t.Fatalf("creating controlplane config to destroy with invalid state should fail")
+		t.Fatalf("Creating controlplane config to destroy with invalid state should fail")
 	}
 }
 
@@ -183,7 +183,7 @@ state:
 `
 
 	if _, err := FromYaml([]byte(y)); err != nil {
-		t.Fatalf("creating controlplane config to destroy with only state should succeed, got: %v", err)
+		t.Fatalf("Creating controlplane config to destroy with only state should succeed, got: %v", err)
 	}
 }
 
@@ -198,7 +198,7 @@ func TestControlplaneNewPKIIntegration(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating PKI should succeed, got: %v", err)
+		t.Fatalf("Generating PKI should succeed, got: %v", err)
 	}
 
 	c := &Controlplane{
@@ -211,6 +211,6 @@ func TestControlplaneNewPKIIntegration(t *testing.T) {
 	}
 
 	if _, err := c.New(); err != nil {
-		t.Fatalf("creating new controlplane with valid PKI should succeed, got: %v", err)
+		t.Fatalf("Creating new controlplane with valid PKI should succeed, got: %v", err)
 	}
 }

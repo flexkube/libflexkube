@@ -219,7 +219,7 @@ func (p *Pool) propagateKubelet(k *Kubelet) {
 // New validates kubelet pool configuration and fills all members with configured values.
 func (p *Pool) New() (types.Resource, error) {
 	if err := p.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate pool configuration: %w", err)
+		return nil, fmt.Errorf("validating pool configuration: %w", err)
 	}
 
 	cc := &container.Containers{
@@ -232,13 +232,13 @@ func (p *Pool) New() (types.Resource, error) {
 
 		p.propagateKubelet(k)
 
-		kubelet, _ := k.New()
-		kubeletHcc, _ := kubelet.ToHostConfiguredContainer()
+		kubelet, _ := k.New()                                //nolint:errcheck // This is checked in Validate().
+		kubeletHcc, _ := kubelet.ToHostConfiguredContainer() //nolint:errcheck // This is checked in Validate().
 
 		cc.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
-	c, _ := cc.New()
+	c, _ := cc.New() //nolint:errcheck // This is checked in Validate().
 
 	return &pool{
 		containers: c,
@@ -247,7 +247,7 @@ func (p *Pool) New() (types.Resource, error) {
 
 // Validate validates Pool configuration.
 func (p *Pool) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	cc := &container.Containers{
 		PreviousState: p.State,
@@ -262,14 +262,14 @@ func (p *Pool) Validate() error {
 
 		kubelet, err := k.New()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to create kubelet object %q: %w", i, err))
+			errors = append(errors, fmt.Errorf("creating kubelet object %q: %w", i, err))
 
 			continue
 		}
 
 		hcc, err := kubelet.ToHostConfiguredContainer()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to generate kubelet %q container configuration: %w", i, err))
+			errors = append(errors, fmt.Errorf("generating kubelet %q container configuration: %w", i, err))
 
 			continue
 		}
@@ -283,7 +283,7 @@ func (p *Pool) Validate() error {
 	}
 
 	if _, err := cc.New(); !noContainersDefined && err != nil {
-		errors = append(errors, fmt.Errorf("failed validating containers configuration: %w", err))
+		errors = append(errors, fmt.Errorf("validating containers configuration: %w", err))
 	}
 
 	return errors.Return()

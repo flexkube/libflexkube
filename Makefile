@@ -4,14 +4,14 @@ LD_FLAGS="-extldflags '-static'"
 
 # Go parameters.
 GOCMD=env GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) go
-GOTEST=$(GOCMD) test -covermode=atomic -buildmode=exe
+GOTEST=$(GOCMD) test -covermode=atomic
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GORUN=$(GOCMD) run
-GOBUILD=$(GOCMD) build -v -buildmode=exe -ldflags $(LD_FLAGS)
+GOBUILD=$(GOCMD) build -v -ldflags $(LD_FLAGS) -trimpath
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.41.1
+GOLANGCI_LINT_VERSION=v1.42.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -46,10 +46,10 @@ VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 COVERPROFILE=c.out
 
 .PHONY: all
-all: build build-test test lint
+all: build build-test test lint semgrep
 
 .PHONY: all-cover
-all-cover: build build-test test-cover lint
+all-cover: build build-test test-cover lint semgrep
 
 .PHONY: build
 build:
@@ -316,10 +316,11 @@ libvirt-download-image:
 	(test -f libvirt/flatcar_production_qemu_image.img.bz2 && bunzip2 libvirt/flatcar_production_qemu_image.img.bz2 && rm libvirt/flatcar_production_qemu_image.img.bz2) || true
 	qemu-img resize libvirt/flatcar_production_qemu_image.img +5G
 
-.PHONY: test-static
-test-static:
-	$(GORUN) honnef.co/go/tools/cmd/staticcheck $(GO_PACKAGES)
-
 .PHONY: terraform-fmt
 terraform-fmt:
 	for j in $$(for i in $$(find -name *.tf 2>/dev/null | grep -v .terraform); do dirname $$i; done | sort  | uniq); do terraform fmt -check $$j; done
+
+.PHONY: semgrep
+semgrep: SEMGREP_BIN=semgrep
+semgrep:
+	@if ! which $(SEMGREP_BIN) >/dev/null 2>&1; then echo "$(SEMGREP_BIN) binary not found, skipping extra linting"; else $(SEMGREP_BIN); fi

@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.41.1
+    container: golangci/golangci-lint:v1.42.0
     steps:
       - uses: actions/cache@v2
         with:
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.16'
+          go-version: '1.17'
       - uses: actions/cache@v2
         with:
           path: |
@@ -105,3 +105,9 @@ jobs:
       - run: |
           terraform -chdir=libvirt init
           make test-terraform
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Use dedicated action for nice integration with GitHub.
+      - uses: returntocorp/semgrep-action@v1

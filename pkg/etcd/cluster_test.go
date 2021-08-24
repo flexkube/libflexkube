@@ -23,13 +23,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
-// FromYAML() tests.
-//
-//nolint:funlen
-func TestClusterFromYaml(t *testing.T) {
-	t.Parallel()
-
-	c := `
+const yamlConfigTemplate = `
 ssh:
   user: "core"
   port: 2222
@@ -56,6 +50,10 @@ members:
     serverAddress: 10.0.2.15
 `
 
+// FromYAML() tests.
+func TestClusterFromYaml(t *testing.T) {
+	t.Parallel()
+
 	data := struct {
 		Certificate       string
 		MemberCertificate string
@@ -68,7 +66,7 @@ members:
 
 	var buf bytes.Buffer
 
-	tpl := template.Must(template.New("c").Parse(c))
+	tpl := template.Must(template.New("c").Parse(yamlConfigTemplate))
 	if err := tpl.Execute(&buf, data); err != nil {
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
@@ -190,7 +188,7 @@ func TestExistingEndpoints(t *testing.T) {
 		},
 	}
 
-	e := []string{"1.1.1.1:2379"} //nolint:ifshort
+	e := []string{"1.1.1.1:2379"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if ee := c.getExistingEndpoints(); !reflect.DeepEqual(e, ee) {
 		t.Fatalf("Expected %+v, got %+v", e, ee)
@@ -345,7 +343,7 @@ func TestMembersToRemove(t *testing.T) {
 		containers: co,
 	}
 
-	e := []string{"foo"} //nolint:ifshort
+	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if r := c.membersToRemove(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)
@@ -375,7 +373,7 @@ func TestMembersToAdd(t *testing.T) {
 		containers: co,
 	}
 
-	e := []string{"foo"} //nolint:ifshort
+	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if r := c.membersToAdd(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)
@@ -569,8 +567,9 @@ func TestDeployUpdateMembers(t *testing.T) {
 		t.Fatalf("Deploying should trigger updateMembers and fail")
 	}
 
-	if !strings.Contains(err.Error(), "failed getting etcd client") {
-		t.Fatalf("Expected failure in client creation, got: %v", err)
+	expectedErrorMessage := "getting etcd client"
+	if !strings.Contains(err.Error(), expectedErrorMessage) {
+		t.Fatalf("Expected failure in client creation by error containing %q, got: %v", expectedErrorMessage, err)
 	}
 }
 
@@ -586,7 +585,7 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating PKI should succeed, got: %v", err)
+		t.Fatalf("Generating PKI should succeed, got: %v", err)
 	}
 
 	c := &Cluster{
@@ -599,6 +598,6 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 	}
 
 	if _, err := c.New(); err != nil {
-		t.Fatalf("creating new cluster with valid PKI should succeed, got: %v", err)
+		t.Fatalf("Creating new cluster with valid PKI should succeed, got: %v", err)
 	}
 }

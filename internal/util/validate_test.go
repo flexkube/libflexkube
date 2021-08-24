@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestValidateError(t *testing.T) {
+func TestValidateErrors(t *testing.T) {
 	t.Parallel()
 
 	err := func() error {
-		errors := ValidateError{
+		errors := ValidateErrors{
 			fmt.Errorf("first error"),
 		}
 
@@ -18,7 +18,7 @@ func TestValidateError(t *testing.T) {
 		return errors.Return()
 	}
 
-	if err == nil {
+	if err() == nil {
 		t.Fatalf("Error shouldn't be nil")
 	}
 }

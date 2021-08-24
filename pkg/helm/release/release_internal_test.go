@@ -15,11 +15,11 @@ func TestRetryOnEtcdErrorRetry(t *testing.T) {
 
 		return fmt.Errorf("etcdserver: foo")
 	}); err == nil {
-		t.Errorf("retry should return error if all attempts failed")
+		t.Errorf("Retry should return error if all attempts failed")
 	}
 
 	if calls < 2 {
-		t.Errorf("function should be at least called twice on etcd error")
+		t.Errorf("Function should be at least called twice on etcd error")
 	}
 }
 
@@ -36,16 +36,15 @@ func TestRetryOnEtcdErrorDifferentError(t *testing.T) {
 		return expectedError
 	})
 	if err == nil {
-		t.Errorf("retry should return error if all attempts failed")
+		t.Errorf("Retry should return error if all attempts failed")
 	}
 
 	if calls != 1 {
-		t.Errorf("function should be called only once if the error returned is not etcd error")
+		t.Errorf("Function should be called only once if the error returned is not etcd error")
 	}
 
-	// Helm errors cannot be unwrapped.
-	if err != expectedError { //nolint:errorlint
-		t.Fatalf("retrying did not retain original error, got: %v", err)
+	if err != expectedError { //nolint:errorlint // Helm errors cannot be unwrapped.
+		t.Fatalf("Retrying did not retain original error, got: %v", err)
 	}
 }
 
@@ -59,11 +58,11 @@ func TestRetryOnEtcdErrorNoError(t *testing.T) {
 
 		return nil
 	}); err != nil {
-		t.Errorf("retry should not return error, got: %v", err)
+		t.Errorf("Retry should not return error, got: %v", err)
 	}
 
 	if calls != 1 {
-		t.Errorf("function should be called only once if no error is returned")
+		t.Errorf("Function should be called only once if no error is returned")
 	}
 }
 
@@ -81,10 +80,10 @@ func TestRetryOnEtcdErrorTranscientError(t *testing.T) {
 
 		return nil
 	}); err != nil {
-		t.Errorf("retry should retry and not return error, got: %v", err)
+		t.Errorf("Retry should retry and not return error, got: %v", err)
 	}
 
 	if calls != 2 {
-		t.Errorf("function should return when no error is returned")
+		t.Errorf("Function should return when no error is returned")
 	}
 }

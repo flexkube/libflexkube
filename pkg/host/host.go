@@ -35,18 +35,18 @@ type hostConnected struct {
 // New validates Host configuration and sets configured transport method.
 func (h *Host) New() (transport.Interface, error) {
 	if err := h.Validate(); err != nil {
-		return nil, fmt.Errorf("host configuration validation failed: %w", err)
+		return nil, fmt.Errorf("validating host configuration: %w", err)
 	}
 
 	// TODO that seems ugly, is there a better way to generalize it?
 	var t transport.Interface
 
 	if h.DirectConfig != nil {
-		t, _ = h.DirectConfig.New()
+		t, _ = h.DirectConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	if h.SSHConfig != nil {
-		t, _ = h.SSHConfig.New()
+		t, _ = h.SSHConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	return &host{
@@ -56,10 +56,10 @@ func (h *Host) New() (transport.Interface, error) {
 
 // Validate validates host configuration.
 func (h *Host) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if err := h.DirectConfig.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("direct config validation failed: %w", err))
+		errors = append(errors, fmt.Errorf("validating direct config: %w", err))
 	}
 
 	if h.DirectConfig != nil && h.SSHConfig != nil {
@@ -72,7 +72,7 @@ func (h *Host) Validate() error {
 
 	if h.SSHConfig != nil {
 		if err := h.SSHConfig.Validate(); err != nil {
-			errors = append(errors, fmt.Errorf("host ssh config invalid: %w", err))
+			errors = append(errors, fmt.Errorf("validating SSH config: %w", err))
 		}
 	}
 
@@ -85,7 +85,7 @@ func (h *Host) Validate() error {
 func (h *host) Connect() (transport.Connected, error) {
 	c, err := h.transport.Connect()
 	if err != nil {
-		return nil, fmt.Errorf("connecting failed: %w", err)
+		return nil, fmt.Errorf("connecting: %w", err)
 	}
 
 	return &hostConnected{

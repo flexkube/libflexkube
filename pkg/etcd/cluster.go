@@ -153,7 +153,7 @@ func (c *Cluster) propagateMember(i string, m *MemberConfig) {
 // New validates etcd cluster configuration and fills members with default and computed values.
 func (c *Cluster) New() (types.Resource, error) {
 	if err := c.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate cluster configuration: %w", err)
+		return nil, fmt.Errorf("validating cluster configuration: %w", err)
 	}
 
 	cc := container.Containers{
@@ -169,15 +169,15 @@ func (c *Cluster) New() (types.Resource, error) {
 		m := m
 		c.propagateMember(n, &m)
 
-		mem, _ := m.New()
-		hcc, _ := mem.ToHostConfiguredContainer()
+		mem, _ := m.New()                         //nolint:errcheck // We check it in Validate().
+		hcc, _ := mem.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
 		cc.DesiredState[n] = hcc
 
 		cluster.members[n] = mem
 	}
 
-	co, _ := cc.New()
+	co, _ := cc.New() //nolint:errcheck // We check it in Validate().
 
 	cluster.containers = co
 
@@ -190,7 +190,7 @@ func (c *Cluster) Validate() error {
 		return fmt.Errorf("at least one member must be defined when state is empty")
 	}
 
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c.CACertificate != "" {
 		caCert := &pki.Certificate{
@@ -213,14 +213,14 @@ func (c *Cluster) Validate() error {
 
 		mem, err := m.New()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to validate member '%s': %w", n, err))
+			errors = append(errors, fmt.Errorf("validating member %q: %w", n, err))
 
 			continue
 		}
 
 		hcc, err := mem.ToHostConfiguredContainer()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to validate member '%s' container: %w", n, err))
+			errors = append(errors, fmt.Errorf("validating member %q container: %w", n, err))
 
 			continue
 		}
@@ -229,7 +229,7 @@ func (c *Cluster) Validate() error {
 	}
 
 	if _, err := cc.New(); err != nil {
-		errors = append(errors, fmt.Errorf("failed validating containers object: %w", err))
+		errors = append(errors, fmt.Errorf("validating containers object: %w", err))
 	}
 
 	return errors.Return()
@@ -248,7 +248,7 @@ func (c *cluster) StateToYaml() ([]byte, error) {
 // CheckCurrentState refreshes current state of the cluster.
 func (c *cluster) CheckCurrentState() error {
 	if err := c.containers.CheckCurrentState(); err != nil {
-		return fmt.Errorf("failed checking current state of etcd cluster: %w", err)
+		return fmt.Errorf("checking current state of etcd cluster: %w", err)
 	}
 
 	return nil
@@ -280,12 +280,12 @@ func (c *cluster) firstMember() (Member, error) {
 func (c *cluster) getClient() (etcdClient, error) {
 	m, err := c.firstMember()
 	if err != nil {
-		return nil, fmt.Errorf("failed getting member object: %w", err)
+		return nil, fmt.Errorf("getting member object: %w", err)
 	}
 
 	endpoints, err := m.forwardEndpoints(c.getExistingEndpoints())
 	if err != nil {
-		return nil, fmt.Errorf("failed forwarding endpoints: %w", err)
+		return nil, fmt.Errorf("forwarding endpoints: %w", err)
 	}
 
 	return m.getEtcdClient(endpoints)
@@ -336,13 +336,13 @@ func (c *cluster) updateMembers(cli etcdClient) error {
 		}
 
 		if err := m.remove(cli); err != nil {
-			return fmt.Errorf("failed removing member: %w", err)
+			return fmt.Errorf("removing member: %w", err)
 		}
 	}
 
 	for _, m := range c.membersToAdd() {
 		if err := c.members[m].add(cli); err != nil {
-			return fmt.Errorf("failed adding member: %w", err)
+			return fmt.Errorf("adding member: %w", err)
 		}
 	}
 
@@ -358,15 +358,15 @@ func (c *cluster) Deploy() error {
 		// Build client, so we can pass it around.
 		cli, err := c.getClient()
 		if err != nil {
-			return fmt.Errorf("failed getting etcd client: %w", err)
+			return fmt.Errorf("getting etcd client: %w", err)
 		}
 
 		if err := c.updateMembers(cli); err != nil {
-			return fmt.Errorf("failed to update members before deploying: %w", err)
+			return fmt.Errorf("updating members before deploying: %w", err)
 		}
 
 		if err := cli.Close(); err != nil {
-			return fmt.Errorf("failed to close etcd client: %w", err)
+			return fmt.Errorf("closing etcd client: %w", err)
 		}
 	}
 

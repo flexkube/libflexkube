@@ -14,7 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-func GetPool(t *testing.T) types.Resource {
+func getPool(t *testing.T) types.Resource {
 	t.Helper()
 
 	y := `
@@ -89,14 +89,14 @@ kubelets:
 func TestPoolFromYaml(t *testing.T) {
 	t.Parallel()
 
-	GetPool(t)
+	getPool(t)
 }
 
 // StateToYaml() tests.
 func TestPoolStateToYAML(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if _, err := p.StateToYaml(); err != nil {
 		t.Fatalf("Dumping state to YAML should work, got: %v", err)
@@ -107,7 +107,7 @@ func TestPoolStateToYAML(t *testing.T) {
 func TestPoolCheckCurrentState(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if err := p.CheckCurrentState(); err != nil {
 		t.Fatalf("Checking current state of empty pool should work, got: %v", err)
@@ -118,7 +118,7 @@ func TestPoolCheckCurrentState(t *testing.T) {
 func TestPoolContainers(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if c := p.Containers(); c == nil {
 		t.Fatalf("Containers() should return non-nil value")
@@ -129,17 +129,17 @@ func TestPoolContainers(t *testing.T) {
 func TestPoolDeploy(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if err := p.Deploy(); err == nil {
 		t.Fatalf("Deploying in testing environment should fail")
 	}
 }
 
-func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
+func Test_Pool_propagates_extra_mounts_to_members_without_extra_mounts_defined(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
@@ -150,10 +150,16 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 	}
 
 	if !found {
-		t.Errorf("kubelet foo should have propagated extra mount")
+		t.Fatal("Kubelet foo should have propagated extra mount")
 	}
+}
 
-	found = false
+func Test_Pool_retains_individual_members_extra_mounts(t *testing.T) {
+	t.Parallel()
+
+	p := getPool(t)
+
+	found := false
 
 	for _, v := range p.Containers().DesiredState()["1"].Container.Config.Mounts {
 		if v.Source == "/doh/" && v.Target == "/tmp" {
@@ -161,19 +167,19 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 		}
 
 		if v.Source == "/foo/" && v.Target == "/bar" {
-			t.Errorf("kubelet doh should not have propagated mounts")
+			t.Errorf("Kubelet doh should not have propagated mounts")
 		}
 	}
 
 	if !found {
-		t.Fatalf("kubelet doh should have directly configured extra mount")
+		t.Fatalf("Kubelet doh should have directly configured extra mount")
 	}
 }
 
 func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
@@ -184,14 +190,14 @@ func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *
 	}
 
 	if !found {
-		t.Errorf("kubelet foo should have propagated extra arguments")
+		t.Errorf("Kubelet foo should have propagated extra arguments")
 	}
 }
 
 func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
@@ -201,12 +207,12 @@ func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
 		}
 
 		if arg == "--baz" {
-			t.Errorf("kubelet doh should not have propagated arguments")
+			t.Errorf("Kubelet doh should not have propagated arguments")
 		}
 	}
 
 	if !found {
-		t.Fatalf("kubelet doh should have directly configured extra arguments")
+		t.Fatalf("Kubelet doh should have directly configured extra arguments")
 	}
 }
 
@@ -218,7 +224,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 	}
 
 	if err := pk.Generate(); err != nil {
-		t.Fatalf("generating PKI: %v", err)
+		t.Fatalf("Generating PKI: %v", err)
 	}
 
 	p := &kubelet.Pool{
@@ -244,7 +250,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 	}
 
 	if _, err := p.New(); err != nil {
-		t.Fatalf("creating kubelet pool with PKI integration should work, got: %v", err)
+		t.Fatalf("Creating kubelet pool with PKI integration should work, got: %v", err)
 	}
 }
 
@@ -256,7 +262,7 @@ func TestPoolNoKubelets(t *testing.T) {
 	}
 
 	if err := pk.Generate(); err != nil {
-		t.Fatalf("generating PKI: %v", err)
+		t.Fatalf("Generating PKI: %v", err)
 	}
 
 	p := &kubelet.Pool{
@@ -268,6 +274,6 @@ func TestPoolNoKubelets(t *testing.T) {
 	}
 
 	if _, err := p.New(); err == nil {
-		t.Fatal("creating kubelet pool with no kubelets and no state defined should fail")
+		t.Fatal("Creating kubelet pool with no kubelets and no state defined should fail")
 	}
 }

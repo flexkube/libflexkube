@@ -92,7 +92,7 @@ bar: |
   -----END RSA PRIVATE KEY-----
 `
 	if err := yaml.Unmarshal([]byte(privateKey), &Foo{}); err == nil {
-		t.Fatalf("parsing not PEM format should fail")
+		t.Fatalf("Parsing not PEM format should fail")
 	}
 }
 
@@ -105,7 +105,7 @@ func TestPrivateKeyPickNil(t *testing.T) {
 	e := types.PrivateKey("baz")
 
 	if c.Pick(d, e) != "bar" {
-		t.Fatalf("first non empty private key should be picked")
+		t.Fatalf("First non empty private key should be picked")
 	}
 }
 
@@ -116,6 +116,6 @@ func TestPrivateKeyPick(t *testing.T) {
 	e := types.PrivateKey("baz")
 
 	if d.Pick(e) != "foo" {
-		t.Fatalf("first non empty private key should be picked")
+		t.Fatalf("First non empty private key should be picked")
 	}
 }

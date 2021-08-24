@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package main_test
@@ -73,7 +74,7 @@ func parseInt(t *testing.T, envVar string, defaultValue int) int {
 
 	i, err := strconv.Atoi(iRaw)
 	if err != nil {
-		t.Fatalf("parsing %q with value %q to int: %v", envVar, iRaw, err)
+		t.Fatalf("Parsing %q with value %q to int: %v", envVar, iRaw, err)
 	}
 
 	return i
@@ -140,7 +141,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo
+//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo // Test function, splitting it decreases readability.
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 
@@ -159,7 +160,7 @@ func TestE2e(t *testing.T) {
 
 	ip, ipnet, err := net.ParseCIDR(testConfig.NodesCIDR)
 	if err != nil {
-		t.Fatalf("parsing nodes CIDR %q: %v", testConfig.NodesCIDR, err)
+		t.Fatalf("Parsing nodes CIDR %q: %v", testConfig.NodesCIDR, err)
 	}
 
 	// Calculate controllers IPs and names.

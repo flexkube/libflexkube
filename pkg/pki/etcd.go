@@ -67,7 +67,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 
 	// etcd CA Certificate
 	if err := buildAndGenerate(cr); err != nil {
-		return fmt.Errorf("failed to generate etcd CA certificate: %w", err)
+		return fmt.Errorf("generating etcd CA certificate: %w", err)
 	}
 
 	crs := []*certificateRequest{}
@@ -100,7 +100,7 @@ func (e *Etcd) initializeCertificatesMaps(servers map[string]string) {
 }
 
 // certificateFromCNIPMap produces a certificate from given common name and IP address.
-func certificateFromCNIPMap(commonName string, ip string, server bool) *Certificate {
+func certificateFromCNIPMap(commonName, ip string, server bool) *Certificate {
 	c := &Certificate{
 		CommonName: commonName,
 		KeyUsage:   clientUsage(),

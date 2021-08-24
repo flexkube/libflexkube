@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	// stopTimeout is how long we wait when gracefully stopping the container before force-killing it.
+	// How long we wait when gracefully stopping the container before force-killing it.
 	stopTimeout = 30 * time.Second
 )
 
@@ -43,7 +43,7 @@ type Config struct {
 // dockerClient is a wrapper interface over
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
-type dockerClient interface { //nolint:dupl
+type dockerClient interface { //nolint:dupl // Test version looks very similar.
 	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
@@ -108,7 +108,7 @@ func (d *docker) pullImageIfNotPresent(image string) error {
 	// TODO make it configurable?
 	id, err := d.imageID(image)
 	if err != nil {
-		return fmt.Errorf("failed checking for image presence: %w", err)
+		return fmt.Errorf("checking for image presence: %w", err)
 	}
 
 	if id != "" {
@@ -127,7 +127,7 @@ func buildPorts(ports []types.PortMap) (nat.PortMap, nat.PortSet, error) {
 	for _, ip := range ports {
 		port, err := nat.NewPort(ip.Protocol, strconv.Itoa(ip.Port))
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed mapping ports: %w", err)
+			return nil, nil, fmt.Errorf("mapping ports: %w", err)
 		}
 
 		if _, exists := portBindings[port]; !exists {
@@ -167,7 +167,7 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 	// TODO That should be validated at ContainerConfig level!
 	portBindings, exposedPorts, err := buildPorts(config.Ports)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed building ports: %w", err)
+		return nil, nil, fmt.Errorf("building ports: %w", err)
 	}
 
 	u := config.User
@@ -207,7 +207,7 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 // Start starts Docker container.
 func (d *docker) Create(config *types.ContainerConfig) (string, error) {
 	if err := d.pullImageIfNotPresent(config.Image); err != nil {
-		return "", fmt.Errorf("failed pulling image: %w", err)
+		return "", fmt.Errorf("pulling image: %w", err)
 	}
 
 	dockerConfig, hostConfig, err := convertContainerConfig(config)
@@ -252,7 +252,7 @@ func (d *docker) Status(id string) (types.ContainerStatus, error) {
 			return s, nil
 		}
 
-		return s, fmt.Errorf("inspecting container failed: %w", err)
+		return s, fmt.Errorf("inspecting container: %w", err)
 	}
 
 	s.Status = status.State.Status
@@ -271,7 +271,7 @@ func (d *docker) Delete(id string) error {
 func (d *docker) Copy(id string, files []*types.File) error {
 	t, err := filesToTar(files)
 	if err != nil {
-		return fmt.Errorf("failed packing files to TAR archive: %w", err)
+		return fmt.Errorf("packing files to TAR archive: %w", err)
 	}
 
 	return d.cli.CopyToContainer(d.ctx, id, "/", t, dockertypes.CopyToContainerOptions{})
@@ -324,12 +324,12 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 
 	for {
 		header, err := tr.Next()
-		if err == io.EOF { //nolint:errorlint
+		if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 			break
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("failed unpacking tar header: %w", err)
+			return nil, fmt.Errorf("unpacking tar header: %w", err)
 		}
 
 		if header.Typeflag != tar.TypeReg {
@@ -337,7 +337,7 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 		}
 
 		if _, err := buf.ReadFrom(tr); err != nil {
-			return nil, fmt.Errorf("failed reading from tar archive: %w", err)
+			return nil, fmt.Errorf("reading from tar archive: %w", err)
 		}
 
 		f := &types.File{
@@ -378,7 +378,7 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 	for _, p := range srcPaths {
 		rc, _, err := d.cli.CopyFromContainer(d.ctx, id, p)
 		if err != nil && !client.IsErrNotFound(err) {
-			return nil, fmt.Errorf("failed copying from container: %w", err)
+			return nil, fmt.Errorf("copying from container: %w", err)
 		}
 
 		// File does not exist.
@@ -388,11 +388,11 @@ func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 
 		fs, err := tarToFiles(rc)
 		if err != nil {
-			return nil, fmt.Errorf("failed extracting file %s from archive: %w", p, err)
+			return nil, fmt.Errorf("extracting file %s from archive: %w", p, err)
 		}
 
 		if err := rc.Close(); err != nil {
-			return nil, fmt.Errorf("failed closing file: %w", err)
+			return nil, fmt.Errorf("closing file: %w", err)
 		}
 
 		fs[0].Path = p
@@ -422,7 +422,7 @@ func sanitizeImageName(image string) string {
 func (d *docker) imageID(image string) (string, error) {
 	images, err := d.cli.ImageList(d.ctx, dockertypes.ImageListOptions{})
 	if err != nil {
-		return "", fmt.Errorf("listing docker images failed: %w", err)
+		return "", fmt.Errorf("listing docker images: %w", err)
 	}
 
 	name := sanitizeImageName(image)
@@ -442,11 +442,11 @@ func (d *docker) imageID(image string) (string, error) {
 func (d *docker) pullImage(image string) error {
 	out, err := d.cli.ImagePull(d.ctx, image, dockertypes.ImagePullOptions{})
 	if err != nil {
-		return fmt.Errorf("pulling image failed: %w", err)
+		return fmt.Errorf("pulling image: %w", err)
 	}
 
 	if _, err := io.Copy(ioutil.Discard, out); err != nil {
-		return fmt.Errorf("failed to discard pulling messages: %w", err)
+		return fmt.Errorf("discarding pulling messages: %w", err)
 	}
 
 	return out.Close()

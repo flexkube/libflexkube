@@ -95,10 +95,10 @@ func TestCheckNodeReadyFakeKubeconfig(t *testing.T) {
 	e, err := c.CheckNodeReady("foo")()
 
 	if e == true {
-		t.Errorf("check should never return true with fake kubeconfig")
+		t.Errorf("Check should never return true with fake kubeconfig")
 	}
 
 	if err != nil {
-		t.Errorf("check should swallow all errors and just return boolean value")
+		t.Errorf("Check should swallow all errors and just return boolean value")
 	}
 }

@@ -50,7 +50,7 @@ func (d *direct) Connect() (transport.Connected, error) {
 
 func (d *direct) ForwardTCP(address string) (string, error) {
 	if _, _, err := net.SplitHostPort(address); err != nil {
-		return "", fmt.Errorf("failed to validate address '%s': %w", address, err)
+		return "", fmt.Errorf("validating address %q: %w", address, err)
 	}
 
 	return address, nil

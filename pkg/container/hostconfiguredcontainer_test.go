@@ -26,11 +26,11 @@ func TestWithHook(t *testing.T) {
 
 		return nil
 	}, nil); err != nil {
-		t.Fatalf("withHook should not return error, got: %v", err)
+		t.Fatalf("WithHook should not return error, got: %v", err)
 	}
 
 	if !action {
-		t.Fatalf("withHook should execute action")
+		t.Fatalf("WithHook should execute action")
 	}
 }
 
@@ -48,11 +48,11 @@ func TestWithPreHook(t *testing.T) {
 	if err := withHook(&f, func() error {
 		return nil
 	}, nil); err != nil {
-		t.Fatalf("withHook should not return error, got: %v", err)
+		t.Fatalf("WithHook should not return error, got: %v", err)
 	}
 
 	if !pre {
-		t.Fatalf("withHook should call pre-hook")
+		t.Fatalf("WithHook should call pre-hook")
 	}
 }
 
@@ -70,11 +70,11 @@ func TestWithPostHook(t *testing.T) {
 	if err := withHook(nil, func() error {
 		return nil
 	}, &f); err != nil {
-		t.Fatalf("withHook should not return error, got: %v", err)
+		t.Fatalf("WithHook should not return error, got: %v", err)
 	}
 
 	if !post {
-		t.Fatalf("withHook should call post-hook")
+		t.Fatalf("WithHook should call post-hook")
 	}
 }
 
@@ -88,7 +88,7 @@ func TestConnectAndForward(t *testing.T) {
 
 	localSock, err := net.ListenUnix("unix", addr)
 	if err != nil {
-		t.Fatalf("unable to listen on address '%s':%v", addr, err)
+		t.Fatalf("Unable to listen on address %q: %v", addr, err)
 	}
 
 	h := &hostConfiguredContainer{
@@ -107,7 +107,7 @@ func TestConnectAndForward(t *testing.T) {
 	}
 
 	if err := localSock.Close(); err != nil {
-		t.Logf("failed to close local socket listener: %v", err)
+		t.Logf("Failed to close local socket listener: %v", err)
 	}
 }
 
@@ -120,7 +120,7 @@ func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 	}
 
 	if err := h.Status(); err == nil {
-		t.Fatalf("checking status of non existing container should fail, got: %v", err)
+		t.Fatalf("Checking status of non existing container should fail, got: %v", err)
 	}
 }
 
@@ -148,7 +148,7 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 	}
 
 	if err := h.Status(); err != nil {
-		t.Fatalf("checking status of existing container should succeed, got: %v", err)
+		t.Fatalf("Checking status of existing container should succeed, got: %v", err)
 	}
 }
 
@@ -169,7 +169,7 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 	}
 
 	if err := h.createConfigurationContainer(); err == nil {
-		t.Fatalf("creating configuration container should fail")
+		t.Fatalf("Creating configuration container should fail")
 	}
 }
 
@@ -191,7 +191,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 					},
 					DeleteF: func(id string) error {
 						if id != i {
-							t.Fatalf("should remove container %s, got %s", i, id)
+							t.Fatalf("Should remove container %q, got %q", i, id)
 						}
 
 						deleted = true
@@ -207,11 +207,11 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 	}
 
 	if err := h.removeConfigurationContainer(); err != nil {
-		t.Fatalf("removing configuration container should succeed, got: %v", err)
+		t.Fatalf("Removing configuration container should succeed, got: %v", err)
 	}
 
 	if !deleted {
-		t.Fatalf("removing existing configuration container should call Delete()")
+		t.Fatalf("Removing existing configuration container should call Delete()")
 	}
 }
 
@@ -231,7 +231,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 	}
 
 	if err := h.removeConfigurationContainer(); err == nil {
-		t.Fatalf("removing configuration container should fail")
+		t.Fatalf("Removing configuration container should fail")
 	}
 }
 
@@ -538,7 +538,7 @@ func TestDirMounts(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(h.dirMounts(), []types.Mount{m}); diff != "" {
-		t.Fatalf("received wrong dir mounts than expected: %s", diff)
+		t.Fatalf("Received wrong dir mounts than expected: %s", diff)
 	}
 }
 
@@ -559,7 +559,7 @@ func TestWithForwardedRuntimeFailForward(t *testing.T) {
 	if err := h.withForwardedRuntime(func() error {
 		return nil
 	}); err == nil {
-		t.Fatalf("should fail with bad host")
+		t.Fatalf("Should fail with bad host")
 	}
 }
 
@@ -580,7 +580,7 @@ func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
 	if err := h.withForwardedRuntime(func() error {
 		return nil
 	}); err == nil {
-		t.Fatalf("should fail with bad runtime")
+		t.Fatalf("Should fail with bad runtime")
 	}
 }
 
@@ -606,7 +606,7 @@ func TestWithForwardedRuntime(t *testing.T) {
 	if err := h.withForwardedRuntime(func() error {
 		return nil
 	}); err != nil {
-		t.Fatalf("should work, got: %v", err)
+		t.Fatalf("Should work, got: %v", err)
 	}
 }
 
@@ -649,7 +649,7 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 	}
 
 	if err := h.Create(); err == nil {
-		t.Fatalf("create with failing stat should fail")
+		t.Fatalf("Create with failing stat should fail")
 	}
 }
 
@@ -701,7 +701,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 	}
 
 	if err := h.Create(); err == nil {
-		t.Fatalf("create with failing create from runtime should fail")
+		t.Fatalf("Create with failing create from runtime should fail")
 	}
 }
 
@@ -753,7 +753,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 	}
 
 	if err := h.Create(); err == nil {
-		t.Fatalf("create with failing status from runtime should fail")
+		t.Fatalf("Create with failing status from runtime should fail")
 	}
 }
 
@@ -799,11 +799,11 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 	}
 
 	if err := h.Create(); err != nil {
-		t.Fatalf("create should succeed, got: %v", err)
+		t.Fatalf("Create should succeed, got: %v", err)
 	}
 
 	if id := h.container.Status().ID; id != "bar" {
-		t.Fatalf("expected ID '%s', got '%s'", "bar", id)
+		t.Fatalf("Expected ID %q, got %q", "bar", id)
 	}
 }
 
@@ -941,7 +941,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *tes
 						return nil
 					},
 					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
-						return []*types.File{}, fmt.Errorf("error")
+						return []*types.File{}, fmt.Errorf("reading")
 					},
 				},
 			},

@@ -145,11 +145,10 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 	}
 
 	if err := k.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate Kubernetes Controller Manager configuration: %w", err)
+		return nil, fmt.Errorf("validating Kubernetes Controller Manager configuration: %w", err)
 	}
 
-	// It's fine to skip the error, Validate() will handle it.
-	kubeconfig, _ := k.Kubeconfig.ToYAMLString()
+	kubeconfig, _ := k.Kubeconfig.ToYAMLString() //nolint:errcheck // We check it in Validate().
 
 	nk := &kubeControllerManager{
 		common:                   *k.Common,

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	// certValidityDuration is how long certificate is valid from the moment of generation.
+	// CertValidityDuration is how long certificate is valid from the moment of generation.
 	certValidityDuration = 1 * time.Hour
 )
 
@@ -94,7 +94,7 @@ func GeneratePKI(t *testing.T) *PKI {
 
 	p, err := GeneratePKIErr()
 	if err != nil {
-		t.Fatalf("failed generating fake PKI: %v", err)
+		t.Fatalf("Failed generating fake PKI: %v", err)
 	}
 
 	return p
@@ -103,11 +103,11 @@ func GeneratePKI(t *testing.T) *PKI {
 // generateX509Certificate generates X.509 certificate in DER format using given RSA private key.
 func generateX509Certificate(priv *rsa.PrivateKey) ([]byte, error) {
 	// Generate serial number for X.509 certificate.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd // As in https://golang.org/src/crypto/tls/generate_cert.go.
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate serial number: %w", err)
+		return nil, fmt.Errorf("generating serial number: %w", err)
 	}
 
 	template := x509.Certificate{
@@ -132,19 +132,19 @@ func encodePKI(priv *rsa.PrivateKey, pub []byte) (*PKI, error) {
 	// Encode private certificate into PEM format.
 	var cert bytes.Buffer
 	if err := pem.Encode(&cert, &pem.Block{Type: "CERTIFICATE", Bytes: pub}); err != nil {
-		return nil, fmt.Errorf("failed to write data to cert.pem: %w", err)
+		return nil, fmt.Errorf("writing data to cert.pem: %w", err)
 	}
 
 	// Convert RSA private key into PKCS8 DER format.
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		return nil, fmt.Errorf("unable to marshal private key: %w", err)
+		return nil, fmt.Errorf("marshaling private key: %w", err)
 	}
 
 	// Convert private key from PKCS8 DER format to PEM format.
 	var key bytes.Buffer
 	if err := pem.Encode(&key, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		return nil, fmt.Errorf("failed to write data to key.pem: %w", err)
+		return nil, fmt.Errorf("writing data to key.pem: %w", err)
 	}
 
 	return &PKI{
@@ -160,12 +160,12 @@ func GeneratePKIErr() (*PKI, error) {
 	// Generate RSA private key.
 	priv, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate RSA key: %w", err)
+		return nil, fmt.Errorf("generating RSA key: %w", err)
 	}
 
 	derBytes, err := generateX509Certificate(priv)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create X.509 certificate: %w", err)
+		return nil, fmt.Errorf("creating X.509 certificate: %w", err)
 	}
 
 	return encodePKI(priv, derBytes)

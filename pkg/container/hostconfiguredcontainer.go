@@ -53,10 +53,10 @@ const (
 	// ConfigMountpoint is where host file-system is mounted in the -config container.
 	ConfigMountpoint = "/mnt/host"
 
-	// configFileMode is default configuration file permissions.
+	// Default configuration file permissions.
 	configFileMode = 0o600
 
-	// mountpointDirMode is default host mountpoint directory permission.
+	// Default host mountpoint directory permission.
 	mountpointDirMode = 0o700
 )
 
@@ -101,10 +101,10 @@ type hostConfiguredContainer struct {
 // can be used for deploying the container.
 func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error) {
 	if err := m.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate container configuration: %w", err)
+		return nil, fmt.Errorf("validating configuration: %w", err)
 	}
 
-	c, _ := m.Container.New()
+	c, _ := m.Container.New() //nolint:errcheck // Already checked in Validate().
 
 	hcc := &hostConfiguredContainer{
 		container:   c,
@@ -123,11 +123,11 @@ func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error
 // Validate validates HostConfiguredContainer struct. All validation rules should be placed here.
 func (m *HostConfiguredContainer) Validate() error {
 	if err := m.Container.Validate(); err != nil {
-		return fmt.Errorf("failed to validate container configuration: %w", err)
+		return fmt.Errorf("validating container configuration: %w", err)
 	}
 
 	if err := m.Host.Validate(); err != nil {
-		return fmt.Errorf("failed to validate host configuration: %w", err)
+		return fmt.Errorf("validating host configuration: %w", err)
 	}
 
 	return nil
@@ -166,7 +166,7 @@ func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) erro
 
 	s, err := m.connectAndForward(a)
 	if err != nil {
-		return fmt.Errorf("forwarding host failed: %w", err)
+		return fmt.Errorf("forwarding host: %w", err)
 	}
 
 	// Override configuration with forwarded address and create Runtime from it.
@@ -217,7 +217,7 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 	// TODO: This might not be the case for other container runtimes.
 	ci, err := cc.Create()
 	if err != nil {
-		return fmt.Errorf("failed creating config container while checking configuration: %w", err)
+		return fmt.Errorf("creating config container while checking configuration: %w", err)
 	}
 
 	m.configContainer = ci
@@ -230,7 +230,7 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 func (m *hostConfiguredContainer) removeConfigurationContainer() error {
 	s, err := m.configContainer.Status()
 	if err != nil {
-		return fmt.Errorf("failed checking if container exists: %w", err)
+		return fmt.Errorf("checking if container exists: %w", err)
 	}
 
 	if s.ID == "" {
@@ -263,7 +263,7 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 
 	f, err := m.configContainer.Read(files)
 	if err != nil {
-		return fmt.Errorf("failed to read configuration status: %w", err)
+		return fmt.Errorf("reading configuration status: %w", err)
 	}
 
 	m.configFiles = map[string]string{}
@@ -283,7 +283,7 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 // removed. If that operation fails as well, error is only logged.
 func (m *hostConfiguredContainer) withConfigurationContainer(action func() error) error {
 	if err := m.createConfigurationContainer(); err != nil {
-		return fmt.Errorf("failed to create container for managing configuration: %w", err)
+		return fmt.Errorf("creating container for managing configuration: %w", err)
 	}
 
 	defer func() {
@@ -394,7 +394,7 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 	// Get information about existing mountpoints.
 	rc, err := m.statMounts()
 	if err != nil {
-		return fmt.Errorf("failed checking if mountpoints exist: %w", err)
+		return fmt.Errorf("checking if mountpoints exist: %w", err)
 	}
 
 	// Collect missing mountpoints.
@@ -406,7 +406,7 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 
 		// If path exists as a file, it can't be mounted as a directory, so fail.
 		if exists && !fm.IsDir() {
-			return fmt.Errorf("mountpoint %s exists as file", m.Source)
+			return fmt.Errorf("mountpoint %q exists as file", m.Source)
 		}
 
 		// If mountpoint does not exist, and it's name has a trailing slash, we should create it as a directory.
@@ -432,17 +432,17 @@ func (m *hostConfiguredContainer) Create() error {
 	return m.withForwardedRuntime(func() error {
 		return m.withConfigurationContainer(func() error {
 			if err := m.createMissingMounts(); err != nil {
-				return fmt.Errorf("failed creating missing mountpoints: %w", err)
+				return fmt.Errorf("creating missing mountpoints: %w", err)
 			}
 
 			i, err := m.container.Create()
 			if err != nil {
-				return fmt.Errorf("failed creating container: %w", err)
+				return fmt.Errorf("creating container: %w", err)
 			}
 
 			s, err := i.Status()
 			if err != nil {
-				return fmt.Errorf("failed getting container status: %w", err)
+				return fmt.Errorf("getting container status: %w", err)
 			}
 
 			*m.container.Status() = s

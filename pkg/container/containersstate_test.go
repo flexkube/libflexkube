@@ -45,7 +45,7 @@ func TestToExported(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(expected, c.Export()); diff != "" {
-		t.Fatalf("unexpected diff %s", diff)
+		t.Fatalf("Unexpected diff %s", diff)
 	}
 }
 
@@ -80,11 +80,11 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 	}
 
 	if c["foo"].container.Status().ID != "" {
-		t.Errorf("failing status call should reset container ID, so we assume container is gone")
+		t.Errorf("Failing status call should reset container ID, so we assume container is gone")
 	}
 
 	if c["foo"].container.Status().Status == "fail" {
-		t.Errorf("container status should include error message returned by status function")
+		t.Errorf("Container status should include error message returned by status function")
 	}
 }
 
@@ -124,19 +124,33 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 	}
 
 	if c["foo"].container.Status().Status != StatusMissing {
-		t.Fatalf("Non existing container should have status '%s', got: %s", StatusMissing, c["foo"].container.Status().Status)
+		t.Fatalf("Non existing container should have status %q, got: %q", StatusMissing, c["foo"].container.Status().Status)
 	}
 }
 
+func failingStopRuntime() *runtime.Fake {
+	r := fakeRuntime()
+	r.StopF = func(string) error {
+		return fmt.Errorf("stopping")
+	}
+
+	return r
+}
+
 // RemoveContainer() tests.
-//
-//nolint:dupl
 func TestRemoveContainerDontStopStopped(t *testing.T) {
 	t.Parallel()
 
+	failingStopRuntime := failingStopRuntime()
+	failingStopRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+		return types.ContainerStatus{
+			Status: "stopped",
+			ID:     "foo",
+		}, nil
+	}
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -146,29 +160,14 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 						Status: "stopped",
 						ID:     "foo",
 					},
-					runtimeConfig: &runtime.FakeConfig{
-						Runtime: &runtime.Fake{
-							DeleteF: func(id string) error {
-								return nil
-							},
-							StatusF: func(id string) (types.ContainerStatus, error) {
-								return types.ContainerStatus{
-									Status: "stopped",
-									ID:     "foo",
-								}, nil
-							},
-							StopF: func(id string) error {
-								return fmt.Errorf("stopping failed")
-							},
-						},
-					},
+					runtimeConfig: asRuntime(failingStopRuntime),
 				},
 			},
 		},
 	}
 
 	if err := c.RemoveContainer("foo"); err != nil {
-		t.Fatalf("removing stopped container shouldn't try to stop it again")
+		t.Fatalf("Removing stopped container shouldn't try to stop it again")
 	}
 }
 
@@ -177,7 +176,6 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -203,17 +201,23 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err != nil {
-		t.Fatalf("removing missing container shouldn't try to remove it again, got: %v", err)
+		t.Fatalf("Removing missing container shouldn't try to remove it again, got: %v", err)
 	}
 }
 
-//nolint:dupl
 func TestRemoveContainerPropagateStopError(t *testing.T) {
 	t.Parallel()
 
+	failingStopRuntime := failingStopRuntime()
+	failingStopRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+		return types.ContainerStatus{
+			Status: "running",
+			ID:     "foo",
+		}, nil
+	}
+
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -223,29 +227,14 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 						Status: "running",
 						ID:     "foo",
 					},
-					runtimeConfig: &runtime.FakeConfig{
-						Runtime: &runtime.Fake{
-							DeleteF: func(id string) error {
-								return nil
-							},
-							StatusF: func(id string) (types.ContainerStatus, error) {
-								return types.ContainerStatus{
-									Status: "running",
-									ID:     "foo",
-								}, nil
-							},
-							StopF: func(id string) error {
-								return fmt.Errorf("stopping failed")
-							},
-						},
-					},
+					runtimeConfig: asRuntime(failingStopRuntime),
 				},
 			},
 		},
 	}
 
 	if err := c.RemoveContainer("foo"); err == nil {
-		t.Fatalf("removing stopped container should propagate stop error")
+		t.Fatalf("Removing stopped container should propagate stop error")
 	}
 }
 
@@ -254,7 +243,6 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -286,7 +274,7 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err == nil {
-		t.Fatalf("removing stopped container should propagate delete error")
+		t.Fatalf("Removing stopped container should propagate delete error")
 	}
 }
 
@@ -297,6 +285,6 @@ func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
 	c := containersState{}
 
 	if err := c.CreateAndStart("foo"); err == nil {
-		t.Fatalf("creating and starting non existing container should give error")
+		t.Fatalf("Creating and starting non existing container should give error")
 	}
 }

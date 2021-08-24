@@ -29,7 +29,6 @@ require (
 	google.golang.org/genproto v0.0.0-20210614182748-5b3b54cad159 // indirect
 	helm.sh/helm/v3 v3.6.3
 	k8s.io/api v0.21.1
-	k8s.io/apiextensions-apiserver v0.21.0
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.21.1
 	k8s.io/kubectl v0.21.1

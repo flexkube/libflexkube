@@ -44,7 +44,7 @@ func TestValidate(t *testing.T) {
 	v := validValidator(t)
 
 	if err := v.validate(true); err != nil {
-		t.Fatalf("validating valid object should succeed, got: %v", err)
+		t.Fatalf("Validating valid object should succeed, got: %v", err)
 	}
 }
 
@@ -58,6 +58,6 @@ func TestValidateMarshalFail(t *testing.T) {
 	}
 
 	if err := v.validate(true); err == nil {
-		t.Fatalf("validating unmarshalable struct should fail")
+		t.Fatalf("Validating unmarshalable struct should fail")
 	}
 }

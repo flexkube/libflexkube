@@ -24,12 +24,12 @@ type validator struct {
 // validate validates validator struct. If validateKubeconfig is false,
 // then validation of this field will be skipped.
 func (v validator) validate(validateKubeconfig bool) error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if !validateKubeconfig {
 		pki, err := utiltest.GeneratePKIErr()
 		if err != nil {
-			return fmt.Errorf("failed to generate fake PKI for validation: %w", err)
+			return fmt.Errorf("generating fake PKI for validation: %w", err)
 		}
 
 		v.Kubeconfig = client.Config{
@@ -42,11 +42,11 @@ func (v validator) validate(validateKubeconfig bool) error {
 
 	b, err := yaml.Marshal(v)
 	if err != nil {
-		return append(errors, fmt.Errorf("failed to validate: %w", err))
+		return append(errors, fmt.Errorf("marshaling kubeconfig: %w", err))
 	}
 
 	if err := yaml.Unmarshal(b, &v); err != nil {
-		return append(errors, fmt.Errorf("validation failed: %w", err))
+		return append(errors, fmt.Errorf("unmarshaling kubeconfig: %w", err))
 	}
 
 	if v.Common == nil {
@@ -64,8 +64,8 @@ func (v validator) validate(validateKubeconfig bool) error {
 	return errors.Return()
 }
 
-func (v validator) validateHost() util.ValidateError {
-	var errors util.ValidateError
+func (v validator) validateHost() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if v.Host == nil {
 		errors = append(errors, fmt.Errorf("host must be defined"))
@@ -73,7 +73,7 @@ func (v validator) validateHost() util.ValidateError {
 
 	if v.Host != nil {
 		if err := v.Host.Validate(); err != nil {
-			errors = append(errors, fmt.Errorf("host config validation failed: %w", err))
+			errors = append(errors, fmt.Errorf("validating host configuration: %w", err))
 		}
 	}
 

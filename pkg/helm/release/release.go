@@ -84,15 +84,14 @@ type release struct {
 // New validates release configuration and builds installable version of it.
 func (r *Config) New() (Release, error) {
 	if err := r.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate helm release: %w", err)
+		return nil, fmt.Errorf("validating Helm release: %w", err)
 	}
 
 	// Initialize kubernetes and helm CLI clients.
 	actionConfig := &action.Configuration{}
 	settings := cli.New()
 
-	// Safe to ignore errors, because Validate will return early if data is not valid.
-	g, kc, cs, _ := newClients(r.Kubeconfig)
+	g, kc, cs, _ := newClients(r.Kubeconfig) //nolint:errcheck // We check it in Validate().
 
 	kc.Namespace = r.Namespace
 
@@ -101,10 +100,9 @@ func (r *Config) New() (Release, error) {
 	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
 	actionConfig.Log = func(_ string, _ ...interface{}) {}
 
-	values, _ := r.parseValues()
+	values, _ := r.parseValues() //nolint:errcheck // We check it in Validate().
 
-	// This is safe, because we call newClients() in Validate().
-	c, _ := client.NewClient([]byte(r.Kubeconfig))
+	c, _ := client.NewClient([]byte(r.Kubeconfig)) //nolint:errcheck // We check it in Validate().
 
 	release := &release{
 		actionConfig:    actionConfig,
@@ -124,7 +122,7 @@ func (r *Config) New() (Release, error) {
 
 // Validate validates Release configuration.
 func (r *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	// Check if all required values are filled in.
 	if r.Kubeconfig == "" {
@@ -145,12 +143,12 @@ func (r *Config) Validate() error {
 
 	// Try to create a clients.
 	if _, _, _, err := newClients(r.Kubeconfig); err != nil {
-		errors = append(errors, fmt.Errorf("failed to create kubernetes clients: %w", err))
+		errors = append(errors, fmt.Errorf("creating Kubernetes clients: %w", err))
 	}
 
 	// Parse given values.
 	if _, err := r.parseValues(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to parse values: %w", err))
+		errors = append(errors, fmt.Errorf("parsing values: %w", err))
 	}
 
 	return errors.Return()
@@ -163,7 +161,7 @@ func (r *Config) Validate() error {
 // errors, this function can be called in addition to Validate().
 func (r *release) ValidateChart() error {
 	if _, err := r.loadChart(); err != nil {
-		return fmt.Errorf("failed validating chart: %w", err)
+		return fmt.Errorf("validating chart: %w", err)
 	}
 
 	return nil
@@ -179,7 +177,7 @@ func (r *release) Install() error {
 
 	chart, err := r.loadChart()
 	if err != nil {
-		return fmt.Errorf("loading chart failed: %w", err)
+		return fmt.Errorf("loading chart: %w", err)
 	}
 
 	client.CreateNamespace = r.createNamespace
@@ -190,7 +188,7 @@ func (r *release) Install() error {
 
 		return err
 	}); err != nil {
-		return fmt.Errorf("installing a release failed: %w", err)
+		return fmt.Errorf("installing a release: %w", err)
 	}
 
 	return nil
@@ -206,7 +204,7 @@ func (r *release) Upgrade() error {
 
 	chart, err := r.loadChart()
 	if err != nil {
-		return fmt.Errorf("loading chart failed: %w", err)
+		return fmt.Errorf("loading chart: %w", err)
 	}
 
 	if err := retryOnEtcdError(func() error {
@@ -214,7 +212,7 @@ func (r *release) Upgrade() error {
 
 		return err
 	}); err != nil {
-		return fmt.Errorf("upgrading a release failed: %w", err)
+		return fmt.Errorf("upgrading a release: %w", err)
 	}
 
 	return nil
@@ -250,7 +248,7 @@ func (r *release) Exists() (bool, error) {
 		return err
 	})
 
-	if err == driver.ErrReleaseNotFound { //nolint:errorlint
+	if err == driver.ErrReleaseNotFound { //nolint:errorlint // errors.Is does not work for Helm errors.
 		return false, nil
 	}
 
@@ -300,7 +298,7 @@ func (r *release) Uninstall() error {
 
 		return err
 	}); err != nil {
-		return fmt.Errorf("uninstalling a release failed: %w", err)
+		return fmt.Errorf("uninstalling a release: %w", err)
 	}
 
 	return nil
@@ -313,7 +311,7 @@ func (r *release) loadChart() (*chart.Chart, error) {
 	// Locate chart to install.
 	cp, err := client.ChartPathOptions.LocateChart(r.chart, r.settings)
 	if err != nil {
-		return nil, fmt.Errorf("locating chart failed: %w", err)
+		return nil, fmt.Errorf("locating chart: %w", err)
 	}
 
 	return loader.Load(cp)
@@ -361,7 +359,7 @@ func (r *release) uninstallClient() *action.Uninstall {
 func (r *Config) parseValues() (map[string]interface{}, error) {
 	values := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(r.Values), &values); err != nil {
-		return nil, fmt.Errorf("failed to parse values: %w", err)
+		return nil, fmt.Errorf("parsing values: %w", err)
 	}
 
 	return values, nil
@@ -372,12 +370,12 @@ func FromYaml(data []byte) (Release, error) {
 	r := Config{}
 
 	if err := yaml.Unmarshal(data, &r); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal release: %w", err)
+		return nil, fmt.Errorf("unmarshaling release: %w", err)
 	}
 
 	release, err := r.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create release: %w", err)
+		return nil, fmt.Errorf("creating release: %w", err)
 	}
 
 	return release, nil

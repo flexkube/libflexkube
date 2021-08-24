@@ -78,12 +78,12 @@ type containers struct {
 // deployed.
 func (c *Containers) New() (ContainersInterface, error) {
 	if err := c.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate containers configuration: %w", err)
+		return nil, fmt.Errorf("validating containers configuration: %w", err)
 	}
 
 	// Validate already checks for errors, so we can skip checking here.
-	previousState, _ := c.PreviousState.New()
-	desiredState, _ := c.DesiredState.New()
+	previousState, _ := c.PreviousState.New() //nolint:errcheck // Checked in Validate().
+	desiredState, _ := c.DesiredState.New()   //nolint:errcheck // Checked in Validate().
 
 	return &containers{
 		previousState: previousState.(containersState),
@@ -93,7 +93,7 @@ func (c *Containers) New() (ContainersInterface, error) {
 
 // Validate validates Containers struct and all structs used underneath.
 func (c *Containers) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c == nil {
 		errors = append(errors, fmt.Errorf("containers must be defined"))
@@ -126,11 +126,11 @@ func (c *Containers) Validate() error {
 func (c *Containers) CheckCurrentState() error {
 	containers, err := c.New()
 	if err != nil {
-		return fmt.Errorf("failed creating containers configuration: %w", err)
+		return fmt.Errorf("creating containers configuration: %w", err)
 	}
 
 	if err := containers.CheckCurrentState(); err != nil {
-		return fmt.Errorf("failed checking current state of the containers: %w", err)
+		return fmt.Errorf("checking current state of the containers: %w", err)
 	}
 
 	*c = *containers.ToExported()
@@ -196,7 +196,7 @@ func filesToUpdate(d hostConfiguredContainer, c *hostConfiguredContainer) []stri
 	for p, content := range d.configFiles {
 		if currentContent, exists := c.configFiles[p]; !exists || content != currentContent {
 			// TODO convert all prints to logging, so we can add more verbose information too
-			fmt.Printf("Detected configuration drift for file '%s'\n", p)
+			fmt.Printf("Detected configuration drift for file %q\n", p)
 			fmt.Printf("  current: \n%+v\n", currentContent)
 			fmt.Printf("  desired: \n%+v\n", content)
 
@@ -221,7 +221,6 @@ func (c *containers) ensureConfigured(n string) error {
 	f := filesToUpdate(*d, r)
 
 	err := d.Configure(f)
-
 	if err != nil && reflect.DeepEqual(f, filesToUpdate(*d, r)) {
 		return fmt.Errorf("no files has been updated: %w", err)
 	}
@@ -236,7 +235,7 @@ func (c *containers) ensureConfigured(n string) error {
 	r.configFiles = d.configFiles
 
 	if err != nil {
-		return fmt.Errorf("updating configuration partially failed: %w", err)
+		return fmt.Errorf("updating configuration: %w", err)
 	}
 
 	return nil
@@ -261,14 +260,14 @@ func (c *containers) ensureExists(n string) error {
 		return nil
 	}
 
-	fmt.Printf("Creating new container '%s'\n", n)
+	fmt.Printf("Creating new container %q\n", n)
 
 	d := c.desiredState[n]
 
 	err := c.desiredState.CreateAndStart(n)
 
 	// Container creation failed and it does not exist, meaning state is clean.
-	if err != nil && !d.container.Status().Exists() {
+	if err != nil && !d.container.Status().Exists() { //nolint:wsl // Do not cuddle err assignment for readability.
 		return fmt.Errorf("creating container: %w", err)
 	}
 
@@ -297,12 +296,12 @@ func (c *containers) ensureExists(n string) error {
 func (c *containers) isUpdatable(n string) error {
 	// Container which currently does not exist can't be updated, only created.
 	if _, ok := c.currentState[n]; !ok {
-		return fmt.Errorf("can't update non-existing container '%s'", n)
+		return fmt.Errorf("can't update non-existing container %q", n)
 	}
 
 	// Container which is suppose to be removed shouldn't be updated.
 	if _, ok := c.desiredState[n]; !ok {
-		return fmt.Errorf("can't update container '%s', which is scheduler for removal", n)
+		return fmt.Errorf("can't update container %q, which is scheduler for removal", n)
 	}
 
 	return nil
@@ -323,7 +322,7 @@ func (c *containers) diffHost(n string) (string, error) {
 // desired state.
 func (c *containers) recreate(n string) error {
 	if err := c.currentState.RemoveContainer(n); err != nil {
-		return fmt.Errorf("failed removing old container to recreate it: %w", err)
+		return fmt.Errorf("removing old container to recreate it: %w", err)
 	}
 
 	c.currentState[n] = nil
@@ -343,18 +342,18 @@ func (c *containers) recreate(n string) error {
 //
 // If host configuration changes, existing container will be removed and new one will be created.
 //
-// TODO This might be an overkill. e.g. changing SSH key for deployment will re-create all containers.
+// TODO This might be an overkill. For example, changing SSH key for deployment will re-create all containers.
 func (c *containers) ensureHost(n string) error {
 	diff, err := c.diffHost(n)
 	if err != nil {
-		return fmt.Errorf("failed to check host diff: %w", err)
+		return fmt.Errorf("checking host diff: %w", err)
 	}
 
 	if diff == "" {
 		return nil
 	}
 
-	fmt.Printf("Detected host configuration drift '%s'\n", n)
+	fmt.Printf("Detected host configuration drift %q\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	return c.recreate(n)
@@ -380,14 +379,14 @@ func (c *containers) diffContainer(n string) (string, error) {
 func (c *containers) ensureContainer(n string) error {
 	diff, err := c.diffContainer(n)
 	if err != nil {
-		return fmt.Errorf("failed to check container diff: %w", err)
+		return fmt.Errorf("checking container diff: %w", err)
 	}
 
 	if diff == "" {
 		return nil
 	}
 
-	fmt.Printf("Detected container configuration drift '%s'\n", n)
+	fmt.Printf("Detected container configuration drift %q\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	return c.recreate(n)
@@ -397,14 +396,14 @@ func (c *containers) ensureContainer(n string) error {
 func (c *containers) hasUpdates(n string) (bool, error) {
 	diffHost, err := c.diffHost(n)
 	if err != nil {
-		return false, fmt.Errorf("failed to check host diff: %w", err)
+		return false, fmt.Errorf("checking host diff: %w", err)
 	}
 
 	f := filesToUpdate(*c.desiredState[n], c.currentState[n])
 
 	diffContainer, err := c.diffContainer(n)
 	if err != nil {
-		return false, fmt.Errorf("failed to check container diff: %w", err)
+		return false, fmt.Errorf("checking container diff: %w", err)
 	}
 
 	return diffHost != "" || len(f) != 0 || diffContainer != "", nil
@@ -420,7 +419,7 @@ func (c *containers) ensureCurrentContainer(n string, r hostConfiguredContainer)
 		// If container is updatable, check if it has any updates pending.
 		u, err := c.hasUpdates(n)
 		if err != nil {
-			return &r, fmt.Errorf("failed checking if container has pending updates: %w", err)
+			return &r, fmt.Errorf("checking if container has pending updates: %w", err)
 		}
 
 		hasUpdates = u
@@ -448,11 +447,11 @@ func (c *containers) ensureNewContainer(i string) error {
 	}
 
 	if err := c.ensureConfigured(i); err != nil {
-		return fmt.Errorf("failed configuring container %s: %w", i, err)
+		return fmt.Errorf("configuring container %q: %w", i, err)
 	}
 
 	if err := c.ensureExists(i); err != nil {
-		return fmt.Errorf("failed creating new container %s: %w", i, err)
+		return fmt.Errorf("creating new container %q: %w", i, err)
 	}
 
 	return nil
@@ -462,15 +461,15 @@ func (c *containers) ensureUpToDate(i string) error {
 	// Update containers on hosts.
 	// This can move containers between hosts, but NOT the data.
 	if err := c.ensureHost(i); err != nil {
-		return fmt.Errorf("failed updating host configuration of container %s: %w", i, err)
+		return fmt.Errorf("updating host configuration of container %q: %w", i, err)
 	}
 
 	if err := c.ensureConfigured(i); err != nil {
-		return fmt.Errorf("failed updating configuration for container %s: %w", i, err)
+		return fmt.Errorf("updating configuration for container %q: %w", i, err)
 	}
 
 	if err := c.ensureContainer(i); err != nil {
-		return fmt.Errorf("failed updating container %s: %w", i, err)
+		return fmt.Errorf("updating container %q: %w", i, err)
 	}
 
 	return nil
@@ -482,14 +481,14 @@ func (c *containers) updateExistingContainers() error {
 	for i := range c.currentState {
 		if _, exists := c.desiredState[i]; !exists {
 			if err := c.currentState.RemoveContainer(i); err != nil {
-				return fmt.Errorf("failed removing old container: %w", err)
+				return fmt.Errorf("removing old container: %w", err)
 			}
 
 			continue
 		}
 
 		if err := c.ensureUpToDate(i); err != nil {
-			return fmt.Errorf("failed ensuring, that container %s is up to date: %w", i, err)
+			return fmt.Errorf("ensuring, that container %q is up to date: %w", i, err)
 		}
 	}
 
@@ -518,7 +517,7 @@ func (c *containers) Deploy() error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("failed to handle existing container %s: %w", n, err)
+			return fmt.Errorf("handling existing container %q: %w", n, err)
 		}
 	}
 
@@ -526,7 +525,7 @@ func (c *containers) Deploy() error {
 
 	for i := range c.desiredState {
 		if err := c.ensureNewContainer(i); err != nil {
-			return fmt.Errorf("failed creating new container %s: %w", i, err)
+			return fmt.Errorf("creating new container %q: %w", i, err)
 		}
 	}
 
@@ -539,12 +538,12 @@ func (c *containers) Deploy() error {
 func FromYaml(c []byte) (ContainersInterface, error) {
 	containers := &Containers{}
 	if err := yaml.Unmarshal(c, &containers); err != nil {
-		return nil, fmt.Errorf("failed to parse input yaml: %w", err)
+		return nil, fmt.Errorf("parsing input YAML: %w", err)
 	}
 
 	cl, err := containers.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create containers object: %w", err)
+		return nil, fmt.Errorf("creating containers object: %w", err)
 	}
 
 	return cl, nil
