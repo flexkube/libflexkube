@@ -191,7 +191,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 					},
 					DeleteF: func(id string) error {
 						if id != i {
-							t.Fatalf("Should remove container %s, got %s", i, id)
+							t.Fatalf("Should remove container %q, got %q", i, id)
 						}
 
 						deleted = true

@@ -85,7 +85,7 @@ func TestPeerURLs(t *testing.T) {
 	e := "https://1.1.1.1:2380" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if urls := m.peerURLs(); urls[0] != e {
-		t.Fatalf("Expected %s, got %s", e, urls[0])
+		t.Fatalf("Expected %q, got %q", e, urls[0])
 	}
 }
 

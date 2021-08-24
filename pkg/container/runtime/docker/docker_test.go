@@ -428,7 +428,7 @@ func TestCreateSetUser(t *testing.T) {
 		cli: &FakeClient{
 			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != c.User {
-					t.Fatalf("Configured user should be %s, got %s", c.User, config.User)
+					t.Fatalf("Configured user should be %q, got %q", c.User, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
@@ -462,7 +462,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 		cli: &FakeClient{
 			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != e {
-					t.Fatalf("Configured user should be %s, got %s", e, config.User)
+					t.Fatalf("Configured user should be %q, got %q", e, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
