@@ -245,7 +245,7 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 
 // handleClient is responsible for copying incoming and outgoing data going
 // through the forwarded connection.
-func handleClient(client io.ReadWriteCloser, remote io.ReadWriteCloser) {
+func handleClient(client, remote io.ReadWriteCloser) {
 	defer func() {
 		if err := client.Close(); err != nil {
 			fmt.Printf("failed closing client connection: %v\n", err)
