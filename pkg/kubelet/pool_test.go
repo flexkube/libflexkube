@@ -136,7 +136,7 @@ func TestPoolDeploy(t *testing.T) {
 	}
 }
 
-func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
+func Test_Pool_propagates_extra_mounts_to_members_without_extra_mounts_defined(t *testing.T) {
 	t.Parallel()
 
 	p := getPool(t)
@@ -150,10 +150,16 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 	}
 
 	if !found {
-		t.Errorf("kubelet foo should have propagated extra mount")
+		t.Fatal("kubelet foo should have propagated extra mount")
 	}
+}
 
-	found = false
+func Test_Pool_retains_individual_members_extra_mounts(t *testing.T) {
+	t.Parallel()
+
+	p := getPool(t)
+
+	found := false
 
 	for _, v := range p.Containers().DesiredState()["1"].Container.Config.Mounts {
 		if v.Source == "/doh/" && v.Target == "/tmp" {
