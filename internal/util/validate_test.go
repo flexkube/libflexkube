@@ -18,7 +18,7 @@ func TestValidateErrors(t *testing.T) {
 		return errors.Return()
 	}
 
-	if err == nil {
+	if err() == nil {
 		t.Fatalf("Error shouldn't be nil")
 	}
 }
