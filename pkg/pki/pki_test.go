@@ -78,16 +78,14 @@ func TestGenerateTrustChain(t *testing.T) {
 
 	roots := x509.NewCertPool()
 
-	ok := roots.AppendCertsFromPEM([]byte(pki.RootCA.X509Certificate))
-	if !ok {
-		t.Fatal("failed to parse root certificate")
+	if ok := roots.AppendCertsFromPEM([]byte(pki.RootCA.X509Certificate)); !ok {
+		t.Fatal("Parsing root certificate")
 	}
 
 	intermediates := x509.NewCertPool()
 
-	ok = intermediates.AppendCertsFromPEM([]byte(pki.Etcd.CA.X509Certificate))
-	if !ok {
-		t.Fatal("failed to parse etcd CA certificate")
+	if ok := intermediates.AppendCertsFromPEM([]byte(pki.Etcd.CA.X509Certificate)); !ok {
+		t.Fatal("Parsing etcd CA certificate")
 	}
 
 	block, _ := pem.Decode([]byte(pki.Etcd.PeerCertificates["controller01"].X509Certificate))
