@@ -47,6 +47,8 @@ linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
+  gci:
+    local-prefixes: github.com/flexkube/libflexkube
   makezero:
     always: true
   wsl:
