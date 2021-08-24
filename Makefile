@@ -46,10 +46,10 @@ VAGRANTCMD=$(TERRAFORM_ENV) vagrant
 COVERPROFILE=c.out
 
 .PHONY: all
-all: build build-test test lint
+all: build build-test test lint semgrep
 
 .PHONY: all-cover
-all-cover: build build-test test-cover lint
+all-cover: build build-test test-cover lint semgrep
 
 .PHONY: build
 build:
@@ -319,3 +319,8 @@ libvirt-download-image:
 .PHONY: terraform-fmt
 terraform-fmt:
 	for j in $$(for i in $$(find -name *.tf 2>/dev/null | grep -v .terraform); do dirname $$i; done | sort  | uniq); do terraform fmt -check $$j; done
+
+.PHONY: semgrep
+semgrep: SEMGREP_BIN=semgrep
+semgrep:
+	@if ! which $(SEMGREP_BIN) >/dev/null 2>&1; then echo "$(SEMGREP_BIN) binary not found, skipping extra linting"; else $(SEMGREP_BIN); fi
