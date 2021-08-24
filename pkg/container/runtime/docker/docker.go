@@ -43,7 +43,7 @@ type Config struct {
 // dockerClient is a wrapper interface over
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
-type dockerClient interface { //nolint:dupl
+type dockerClient interface { //nolint:dupl // Test version looks very similar.
 	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
@@ -324,7 +324,7 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 
 	for {
 		header, err := tr.Next()
-		if err == io.EOF { //nolint:errorlint
+		if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 			break
 		}
 

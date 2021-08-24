@@ -22,7 +22,7 @@ const (
 
 // Create() tests.
 //
-//nolint:funlen
+//nolint:funlen // Just a long integration test.
 func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	t.Parallel()
 

@@ -250,7 +250,7 @@ func (r *release) Exists() (bool, error) {
 		return err
 	})
 
-	if err == driver.ErrReleaseNotFound { //nolint:errorlint
+	if err == driver.ErrReleaseNotFound { //nolint:errorlint // errors.Is does not work for Helm errors.
 		return false, nil
 	}
 

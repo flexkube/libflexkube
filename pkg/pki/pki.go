@@ -320,7 +320,7 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 	der, _ := pem.Decode([]byte(c.X509Certificate))
 	if der == nil {
-		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format") //nolint:stylecheck
+		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format") //nolint:stylecheck // Capitaliziation is OK here, as X.509 is a proper noun.
 	}
 
 	cert, err := x509.ParseCertificate(der.Bytes)
@@ -421,7 +421,7 @@ func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
 
 func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
 	// Generate serial number for X.509 certificate.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128) //nolint:gomnd // As in https://golang.org/src/crypto/tls/generate_cert.go.
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {

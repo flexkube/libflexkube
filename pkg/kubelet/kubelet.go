@@ -343,7 +343,7 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 }
 
 // mounts returns kubelet's host mounts.
-func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen
+func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return single data structure here.
 	return append([]containertypes.Mount{
 		{
 			// Kubelet is using this file to determine what OS it runs on and then reports that to API server

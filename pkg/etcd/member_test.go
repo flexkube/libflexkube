@@ -74,7 +74,7 @@ func validMember(t *testing.T) *etcd.MemberConfig {
 
 // Validate() tests.
 //
-//nolint:funlen
+//nolint:funlen // Just many test cases.
 func TestValidate(t *testing.T) {
 	t.Parallel()
 

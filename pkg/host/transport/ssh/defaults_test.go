@@ -13,7 +13,7 @@ const (
 	customPort = 33
 )
 
-func TestBuildConfig(t *testing.T) { //nolint:funlen
+func TestBuildConfig(t *testing.T) { //nolint:funlen // Just many test cases.
 	t.Parallel()
 
 	cases := []struct {

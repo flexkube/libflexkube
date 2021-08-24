@@ -437,11 +437,11 @@ func (r *Resource) validateKubeconfigPKI() error {
 	}
 
 	if r.State.PKI.Kubernetes == nil {
-		return fmt.Errorf("Kubernetes PKI management not enabled") //nolint:stylecheck
+		return fmt.Errorf("Kubernetes PKI management not enabled") //nolint:stylecheck // Kubernetes is a proper noun so should be capitalized.
 	}
 
 	if r.State.PKI.Kubernetes.AdminCertificate == nil {
-		return fmt.Errorf("Kubernetes admin certificate not available in PKI") //nolint:stylecheck
+		return fmt.Errorf("Kubernetes admin certificate not available in PKI") //nolint:stylecheck // Kubernetes is a proper noun so should be capitalized.
 	}
 
 	return nil
@@ -451,15 +451,15 @@ func (r *Resource) validateKubeconfigPKI() error {
 // configuration to generate admin kubeconfig file.
 func (r *Resource) validateKubeconfigControlplane() error {
 	if r.Controlplane == nil {
-		return fmt.Errorf("Kubernetes controlplane management not enabled") //nolint:stylecheck
+		return fmt.Errorf("Kubernetes controlplane management not enabled") //nolint:stylecheck // Kubernetes is a proper noun so should be capitalized.
 	}
 
 	if r.Controlplane.APIServerAddress == "" {
-		return fmt.Errorf("Kubernetes controlplane has no API server address set") //nolint:stylecheck
+		return fmt.Errorf("Kubernetes controlplane has no API server address set") //nolint:stylecheck // Kubernetes is a proper noun so should be capitalized.
 	}
 
 	if r.Controlplane.APIServerPort == 0 {
-		return fmt.Errorf("Kubernetes controlplane has no API server port set") //nolint:stylecheck
+		return fmt.Errorf("Kubernetes controlplane has no API server port set") //nolint:stylecheck // Kubernetes is a proper noun so should be capitalized.
 	}
 
 	return nil

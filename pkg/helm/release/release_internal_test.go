@@ -43,8 +43,7 @@ func TestRetryOnEtcdErrorDifferentError(t *testing.T) {
 		t.Errorf("function should be called only once if the error returned is not etcd error")
 	}
 
-	// Helm errors cannot be unwrapped.
-	if err != expectedError { //nolint:errorlint
+	if err != expectedError { //nolint:errorlint // Helm errors cannot be unwrapped.
 		t.Fatalf("retrying did not retain original error, got: %v", err)
 	}
 }

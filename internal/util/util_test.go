@@ -72,7 +72,7 @@ func TestIndent(t *testing.T) {
 func TestIndentWithNewline(t *testing.T) {
 	t.Parallel()
 
-	expected := "  foo\n  bar\n" //nolint:ifshort
+	expected := "  foo\n  bar\n" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("foo\nbar\n", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -81,7 +81,7 @@ func TestIndentWithNewline(t *testing.T) {
 func TestIndentEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := "" //nolint:ifshort
+	expected := "" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -90,7 +90,7 @@ func TestIndentEmpty(t *testing.T) {
 func TestIndentEmptyText(t *testing.T) {
 	t.Parallel()
 
-	expected := "" //nolint:ifshort
+	expected := "" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("", "  "); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -99,7 +99,7 @@ func TestIndentEmptyText(t *testing.T) {
 func TestIndentEmptyIndent(t *testing.T) {
 	t.Parallel()
 
-	expected := "foo\nbar" //nolint:ifshort
+	expected := "foo\nbar" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("foo\nbar", ""); a != expected {
 		t.Fatalf("expected '%s', got '%s'", expected, a)
 	}
@@ -108,7 +108,7 @@ func TestIndentEmptyIndent(t *testing.T) {
 func TestJoinSorted(t *testing.T) {
 	t.Parallel()
 
-	expected := "baz/doh|foo/bar" //nolint:ifshort
+	expected := "baz/doh|foo/bar" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	values := map[string]string{
 		"foo": "bar",
@@ -123,7 +123,7 @@ func TestJoinSorted(t *testing.T) {
 func TestPickStringSlice(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{"foo"} //nolint:ifshort
+	expected := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
 	}
@@ -141,7 +141,7 @@ func TestPickStringMap(t *testing.T) {
 func TestPickStringSliceEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{} //nolint:ifshort
+	expected := []string{} //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if v := PickStringSlice([]string{}, expected); !reflect.DeepEqual(v, expected) {
 		t.Fatalf("Expected %v, got %v", expected, v)
 	}

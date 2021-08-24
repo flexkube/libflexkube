@@ -190,7 +190,7 @@ func TestExistingEndpoints(t *testing.T) {
 		},
 	}
 
-	e := []string{"1.1.1.1:2379"} //nolint:ifshort
+	e := []string{"1.1.1.1:2379"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if ee := c.getExistingEndpoints(); !reflect.DeepEqual(e, ee) {
 		t.Fatalf("Expected %+v, got %+v", e, ee)
@@ -345,7 +345,7 @@ func TestMembersToRemove(t *testing.T) {
 		containers: co,
 	}
 
-	e := []string{"foo"} //nolint:ifshort
+	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if r := c.membersToRemove(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)
@@ -375,7 +375,7 @@ func TestMembersToAdd(t *testing.T) {
 		containers: co,
 	}
 
-	e := []string{"foo"} //nolint:ifshort
+	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if r := c.membersToAdd(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)

@@ -64,7 +64,7 @@ func TestNewClientWithHost(t *testing.T) {
 func TestSanitizeImageName(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:latest" //nolint:ifshort
+	e := "foo:latest" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if g := sanitizeImageName("foo"); g != e {
 		t.Fatalf("Expected '%s', got '%s'", e, g)
@@ -74,7 +74,7 @@ func TestSanitizeImageName(t *testing.T) {
 func TestSanitizeImageNameWithTag(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:v0.1.0" //nolint:ifshort
+	e := "foo:v0.1.0" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if g := sanitizeImageName(e); g != e {
 		t.Fatalf("Expected '%s', got '%s'", e, g)
@@ -340,7 +340,7 @@ func TestFilesToTar(t *testing.T) {
 	tr := tar.NewReader(r)
 
 	h, err := tr.Next()
-	if err == io.EOF { //nolint:errorlint
+	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 
@@ -385,7 +385,7 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 	tr := tar.NewReader(r)
 
 	h, err := tr.Next()
-	if err == io.EOF { //nolint:errorlint
+	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 

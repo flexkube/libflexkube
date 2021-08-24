@@ -133,7 +133,7 @@ desiredState:
 func TestFilesToUpdateEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{foo} //nolint:ifshort
+	expected := []string{foo} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	d := hostConfiguredContainer{
 		configFiles: map[string]string{

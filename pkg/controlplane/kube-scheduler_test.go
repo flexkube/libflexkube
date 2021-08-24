@@ -67,7 +67,7 @@ func TestKubeSchedulerNewEmptyHost(t *testing.T) {
 
 // Validate() tests.
 //
-//nolint:funlen
+//nolint:funlen // Just many test cases.
 func TestKubeSchedulerValidate(t *testing.T) {
 	t.Parallel()
 

@@ -10,7 +10,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-//nolint:funlen
+//nolint:funlen // Just a lot of test cases.
 func TestKubeControllerManagerValidate(t *testing.T) {
 	t.Parallel()
 

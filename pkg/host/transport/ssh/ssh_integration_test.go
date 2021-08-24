@@ -20,10 +20,8 @@ import (
 // share /run with the host).
 const testServerAddr = "/run/test.sock"
 
-// This test may access SSHAuthSockEnv environment variable,
-// which is global variable, so to keep things stable, don't run it in parallel.
-//
-//nolint:paralleltest
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPasswordAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -52,10 +50,8 @@ func TestPasswordAuth(t *testing.T) {
 	}
 }
 
-// This test may access SSHAuthSockEnv environment variable,
-// which is global variable, so to keep things stable, don't run it in parallel.
-//
-//nolint:paralleltest
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPasswordAuthFail(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -79,10 +75,8 @@ func TestPasswordAuthFail(t *testing.T) {
 	}
 }
 
-// This test may access SSHAuthSockEnv environment variable,
-// which is global variable, so to keep things stable, don't run it in parallel.
-//
-//nolint:paralleltest
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPrivateKeyAuth(t *testing.T) {
 	s := withPrivateKey(t)
 
@@ -119,10 +113,8 @@ func withPrivateKey(t *testing.T) transport.Interface {
 	return ssh
 }
 
-// This test may access SSHAuthSockEnv environment variable,
-// which is global variable, so to keep things stable, don't run it in parallel.
-//
-//nolint:paralleltest
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestForwardUnixSocketFull(t *testing.T) {
 	ssh := withPrivateKey(t)
 
@@ -192,9 +184,7 @@ func prepareTestSocket(t *testing.T) net.Listener {
 	return l
 }
 
-// This function is actually part of the test.
-//
-//nolint:thelper
+//nolint:thelper // This function is actually part of the test.
 func runServer(t *testing.T, expectedRequest, response []byte) {
 	l := prepareTestSocket(t)
 
