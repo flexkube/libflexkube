@@ -25,9 +25,11 @@ const testServerAddr = "/run/test.sock"
 func TestPasswordAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	pass, err := ioutil.ReadFile("/home/core/.password")
+	passwordFilePath := "/home/core/.password"
+
+	pass, err := ioutil.ReadFile(passwordFilePath)
 	if err != nil {
-		t.Fatalf("reading password shouldn't fail, got: %v", err)
+		t.Fatalf("reading password file %q: %v", passwordFilePath, err)
 	}
 
 	c := &Config{
@@ -90,9 +92,11 @@ func withPrivateKey(t *testing.T) transport.Interface {
 
 	unsetSSHAuthSockEnv(t)
 
-	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
+	sshPrivateKeyPath := "/home/core/.ssh/id_rsa"
+
+	key, err := ioutil.ReadFile(sshPrivateKeyPath)
 	if err != nil {
-		t.Fatalf("reading SSH private key shouldn't fail, got: %v", err)
+		t.Fatalf("reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
 	}
 
 	c := &Config{
