@@ -567,8 +567,9 @@ func TestDeployUpdateMembers(t *testing.T) {
 		t.Fatalf("Deploying should trigger updateMembers and fail")
 	}
 
-	if !strings.Contains(err.Error(), "getting etcd client") {
-		t.Fatalf("Expected failure in client creation, got: %v", err)
+	expectedErrorMessage := "getting etcd client"
+	if !strings.Contains(err.Error(), expectedErrorMessage) {
+		t.Fatalf("Expected failure in client creation by error containing %q, got: %v", expectedErrorMessage, err)
 	}
 }
 
