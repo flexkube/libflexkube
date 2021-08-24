@@ -34,14 +34,19 @@ func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
 	d := newDirect(t)
-	p := "/foo" //nolint:ifshort
+	p := "/foo"
 
 	dc, err := d.Connect()
 	if err != nil {
 		t.Fatalf("Connecting: %v", err)
 	}
 
-	if fp, _ := dc.ForwardUnixSocket(p); fp != p {
+	fp, err := dc.ForwardUnixSocket(p)
+	if err != nil {
+		t.Fatalf("forwarding socket: %v", err)
+	}
+
+	if fp != p {
 		t.Fatalf("expected '%s', got '%s'", p, fp)
 	}
 }
@@ -60,14 +65,19 @@ func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
 	d := newDirect(t)
-	a := "localhost:80" //nolint:ifshort
+	a := "localhost:80"
 
 	dc, err := d.Connect()
 	if err != nil {
 		t.Fatalf("Connecting: %v", err)
 	}
 
-	if fa, _ := dc.ForwardTCP(a); fa != a {
+	fa, err := dc.ForwardTCP(a)
+	if err != nil {
+		t.Fatalf("forwarding TCP: %v", err)
+	}
+
+	if fa != a {
 		t.Fatalf("expected '%s', got '%s'", a, fa)
 	}
 }
