@@ -39,16 +39,8 @@ func unsetSSHAuthSockEnv(t *testing.T) {
 func TestNew(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-		PrivateKey:        generateRSAPrivateKey(t),
-	}
+	c := testConfig(t)
+
 	if _, err := c.New(); err != nil {
 		t.Fatalf("creating new SSH object should succeed, got: %s", err)
 	}
@@ -59,15 +51,8 @@ func TestNew(t *testing.T) {
 func TestNewSetPassword(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
+	c := testConfig(t)
+	c.PrivateKey = ""
 
 	s, err := c.New()
 	if err != nil {
@@ -84,15 +69,8 @@ func TestNewSetPassword(t *testing.T) {
 func TestNewSetPrivateKey(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-		PrivateKey:        generateRSAPrivateKey(t),
-	}
+	c := testConfig(t)
+	c.Password = ""
 
 	s, err := c.New()
 	if err != nil {
@@ -113,186 +91,62 @@ func TestNewValidate(t *testing.T) {
 	}
 }
 
-// Validate() tests.
-func TestValidateRequireAddress(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require address field")
-	}
-}
-
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
 // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestValidateRequireAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require either password or private key")
-	}
-}
+	c := testConfig(t)
+	c.PrivateKey = ""
+	c.Password = ""
 
-func TestValidateRequireUser(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require user field")
-	}
-}
-
-func TestValidateRequireConnectionTimeout(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:       "localhost",
-		User:          "root",
-		Password:      "foo",
-		RetryTimeout:  "60s",
-		RetryInterval: "1s",
-		Port:          Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require connection timeout field")
-	}
-}
-
-func TestValidateRequireRetryTimeout(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require retry timeout field")
-	}
-}
-
-func TestValidateRequireRetryInterval(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		Port:              Port,
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-	}
 	if err := c.Validate(); err == nil {
 		t.Fatalf("validating SSH configuration should require retry interval field")
 	}
 }
 
-func TestValidateRequirePort(t *testing.T) {
+func Test_Validating_config_returns_error_when(t *testing.T) {
 	t.Parallel()
 
-	c := &Config{
+	for name, mutateF := range map[string]func(*Config){
+		"address_is_empty":                             func(c *Config) { c.Address = "" },
+		"user_is_empty":                                func(c *Config) { c.User = "" },
+		"connection_timeout_is_empty":                  func(c *Config) { c.ConnectionTimeout = "" },
+		"retry_timeout_is_empty":                       func(c *Config) { c.RetryTimeout = "" },
+		"retry_interval_is_empty":                      func(c *Config) { c.RetryInterval = "" },
+		"port_is_zero":                                 func(c *Config) { c.Port = 0 },
+		"connection_timeout_is_not_a_valid_duration":   func(c *Config) { c.ConnectionTimeout = "baz" },
+		"retry_timeout_is_not_a_valid_duration":        func(c *Config) { c.RetryTimeout = "bar" },
+		"retry_interval_is_not_a_valid_duration":       func(c *Config) { c.RetryInterval = "ban" },
+		"private_key_is_not_a_PEM_encoded_private_key": func(c *Config) { c.PrivateKey = "bah" },
+	} {
+		mutateF := mutateF
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			c := testConfig(t)
+			mutateF(c)
+
+			if err := c.Validate(); err == nil {
+				t.Fatal("Expected validation error")
+			}
+		})
+	}
+}
+
+func testConfig(t *testing.T) *Config {
+	t.Helper()
+
+	return &Config{
 		Address:           "localhost",
 		User:              "root",
 		Password:          "foo",
 		ConnectionTimeout: "30s",
 		RetryTimeout:      "60s",
 		RetryInterval:     "1s",
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should require port field")
-	}
-}
-
-func TestValidateParseConnectionTimeout(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "doh",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
 		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should parse connection timeout")
-	}
-}
-
-func TestValidateParseRetryTimeout(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "doh",
-		RetryInterval:     "1s",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should parse retry timeout")
-	}
-}
-
-func TestValidateParseRetryInterval(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		Password:          "foo",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "doh",
-		Port:              Port,
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should parse retry interval")
-	}
-}
-
-func TestValidateParsePrivateKey(t *testing.T) {
-	t.Parallel()
-
-	c := &Config{
-		Address:           "localhost",
-		User:              "root",
-		ConnectionTimeout: "30s",
-		RetryTimeout:      "60s",
-		RetryInterval:     "1s",
-		Port:              Port,
-		PrivateKey:        "foo",
-	}
-	if err := c.Validate(); err == nil {
-		t.Fatalf("validating SSH configuration should parse private key")
+		PrivateKey:        generateRSAPrivateKey(t),
 	}
 }
 
