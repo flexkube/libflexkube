@@ -104,7 +104,7 @@ func (m *HostConfiguredContainer) New() (HostConfiguredContainerInterface, error
 		return nil, fmt.Errorf("validating configuration: %w", err)
 	}
 
-	c, _ := m.Container.New()
+	c, _ := m.Container.New() //nolint:errcheck // Already checked in Validate().
 
 	hcc := &hostConfiguredContainer{
 		container:   c,

@@ -298,7 +298,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("validating controlplane configuration: %w", err)
 	}
 
-	controlplane, cc, _ := c.containersWithState()
+	controlplane, cc, _ := c.containersWithState() //nolint:errcheck // We check it in Validate().
 
 	// If shutdown is requested, don't fill DesiredState to remove everything.
 	if c.Destroy {
@@ -308,15 +308,14 @@ func (c *Controlplane) New() (types.Resource, error) {
 	// Make sure all values are filled.
 	c.buildComponents()
 
-	// Skip error checking, as it's done in Verify().
-	kas, _ := c.KubeAPIServer.New()
-	kasHcc, _ := kas.ToHostConfiguredContainer()
+	kas, _ := c.KubeAPIServer.New()              //nolint:errcheck // We check it in Validate().
+	kasHcc, _ := kas.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
-	kcm, _ := c.KubeControllerManager.New()
-	kcmHcc, _ := kcm.ToHostConfiguredContainer()
+	kcm, _ := c.KubeControllerManager.New()      //nolint:errcheck // We check it in Validate().
+	kcmHcc, _ := kcm.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
-	ks, _ := c.KubeScheduler.New()
-	ksHcc, _ := ks.ToHostConfiguredContainer()
+	ks, _ := c.KubeScheduler.New()             //nolint:errcheck // We check it in Validate().
+	ksHcc, _ := ks.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
 	cc.DesiredState = container.ContainersState{
 		"kube-apiserver":          kasHcc,
@@ -324,7 +323,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 		"kube-scheduler":          ksHcc,
 	}
 
-	co, _ := cc.New()
+	co, _ := cc.New() //nolint:errcheck // We check it in Validate().
 
 	controlplane.containers = co
 

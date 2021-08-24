@@ -42,11 +42,11 @@ func (h *Host) New() (transport.Interface, error) {
 	var t transport.Interface
 
 	if h.DirectConfig != nil {
-		t, _ = h.DirectConfig.New()
+		t, _ = h.DirectConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	if h.SSHConfig != nil {
-		t, _ = h.SSHConfig.New()
+		t, _ = h.SSHConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	return &host{

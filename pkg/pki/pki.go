@@ -428,7 +428,7 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 		return fmt.Errorf("generating serial number for certificate: %w", err)
 	}
 
-	vd, _ := time.ParseDuration(c.ValidityDuration)
+	vd, _ := time.ParseDuration(c.ValidityDuration) //nolint:errcheck // Already done in Validate().
 
 	ku, eku := c.decodeKeyUsage()
 

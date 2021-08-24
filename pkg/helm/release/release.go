@@ -91,8 +91,7 @@ func (r *Config) New() (Release, error) {
 	actionConfig := &action.Configuration{}
 	settings := cli.New()
 
-	// Safe to ignore errors, because Validate will return early if data is not valid.
-	g, kc, cs, _ := newClients(r.Kubeconfig)
+	g, kc, cs, _ := newClients(r.Kubeconfig) //nolint:errcheck // We check it in Validate().
 
 	kc.Namespace = r.Namespace
 
@@ -101,10 +100,9 @@ func (r *Config) New() (Release, error) {
 	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
 	actionConfig.Log = func(_ string, _ ...interface{}) {}
 
-	values, _ := r.parseValues()
+	values, _ := r.parseValues() //nolint:errcheck // We check it in Validate().
 
-	// This is safe, because we call newClients() in Validate().
-	c, _ := client.NewClient([]byte(r.Kubeconfig))
+	c, _ := client.NewClient([]byte(r.Kubeconfig)) //nolint:errcheck // We check it in Validate().
 
 	release := &release{
 		actionConfig:    actionConfig,

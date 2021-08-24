@@ -332,7 +332,7 @@ func (k *kubelet) configFiles() (map[string]string, error) {
 		return nil, fmt.Errorf("building kubelet configuration: %w", err)
 	}
 
-	bootstrapKubeconfig, _ := k.config.BootstrapConfig.ToYAMLString()
+	bootstrapKubeconfig, _ := k.config.BootstrapConfig.ToYAMLString() //nolint:errcheck // This is checked in Validate().
 
 	return map[string]string{
 		// kubelet.yaml file is a recommended way to configure the kubelet.
@@ -534,7 +534,7 @@ func (k *kubelet) getHooks() *container.Hooks {
 
 // applyPrivilegedLabels adds privileged labels to kubelet object using Kubernetes API.
 func (k *kubelet) applyPrivilegedLabels() error {
-	kc, _ := k.config.AdminConfig.ToYAMLString()
+	kc, _ := k.config.AdminConfig.ToYAMLString() //nolint:errcheck // This is checked in Validate().
 
 	c, err := client.NewClient([]byte(kc))
 	if err != nil {
@@ -546,7 +546,7 @@ func (k *kubelet) applyPrivilegedLabels() error {
 
 // waitForNodeReady waits until the node becomes ready.
 func (k *kubelet) waitForNodeReady() error {
-	kc, _ := k.config.AdminConfig.ToYAMLString()
+	kc, _ := k.config.AdminConfig.ToYAMLString() //nolint:errcheck // This is checked in Validate().
 
 	c, err := client.NewClient([]byte(kc))
 	if err != nil {

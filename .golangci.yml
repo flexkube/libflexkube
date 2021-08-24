@@ -44,6 +44,9 @@ issues:
       text: "(CIDR|CA|DNS|API|CN|SSH).+(Cidr|Ca|Dns|Api|Cn|Ssh)"
 
 linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
   makezero:
     always: true
 

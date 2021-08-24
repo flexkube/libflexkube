@@ -232,13 +232,13 @@ func (p *Pool) New() (types.Resource, error) {
 
 		p.propagateKubelet(k)
 
-		kubelet, _ := k.New()
-		kubeletHcc, _ := kubelet.ToHostConfiguredContainer()
+		kubelet, _ := k.New()                                //nolint:errcheck // This is checked in Validate().
+		kubeletHcc, _ := kubelet.ToHostConfiguredContainer() //nolint:errcheck // This is checked in Validate().
 
 		cc.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
-	c, _ := cc.New()
+	c, _ := cc.New() //nolint:errcheck // This is checked in Validate().
 
 	return &pool{
 		containers: c,

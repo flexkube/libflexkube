@@ -169,15 +169,15 @@ func (c *Cluster) New() (types.Resource, error) {
 		m := m
 		c.propagateMember(n, &m)
 
-		mem, _ := m.New()
-		hcc, _ := mem.ToHostConfiguredContainer()
+		mem, _ := m.New()                         //nolint:errcheck // We check it in Validate().
+		hcc, _ := mem.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
 		cc.DesiredState[n] = hcc
 
 		cluster.members[n] = mem
 	}
 
-	co, _ := cc.New()
+	co, _ := cc.New() //nolint:errcheck // We check it in Validate().
 
 	cluster.containers = co
 

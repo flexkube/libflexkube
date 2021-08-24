@@ -146,13 +146,13 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 		lb := lb
 		a.propagateInstance(&lb)
 
-		lbx, _ := lb.New()
-		lbxHcc, _ := lbx.ToHostConfiguredContainer()
+		lbx, _ := lb.New()                           //nolint:errcheck // Already checked in Validate().
+		lbxHcc, _ := lbx.ToHostConfiguredContainer() //nolint:errcheck // Already checked in Validate().
 
 		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
 	}
 
-	c, _ := cc.New()
+	c, _ := cc.New() //nolint:errcheck // Already checked in Validate().
 
 	return &apiLoadBalancers{
 		containers: c,

@@ -316,7 +316,7 @@ func (m *member) peerURLs() []string {
 func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 	newEndpoints := []string{}
 
-	h, _ := m.config.Host.New()
+	h, _ := m.config.Host.New() //nolint:errcheck // We check it in Validate().
 
 	hc, err := h.Connect()
 	if err != nil {
@@ -364,9 +364,10 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 // getEtcdClient creates etcd client object using member certificates and
 // given endpoints.
 func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
-	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey))
+	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey)) //nolint:errcheck // We check it in Validate().
+
 	der, _ := pem.Decode([]byte(m.config.CACertificate))
-	ca, _ := x509.ParseCertificate(der.Bytes)
+	ca, _ := x509.ParseCertificate(der.Bytes) //nolint:errcheck // We check it in Validate().
 
 	p := x509.NewCertPool()
 	p.AddCert(ca)

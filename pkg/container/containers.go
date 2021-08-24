@@ -82,8 +82,8 @@ func (c *Containers) New() (ContainersInterface, error) {
 	}
 
 	// Validate already checks for errors, so we can skip checking here.
-	previousState, _ := c.PreviousState.New()
-	desiredState, _ := c.DesiredState.New()
+	previousState, _ := c.PreviousState.New() //nolint:errcheck // Checked in Validate().
+	desiredState, _ := c.DesiredState.New()   //nolint:errcheck // Checked in Validate().
 
 	return &containers{
 		previousState: previousState.(containersState),

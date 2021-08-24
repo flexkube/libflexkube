@@ -82,10 +82,9 @@ func (d *Config) New() (transport.Interface, error) {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
-	// Validate checks parsing, so we can skip error checking here.
-	ct, _ := time.ParseDuration(d.ConnectionTimeout)
-	rt, _ := time.ParseDuration(d.RetryTimeout)
-	ri, _ := time.ParseDuration(d.RetryInterval)
+	ct, _ := time.ParseDuration(d.ConnectionTimeout) //nolint:errcheck // This is checked in Validate().
+	rt, _ := time.ParseDuration(d.RetryTimeout)      //nolint:errcheck // This is checked in Validate().
+	ri, _ := time.ParseDuration(d.RetryInterval)     //nolint:errcheck // This is checked in Validate().
 
 	s := &ssh{
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
@@ -101,7 +100,8 @@ func (d *Config) New() (transport.Interface, error) {
 		s.auth = append(s.auth, gossh.Password(d.Password))
 	}
 
-	if signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" {
+	if d.PrivateKey != "" {
+		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)) //nolint:errcheck // This is checked in Validate().
 		s.auth = append(s.auth, gossh.PublicKeys(signer))
 	}
 

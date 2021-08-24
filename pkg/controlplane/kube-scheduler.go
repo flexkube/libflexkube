@@ -97,8 +97,7 @@ func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 		return nil, fmt.Errorf("validating Kubernetes Scheduler configuration: %w", err)
 	}
 
-	// It's fine to skip the error, Validate() will handle it.
-	kubeconfig, _ := k.Kubeconfig.ToYAMLString()
+	kubeconfig, _ := k.Kubeconfig.ToYAMLString() //nolint:errcheck // We check it in Validate().
 
 	return &kubeScheduler{
 		common:     *k.Common,
