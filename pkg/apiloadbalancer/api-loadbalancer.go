@@ -134,7 +134,7 @@ const (
 	// ContainerName is a default name for load balancer container.
 	ContainerName = "api-loadbalancer-haproxy"
 
-	// containerConfigPath is a path inside the container, where configuration
+	// Path inside the container, where configuration
 	// stored on the host filesystem should be mapped into.
 	containerConfigPath = "/usr/local/etc/haproxy/haproxy.cfg"
 )

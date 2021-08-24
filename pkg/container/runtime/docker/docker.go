@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	// stopTimeout is how long we wait when gracefully stopping the container before force-killing it.
+	// How long we wait when gracefully stopping the container before force-killing it.
 	stopTimeout = 30 * time.Second
 )
 

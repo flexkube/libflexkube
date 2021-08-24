@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	// certValidityDuration is how long certificate is valid from the moment of generation.
+	// CertValidityDuration is how long certificate is valid from the moment of generation.
 	certValidityDuration = 1 * time.Hour
 )
 

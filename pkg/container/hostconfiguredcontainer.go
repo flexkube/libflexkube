@@ -53,10 +53,10 @@ const (
 	// ConfigMountpoint is where host file-system is mounted in the -config container.
 	ConfigMountpoint = "/mnt/host"
 
-	// configFileMode is default configuration file permissions.
+	// Default configuration file permissions.
 	configFileMode = 0o600
 
-	// mountpointDirMode is default host mountpoint directory permission.
+	// Default host mountpoint directory permission.
 	mountpointDirMode = 0o700
 )
 

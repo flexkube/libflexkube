@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// customPort is a port, which differs from default SSH port.
+	// Custom port for testing, which differs from default SSH port.
 	customPort = 33
 )
 

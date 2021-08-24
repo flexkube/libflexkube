@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	// containerRunningDelay is how long we wait for container to start and report as running by Docker.
+	// Arbitrary value of wow long we wait for container to start and report as running by Docker.
 	containerRunningDelay = 3 * time.Second
 )
 

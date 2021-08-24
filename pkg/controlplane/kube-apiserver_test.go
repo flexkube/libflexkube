@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	// securePort is a TLS port used for testing.
+	// TLS port used for testing.
 	securePort = 6443
 
-	// nonEmptyString is a string used for testing.
+	// Non empty string used for testing.
 	nonEmptyString = "foo"
 )
 
