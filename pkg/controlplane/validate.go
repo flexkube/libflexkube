@@ -24,7 +24,7 @@ type validator struct {
 // validate validates validator struct. If validateKubeconfig is false,
 // then validation of this field will be skipped.
 func (v validator) validate(validateKubeconfig bool) error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if !validateKubeconfig {
 		pki, err := utiltest.GeneratePKIErr()
@@ -64,8 +64,8 @@ func (v validator) validate(validateKubeconfig bool) error {
 	return errors.Return()
 }
 
-func (v validator) validateHost() util.ValidateError {
-	var errors util.ValidateError
+func (v validator) validateHost() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if v.Host == nil {
 		errors = append(errors, fmt.Errorf("host must be defined"))

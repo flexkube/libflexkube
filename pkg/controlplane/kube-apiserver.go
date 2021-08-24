@@ -285,7 +285,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 //
 // TODO: Add validation of certificates if specified.
 func (k *KubeAPIServer) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	v := validator{
 		Common: k.Common,

@@ -56,7 +56,7 @@ func (h *Host) New() (transport.Interface, error) {
 
 // Validate validates host configuration.
 func (h *Host) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if err := h.DirectConfig.Validate(); err != nil {
 		errors = append(errors, fmt.Errorf("validating direct config: %w", err))

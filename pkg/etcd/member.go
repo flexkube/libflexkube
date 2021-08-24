@@ -256,7 +256,7 @@ func (m *MemberConfig) New() (Member, error) {
 
 // Validate validates etcd member configuration.
 func (m *MemberConfig) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	nonEmptyFields := map[string]string{
 		// TODO: Require peer address for now. Later we could figure out

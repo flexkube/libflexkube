@@ -47,7 +47,7 @@ type Config struct {
 
 // Validate validates Config struct.
 func (c *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c.Server == "" {
 		errors = append(errors, fmt.Errorf("server is empty"))
@@ -71,8 +71,8 @@ func (c *Config) Validate() error {
 	return errors.Return()
 }
 
-func (c *Config) validateAuth() util.ValidateError {
-	var errors util.ValidateError
+func (c *Config) validateAuth() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if c.ClientCertificate == "" && c.Token == "" {
 		errors = append(errors, fmt.Errorf("either client certificate or token must be set"))

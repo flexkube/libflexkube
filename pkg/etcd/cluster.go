@@ -190,7 +190,7 @@ func (c *Cluster) Validate() error {
 		return fmt.Errorf("at least one member must be defined when state is empty")
 	}
 
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c.CACertificate != "" {
 		caCert := &pki.Certificate{

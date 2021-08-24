@@ -161,7 +161,7 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 
 // Validate validates APILoadBalancers struct.
 func (a *APILoadBalancers) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	cc := &container.Containers{
 		PreviousState: a.State,

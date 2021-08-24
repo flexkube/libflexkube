@@ -132,7 +132,7 @@ func (d *Config) New() (transport.Interface, error) {
 
 // Validate validates given configuration.
 func (d *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if d.Address == "" {
 		errors = append(errors, fmt.Errorf("address must be set"))
@@ -155,8 +155,8 @@ func (d *Config) Validate() error {
 	return errors.Return()
 }
 
-func (d *Config) validateDurations() util.ValidateError {
-	var errors util.ValidateError
+func (d *Config) validateDurations() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	// Make sure durations are parse-able.
 	if _, err := time.ParseDuration(d.ConnectionTimeout); err != nil {

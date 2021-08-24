@@ -124,7 +124,7 @@ func (r *Config) New() (Release, error) {
 
 // Validate validates Release configuration.
 func (r *Config) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	// Check if all required values are filled in.
 	if r.Kubeconfig == "" {

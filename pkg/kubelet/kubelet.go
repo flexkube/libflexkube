@@ -143,7 +143,7 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 
 // Validate validates kubelet configuration.
 func (k *Kubelet) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	b, err := yaml.Marshal(k)
 	if err != nil {
@@ -182,8 +182,8 @@ func (k *Kubelet) Validate() error {
 }
 
 // validateBootstrapConfig validates bootstrap config.
-func (k *Kubelet) validateBootstrapConfig() util.ValidateError {
-	var errors util.ValidateError
+func (k *Kubelet) validateBootstrapConfig() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if k.BootstrapConfig == nil {
 		errors = append(errors, fmt.Errorf("bootstrapConfig must be set"))
@@ -206,7 +206,7 @@ func (k *Kubelet) validateBootstrapConfig() util.ValidateError {
 
 // validateAdminConfig validates admin config and related parameters.
 func (k *Kubelet) validateAdminConfig() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if k.AdminConfig == nil {
 		errors = append(errors, k.adminConfigRequired()...)
@@ -230,8 +230,8 @@ func (k *Kubelet) validateAdminConfig() error {
 }
 
 // adminConfigRequired returns validation errors which should be used when AdminConfig is not defined.
-func (k *Kubelet) adminConfigRequired() util.ValidateError {
-	var errors util.ValidateError
+func (k *Kubelet) adminConfigRequired() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	if len(k.PrivilegedLabels) > 0 {
 		errors = append(errors, fmt.Errorf("privilegedLabels requested, but adminConfig is not set"))
@@ -245,8 +245,8 @@ func (k *Kubelet) adminConfigRequired() util.ValidateError {
 }
 
 // validateNetworkPlugin validates NetworkPlugin and related required fields.
-func (k *Kubelet) validateNetworkPlugin() util.ValidateError {
-	var errors util.ValidateError
+func (k *Kubelet) validateNetworkPlugin() util.ValidateErrors {
+	var errors util.ValidateErrors
 
 	switch k.NetworkPlugin {
 	case "cni":

@@ -4,12 +4,12 @@ import (
 	"strings"
 )
 
-// ValidateError is a collection of errors, which can be used when
+// ValidateErrors is a collection of errors, which can be used when
 // performing validation of structs to collect all possible errors
 // and return them in one batch.
-type ValidateError []error
+type ValidateErrors []error
 
-func (e ValidateError) Error() string {
+func (e ValidateErrors) Error() string {
 	errors := []string{}
 
 	for _, s := range e {
@@ -20,7 +20,7 @@ func (e ValidateError) Error() string {
 }
 
 // Return returns nil, if no errors has been added.
-func (e ValidateError) Return() error {
+func (e ValidateErrors) Return() error {
 	if len(e) > 0 {
 		return e
 	}

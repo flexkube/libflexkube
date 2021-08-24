@@ -247,7 +247,7 @@ func (p *Pool) New() (types.Resource, error) {
 
 // Validate validates Pool configuration.
 func (p *Pool) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	cc := &container.Containers{
 		PreviousState: p.State,

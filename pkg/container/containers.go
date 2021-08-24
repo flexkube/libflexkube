@@ -93,7 +93,7 @@ func (c *Containers) New() (ContainersInterface, error) {
 
 // Validate validates Containers struct and all structs used underneath.
 func (c *Containers) Validate() error {
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c == nil {
 		errors = append(errors, fmt.Errorf("containers must be defined"))

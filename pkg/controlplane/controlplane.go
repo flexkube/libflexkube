@@ -387,7 +387,7 @@ func validateControlplaneComponent(ccc controlplaneComponentConfiguration, name 
 func (c *Controlplane) Validate() error {
 	c.buildComponents()
 
-	var errors util.ValidateError
+	var errors util.ValidateErrors
 
 	if c.Destroy && (c.State == nil || len(*c.State) == 0) {
 		errors = append(errors, fmt.Errorf("can't destroy non-existent controlplane"))
@@ -420,8 +420,8 @@ func (c *Controlplane) Validate() error {
 	return errors.Return()
 }
 
-func (c *Controlplane) controlplaneComponentsToContainersState() (container.ContainersState, util.ValidateError) {
-	var errors util.ValidateError
+func (c *Controlplane) controlplaneComponentsToContainersState() (container.ContainersState, util.ValidateErrors) {
+	var errors util.ValidateErrors
 
 	kasHcc, err := validateControlplaneComponent(&c.KubeAPIServer, "kube-apiserver")
 	if err != nil {
