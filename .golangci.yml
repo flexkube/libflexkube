@@ -53,6 +53,11 @@ linters-settings:
     capital: true
   gofumpt:
     extra-rules: true
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
   makezero:
     always: true
   nolintlint:
