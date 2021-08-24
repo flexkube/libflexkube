@@ -101,7 +101,7 @@ func TestValidateRequireAuth(t *testing.T) {
 	c.Password = ""
 
 	if err := c.Validate(); err == nil {
-		t.Fatalf("Validating SSH configuration should require retry interval field")
+		t.Fatalf("Validating SSH configuration should require either password or private key")
 	}
 }
 
