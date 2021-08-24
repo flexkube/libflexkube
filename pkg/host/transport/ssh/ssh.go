@@ -146,6 +146,10 @@ func (d *Config) Validate() error {
 		errors = append(errors, fmt.Errorf("at least one authentication method must be available"))
 	}
 
+	if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" && err != nil {
+		errors = append(errors, fmt.Errorf("parsing private key: %w", err))
+	}
+
 	if d.Port == 0 {
 		errors = append(errors, fmt.Errorf("port must be set"))
 	}
@@ -169,10 +173,6 @@ func (d *Config) validateDurations() util.ValidateErrors {
 
 	if _, err := time.ParseDuration(d.RetryInterval); err != nil {
 		errors = append(errors, fmt.Errorf("parsing retry interval: %w", err))
-	}
-
-	if _, err := gossh.ParsePrivateKey([]byte(d.PrivateKey)); d.PrivateKey != "" && err != nil {
-		errors = append(errors, fmt.Errorf("parsing private key: %w", err))
 	}
 
 	return errors
