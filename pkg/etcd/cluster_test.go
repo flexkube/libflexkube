@@ -23,13 +23,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/pki"
 )
 
-// FromYAML() tests.
-//
-//nolint:funlen
-func TestClusterFromYaml(t *testing.T) {
-	t.Parallel()
-
-	c := `
+const yamlConfigTemplate = `
 ssh:
   user: "core"
   port: 2222
@@ -56,6 +50,10 @@ members:
     serverAddress: 10.0.2.15
 `
 
+// FromYAML() tests.
+func TestClusterFromYaml(t *testing.T) {
+	t.Parallel()
+
 	data := struct {
 		Certificate       string
 		MemberCertificate string
@@ -68,7 +66,7 @@ members:
 
 	var buf bytes.Buffer
 
-	tpl := template.Must(template.New("c").Parse(c))
+	tpl := template.Must(template.New("c").Parse(yamlConfigTemplate))
 	if err := tpl.Execute(&buf, data); err != nil {
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
