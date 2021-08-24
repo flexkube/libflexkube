@@ -43,6 +43,10 @@ issues:
         - tagliatelle
       text: "(CIDR|CA|DNS|API|CN|SSH).+(Cidr|Ca|Dns|Api|Cn|Ssh)"
 
+linters-settings:
+  makezero:
+    always: true
+
 linters:
   disable:
     # Triggers on TODOs in the code, which is fine to put.

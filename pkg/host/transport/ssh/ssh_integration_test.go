@@ -200,7 +200,7 @@ func runServer(t *testing.T, expectedRequest, response []byte) {
 
 	expectedRequestLength := len(expectedRequest)
 
-	receivedRequest := make([]byte, expectedRequestLength*2)
+	receivedRequest := make([]byte, expectedRequestLength*2) //nolint:makezero // We do not append here.
 
 	bytesRead, err := conn.Read(receivedRequest)
 	if err != nil {
