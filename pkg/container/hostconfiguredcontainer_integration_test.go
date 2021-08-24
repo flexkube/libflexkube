@@ -53,10 +53,10 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 				},
 			},
 		},
-		ConfigFiles: map[string]string{},
+		ConfigFiles: map[string]string{
+			f: "baz",
+		},
 	}
-
-	h.ConfigFiles[f] = "baz"
 
 	hcc, err := h.New()
 	if err != nil {
