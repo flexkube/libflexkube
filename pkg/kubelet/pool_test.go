@@ -14,7 +14,7 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-func GetPool(t *testing.T) types.Resource {
+func getPool(t *testing.T) types.Resource {
 	t.Helper()
 
 	y := `
@@ -89,14 +89,14 @@ kubelets:
 func TestPoolFromYaml(t *testing.T) {
 	t.Parallel()
 
-	GetPool(t)
+	getPool(t)
 }
 
 // StateToYaml() tests.
 func TestPoolStateToYAML(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if _, err := p.StateToYaml(); err != nil {
 		t.Fatalf("Dumping state to YAML should work, got: %v", err)
@@ -107,7 +107,7 @@ func TestPoolStateToYAML(t *testing.T) {
 func TestPoolCheckCurrentState(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if err := p.CheckCurrentState(); err != nil {
 		t.Fatalf("Checking current state of empty pool should work, got: %v", err)
@@ -118,7 +118,7 @@ func TestPoolCheckCurrentState(t *testing.T) {
 func TestPoolContainers(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if c := p.Containers(); c == nil {
 		t.Fatalf("Containers() should return non-nil value")
@@ -129,7 +129,7 @@ func TestPoolContainers(t *testing.T) {
 func TestPoolDeploy(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	if err := p.Deploy(); err == nil {
 		t.Fatalf("Deploying in testing environment should fail")
@@ -139,7 +139,7 @@ func TestPoolDeploy(t *testing.T) {
 func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
@@ -173,7 +173,7 @@ func TestPoolPropagateExtraMounts(t *testing.T) { //nolint:cyclop
 func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
@@ -191,7 +191,7 @@ func Test_Pool_does_propagate_extra_args_when_instance_has_no_extra_args_set(t *
 func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
 	t.Parallel()
 
-	p := GetPool(t)
+	p := getPool(t)
 
 	found := false
 
