@@ -14,33 +14,33 @@ issues:
   exclude-rules:
     # False positive: https://github.com/kunwardeep/paralleltest/issues/8.
     - linters:
-      - paralleltest
+        - paralleltest
       text: "does not use range value in test Run"
     - linters:
-      - godot
+        - godot
       source: "(front proxy CA certificate,|certificate, as recommended by)"
     # Allow packages to print output to the user until we introduce loggers.
     - linters:
-      - forbidigo
+        - forbidigo
       text: "use of `fmt.Printf` forbidden by pattern"
     - linters:
-      - forbidigo
+        - forbidigo
       text: "use of `fmt.Println` forbidden by pattern"
     # Allow replacements to force specific versions of dependencies.
     - linters:
-      - gomoddirectives
+        - gomoddirectives
       text: "replacement are not allowed"
     # Allow some errors to be not wrapped, as it is not ambiguous where they come from.
     - linters:
-      - wrapcheck
+        - wrapcheck
       text: "error returned from external package is unwrapped"
     # Allow wrapping function which return errors.
     - linters:
-      - wrapcheck
+        - wrapcheck
       text: "error returned from interface method should be wrapped"
     # Allow certain abbreviations in JSON fields for better readability.
     - linters:
-      - tagliatelle
+        - tagliatelle
       text: "(CIDR|CA|DNS|API|CN|SSH).+(Cidr|Ca|Dns|Api|Cn|Ssh)"
 
 linters:
