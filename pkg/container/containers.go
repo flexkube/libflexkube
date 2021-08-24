@@ -342,7 +342,7 @@ func (c *containers) recreate(n string) error {
 //
 // If host configuration changes, existing container will be removed and new one will be created.
 //
-// TODO This might be an overkill. e.g. changing SSH key for deployment will re-create all containers.
+// TODO This might be an overkill. For example, changing SSH key for deployment will re-create all containers.
 func (c *containers) ensureHost(n string) error {
 	diff, err := c.diffHost(n)
 	if err != nil {
