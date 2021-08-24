@@ -151,7 +151,6 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -177,7 +176,6 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -220,7 +218,6 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},
@@ -246,7 +243,6 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 
 	c := containersState{
 		"foo": &hostConfiguredContainer{
-			hooks: &Hooks{},
 			host: host.Host{
 				DirectConfig: &direct.Config{},
 			},

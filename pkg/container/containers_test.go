@@ -1354,7 +1354,6 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 		desiredState: containersState{},
 		currentState: containersState{
 			foo: &hostConfiguredContainer{
-				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -1369,7 +1368,6 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 				},
 			},
 			bar: &hostConfiguredContainer{
-				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
