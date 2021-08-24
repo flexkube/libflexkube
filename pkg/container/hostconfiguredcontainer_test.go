@@ -88,7 +88,7 @@ func TestConnectAndForward(t *testing.T) {
 
 	localSock, err := net.ListenUnix("unix", addr)
 	if err != nil {
-		t.Fatalf("unable to listen on address '%s':%v", addr, err)
+		t.Fatalf("unable to listen on address %q: %v", addr, err)
 	}
 
 	h := &hostConfiguredContainer{
@@ -803,7 +803,7 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 	}
 
 	if id := h.container.Status().ID; id != "bar" {
-		t.Fatalf("expected ID '%s', got '%s'", "bar", id)
+		t.Fatalf("expected ID %q, got %q", "bar", id)
 	}
 }
 

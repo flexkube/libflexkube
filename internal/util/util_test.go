@@ -25,7 +25,7 @@ func TestPickStringNoValue(t *testing.T) {
 	t.Parallel()
 
 	if v := PickString(""); v != "" {
-		t.Fatalf("expected '%s', got '%s'", "", v)
+		t.Fatalf("expected %q, got %q", "", v)
 	}
 }
 
@@ -65,7 +65,7 @@ func TestIndent(t *testing.T) {
 	t.Parallel()
 
 	if a, expected := Indent("foo", "   "), "   foo"; a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestIndentWithNewline(t *testing.T) {
 
 	expected := "  foo\n  bar\n" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("foo\nbar\n", "  "); a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestIndentEmpty(t *testing.T) {
 
 	expected := "" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("", ""); a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestIndentEmptyText(t *testing.T) {
 
 	expected := "" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("", "  "); a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 
@@ -101,7 +101,7 @@ func TestIndentEmptyIndent(t *testing.T) {
 
 	expected := "foo\nbar" //nolint:ifshort // Declare 2 variables in if statement is not common.
 	if a := Indent("foo\nbar", ""); a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestJoinSorted(t *testing.T) {
 	}
 
 	if a := JoinSorted(values, "/", "|"); a != expected {
-		t.Fatalf("expected '%s', got '%s'", expected, a)
+		t.Fatalf("expected %q, got %q", expected, a)
 	}
 }
 

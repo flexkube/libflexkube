@@ -47,7 +47,7 @@ func TestForwardUnixSocket(t *testing.T) {
 	}
 
 	if fp != p {
-		t.Fatalf("expected '%s', got '%s'", p, fp)
+		t.Fatalf("expected %q, got %q", p, fp)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestForwardTCP(t *testing.T) {
 	}
 
 	if fa != a {
-		t.Fatalf("expected '%s', got '%s'", a, fa)
+		t.Fatalf("expected %q, got %q", a, fa)
 	}
 }
 

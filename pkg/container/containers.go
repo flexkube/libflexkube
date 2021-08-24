@@ -196,7 +196,7 @@ func filesToUpdate(d hostConfiguredContainer, c *hostConfiguredContainer) []stri
 	for p, content := range d.configFiles {
 		if currentContent, exists := c.configFiles[p]; !exists || content != currentContent {
 			// TODO convert all prints to logging, so we can add more verbose information too
-			fmt.Printf("Detected configuration drift for file '%s'\n", p)
+			fmt.Printf("Detected configuration drift for file %q\n", p)
 			fmt.Printf("  current: \n%+v\n", currentContent)
 			fmt.Printf("  desired: \n%+v\n", content)
 
@@ -260,7 +260,7 @@ func (c *containers) ensureExists(n string) error {
 		return nil
 	}
 
-	fmt.Printf("Creating new container '%s'\n", n)
+	fmt.Printf("Creating new container %q\n", n)
 
 	d := c.desiredState[n]
 
@@ -353,7 +353,7 @@ func (c *containers) ensureHost(n string) error {
 		return nil
 	}
 
-	fmt.Printf("Detected host configuration drift '%s'\n", n)
+	fmt.Printf("Detected host configuration drift %q\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	return c.recreate(n)
@@ -386,7 +386,7 @@ func (c *containers) ensureContainer(n string) error {
 		return nil
 	}
 
-	fmt.Printf("Detected container configuration drift '%s'\n", n)
+	fmt.Printf("Detected container configuration drift %q\n", n)
 	fmt.Printf("  Diff: %v\n", util.ColorizeDiff(diff))
 
 	return c.recreate(n)

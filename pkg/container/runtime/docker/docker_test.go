@@ -56,7 +56,7 @@ func TestNewClientWithHost(t *testing.T) {
 	}
 
 	if dh := c.DaemonHost(); dh != config.Host {
-		t.Fatalf("Client with host set should have '%s' as host, got: '%s'", config.Host, dh)
+		t.Fatalf("Client with host set should have %q as host, got: %q", config.Host, dh)
 	}
 }
 
@@ -67,7 +67,7 @@ func TestSanitizeImageName(t *testing.T) {
 	e := "foo:latest" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if g := sanitizeImageName("foo"); g != e {
-		t.Fatalf("Expected '%s', got '%s'", e, g)
+		t.Fatalf("Expected %q, got %q", e, g)
 	}
 }
 
@@ -77,7 +77,7 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 	e := "foo:v0.1.0" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
 	if g := sanitizeImageName(e); g != e {
-		t.Fatalf("Expected '%s', got '%s'", e, g)
+		t.Fatalf("Expected %q, got %q", e, g)
 	}
 }
 

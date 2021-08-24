@@ -124,7 +124,7 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 	}
 
 	if c["foo"].container.Status().Status != StatusMissing {
-		t.Fatalf("Non existing container should have status '%s', got: %s", StatusMissing, c["foo"].container.Status().Status)
+		t.Fatalf("Non existing container should have status %q, got: %q", StatusMissing, c["foo"].container.Status().Status)
 	}
 }
 
