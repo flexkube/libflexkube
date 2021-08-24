@@ -221,7 +221,6 @@ func (c *containers) ensureConfigured(n string) error {
 	f := filesToUpdate(*d, r)
 
 	err := d.Configure(f)
-
 	if err != nil && reflect.DeepEqual(f, filesToUpdate(*d, r)) {
 		return fmt.Errorf("no files has been updated: %w", err)
 	}
@@ -268,7 +267,7 @@ func (c *containers) ensureExists(n string) error {
 	err := c.desiredState.CreateAndStart(n)
 
 	// Container creation failed and it does not exist, meaning state is clean.
-	if err != nil && !d.container.Status().Exists() {
+	if err != nil && !d.container.Status().Exists() { //nolint:wsl // Do not cuddle err assignment for readability.
 		return fmt.Errorf("creating container: %w", err)
 	}
 
