@@ -198,11 +198,11 @@ func (r *Resource) getPKI() (*pki.PKI, error) {
 	// Then load config on top.
 	pkic, err := yaml.Marshal(r.PKI)
 	if err != nil {
-		return nil, fmt.Errorf("serializing PKI configuration failed: %w", err)
+		return nil, fmt.Errorf("serializing PKI configuration: %w", err)
 	}
 
 	if err := yaml.Unmarshal(pkic, pki); err != nil {
-		return nil, fmt.Errorf("failed merging PKI configuration with state: %w", err)
+		return nil, fmt.Errorf("merging PKI configuration with state: %w", err)
 	}
 
 	return pki, nil
@@ -255,12 +255,12 @@ func (r *Resource) getContainers(name string) (types.Resource, error) {
 // validateAndNew validates and creates new resource from resource config.
 func validateAndNew(rc types.ResourceConfig) (types.Resource, error) {
 	if err := rc.Validate(); err != nil {
-		return nil, fmt.Errorf("validating configuration failed: %w", err)
+		return nil, fmt.Errorf("validating configuration: %w", err)
 	}
 
 	r, err := rc.New()
 	if err != nil {
-		return nil, fmt.Errorf("initializing object failed: %w", err)
+		return nil, fmt.Errorf("initializing object: %w", err)
 	}
 
 	return r, nil
@@ -271,7 +271,7 @@ func (r *Resource) checkState(rs types.Resource) (string, error) {
 	fmt.Println("Checking current state")
 
 	if err := rs.CheckCurrentState(); err != nil {
-		return "", fmt.Errorf("failed checking current state: %w", err)
+		return "", fmt.Errorf("checking current state: %w", err)
 	}
 
 	// Calculate and print diff.
@@ -294,7 +294,7 @@ func (r *Resource) checkState(rs types.Resource) (string, error) {
 func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
 	diff, err := r.checkState(rs)
 	if err != nil {
-		return fmt.Errorf("failed checking current state: %w", err)
+		return fmt.Errorf("checking current state: %w", err)
 	}
 
 	if r.Noop || diff == "" {
@@ -309,7 +309,7 @@ func (r *Resource) deploy(rs types.Resource, saveStateF func(types.Resource)) er
 	if !r.Confirmed {
 		confirmed, err := askForConfirmation()
 		if err != nil {
-			return fmt.Errorf("failed asking for confirmation: %w", err)
+			return fmt.Errorf("asking for confirmation: %w", err)
 		}
 
 		if !confirmed {
@@ -337,7 +337,7 @@ func askForConfirmation() (bool, error) {
 
 	response, err := r.ReadString('\n')
 	if err != nil {
-		return false, fmt.Errorf("failed reading user response: %w", err)
+		return false, fmt.Errorf("reading user response: %w", err)
 	}
 
 	switch strings.ToLower(strings.TrimSpace(response)) {
@@ -380,16 +380,16 @@ func LoadResourceFromFiles() (*Resource, error) {
 
 	c, err := readYamlFile("config.yaml")
 	if err != nil {
-		return nil, fmt.Errorf("reading config.yaml file failed: %w", err)
+		return nil, fmt.Errorf("reading config.yaml file: %w", err)
 	}
 
 	s, err := readYamlFile("state.yaml")
 	if err != nil {
-		return nil, fmt.Errorf("reading state.yaml file failed: %w", err)
+		return nil, fmt.Errorf("reading state.yaml file: %w", err)
 	}
 
 	if err := yaml.Unmarshal([]byte(string(c)+string(s)), r); err != nil {
-		return nil, fmt.Errorf("parsing files failed: %w", err)
+		return nil, fmt.Errorf("parsing files: %w", err)
 	}
 
 	return r, nil
@@ -403,7 +403,7 @@ func (r *Resource) StateToFile(actionErr error) error {
 
 	rb, err := yaml.Marshal(rs)
 	if err != nil {
-		return fmt.Errorf("failed serializing state: %w", err)
+		return fmt.Errorf("serializing state: %w", err)
 	}
 
 	if string(rb) == "{}\n" {
@@ -414,14 +414,14 @@ func (r *Resource) StateToFile(actionErr error) error {
 
 	if err := ioutil.WriteFile("state.yaml", rb, fs.FileMode(readWriteOwnerOnly)); err != nil {
 		if actionErr == nil {
-			return fmt.Errorf("failed writing new state to file: %w", err)
+			return fmt.Errorf("writing new state to file: %w", err)
 		}
 
 		fmt.Println("Failed to write state.yaml file: %w", err)
 	}
 
 	if actionErr != nil {
-		return fmt.Errorf("execution failed: %w", actionErr)
+		return fmt.Errorf("executing action: %w", actionErr)
 	}
 
 	fmt.Println("Action complete")
@@ -483,7 +483,7 @@ func (r *Resource) validateKubeconfig() error {
 // configuration.
 func (r *Resource) Kubeconfig() (string, error) {
 	if err := r.validateKubeconfig(); err != nil {
-		return "", fmt.Errorf("validation failed: %w", err)
+		return "", fmt.Errorf("validating kubeconfig: %w", err)
 	}
 
 	cc := &client.Config{
@@ -495,7 +495,7 @@ func (r *Resource) Kubeconfig() (string, error) {
 
 	k, err := cc.ToYAMLString()
 	if err != nil {
-		return "", fmt.Errorf("generating failed: %w", err)
+		return "", fmt.Errorf("generating client configuration: %w", err)
 	}
 
 	return k, nil
@@ -505,7 +505,7 @@ func (r *Resource) Kubeconfig() (string, error) {
 func (r *Resource) RunAPILoadBalancerPool(name string) error {
 	p, err := r.getAPILoadBalancerPool(name)
 	if err != nil {
-		return fmt.Errorf("failed getting API Load Balancer pool %q from configuration: %w", name, err)
+		return fmt.Errorf("getting API Load Balancer pool %q from configuration: %w", name, err)
 	}
 
 	saveStateF := func(rs types.Resource) {
@@ -523,7 +523,7 @@ func (r *Resource) RunAPILoadBalancerPool(name string) error {
 func (r *Resource) RunControlplane() error {
 	e, err := r.getControlplane()
 	if err != nil {
-		return fmt.Errorf("failed getting controlplane from the configuration: %w", err)
+		return fmt.Errorf("getting controlplane from the configuration: %w", err)
 	}
 
 	saveStateF := func(rs types.Resource) {
@@ -537,7 +537,7 @@ func (r *Resource) RunControlplane() error {
 func (r *Resource) RunEtcd() error {
 	e, err := r.getEtcd()
 	if err != nil {
-		return fmt.Errorf("preparing failed: %w", err)
+		return fmt.Errorf("getting etcd from the configuration: %w", err)
 	}
 
 	saveStateF := func(rs types.Resource) {
@@ -551,7 +551,7 @@ func (r *Resource) RunEtcd() error {
 func (r *Resource) RunKubeletPool(name string) error {
 	p, err := r.getKubeletPool(name)
 	if err != nil {
-		return fmt.Errorf("failed getting kubelet pool %q from configuration: %w", name, err)
+		return fmt.Errorf("getting kubelet pool %q from configuration: %w", name, err)
 	}
 
 	saveStateF := func(rs types.Resource) {
@@ -569,7 +569,7 @@ func (r *Resource) RunKubeletPool(name string) error {
 func (r *Resource) RunPKI() error {
 	pki, err := r.getPKI()
 	if err != nil {
-		return fmt.Errorf("failed loading PKI configuration: %w", err)
+		return fmt.Errorf("loading PKI configuration: %w", err)
 	}
 
 	fmt.Println("Generating PKI...")
@@ -589,7 +589,7 @@ func (r *Resource) RunPKI() error {
 func (r *Resource) RunContainers(name string) error {
 	p, err := r.getContainers(name)
 	if err != nil {
-		return fmt.Errorf("failed getting containers group %q from configuration: %w", name, err)
+		return fmt.Errorf("getting containers group %q from configuration: %w", name, err)
 	}
 
 	saveStateF := func(rs types.Resource) {

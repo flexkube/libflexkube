@@ -149,7 +149,7 @@ func TestStatus(t *testing.T) {
 		base: base{
 			runtime: runtime.Fake{
 				StatusF: func(ID string) (types.ContainerStatus, error) {
-					return types.ContainerStatus{}, fmt.Errorf("failed checking status")
+					return types.ContainerStatus{}, fmt.Errorf("checking status")
 				},
 			},
 		},
@@ -178,7 +178,7 @@ func TestContainerUpdateStatusFail(t *testing.T) {
 		base: base{
 			runtime: runtime.Fake{
 				StatusF: func(ID string) (types.ContainerStatus, error) {
-					return types.ContainerStatus{}, fmt.Errorf("failed checking status")
+					return types.ContainerStatus{}, fmt.Errorf("checking status")
 				},
 			},
 			status: types.ContainerStatus{

@@ -941,7 +941,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *tes
 						return nil
 					},
 					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
-						return []*types.File{}, fmt.Errorf("error")
+						return []*types.File{}, fmt.Errorf("reading")
 					},
 				},
 			},

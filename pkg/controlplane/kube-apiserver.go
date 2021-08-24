@@ -257,7 +257,7 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 	}
 
 	if err := k.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate Kubernetes API server configuration: %w", err)
+		return nil, fmt.Errorf("validating Kubernetes API server configuration: %w", err)
 	}
 
 	return &kubeAPIServer{

@@ -22,7 +22,7 @@ func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Cl
 
 	g, err := client.NewGetter([]byte(kubeconfig))
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create kubernetes client getter: %w", err)
+		return nil, nil, nil, fmt.Errorf("creating Kubernetes client getter: %w", err)
 	}
 
 	c := &kube.Client{
@@ -32,7 +32,7 @@ func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Cl
 
 	kc, err := c.Factory.KubernetesClientSet()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create kubernetes client: %w", err)
+		return nil, nil, nil, fmt.Errorf("creating Kubernetes client: %w", err)
 	}
 
 	return g, c, kc, nil

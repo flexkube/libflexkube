@@ -50,7 +50,7 @@ type ResourceConfig interface {
 // ResourceFromYaml allows to create any resource instance from YAML configuration.
 func ResourceFromYaml(c []byte, r ResourceConfig) (Resource, error) {
 	if err := yaml.Unmarshal(c, &r); err != nil {
-		return nil, fmt.Errorf("failed to parse input YAML: %w", err)
+		return nil, fmt.Errorf("parsing input YAML: %w", err)
 	}
 
 	return r.New()

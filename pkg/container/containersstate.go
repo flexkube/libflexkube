@@ -118,11 +118,11 @@ func (s containersState) CreateAndStart(containerName string) error {
 	}
 
 	if err := s[containerName].Create(); err != nil {
-		return fmt.Errorf("failed creating new container: %w", err)
+		return fmt.Errorf("creating new container: %w", err)
 	}
 
 	if err := s[containerName].Start(); err != nil {
-		return fmt.Errorf("failed starting container: %w", err)
+		return fmt.Errorf("starting container: %w", err)
 	}
 
 	return nil

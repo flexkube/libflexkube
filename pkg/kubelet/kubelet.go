@@ -127,7 +127,7 @@ type kubelet struct {
 func (k *Kubelet) New() (container.ResourceInstance, error) {
 	// TODO: When creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
 	if err := k.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate kubelet configuration: %w", err)
+		return nil, fmt.Errorf("validating kubelet configuration: %w", err)
 	}
 
 	nk := &kubelet{
@@ -147,11 +147,11 @@ func (k *Kubelet) Validate() error {
 
 	b, err := yaml.Marshal(k)
 	if err != nil {
-		errors = append(errors, fmt.Errorf("failed to validate: %w", err))
+		errors = append(errors, fmt.Errorf("serializing configuration: %w", err))
 	}
 
 	if err := yaml.Unmarshal(b, &k); err != nil {
-		errors = append(errors, fmt.Errorf("validation failed: %w", err))
+		errors = append(errors, fmt.Errorf("deserializing configuration: %w", err))
 	}
 
 	if k.KubernetesCACertificate == "" {
@@ -171,7 +171,7 @@ func (k *Kubelet) Validate() error {
 	errors = append(errors, k.validateNetworkPlugin()...)
 
 	if err := k.Host.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
+		errors = append(errors, fmt.Errorf("validating host configuration: %w", err))
 	}
 
 	if k.Name == "" {
@@ -192,13 +192,13 @@ func (k *Kubelet) validateBootstrapConfig() util.ValidateError {
 	}
 
 	if err := k.BootstrapConfig.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("failed validating bootstrap config: %w", err))
+		errors = append(errors, fmt.Errorf("validating bootstrap config: %w", err))
 
 		return errors
 	}
 
 	if _, err := k.BootstrapConfig.ToYAMLString(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to generate bootstrap kubeconfig: %w", err))
+		errors = append(errors, fmt.Errorf("generating bootstrap kubeconfig: %w", err))
 	}
 
 	return errors
@@ -219,11 +219,11 @@ func (k *Kubelet) validateAdminConfig() error {
 	}
 
 	if err := k.AdminConfig.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("failed validating admin config: %w", err))
+		errors = append(errors, fmt.Errorf("validating admin config: %w", err))
 	}
 
 	if _, err := k.AdminConfig.ToYAMLString(); err != nil {
-		errors = append(errors, fmt.Errorf("failed to generate admin kubeconfig: %w", err))
+		errors = append(errors, fmt.Errorf("generating admin kubeconfig: %w", err))
 	}
 
 	return errors.Return()
@@ -320,7 +320,7 @@ func (k *kubelet) configFile() (string, error) {
 
 	kubelet, err := yaml.Marshal(config)
 	if err != nil {
-		return "", fmt.Errorf("serializing to YAML failed: %w", err)
+		return "", fmt.Errorf("serializing to YAML: %w", err)
 	}
 
 	return string(kubelet), nil
@@ -329,7 +329,7 @@ func (k *kubelet) configFile() (string, error) {
 func (k *kubelet) configFiles() (map[string]string, error) {
 	config, err := k.configFile()
 	if err != nil {
-		return nil, fmt.Errorf("failed building kubelet configuration: %w", err)
+		return nil, fmt.Errorf("building kubelet configuration: %w", err)
 	}
 
 	bootstrapKubeconfig, _ := k.config.BootstrapConfig.ToYAMLString()
@@ -490,7 +490,7 @@ func (k *kubelet) args() []string {
 func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
 	configFiles, err := k.configFiles()
 	if err != nil {
-		return nil, fmt.Errorf("failed building config files map: %w", err)
+		return nil, fmt.Errorf("building config files map: %w", err)
 	}
 
 	c := container.Container{
@@ -538,7 +538,7 @@ func (k *kubelet) applyPrivilegedLabels() error {
 
 	c, err := client.NewClient([]byte(kc))
 	if err != nil {
-		return fmt.Errorf("failed creating kubernetes client: %w", err)
+		return fmt.Errorf("creating kubernetes client: %w", err)
 	}
 
 	return c.LabelNode(k.config.Name, k.config.PrivilegedLabels)
@@ -550,7 +550,7 @@ func (k *kubelet) waitForNodeReady() error {
 
 	c, err := client.NewClient([]byte(kc))
 	if err != nil {
-		return fmt.Errorf("failed creating kubernetes client: %w", err)
+		return fmt.Errorf("creating kubernetes client: %w", err)
 	}
 
 	return c.WaitForNodeReady(k.config.Name)
@@ -561,13 +561,13 @@ func (k *kubelet) postStartHook() *container.Hook {
 	f := container.Hook(func() error {
 		if len(k.config.PrivilegedLabels) > 0 {
 			if err := k.applyPrivilegedLabels(); err != nil {
-				return fmt.Errorf("failed applying privileged labels: %w", err)
+				return fmt.Errorf("applying privileged labels: %w", err)
 			}
 		}
 
 		if k.config.WaitForNodeReady {
 			if err := k.waitForNodeReady(); err != nil {
-				return fmt.Errorf("failed waiting for node to become ready: %w", err)
+				return fmt.Errorf("waiting for node to become ready: %w", err)
 			}
 		}
 

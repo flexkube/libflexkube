@@ -211,7 +211,7 @@ func templateAction(c *cli.Context, r *Resource) error {
 func kubeconfigAction(c *cli.Context, r *Resource) error {
 	k, err := r.Kubeconfig()
 	if err != nil {
-		return fmt.Errorf("failed generating kubeconfig: %w", err)
+		return fmt.Errorf("generating kubeconfig: %w", err)
 	}
 
 	fmt.Println(k)

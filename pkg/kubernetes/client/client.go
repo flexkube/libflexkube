@@ -54,7 +54,7 @@ type client struct {
 func NewClient(kubeconfig []byte) (Client, error) {
 	c, err := NewClientset(kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating kubernetes clientset: %w", err)
+		return nil, fmt.Errorf("creating kubernetes clientset: %w", err)
 	}
 
 	return &client{c}, nil
@@ -134,7 +134,7 @@ func (c *client) WaitForNodeReady(name string) error {
 // LabelNode add specified labels to the Node object. If label already exist, it will be replaced.
 func (c *client) LabelNode(name string, labels map[string]string) error {
 	if err := c.WaitForNode(name); err != nil {
-		return fmt.Errorf("failed waiting for node: %w", err)
+		return fmt.Errorf("waiting for node: %w", err)
 	}
 
 	patches := []patchStringValue{}
@@ -149,7 +149,7 @@ func (c *client) LabelNode(name string, labels map[string]string) error {
 
 	payloadBytes, err := json.Marshal(patches)
 	if err != nil {
-		return fmt.Errorf("failed to encode update payload: %w", err)
+		return fmt.Errorf("encoding update payload: %w", err)
 	}
 
 	if _, err := c.CoreV1().Nodes().Patch(context.TODO(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{}); err != nil {

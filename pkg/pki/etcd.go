@@ -67,7 +67,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 
 	// etcd CA Certificate
 	if err := buildAndGenerate(cr); err != nil {
-		return fmt.Errorf("failed to generate etcd CA certificate: %w", err)
+		return fmt.Errorf("generating etcd CA certificate: %w", err)
 	}
 
 	crs := []*certificateRequest{}

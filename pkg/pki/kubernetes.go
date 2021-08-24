@@ -203,7 +203,7 @@ func (k *Kubernetes) Generate(rootCA *Certificate, defaultCertificate Certificat
 	}
 
 	if err := buildAndGenerate(crs...); err != nil {
-		return fmt.Errorf("failed to generate kubernetes CA certificates: %w", err)
+		return fmt.Errorf("generating kubernetes CA certificates: %w", err)
 	}
 
 	if k.KubeAPIServer == nil {

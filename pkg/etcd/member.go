@@ -244,7 +244,7 @@ func (m *member) peerAddress() string {
 // New validates MemberConfig and returns Member interface.
 func (m *MemberConfig) New() (Member, error) {
 	if err := m.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate member configuration: %w", err)
+		return nil, fmt.Errorf("validating member configuration: %w", err)
 	}
 
 	nm := &member{
@@ -300,7 +300,7 @@ func (m *MemberConfig) Validate() error {
 	}
 
 	if err := m.Host.Validate(); err != nil {
-		errors = append(errors, fmt.Errorf("host validation failed: %w", err))
+		errors = append(errors, fmt.Errorf("validating host configuration: %w", err))
 	}
 
 	return errors.Return()
@@ -320,13 +320,13 @@ func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 
 	hc, err := h.Connect()
 	if err != nil {
-		return nil, fmt.Errorf("failed opening forwarding connection to host: %w", err)
+		return nil, fmt.Errorf("opening forwarding connection to host: %w", err)
 	}
 
 	for _, e := range endpoints {
 		e, err := hc.ForwardTCP(e)
 		if err != nil {
-			return nil, fmt.Errorf("failed opening forwarding to member: %w", err)
+			return nil, fmt.Errorf("opening forwarding to member: %w", err)
 		}
 
 		newEndpoints = append(newEndpoints, fmt.Sprintf("https://%s", e))
@@ -341,7 +341,7 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 	// Get actual list of members.
 	resp, err := cli.MemberList(context.Background())
 	if err != nil {
-		return 0, fmt.Errorf("failed to list existing cluster members: %w", err)
+		return 0, fmt.Errorf("listing existing cluster members: %w", err)
 	}
 
 	for _, v := range resp.Members {
@@ -382,7 +382,7 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed creating etcd client: %w", err)
+		return nil, fmt.Errorf("creating etcd client: %w", err)
 	}
 
 	return cli, nil
@@ -394,7 +394,7 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 func (m *member) add(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
-		return fmt.Errorf("failed getting member ID: %w", err)
+		return fmt.Errorf("getting member ID: %w", err)
 	}
 
 	// If no error is returned, and ID is 0, it means member is already added.
@@ -403,7 +403,7 @@ func (m *member) add(cli etcdClient) error {
 	}
 
 	if _, err := cli.MemberAdd(context.Background(), m.peerURLs()); err != nil {
-		return fmt.Errorf("failed adding new member to the cluster: %w", err)
+		return fmt.Errorf("adding new member to the cluster: %w", err)
 	}
 
 	return nil
@@ -415,7 +415,7 @@ func (m *member) add(cli etcdClient) error {
 func (m *member) remove(cli etcdClient) error {
 	id, err := m.getID(cli)
 	if err != nil {
-		return fmt.Errorf("failed getting member ID: %w", err)
+		return fmt.Errorf("getting member ID: %w", err)
 	}
 
 	// If no error is returned, and ID is 0, it means member is already returned.
@@ -424,7 +424,7 @@ func (m *member) remove(cli etcdClient) error {
 	}
 
 	if _, err = cli.MemberRemove(context.Background(), id); err != nil {
-		return fmt.Errorf("failed removing member: %w", err)
+		return fmt.Errorf("removing member: %w", err)
 	}
 
 	return nil

@@ -134,7 +134,7 @@ func (a *APILoadBalancers) propagateInstance(i *APILoadBalancer) {
 // TODO move filling the defaults to separated function, so it can be re-used in Validate.
 func (a *APILoadBalancers) New() (types.Resource, error) {
 	if err := a.Validate(); err != nil {
-		return nil, fmt.Errorf("failed to validate API Load balancers configuration: %w", err)
+		return nil, fmt.Errorf("validating API Load balancers configuration: %w", err)
 	}
 
 	cc := &container.Containers{
@@ -174,14 +174,14 @@ func (a *APILoadBalancers) Validate() error {
 
 		lbx, err := lb.New()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed creating load balancer instance %q: %w", i, err))
+			errors = append(errors, fmt.Errorf("creating load balancer instance %q: %w", i, err))
 
 			continue
 		}
 
 		lbxHcc, err := lbx.ToHostConfiguredContainer()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed creating load balancer %q container configuration: %w", i, err))
+			errors = append(errors, fmt.Errorf("creating load balancer %q container configuration: %w", i, err))
 
 			continue
 		}
@@ -195,7 +195,7 @@ func (a *APILoadBalancers) Validate() error {
 	}
 
 	if _, err := cc.New(); !noContainersDefined && err != nil {
-		errors = append(errors, fmt.Errorf("failed creating containers object: %w", err))
+		errors = append(errors, fmt.Errorf("creating containers object: %w", err))
 	}
 
 	return errors.Return()
