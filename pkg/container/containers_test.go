@@ -163,7 +163,7 @@ func TestValidateNil(t *testing.T) {
 	var cc Containers
 
 	if err := cc.Validate(); err == nil {
-		t.Fatalf("nil containers object shouldn't be valid")
+		t.Fatalf("Nil containers object shouldn't be valid")
 	}
 }
 
@@ -569,7 +569,7 @@ func TestEnsureExistsFailStart(t *testing.T) {
 	}
 
 	if _, ok := c.currentState[foo]; !ok {
-		t.Fatalf("ensureExists should save state of created container even if starting failed")
+		t.Fatalf("EnsureExists should save state of created container even if starting failed")
 	}
 }
 
@@ -599,7 +599,7 @@ func TestEnsureExist(t *testing.T) {
 	}
 
 	if _, ok := c.currentState[foo]; !ok {
-		t.Fatalf("ensureExists should save state of created container when creation succeeds")
+		t.Fatalf("EnsureExists should save state of created container when creation succeeds")
 	}
 }
 
@@ -670,7 +670,7 @@ func TestEnsureHostFailStart(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure host should persist state changes even if process fails")
+		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
 
@@ -715,7 +715,7 @@ func TestEnsureHost(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure host should persist state changes even if process fails")
+		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
 
@@ -794,7 +794,7 @@ func TestEnsureContainerFailStart(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure container should persist state changes even if process fails")
+		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
 
@@ -843,7 +843,7 @@ func TestEnsureContainer(t *testing.T) {
 	}
 
 	if c.currentState[foo].container.Status().ID != bar {
-		t.Fatalf("ensure container should persist state changes even if process fails")
+		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
 
@@ -1102,7 +1102,7 @@ func TestEnsureConfigured(t *testing.T) {
 	}
 
 	if !called {
-		t.Fatalf("should call Copy on container")
+		t.Fatalf("Should call Copy on container")
 	}
 }
 
@@ -1141,7 +1141,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 	}
 
 	if !called {
-		t.Fatalf("should call Copy on container")
+		t.Fatalf("Should call Copy on container")
 	}
 }
 
@@ -1206,11 +1206,11 @@ func TestSelectRuntime(t *testing.T) {
 	}
 
 	if err := c.selectRuntime(); err != nil {
-		t.Fatalf("selecting runtime should succeed, got: %v", err)
+		t.Fatalf("Selecting runtime should succeed, got: %v", err)
 	}
 
 	if c.base.runtime == nil {
-		t.Fatalf("selectRuntime should set container runtime")
+		t.Fatalf("SelectRuntime should set container runtime")
 	}
 }
 
@@ -1426,11 +1426,11 @@ func TestEnsureCurrentContainer(t *testing.T) {
 
 	_, err := c.ensureCurrentContainer(foo, hcc)
 	if err == nil {
-		t.Fatalf("ensure stopped container should try to start the container and fail")
+		t.Fatalf("Ensure stopped container should try to start the container and fail")
 	}
 
 	if !strings.Contains(err.Error(), "Is the docker daemon running?") {
-		t.Fatalf("ensuring stopped container should fail to contact non existing runtime, got: %v", err)
+		t.Fatalf("Ensuring stopped container should fail to contact non existing runtime, got: %v", err)
 	}
 }
 
@@ -1465,11 +1465,11 @@ func TestEnsureCurrentContainerNonExisting(t *testing.T) {
 	}
 
 	if _, err := c.ensureCurrentContainer(foo, hcc); err != nil {
-		t.Fatalf("ensure stopped container should not fail on non-existing container, got: %v", err)
+		t.Fatalf("Ensure stopped container should not fail on non-existing container, got: %v", err)
 	}
 
 	if len(c.currentState) > 0 {
-		t.Fatalf("ensuring removed container should remove it from current state to trigger creation")
+		t.Fatalf("Ensuring removed container should remove it from current state to trigger creation")
 	}
 }
 

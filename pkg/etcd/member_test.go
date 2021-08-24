@@ -37,7 +37,7 @@ func TestMemberToHostConfiguredContainer(t *testing.T) {
 
 	o, err := kas.New()
 	if err != nil {
-		t.Fatalf("new should not return error, got: %v", err)
+		t.Fatalf("New should not return error, got: %v", err)
 	}
 
 	hcc, err := o.ToHostConfiguredContainer()
@@ -162,11 +162,11 @@ func TestValidate(t *testing.T) {
 			err := m.Validate()
 
 			if p.expectError && err == nil {
-				t.Fatalf("expected error")
+				t.Fatalf("Expected error")
 			}
 
 			if !p.expectError && err != nil {
-				t.Fatalf("didn't expect error, got: %v", err)
+				t.Fatalf("Didn't expect error, got: %v", err)
 			}
 		})
 	}

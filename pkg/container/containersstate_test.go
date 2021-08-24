@@ -45,7 +45,7 @@ func TestToExported(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(expected, c.Export()); diff != "" {
-		t.Fatalf("unexpected diff %s", diff)
+		t.Fatalf("Unexpected diff %s", diff)
 	}
 }
 
@@ -80,11 +80,11 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 	}
 
 	if c["foo"].container.Status().ID != "" {
-		t.Errorf("failing status call should reset container ID, so we assume container is gone")
+		t.Errorf("Failing status call should reset container ID, so we assume container is gone")
 	}
 
 	if c["foo"].container.Status().Status == "fail" {
-		t.Errorf("container status should include error message returned by status function")
+		t.Errorf("Container status should include error message returned by status function")
 	}
 }
 
@@ -167,7 +167,7 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err != nil {
-		t.Fatalf("removing stopped container shouldn't try to stop it again")
+		t.Fatalf("Removing stopped container shouldn't try to stop it again")
 	}
 }
 
@@ -201,7 +201,7 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err != nil {
-		t.Fatalf("removing missing container shouldn't try to remove it again, got: %v", err)
+		t.Fatalf("Removing missing container shouldn't try to remove it again, got: %v", err)
 	}
 }
 
@@ -234,7 +234,7 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err == nil {
-		t.Fatalf("removing stopped container should propagate stop error")
+		t.Fatalf("Removing stopped container should propagate stop error")
 	}
 }
 
@@ -274,7 +274,7 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 	}
 
 	if err := c.RemoveContainer("foo"); err == nil {
-		t.Fatalf("removing stopped container should propagate delete error")
+		t.Fatalf("Removing stopped container should propagate delete error")
 	}
 }
 
@@ -285,6 +285,6 @@ func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
 	c := containersState{}
 
 	if err := c.CreateAndStart("foo"); err == nil {
-		t.Fatalf("creating and starting non existing container should give error")
+		t.Fatalf("Creating and starting non existing container should give error")
 	}
 }

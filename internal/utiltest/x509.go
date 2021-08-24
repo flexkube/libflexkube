@@ -94,7 +94,7 @@ func GeneratePKI(t *testing.T) *PKI {
 
 	p, err := GeneratePKIErr()
 	if err != nil {
-		t.Fatalf("failed generating fake PKI: %v", err)
+		t.Fatalf("Failed generating fake PKI: %v", err)
 	}
 
 	return p

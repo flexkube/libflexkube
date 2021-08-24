@@ -14,7 +14,7 @@ func newDirect(t *testing.T) transport.Interface {
 
 	di, err := d.New()
 	if err != nil {
-		t.Fatalf("should return new object without errors, got: %v", err)
+		t.Fatalf("Should return new object without errors, got: %v", err)
 	}
 
 	return di
@@ -26,7 +26,7 @@ func TestValidate(t *testing.T) {
 	d := &direct.Config{}
 
 	if err := d.Validate(); err != nil {
-		t.Fatalf("validation should always pass, got: %v", err)
+		t.Fatalf("Validation should always pass, got: %v", err)
 	}
 }
 
@@ -43,11 +43,11 @@ func TestForwardUnixSocket(t *testing.T) {
 
 	fp, err := dc.ForwardUnixSocket(p)
 	if err != nil {
-		t.Fatalf("forwarding socket: %v", err)
+		t.Fatalf("Forwarding socket: %v", err)
 	}
 
 	if fp != p {
-		t.Fatalf("expected %q, got %q", p, fp)
+		t.Fatalf("Expected %q, got %q", p, fp)
 	}
 }
 
@@ -74,11 +74,11 @@ func TestForwardTCP(t *testing.T) {
 
 	fa, err := dc.ForwardTCP(a)
 	if err != nil {
-		t.Fatalf("forwarding TCP: %v", err)
+		t.Fatalf("Forwarding TCP: %v", err)
 	}
 
 	if fa != a {
-		t.Fatalf("expected %q, got %q", a, fa)
+		t.Fatalf("Expected %q, got %q", a, fa)
 	}
 }
 

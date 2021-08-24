@@ -15,7 +15,7 @@ func TestDeploy(t *testing.T) {
 
 	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
 	if err != nil {
-		t.Fatalf("reading SSH private key shouldn't fail, got: %v", err)
+		t.Fatalf("Reading SSH private key shouldn't fail, got: %v", err)
 	}
 
 	config := `
@@ -35,20 +35,20 @@ ssh:
 
 	c, err := FromYaml([]byte(config))
 	if err != nil {
-		t.Fatalf("creating apiloadbalancers object should succeed, got: %v", err)
+		t.Fatalf("Creating apiloadbalancers object should succeed, got: %v", err)
 	}
 
 	if err := c.CheckCurrentState(); err != nil {
-		t.Fatalf("checking current state should succeed, got: %v", err)
+		t.Fatalf("Checking current state should succeed, got: %v", err)
 	}
 
 	if err := c.Deploy(); err != nil {
-		t.Fatalf("deploying should succeed, got: %v", err)
+		t.Fatalf("Deploying should succeed, got: %v", err)
 	}
 
 	state, err := c.StateToYaml()
 	if err != nil {
-		t.Fatalf("dumping state should succeed, got: %v", err)
+		t.Fatalf("Dumping state should succeed, got: %v", err)
 	}
 
 	tearDownConfig := `
@@ -59,14 +59,14 @@ apiLoadBalancers: []
 
 	c, err = FromYaml([]byte(tearDownConfig + string(state)))
 	if err != nil {
-		t.Fatalf("creating apiloadbalancers object for teardown should succeed, got: %v", err)
+		t.Fatalf("Creating apiloadbalancers object for teardown should succeed, got: %v", err)
 	}
 
 	if err := c.CheckCurrentState(); err != nil {
-		t.Fatalf("checking current state for teardown should succeed, got: %v", err)
+		t.Fatalf("Checking current state for teardown should succeed, got: %v", err)
 	}
 
 	if err := c.Deploy(); err != nil {
-		t.Fatalf("tearing down should succeed, got: %v", err)
+		t.Fatalf("Tearing down should succeed, got: %v", err)
 	}
 }

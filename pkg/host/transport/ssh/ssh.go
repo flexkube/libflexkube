@@ -248,11 +248,11 @@ func (d *sshConnected) ForwardUnixSocket(path string) (string, error) {
 func handleClient(client, remote io.ReadWriteCloser) {
 	defer func() {
 		if err := client.Close(); err != nil {
-			fmt.Printf("failed closing client connection: %v\n", err)
+			fmt.Printf("Failed closing client connection: %v\n", err)
 		}
 
 		if err := remote.Close(); err != nil {
-			fmt.Printf("closing remote: %v\n", err)
+			fmt.Printf("Closing remote: %v\n", err)
 		}
 	}()
 
@@ -261,7 +261,7 @@ func handleClient(client, remote io.ReadWriteCloser) {
 	// Start remote -> local data transfer.
 	go func() {
 		if _, err := io.Copy(client, remote); err != nil {
-			fmt.Printf("error while copy remote->local: %s\n", err)
+			fmt.Printf("Error while copy remote->local: %s\n", err)
 		}
 		chDone <- true
 	}()
@@ -269,7 +269,7 @@ func handleClient(client, remote io.ReadWriteCloser) {
 	// Start local -> remote data transfer.
 	go func() {
 		if _, err := io.Copy(remote, client); err != nil {
-			fmt.Printf("error while copy local->remote: %s\n", err)
+			fmt.Printf("Error while copy local->remote: %s\n", err)
 		}
 		chDone <- true
 	}()
@@ -283,7 +283,7 @@ func handleClient(client, remote io.ReadWriteCloser) {
 func forwardConnection(l net.Listener, connection dialer, remoteAddress, connectionType string) {
 	defer func() {
 		if err := l.Close(); err != nil {
-			fmt.Printf("failed closing listener: %v\n", err)
+			fmt.Printf("Failed closing listener: %v\n", err)
 		}
 	}()
 
@@ -291,7 +291,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		// Accept connection from the client.
 		c, err := l.Accept()
 		if err != nil {
-			fmt.Printf("failed to accept connection: %v\n", err)
+			fmt.Printf("Failed to accept connection: %v\n", err)
 			// Handle error (and then for example indicate acceptor is down).
 			return
 		}
@@ -299,7 +299,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		// Open remote connection.
 		remoteSock, err := connection.Dial(connectionType, remoteAddress)
 		if err != nil {
-			fmt.Printf("failed to open remote connection: %v\n", err)
+			fmt.Printf("Failed to open remote connection: %v\n", err)
 
 			return
 		}

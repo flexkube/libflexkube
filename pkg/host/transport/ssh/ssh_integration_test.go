@@ -29,7 +29,7 @@ func TestPasswordAuth(t *testing.T) {
 
 	pass, err := ioutil.ReadFile(passwordFilePath)
 	if err != nil {
-		t.Fatalf("reading password file %q: %v", passwordFilePath, err)
+		t.Fatalf("Reading password file %q: %v", passwordFilePath, err)
 	}
 
 	c := &Config{
@@ -44,11 +44,11 @@ func TestPasswordAuth(t *testing.T) {
 
 	s, err := c.New()
 	if err != nil {
-		t.Fatalf("creating new SSH object should succeed, got: %v", err)
+		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
 	if _, err := s.Connect(); err != nil {
-		t.Fatalf("connecting should succeed, got: %v", err)
+		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 }
 
@@ -69,11 +69,11 @@ func TestPasswordAuthFail(t *testing.T) {
 
 	s, err := c.New()
 	if err != nil {
-		t.Fatalf("creating new SSH object should succeed, got: %v", err)
+		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
 	if _, err := s.Connect(); err == nil {
-		t.Fatalf("connecting with bad password should fail")
+		t.Fatalf("Connecting with bad password should fail")
 	}
 }
 
@@ -83,7 +83,7 @@ func TestPrivateKeyAuth(t *testing.T) {
 	s := withPrivateKey(t)
 
 	if _, err := s.Connect(); err != nil {
-		t.Fatalf("connecting should succeed, got: %v", err)
+		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 }
 
@@ -96,7 +96,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 
 	key, err := ioutil.ReadFile(sshPrivateKeyPath)
 	if err != nil {
-		t.Fatalf("reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
+		t.Fatalf("Reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
 	}
 
 	c := &Config{
@@ -111,7 +111,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 
 	ssh, err := c.New()
 	if err != nil {
-		t.Fatalf("creating new SSH object should succeed, got: %v", err)
+		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
 	return ssh
@@ -134,12 +134,12 @@ func TestForwardUnixSocketFull(t *testing.T) {
 
 	localSocket, err := c.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
 	if err != nil {
-		t.Fatalf("forwarding should succeed, got: %v", err)
+		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
 
 	conn, err := net.Dial("unix", strings.ReplaceAll(localSocket, "unix://", ""))
 	if err != nil {
-		t.Fatalf("opening connection to %s should succeed, got: %v", localSocket, err)
+		t.Fatalf("Opening connection to %s should succeed, got: %v", localSocket, err)
 	}
 
 	if _, err := conn.Write(randomRequest); err != nil {
@@ -164,13 +164,13 @@ func prepareTestSocket(t *testing.T) net.Listener {
 		// Can't use t.Fatalf from go routine. use fmt.Printf + t.Fail() instead
 		//
 		// SA2002: the goroutine calls T.Fatalf, which must be called in the same goroutine as the test (staticcheck)
-		fmt.Printf("listening on socket should succeed, got: %v\n", err)
+		fmt.Printf("Listening on socket should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
 	t.Cleanup(func() {
 		if err := l.Close(); err != nil {
-			fmt.Printf("failed closing local listener: %v\n", err)
+			fmt.Printf("Failed closing local listener: %v\n", err)
 		}
 
 		if err := os.Remove(testServerAddr); err != nil {
@@ -181,7 +181,7 @@ func prepareTestSocket(t *testing.T) net.Listener {
 	// We may SSH into host as unprivileged user, so make sure we are allowed to access the
 	// socket file.
 	if err := os.Chmod(testServerAddr, 0o777); err != nil {
-		fmt.Printf("socket chmod should succeed, got: %v\n", err)
+		fmt.Printf("Socket chmod should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
@@ -194,7 +194,7 @@ func runServer(t *testing.T, expectedRequest, response []byte) {
 
 	conn, err := l.Accept()
 	if err != nil {
-		fmt.Printf("accepting connection should succeed, got: %v\n", err)
+		fmt.Printf("Accepting connection should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
@@ -204,7 +204,7 @@ func runServer(t *testing.T, expectedRequest, response []byte) {
 
 	bytesRead, err := conn.Read(receivedRequest)
 	if err != nil {
-		fmt.Printf("reading data from connection should succeed, got: %v\n", err)
+		fmt.Printf("Reading data from connection should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
@@ -222,12 +222,12 @@ func runServer(t *testing.T, expectedRequest, response []byte) {
 	}
 
 	if _, err := conn.Write(response); err != nil {
-		fmt.Printf("writing response should succeed, got: %v\n", err)
+		fmt.Printf("Writing response should succeed, got: %v\n", err)
 		t.Fail()
 	}
 
 	if err := conn.Close(); err != nil {
-		fmt.Printf("failed closing connection: %v\n", err)
+		fmt.Printf("Failed closing connection: %v\n", err)
 		t.Fail()
 	}
 }

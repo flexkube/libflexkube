@@ -51,7 +51,7 @@ func TestKubeAPIServerToHostConfiguredContainer(t *testing.T) {
 
 	o, err := kas.New()
 	if err != nil {
-		t.Fatalf("new should not return error, got: %v", err)
+		t.Fatalf("New should not return error, got: %v", err)
 	}
 
 	hcc, err := o.ToHostConfiguredContainer()
@@ -153,11 +153,11 @@ func TestKubeAPIServerValidate(t *testing.T) {
 
 			err := config.Validate()
 			if !c.Error && err != nil {
-				t.Errorf("didn't expect error, got: %v", err)
+				t.Errorf("Didn't expect error, got: %v", err)
 			}
 
 			if c.Error && err == nil {
-				t.Errorf("expected error")
+				t.Errorf("Expected error")
 			}
 		})
 	}
@@ -200,7 +200,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 
 	ki, err := c.New()
 	if err != nil {
-		t.Fatalf("kubeAPIServer object should be created, got: %v", err)
+		t.Fatalf("KubeAPIServer object should be created, got: %v", err)
 	}
 
 	hcc, err := ki.ToHostConfiguredContainer()
@@ -210,7 +210,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 
 	for k := range hcc.ConfigFiles {
 		if !strings.Contains(k, hostConfigPath) {
-			t.Fatalf("all config files paths should contain %s, got: %s", hostConfigPath, k)
+			t.Fatalf("All config files paths should contain %s, got: %s", hostConfigPath, k)
 		}
 	}
 }

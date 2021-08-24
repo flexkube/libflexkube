@@ -36,7 +36,7 @@ clientKey: |
 	c := &client.Config{}
 
 	if err := yaml.Unmarshal([]byte(y), c); err != nil {
-		t.Fatalf("unmarshaling config should succeed, got: %v", err)
+		t.Fatalf("Unmarshaling config should succeed, got: %v", err)
 	}
 
 	kubeconfig, err := c.ToYAMLString()
@@ -120,7 +120,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 			},
 			func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err != nil {
-					t.Errorf("config with only token set should be valid, got: %v", err)
+					t.Errorf("Config with only token set should be valid, got: %v", err)
 				}
 			},
 		},
@@ -131,7 +131,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 			},
 			func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err == nil {
-					t.Errorf("config with token and client key set should not be valid")
+					t.Errorf("Config with token and client key set should not be valid")
 				}
 			},
 		},
@@ -142,7 +142,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 			},
 			func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err == nil {
-					t.Errorf("config with token and client certificate set should be valid")
+					t.Errorf("Config with token and client certificate set should be valid")
 				}
 			},
 		},

@@ -35,7 +35,7 @@ labels:
 	}
 
 	if _, err := config.New(); err == nil {
-		t.Fatalf("creating release object with bad kubeconfig should fail")
+		t.Fatalf("Creating release object with bad kubeconfig should fail")
 	}
 }
 
@@ -50,7 +50,7 @@ func newConfig(t *testing.T) *release.Config {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating PKI: %v", err)
+		t.Fatalf("Generating PKI: %v", err)
 	}
 
 	c := client.Config{
@@ -62,7 +62,7 @@ func newConfig(t *testing.T) *release.Config {
 
 	kubeconfig, err := c.ToYAMLString()
 	if err != nil {
-		t.Fatalf("rendering kubeconfig: %v", err)
+		t.Fatalf("Rendering kubeconfig: %v", err)
 	}
 
 	return &release.Config{
@@ -95,7 +95,7 @@ func newRelease(t *testing.T) release.Release {
 
 	r, err := config.New()
 	if err != nil {
-		t.Fatalf("creating release object with valid kubeconfig should succeed: %v", err)
+		t.Fatalf("Creating release object with valid kubeconfig should succeed: %v", err)
 	}
 
 	return r
@@ -114,7 +114,7 @@ func TestConfigValidateEmptyNamespace(t *testing.T) {
 	c.Namespace = ""
 
 	if err := c.Validate(); err == nil {
-		t.Fatalf("validate should require namespace to be set")
+		t.Fatalf("Validate should require namespace to be set")
 	}
 }
 
@@ -124,7 +124,7 @@ func TestConfigValidateEmptyName(t *testing.T) {
 	c.Name = ""
 
 	if err := c.Validate(); err == nil {
-		t.Fatalf("validate should require name to be set")
+		t.Fatalf("Validate should require name to be set")
 	}
 }
 
@@ -134,7 +134,7 @@ func TestConfigValidateEmptyChart(t *testing.T) {
 	c.Chart = ""
 
 	if err := c.Validate(); err == nil {
-		t.Fatalf("validate should require chart to be set")
+		t.Fatalf("Validate should require chart to be set")
 	}
 }
 
@@ -144,7 +144,7 @@ func TestConfigValidateBadValues(t *testing.T) {
 	c.Values = "asd"
 
 	if err := c.Validate(); err == nil {
-		t.Fatalf("validate should validate given values")
+		t.Fatalf("Validate should validate given values")
 	}
 }
 
@@ -155,6 +155,6 @@ func TestReleaseValidateChartBad(t *testing.T) {
 	r := newRelease(t)
 
 	if err := r.ValidateChart(); err == nil {
-		t.Fatalf("validating invalid chart should fail")
+		t.Fatalf("Validating invalid chart should fail")
 	}
 }

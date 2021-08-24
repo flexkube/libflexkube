@@ -23,11 +23,11 @@ func TestGenerateEtcdPeerCertificates(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.PeerCertificates["foo"].X509Certificate == "" {
-		t.Fatalf("generated etcd peer certificate should not be empty")
+		t.Fatalf("Generated etcd peer certificate should not be empty")
 	}
 }
 
@@ -50,20 +50,20 @@ func TestGenerateEtcdPeerCertificatesPropagate(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.PeerCertificates["foo"].X509Certificate == "" {
-		t.Fatalf("generated etcd peer certificate should not be empty")
+		t.Fatalf("Generated etcd peer certificate should not be empty")
 	}
 
 	c, err := pki.Etcd.PeerCertificates["foo"].DecodeX509Certificate()
 	if err != nil {
-		t.Fatalf("decoding generated certificate should work, got: %v", err)
+		t.Fatalf("Decoding generated certificate should work, got: %v", err)
 	}
 
 	if diff := cmp.Diff(c.IPAddresses, e); diff != "" {
-		t.Fatalf("unexpected diff: %s", diff)
+		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }
 
@@ -84,17 +84,17 @@ func TestGenerateEtcdPeerCertitificatesSupportAddingPeers(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	pki.Etcd.Peers["bar"] = "2.2.2.2"
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.PeerCertificates["bar"].X509Certificate == "" {
-		t.Fatalf("generated etcd peer certificate should not be empty")
+		t.Fatalf("Generated etcd peer certificate should not be empty")
 	}
 }
 
@@ -110,17 +110,17 @@ func TestGenerateEtcdPeerCertitificatesPreservePeers(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	pki.Etcd.Peers = map[string]string{}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.PeerCertificates["foo"].X509Certificate == "" {
-		t.Fatalf("generated etcd peer certificate should not be empty")
+		t.Fatalf("Generated etcd peer certificate should not be empty")
 	}
 }
 
@@ -136,17 +136,17 @@ func TestGenerateEtcdPeerCertitificatesAddServer(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	pki.Etcd.Servers = map[string]string{"bar": "2.2.2.2"}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.ServerCertificates["bar"].X509Certificate == "" {
-		t.Fatalf("generated etcd server certificate should not be empty")
+		t.Fatalf("Generated etcd server certificate should not be empty")
 	}
 }
 
@@ -162,14 +162,14 @@ func TestGenerateEtcdPeerCertificatesDontSetCommonName(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating valid PKI should work, got: %v", err)
+		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
 	if pki.Etcd.PeerCertificates["foo"].CommonName != "" {
-		t.Fatalf("generated etcd peer certificate should have empty common name")
+		t.Fatalf("Generated etcd peer certificate should have empty common name")
 	}
 }

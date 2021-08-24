@@ -74,7 +74,7 @@ func parseInt(t *testing.T, envVar string, defaultValue int) int {
 
 	i, err := strconv.Atoi(iRaw)
 	if err != nil {
-		t.Fatalf("parsing %q with value %q to int: %v", envVar, iRaw, err)
+		t.Fatalf("Parsing %q with value %q to int: %v", envVar, iRaw, err)
 	}
 
 	return i
@@ -160,7 +160,7 @@ func TestE2e(t *testing.T) {
 
 	ip, ipnet, err := net.ParseCIDR(testConfig.NodesCIDR)
 	if err != nil {
-		t.Fatalf("parsing nodes CIDR %q: %v", testConfig.NodesCIDR, err)
+		t.Fatalf("Parsing nodes CIDR %q: %v", testConfig.NodesCIDR, err)
 	}
 
 	// Calculate controllers IPs and names.

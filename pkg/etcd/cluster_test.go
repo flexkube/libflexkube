@@ -585,7 +585,7 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 	}
 
 	if err := pki.Generate(); err != nil {
-		t.Fatalf("generating PKI should succeed, got: %v", err)
+		t.Fatalf("Generating PKI should succeed, got: %v", err)
 	}
 
 	c := &Cluster{
@@ -598,6 +598,6 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 	}
 
 	if _, err := c.New(); err != nil {
-		t.Fatalf("creating new cluster with valid PKI should succeed, got: %v", err)
+		t.Fatalf("Creating new cluster with valid PKI should succeed, got: %v", err)
 	}
 }

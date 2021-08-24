@@ -169,7 +169,7 @@ func TestCopyRuntimeError(t *testing.T) {
 	}
 
 	if err := d.Copy("foo", []*types.File{}); err == nil {
-		t.Fatalf("should fail when runtime returns error")
+		t.Fatalf("Should fail when runtime returns error")
 	}
 }
 
@@ -193,7 +193,7 @@ func TestReadRuntimeError(t *testing.T) {
 	}
 
 	if _, err := d.Read("foo", []string{p}); err == nil {
-		t.Fatalf("should fail when runtime returns error")
+		t.Fatalf("Should fail when runtime returns error")
 	}
 }
 
@@ -254,11 +254,11 @@ func TestReadFileMissing(t *testing.T) {
 
 	fs, err := d.Read("foo", []string{p})
 	if err != nil {
-		t.Fatalf("read should succeed, got: %v", err)
+		t.Fatalf("Read should succeed, got: %v", err)
 	}
 
 	if len(fs) != 0 {
-		t.Fatalf("read should not return any files if the file does not exist")
+		t.Fatalf("Read should not return any files if the file does not exist")
 	}
 }
 
@@ -292,7 +292,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 	}
 
 	if _, err := d.Read("foo", []string{p}); err == nil {
-		t.Fatalf("read should fail on bad TAR archive")
+		t.Fatalf("Read should fail on bad TAR archive")
 	}
 }
 
@@ -428,7 +428,7 @@ func TestCreateSetUser(t *testing.T) {
 		cli: &FakeClient{
 			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != c.User {
-					t.Fatalf("configured user should be %s, got %s", c.User, config.User)
+					t.Fatalf("Configured user should be %s, got %s", c.User, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
@@ -462,7 +462,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 		cli: &FakeClient{
 			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != e {
-					t.Fatalf("configured user should be %s, got %s", e, config.User)
+					t.Fatalf("Configured user should be %s, got %s", e, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
@@ -520,7 +520,7 @@ func TestGetAddressNilConfig(t *testing.T) {
 	var c *Config
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
-		t.Fatalf("expected %q, got %q", client.DefaultDockerHost, a)
+		t.Fatalf("Expected %q, got %q", client.DefaultDockerHost, a)
 	}
 }
 
@@ -530,7 +530,7 @@ func TestGetAddressEmptyConfig(t *testing.T) {
 	c := &Config{}
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
-		t.Fatalf("expected %q, got %q", client.DefaultDockerHost, a)
+		t.Fatalf("Expected %q, got %q", client.DefaultDockerHost, a)
 	}
 }
 
@@ -543,7 +543,7 @@ func TestGetAddress(t *testing.T) {
 	}
 
 	if a := c.GetAddress(); a != f {
-		t.Fatalf("expected %q, got %q", f, a)
+		t.Fatalf("Expected %q, got %q", f, a)
 	}
 }
 
