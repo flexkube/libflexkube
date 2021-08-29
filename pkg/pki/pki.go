@@ -328,7 +328,7 @@ func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 }
 
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
-	// generate RSA private key.
+	// Generate RSA private key.
 	k, err := rsa.GenerateKey(rand.Reader, c.RSABits)
 	if err != nil {
 		return nil, fmt.Errorf("generating RSA key: %w", err)
