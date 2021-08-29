@@ -54,7 +54,6 @@ func TestGenerateDontCopyAllSettings(t *testing.T) {
 	c := &pki.Certificate{
 		X509Certificate: pkii.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate,
 		PrivateKey:      pkii.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey,
-		PublicKey:       pkii.Kubernetes.KubeAPIServer.ServerCertificate.PublicKey,
 	}
 
 	if diff := cmp.Diff(pkii.Kubernetes.KubeAPIServer.ServerCertificate, c); diff != "" {

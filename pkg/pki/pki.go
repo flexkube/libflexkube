@@ -139,9 +139,6 @@ type Certificate struct {
 	// X509Certificate stores generated certificate in X.509 certificate format, PEM encoded.
 	X509Certificate types.Certificate `json:"x509Certificate,omitempty"`
 
-	// PublicKey stores generate RSA public key, PEM encoded.
-	PublicKey string `json:"publicKey,omitempty"`
-
 	// PrivateKey stores generates RSA private key in PKCS1 format, PEM encoded.
 	PrivateKey types.PrivateKey `json:"privateKey,omitempty"`
 }
@@ -225,7 +222,6 @@ func buildAndGenerate(crs ...*certificateRequest) error {
 
 		cr.Target.X509Certificate = r.X509Certificate
 		cr.Target.PrivateKey = r.PrivateKey
-		cr.Target.PublicKey = r.PublicKey
 	}
 
 	return nil
@@ -331,24 +327,6 @@ func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// persistPublicKey persist given RSA public key into the certificate object.
-func (c *Certificate) persistPublicKey(k *rsa.PublicKey) error {
-	pubBytes, err := x509.MarshalPKIXPublicKey(k)
-	if err != nil {
-		return fmt.Errorf("marshaling RSA public key: %w", err)
-	}
-
-	var buf bytes.Buffer
-
-	if err := pem.Encode(&buf, &pem.Block{Type: RSAPublicKeyPEMHeader, Bytes: pubBytes}); err != nil {
-		return fmt.Errorf("encoding RSA public key: %w", err)
-	}
-
-	c.PublicKey = buf.String()
-
-	return nil
-}
-
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 	// generate RSA private key.
 	k, err := rsa.GenerateKey(rand.Reader, c.RSABits)
@@ -364,10 +342,6 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 	}
 
 	c.PrivateKey = types.PrivateKey(buf.String())
-
-	if err := c.persistPublicKey(k.Public().(*rsa.PublicKey)); err != nil {
-		return nil, fmt.Errorf("persisting RSA public key: %w", err)
-	}
 
 	return k, nil
 }
