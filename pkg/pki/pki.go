@@ -529,7 +529,7 @@ func (c *Certificate) Generate(ca *Certificate) error {
 // ensureX509Certificate checks if the certificate is up to date and if not, triggers
 // certificate generation.
 func (c *Certificate) ensureX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
-	upToDate, err := c.IsX509CertificateUpToDate()
+	upToDate, err := c.upToDate()
 	if err != nil {
 		return fmt.Errorf("checking if X.509 certificate is up to date: %w", err)
 	}
@@ -555,9 +555,9 @@ func ipAddressesUpToDate(cert *x509.Certificate, configuredIPs []string) bool {
 	return strings.Join(ips, ",") == strings.Join(configuredIPs, ",")
 }
 
-// IsX509CertificateUpToDate checks, if generated X.509 certificate is up to date
+// upToDate checks, if generated X.509 certificate is up to date
 // with it's configuration.
-func (c *Certificate) IsX509CertificateUpToDate() (bool, error) {
+func (c *Certificate) upToDate() (bool, error) {
 	if c.X509Certificate == "" {
 		return false, nil
 	}

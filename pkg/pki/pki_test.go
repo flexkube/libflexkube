@@ -340,15 +340,3 @@ func Test_Generate_does_not_change_PKI_when_there_is_no_configuration_changes(t 
 		t.Fatalf("Unexpected PKI diff: \n%s", diff)
 	}
 }
-
-func TestIsX509CertificateUpToDateBadCert(t *testing.T) {
-	t.Parallel()
-
-	c := &pki.Certificate{
-		X509Certificate: "doh",
-	}
-
-	if _, err := c.IsX509CertificateUpToDate(); err == nil {
-		t.Fatalf("Checking if certificate is up to date should fail on bad certificate")
-	}
-}
