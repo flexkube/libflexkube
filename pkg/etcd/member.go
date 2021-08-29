@@ -263,7 +263,10 @@ func (m *MemberConfig) Validate() error {
 		// how to use CNI for setting it using env variables or something.
 		"peer address": m.PeerAddress,
 		// TODO: Can we auto-generate it?
-		"member name": m.Name,
+		"member name":        m.Name,
+		"CA certificate":     m.CACertificate,
+		"peer certificate":   m.PeerCertificate,
+		"server certificate": m.ServerCertificate,
 	}
 
 	for k, v := range nonEmptyFields {
@@ -279,6 +282,10 @@ func (m *MemberConfig) Validate() error {
 	}
 
 	for k, v := range certificates {
+		if v == "" {
+			continue
+		}
+
 		caCert := &pki.Certificate{
 			X509Certificate: types.Certificate(v),
 		}
