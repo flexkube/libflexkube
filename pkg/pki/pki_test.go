@@ -268,18 +268,6 @@ func TestDecodeKeypair(t *testing.T) {
 	}
 }
 
-func TestValidateRSABits(t *testing.T) {
-	t.Parallel()
-
-	c := &pki.Certificate{
-		ValidityDuration: "24h",
-	}
-
-	if err := c.Validate(); err == nil {
-		t.Fatalf("Certificate with 0 RSA bits should be invalid")
-	}
-}
-
 func TestGenerateUpdateIPs(t *testing.T) {
 	t.Parallel()
 

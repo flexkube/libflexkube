@@ -18,6 +18,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
@@ -356,21 +357,33 @@ func (c *Certificate) getPrivateKey() (*rsa.PrivateKey, error) {
 
 // Validate validates the certificate configuration.
 func (c *Certificate) Validate() error {
-	if _, err := time.ParseDuration(c.ValidityDuration); err != nil {
-		return fmt.Errorf("parsing validity duration %q for certificate: %w", c.ValidityDuration, err)
+	var errors util.ValidateErrors
+
+	if c.ValidityDuration != "" {
+		if _, err := time.ParseDuration(c.ValidityDuration); err != nil {
+			errors = append(errors, fmt.Errorf("parsing validity duration %q for certificate: %w", c.ValidityDuration, err))
+		}
 	}
 
 	for _, i := range c.IPAddresses {
 		if ip := net.ParseIP(i); ip == nil {
-			return fmt.Errorf("parsing IP address %q", i)
+			errors = append(errors, fmt.Errorf("parsing IP address %q", i))
 		}
 	}
 
-	if c.RSABits == 0 {
-		return fmt.Errorf("RSA bits can't be 0")
+	if c.PrivateKey != "" {
+		if _, err := c.decodePrivateKey(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing existing private key %q: %w", c.PrivateKey, err))
+		}
 	}
 
-	return nil
+	if c.X509Certificate != "" {
+		if _, err := c.DecodeX509Certificate(); err != nil {
+			errors = append(errors, fmt.Errorf("parsing existing X.509 certificate: %w", err))
+		}
+	}
+
+	return errors.Return()
 }
 
 func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
