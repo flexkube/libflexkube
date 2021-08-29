@@ -267,6 +267,8 @@ func (m *MemberConfig) Validate() error {
 		"CA certificate":     m.CACertificate,
 		"peer certificate":   m.PeerCertificate,
 		"server certificate": m.ServerCertificate,
+		"peer key":           m.PeerKey,
+		"server key":         m.ServerKey,
 	}
 
 	for k, v := range nonEmptyFields {
