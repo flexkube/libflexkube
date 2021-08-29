@@ -135,13 +135,10 @@ func encodePKI(priv *rsa.PrivateKey, pub []byte) (*PKI, error) {
 		return nil, fmt.Errorf("writing data to cert.pem: %w", err)
 	}
 
-	// Convert RSA private key into PKCS8 DER format.
-	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling private key: %w", err)
-	}
+	// Convert RSA private key into PKCS1 DER format.
+	privBytes := x509.MarshalPKCS1PrivateKey(priv)
 
-	// Convert private key from PKCS8 DER format to PEM format.
+	// Convert private key from PKCS1 DER format to PEM format.
 	var key bytes.Buffer
 	if err := pem.Encode(&key, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
 		return nil, fmt.Errorf("writing data to key.pem: %w", err)
