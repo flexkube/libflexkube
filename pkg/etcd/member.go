@@ -277,34 +277,23 @@ func (m *MemberConfig) Validate() error {
 		}
 	}
 
-	certificates := map[string]string{
-		"CA certificate":     m.CACertificate,
-		"peer certificate":   m.PeerCertificate,
-		"server certificate": m.ServerCertificate,
+	certificates := map[string]*pki.Certificate{
+		"CA": {
+			X509Certificate: types.Certificate(m.CACertificate),
+		},
+		"peer": {
+			X509Certificate: types.Certificate(m.PeerCertificate),
+			PrivateKey:      types.PrivateKey(m.PeerKey),
+		},
+		"server": {
+			X509Certificate: types.Certificate(m.ServerCertificate),
+			PrivateKey:      types.PrivateKey(m.ServerKey),
+		},
 	}
 
 	for k, v := range certificates {
-		if v == "" {
-			continue
-		}
-
-		caCert := &pki.Certificate{
-			X509Certificate: types.Certificate(v),
-		}
-
-		if _, err := caCert.DecodeX509Certificate(); err != nil {
-			errors = append(errors, fmt.Errorf("parsing %s as X.509 certificate: %w", k, err))
-		}
-	}
-
-	keys := map[string]string{
-		"peer key":   m.PeerKey,
-		"server key": m.ServerKey,
-	}
-
-	for k, v := range keys {
-		if err := pki.ValidatePrivateKey(v); err != nil {
-			errors = append(errors, fmt.Errorf("parsing %s as private key: %w", k, err))
+		if err := v.Validate(); err != nil {
+			errors = append(errors, fmt.Errorf("validating %s X.509 certificate: %w", k, err))
 		}
 	}
 

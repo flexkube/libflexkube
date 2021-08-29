@@ -197,7 +197,7 @@ func (c *Cluster) Validate() error {
 			X509Certificate: types.Certificate(c.CACertificate),
 		}
 
-		if _, err := caCert.DecodeX509Certificate(); err != nil {
+		if err := caCert.Validate(); err != nil {
 			errors = append(errors, fmt.Errorf("parsing CA certificate: %w", err))
 		}
 	}
