@@ -460,8 +460,6 @@ func (k *kubelet) args() []string {
 		"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 		// Set which network plugin to use.
 		fmt.Sprintf("--network-plugin=%s", k.config.NetworkPlugin),
-		// https://alexbrand.dev/post/why-is-my-kubelet-listening-on-a-random-port-a-closer-look-at-cri-and-the-docker-cri-shim/
-		"--redirect-container-streaming=false",
 		// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
 		// we specify it equal to address.
 		// TODO make it optional/configurable?
