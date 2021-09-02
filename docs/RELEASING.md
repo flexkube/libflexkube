@@ -33,7 +33,7 @@ To create new release, following tasks should be performed:
 - Run `goreleaser` to create a GitHub Release:
 
   ```sh
-  GITHUB_TOKEN=githubtoken goreleaser release --release-notes <(go run github.com/rcmachado/changelog show 0.4.7)
+  GITHUB_TOKEN=githubtoken goreleaser release --release-notes <(go run github.com/rcmachado/changelog@0.7.0 show 0.4.7)
   ```
 
 - Go to newly create [GitHub release](https://github.com/flexkube/libflexkube/releases/tag/v0.4.7), verify that the changelog and artifacts looks correct and publish it.

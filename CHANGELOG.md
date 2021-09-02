@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2021-09-02
+### Added
+- Certificates and private keys in configs are now parsed as part of validation process.
+- e2e tests has now container runtime, nodes CIDR, and kubelet extra args configurable.
+- e2e tests are now run as part of CI process.
+- CI process now covers Dockerfiles, changelog formatting, go mod tidyness, Vagrantfile and Terraform code.
+- Custom code style checks using semgrep.
+
+### Changed
+- Default Kubernetes version is now v1.22.1.
+- Default etcd version is now v3.5.0.
+- Default HAProxy version is now v2.4.3.
+- Error messages has been improved across all codebase.
+- CI and Docker images now use Go 1.17.
+- Binaries are now build with local paths stripped (-trimpath flag).
+- e2e and local tests now use containerd as container runtime.
+- Sonobuoy version used in conformance tests has been updated to latest version v0.53.2.
+- golangci-lint version v1.42.0 is now used.
+
 ## [0.6.0] - 2021-05-24
 ### Changed
 - `etcd.Member` struct has been renamed to `etcd.MemberConfig` and `etcd.Member` is now an
@@ -297,6 +316,7 @@ flaky cluster deployments (#84)
 ### Added
 - Initial release
 
+[0.7.0]: https://github.com/flexkube/libflexkube/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flexkube/libflexkube/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/flexkube/libflexkube/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/flexkube/libflexkube/compare/v0.4.3...v0.5.0
