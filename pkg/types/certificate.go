@@ -10,8 +10,8 @@ import (
 )
 
 // Certificate is a wrapper on string type, which parses it's content
-// as X.509 certificate while unmarshalling. This allows to validate the
-// data during unmarshalling process.
+// as X.509 certificate while unmarshaling. This allows to validate the
+// data during unmarshaling process.
 //
 // This type should not be used, as it does not allow to produce
 // meaningful error to the user.
