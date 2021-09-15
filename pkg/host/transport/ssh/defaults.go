@@ -36,7 +36,11 @@ func BuildConfig(sshConfig, defaults *Config) *Config {
 
 	sshConfig.User = util.PickString(sshConfig.User, defaults.User, User)
 
-	sshConfig.ConnectionTimeout = util.PickString(sshConfig.ConnectionTimeout, defaults.ConnectionTimeout, ConnectionTimeout)
+	sshConfig.ConnectionTimeout = util.PickString(
+		sshConfig.ConnectionTimeout,
+		defaults.ConnectionTimeout,
+		ConnectionTimeout,
+	)
 
 	sshConfig.RetryTimeout = util.PickString(sshConfig.RetryTimeout, defaults.RetryTimeout, RetryTimeout)
 

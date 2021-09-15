@@ -152,7 +152,8 @@ func (c *client) LabelNode(name string, labels map[string]string) error {
 		return fmt.Errorf("encoding update payload: %w", err)
 	}
 
-	if _, err := c.CoreV1().Nodes().Patch(context.TODO(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{}); err != nil {
+	nc := c.CoreV1().Nodes()
+	if _, err := nc.Patch(context.TODO(), name, types.JSONPatchType, payloadBytes, metav1.PatchOptions{}); err != nil {
 		return fmt.Errorf("patching node %q: %w", name, err)
 	}
 

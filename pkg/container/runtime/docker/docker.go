@@ -43,14 +43,35 @@ type Config struct {
 // dockerClient is a wrapper interface over
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
-type dockerClient interface { //nolint:dupl // Test version looks very similar.
-	ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+type dockerClient interface {
+	ContainerCreate(
+		ctx context.Context,
+		config *containertypes.Config,
+		hostConfig *containertypes.HostConfig,
+		networkingConfig *networktypes.NetworkingConfig,
+		platform *v1.Platform,
+		containerName string,
+	) (containertypes.ContainerCreateCreatedBody, error)
+
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
 	ContainerInspect(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
 	ContainerRemove(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
-	CopyFromContainer(ctx context.Context, container, srcPath string) (io.ReadCloser, dockertypes.ContainerPathStat, error)
-	CopyToContainer(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error
+
+	CopyFromContainer(
+		ctx context.Context,
+		container,
+		srcPath string,
+	) (io.ReadCloser, dockertypes.ContainerPathStat, error)
+
+	CopyToContainer(
+		ctx context.Context,
+		container,
+		path string,
+		content io.Reader,
+		options dockertypes.CopyToContainerOptions,
+	) error
+
 	ContainerStatPath(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error)
 	ImageList(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error)
 	ImagePull(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error)

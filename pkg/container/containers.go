@@ -16,7 +16,8 @@ import (
 // ContainersInterface represents capabilities of containers struct.
 type ContainersInterface interface {
 	// CheckCurrentState iterates over containers defined in the state, checks if they exist, are
-	// running etc and writes to containers current state. This allows then to compare current state      // of the containers with desired state, using Containers() method, to check if there are any
+	// running etc and writes to containers current state. This allows then to compare current state
+	// of the containers with desired state, using Containers() method, to check if there are any
 	// pending changes to cluster configuration.
 	//
 	// Calling CheckCurrentState is required before calling Deploy(), to ensure, that Deploy() executes

@@ -151,7 +151,8 @@ func TestContainerCreateWithEntrypoint(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(data.Path, entrypoint[0]) {
-		t.Fatalf("Container created with entrypoint set should have entrypoint set\nExpected: %+v\nGot: %+v\n", entrypoint[0], data.Path)
+		t.Fatalf("Container created with entrypoint set should have entrypoint set\n"+
+			"Expected: %+v\nGot: %+v\n", entrypoint[0], data.Path)
 	}
 
 	t.Cleanup(func() {
@@ -409,7 +410,8 @@ func TestContainerEnv(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(data.Config.Env, envSlice) {
-		t.Fatalf("Container created with environment variables set should have environment variables set\nExpected: %+v\nGot: %+v\n", envSlice, data.Config.Env)
+		t.Fatalf("Container created with environment variables set should have environment variables set"+
+			"\nExpected: %+v\nGot: %+v\n", envSlice, data.Config.Env)
 	}
 
 	t.Cleanup(func() {

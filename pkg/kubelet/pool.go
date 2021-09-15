@@ -162,7 +162,10 @@ func (p *Pool) pkiIntegration() {
 
 // kubeletPKIIntegration merges certificates from PKI into given kubelet configuration.
 func (p *Pool) kubeletPKIIntegration(k *Kubelet) {
-	k.KubernetesCACertificate = types.Certificate(util.PickString(string(k.KubernetesCACertificate), string(p.KubernetesCACertificate)))
+	kubeletCACert := string(k.KubernetesCACertificate)
+	poolCACert := string(p.KubernetesCACertificate)
+
+	k.KubernetesCACertificate = types.Certificate(util.PickString(kubeletCACert, poolCACert))
 
 	if p.BootstrapConfig != nil && k.BootstrapConfig == nil {
 		k.BootstrapConfig = p.BootstrapConfig

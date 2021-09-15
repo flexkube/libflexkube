@@ -157,7 +157,9 @@ func (c *Controlplane) buildKubeScheduler() {
 
 	// TODO: can be moved to function, which takes Kubeconfig and *pki.Certificate as an input
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.KubeSchedulerCertificate != nil {
-		k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(c.PKI.Kubernetes.KubeSchedulerCertificate.X509Certificate)
+		k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(
+			c.PKI.Kubernetes.KubeSchedulerCertificate.X509Certificate)
+
 		k.Kubeconfig.ClientKey = k.Kubeconfig.ClientKey.Pick(c.PKI.Kubernetes.KubeSchedulerCertificate.PrivateKey)
 	}
 
@@ -174,7 +176,9 @@ func (c *Controlplane) buildKubeControllerManager() {
 
 	if c.PKI != nil && c.PKI.Kubernetes != nil {
 		if c.PKI.Kubernetes.KubeControllerManagerCertificate != nil {
-			k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(c.PKI.Kubernetes.KubeControllerManagerCertificate.X509Certificate)
+			k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(
+				c.PKI.Kubernetes.KubeControllerManagerCertificate.X509Certificate)
+
 			k.Kubeconfig.ClientKey = k.Kubeconfig.ClientKey.Pick(c.PKI.Kubernetes.KubeControllerManagerCertificate.PrivateKey)
 		}
 
@@ -368,7 +372,10 @@ type controlplaneComponentConfiguration interface {
 // validateControlplaneComponent evaluates configuration of given controlplane component
 // and tries to convert it into HostConfiguredContainer to ensure that their configuration
 // is correct.
-func validateControlplaneComponent(ccc controlplaneComponentConfiguration, name string) (*container.HostConfiguredContainer, error) {
+func validateControlplaneComponent(
+	ccc controlplaneComponentConfiguration,
+	name string,
+) (*container.HostConfiguredContainer, error) {
 	cc, err := ccc.New()
 	if err != nil {
 		return nil, fmt.Errorf("verifying %q configuration: %w", name, err)

@@ -12,9 +12,16 @@ import (
 )
 
 // FakeClient is a mock of Docker client, which should be used only for testing.
-type FakeClient struct { //nolint:dupl // Looks almost the same as the interface.
+type FakeClient struct {
 	// ContainerCreateF will be called by ContainerCreate.
-	ContainerCreateF func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error)
+	ContainerCreateF func(
+		ctx context.Context,
+		config *containertypes.Config,
+		hostConfig *containertypes.HostConfig,
+		networkingConfig *networktypes.NetworkingConfig,
+		platform *v1.Platform,
+		containerName string,
+	) (containertypes.ContainerCreateCreatedBody, error)
 
 	// ContainerStartF will be called by ContainerStart.
 	ContainerStartF func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
@@ -29,10 +36,20 @@ type FakeClient struct { //nolint:dupl // Looks almost the same as the interface
 	ContainerRemoveF func(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
 
 	// CopyFromContainerF will be called by CopyFromContainer.
-	CopyFromContainerF func(ctx context.Context, container, srcPath string) (io.ReadCloser, dockertypes.ContainerPathStat, error)
+	CopyFromContainerF func(
+		ctx context.Context,
+		container string,
+		srcPath string,
+	) (io.ReadCloser, dockertypes.ContainerPathStat, error)
 
 	// CopyToContainerF will be called by CopyToContainer.
-	CopyToContainerF func(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error
+	CopyToContainerF func(
+		ctx context.Context,
+		container,
+		path string,
+		content io.Reader,
+		options dockertypes.CopyToContainerOptions,
+	) error
 
 	// ContainerStatPathF will be called by ContainerStatPath.
 	ContainerStatPathF func(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error)
@@ -45,12 +62,23 @@ type FakeClient struct { //nolint:dupl // Looks almost the same as the interface
 }
 
 // ContainerCreate mocks Docker client ContainerCreate().
-func (f *FakeClient) ContainerCreate(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+func (f *FakeClient) ContainerCreate(
+	ctx context.Context,
+	config *containertypes.Config,
+	hostConfig *containertypes.HostConfig,
+	networkingConfig *networktypes.NetworkingConfig,
+	platform *v1.Platform,
+	containerName string,
+) (containertypes.ContainerCreateCreatedBody, error) {
 	return f.ContainerCreateF(ctx, config, hostConfig, networkingConfig, platform, containerName)
 }
 
 // ContainerStart mocks Docker client ContainerStart().
-func (f *FakeClient) ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error {
+func (f *FakeClient) ContainerStart(
+	ctx context.Context,
+	container string,
+	options dockertypes.ContainerStartOptions,
+) error {
 	return f.ContainerStartF(ctx, container, options)
 }
 
@@ -65,31 +93,56 @@ func (f *FakeClient) ContainerInspect(ctx context.Context, container string) (do
 }
 
 // ContainerRemove mocks Docker client ContainerRemove().
-func (f *FakeClient) ContainerRemove(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error {
+func (f *FakeClient) ContainerRemove(
+	ctx context.Context,
+	container string,
+	options dockertypes.ContainerRemoveOptions,
+) error {
 	return f.ContainerRemoveF(ctx, container, options)
 }
 
 // CopyFromContainer mocks Docker client CopyFromContainer().
-func (f *FakeClient) CopyFromContainer(ctx context.Context, container, srcPath string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+func (f *FakeClient) CopyFromContainer(
+	ctx context.Context,
+	container,
+	srcPath string,
+) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 	return f.CopyFromContainerF(ctx, container, srcPath)
 }
 
 // CopyToContainer mocks Docker client CopyToContainer().
-func (f *FakeClient) CopyToContainer(ctx context.Context, container, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error {
+func (f *FakeClient) CopyToContainer(
+	ctx context.Context,
+	container,
+	path string,
+	content io.Reader,
+	options dockertypes.CopyToContainerOptions,
+) error {
 	return f.CopyToContainerF(ctx, container, path, content, options)
 }
 
 // ContainerStatPath mocks Docker client ContainerStatPath().
-func (f *FakeClient) ContainerStatPath(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error) {
+func (f *FakeClient) ContainerStatPath(
+	ctx context.Context,
+	container,
+	path string,
+) (dockertypes.ContainerPathStat, error) {
 	return f.ContainerStatPathF(ctx, container, path)
 }
 
 // ImageList mocks Docker client ImageList().
-func (f *FakeClient) ImageList(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+func (f *FakeClient) ImageList(
+	ctx context.Context,
+	options dockertypes.ImageListOptions,
+) ([]dockertypes.ImageSummary, error) {
 	return f.ImageListF(ctx, options)
 }
 
 // ImagePull mocks Docker client ImagePull().
-func (f *FakeClient) ImagePull(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+func (f *FakeClient) ImagePull(
+	ctx context.Context,
+	ref string,
+	options dockertypes.ImagePullOptions,
+) (io.ReadCloser, error) {
 	return f.ImagePullF(ctx, ref, options)
 }

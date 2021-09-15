@@ -106,8 +106,13 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/service-account.key"] = k.serviceAccountPrivateKey
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/ca.key"] = k.kubernetesCAKey
-	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = fmt.Sprintf("%s%s", k.rootCACertificate, string(k.common.KubernetesCACertificate))
-	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
+
+	caBundle := fmt.Sprintf("%s%s", k.rootCACertificate, string(k.common.KubernetesCACertificate))
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/root.crt"] = caBundle
+
+	frontProxyCA := string(k.common.FrontProxyCACertificate)
+
+	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = frontProxyCA
 
 	c := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
