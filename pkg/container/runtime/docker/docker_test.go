@@ -162,7 +162,7 @@ func TestCopyRuntimeError(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyToContainerF: func(ctx context.Context, id, path string, content io.Reader, options dockertypes.CopyToContainerOptions) error {
+			CopyToContainerF: func(_ context.Context, _, _ string, _ io.Reader, _ dockertypes.CopyToContainerOptions) error {
 				return fmt.Errorf("Copying failed")
 			},
 		},
@@ -182,7 +182,7 @@ func TestReadRuntimeError(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(_ context.Context, _, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				if path != p {
 					t.Fatalf("Should read path %s, got %s", p, path)
 				}
@@ -210,7 +210,7 @@ func TestRead(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
 					Name: p,
 				}, nil
@@ -246,7 +246,7 @@ func TestReadFileMissing(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return nil, dockertypes.ContainerPathStat{}, nil
 			},
 		},
@@ -285,7 +285,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			CopyFromContainerF: func(ctx context.Context, id, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return ioutil.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
 			},
 		},
@@ -426,7 +426,14 @@ func TestCreateSetUser(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(
+				_ context.Context,
+				config *containertypes.Config,
+				_ *containertypes.HostConfig,
+				_ *networktypes.NetworkingConfig,
+				_ *v1.Platform,
+				_ string,
+			) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != c.User {
 					t.Fatalf("Configured user should be %q, got %q", c.User, config.User)
 				}
@@ -460,7 +467,14 @@ func TestCreateSetUserGroup(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(
+				_ context.Context,
+				config *containertypes.Config,
+				_ *containertypes.HostConfig,
+				_ *networktypes.NetworkingConfig,
+				_ *v1.Platform,
+				_ string,
+			) (containertypes.ContainerCreateCreatedBody, error) {
 				if config.User != e {
 					t.Fatalf("Configured user should be %q, got %q", e, config.User)
 				}
@@ -487,7 +501,14 @@ func TestCreateRuntimeFail(t *testing.T) {
 	d := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
-			ContainerCreateF: func(ctx context.Context, config *containertypes.Config, hostConfig *containertypes.HostConfig, networkingConfig *networktypes.NetworkingConfig, platform *v1.Platform, containerName string) (containertypes.ContainerCreateCreatedBody, error) {
+			ContainerCreateF: func(
+				_ context.Context,
+				_ *containertypes.Config,
+				_ *containertypes.HostConfig,
+				_ *networktypes.NetworkingConfig,
+				_ *v1.Platform,
+				_ string,
+			) (containertypes.ContainerCreateCreatedBody, error) {
 				return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
 			},
 			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {

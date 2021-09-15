@@ -485,13 +485,17 @@ export ETCDCTL_CERT=%s
 export ETCDCTL_KEY=%s
 export ETCDCTL_ENDPOINTS=%s
 `
+
+	prometheusClientCert := string(r.State.PKI.Etcd.ClientCertificates["prometheus"].X509Certificate)
+	prometheusClientKey := string(r.State.PKI.Etcd.ClientCertificates["prometheus"].PrivateKey)
+
 	files := map[string]string{
 		"kubeconfig":                                     k,
 		"./resources/etcd-cluster/ca.pem":                string(r.State.PKI.Etcd.CA.X509Certificate),
 		"./resources/etcd-cluster/client.pem":            string(r.State.PKI.Etcd.ClientCertificates["root"].X509Certificate),
 		"./resources/etcd-cluster/client.key":            string(r.State.PKI.Etcd.ClientCertificates["root"].PrivateKey),
-		"./resources/etcd-cluster/prometheus_client.pem": string(r.State.PKI.Etcd.ClientCertificates["prometheus"].X509Certificate),
-		"./resources/etcd-cluster/prometheus_client.key": string(r.State.PKI.Etcd.ClientCertificates["prometheus"].PrivateKey),
+		"./resources/etcd-cluster/prometheus_client.pem": prometheusClientCert,
+		"./resources/etcd-cluster/prometheus_client.key": prometheusClientKey,
 		"./resources/etcd-cluster/environment.sh": fmt.Sprintf(etcdTemplate,
 			absPath(t, "./resources/etcd-cluster/ca.pem"),
 			absPath(t, "./resources/etcd-cluster/client.pem"),

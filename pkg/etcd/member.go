@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"strings"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
@@ -154,6 +155,14 @@ func (m *member) configFiles() map[string]string {
 
 // args returns flags which will be set to the container.
 func (m *member) args() []string {
+	authToken := strings.Join([]string{
+		"jwt",
+		"pub-key=/etc/kubernetes/pki/etcd/peer.crt",
+		"priv-key=/etc/kubernetes/pki/etcd/peer.key",
+		"sign-method=RS512",
+		"ttl=10m",
+	}, ",")
+
 	flags := []string{
 		// TODO Add descriptions explaining why we need each line.
 		// Default value 'capnslog' for logger is deprecated and prints warning now.
@@ -175,7 +184,7 @@ func (m *member) args() []string {
 		fmt.Sprintf("--data-dir=/%s.etcd", m.config.Name),
 		// To get rid of warning with default configuration.
 		// ttl parameter support has been added in 3.4.x.
-		"--auth-token=jwt,pub-key=/etc/kubernetes/pki/etcd/peer.crt,priv-key=/etc/kubernetes/pki/etcd/peer.key,sign-method=RS512,ttl=10m",
+		fmt.Sprintf("--auth-token=%s", authToken),
 		// This is set by typhoon, seems like extra safety knob.
 		"--strict-reconfig-check",
 		// TODO: Enable metrics.
@@ -364,7 +373,8 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 // getEtcdClient creates etcd client object using member certificates and
 // given endpoints.
 func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
-	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey)) //nolint:errcheck // We check it in Validate().
+	//nolint:errcheck // We check it in Validate().
+	cert, _ := tls.X509KeyPair([]byte(m.config.PeerCertificate), []byte(m.config.PeerKey))
 
 	der, _ := pem.Decode([]byte(m.config.CACertificate))
 	ca, _ := x509.ParseCertificate(der.Bytes) //nolint:errcheck // We check it in Validate().

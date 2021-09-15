@@ -125,7 +125,8 @@ type kubelet struct {
 
 // New validates Kubelet configuration and returns it's usable version.
 func (k *Kubelet) New() (container.ResourceInstance, error) {
-	// TODO: When creating kubelet, also pull pause image using configured Container Runtime to speed up later start of pods?
+	// TODO: When creating kubelet, also pull pause image using configured Container Runtime
+	// to speed up later start of pods?
 	if err := k.Validate(); err != nil {
 		return nil, fmt.Errorf("validating kubelet configuration: %w", err)
 	}
@@ -314,7 +315,8 @@ func (k *kubelet) configFile() (string, error) {
 	}
 
 	if k.config.NetworkPlugin == KubenetNetworkPlugin {
-		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin and manager-controller is not assigning those.
+		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin
+		// and manager-controller is not assigning those.
 		config.PodCIDR = k.config.PodCIDR
 	}
 
@@ -430,8 +432,14 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return
 		},
 		{
 			// For reading host cgroups, to get stats for docker.service cgroup etc.
+			//
 			// Without this, following error message occurs:
-			// Failed to get system container stats for "/system.slice/kubelet.service": failed to get cgroup stats for "/system.slice/kubelet.service": failed to get container info for "/system.slice/kubelet.service": unknown container "/system.slice/kubelet.service"
+			//
+			// Failed to get system container stats for "/system.slice/kubelet.service":
+			// failed to get cgroup stats for "/system.slice/kubelet.service":
+			// failed to get container info for "/system.slice/kubelet.service":
+			// unknown container "/system.slice/kubelet.service"
+
 			// It seems you can't go any deeper with this mount, otherwise it's not working.
 			Source: "/sys/",
 			Target: "/sys",
@@ -460,13 +468,15 @@ func (k *kubelet) args() []string {
 		"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
 		// Set which network plugin to use.
 		fmt.Sprintf("--network-plugin=%s", k.config.NetworkPlugin),
-		// --node-ip controls where are exposed nodePort services. Since we want to have them available only on private interface,
-		// we specify it equal to address.
+		// --node-ip controls where are exposed nodePort services.
+		// Since we want to have them available only on private interface, we specify it equal to address.
 		// TODO make it optional/configurable?
 		fmt.Sprintf("--node-ip=%s", k.config.Address),
-		// Make sure we register the node with the name specified by the user. This is needed to later on patch the Node object when needed.
+		// Make sure we register the node with the name specified by the user.
+		// This is needed to later on patch the Node object when needed.
 		fmt.Sprintf("--hostname-override=%s", k.config.Name),
-		// Tell kubelet where to look for CNI binaries. Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
+		// Tell kubelet where to look for CNI binaries.
+		// Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
 		// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
 		//
 		// TODO This flag should only be set if Docker is used as container runtime.

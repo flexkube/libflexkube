@@ -71,14 +71,10 @@ linters:
   disable:
     # Triggers on TODOs in the code, which is fine to put.
     - godox
-    # As some lines are long because of the type names, and breaking it down decreases redability.
-    - lll
     # Disabled until tests are split and moved to the right file names.
     - testpackage
     # Disabled until we implement some error types and migrate to use them.
     - goerr113
-    # As we use formatting rules from different linter and they are conflicting.
-    - gci
     # To be able to make use of Go zero-value feature.
     - exhaustivestruct
     # This linter has been deprecated.
@@ -104,6 +100,7 @@ linters:
     - forbidigo
     - forcetypeassert
     - funlen
+    - gci
     - gochecknoglobals
     - gochecknoinits
     - gocognit
@@ -122,6 +119,7 @@ linters:
     - ifshort
     - importas
     - ineffassign
+    - lll
     - makezero
     - misspell
     - nakedret

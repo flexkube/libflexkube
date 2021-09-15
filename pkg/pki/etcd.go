@@ -121,7 +121,12 @@ func certificateFromCNIPMap(commonName, ip string, server bool) *Certificate {
 // peerCRs builds list of certificate requests for peer certificates by combining
 // information from PeerCertificates and Peers fields, where PeerCertificates always
 // takes precedence.
-func (e *Etcd) crsFromMap(defaultCertificate *Certificate, certs map[string]*Certificate, cnIPs map[string]string, server bool) []*certificateRequest {
+func (e *Etcd) crsFromMap(
+	defaultCertificate *Certificate,
+	certs map[string]*Certificate,
+	cnIPs map[string]string,
+	server bool,
+) []*certificateRequest {
 	// Store peer CRs in temporary map, so we can find them by common name.
 	crs := map[string]*certificateRequest{}
 

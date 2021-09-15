@@ -418,7 +418,8 @@ func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 	}
 
 	if err := h.createMissingMounts(); err != nil {
-		t.Fatalf("Creating missing mountpoints without runtime should succeed, if there is no mountpoints to create, got: %v", err)
+		t.Fatalf("Creating missing mountpoints without runtime should succeed, "+
+			"if there is no mountpoints to create, got: %v", err)
 	}
 }
 
