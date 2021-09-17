@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/storage"
-	"helm.sh/helm/v3/pkg/storage/driver"
+	"github.com/flexkube/helm/v3/pkg/action"
+	"github.com/flexkube/helm/v3/pkg/chart"
+	"github.com/flexkube/helm/v3/pkg/chart/loader"
+	"github.com/flexkube/helm/v3/pkg/cli"
+	"github.com/flexkube/helm/v3/pkg/storage"
+	"github.com/flexkube/helm/v3/pkg/storage/driver"
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
