@@ -4,6 +4,7 @@
 package main_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
@@ -697,7 +699,7 @@ func installOrUpgradeRelease(t *testing.T, config *release.Config) {
 
 	t.Logf("Installing release %q", config.Name)
 
-	if err := rel.InstallOrUpgrade(); err != nil {
+	if err := rel.InstallOrUpgrade(contextWithDeadline(t)); err != nil {
 		t.Fatalf("Installing %q release: %v", config.Name, err)
 	}
 }
@@ -733,4 +735,25 @@ func readYamlFile(file string) ([]byte, error) {
 	}
 
 	return c, nil
+}
+
+const (
+	// Arbitrary amount of time to let tests exit cleanly before main process terminates.
+	timeoutGracePeriod = 10 * time.Second
+)
+
+// contextWithDeadline returns context with will timeout before t.Deadline().
+func contextWithDeadline(t *testing.T) context.Context {
+	t.Helper()
+
+	deadline, ok := t.Deadline()
+	if !ok {
+		return context.Background()
+	}
+
+	ctx, cancel := context.WithDeadline(context.Background(), deadline.Truncate(timeoutGracePeriod))
+
+	t.Cleanup(cancel)
+
+	return ctx
 }
