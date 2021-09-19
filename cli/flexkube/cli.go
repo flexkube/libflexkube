@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime/debug"
 
 	"github.com/urfave/cli/v2"
 )
@@ -24,7 +25,7 @@ const (
 func Run(args []string) int {
 	app := &cli.App{
 		Name:    "flexkube",
-		Version: Version,
+		Version: version(),
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  YesFlag,
@@ -54,6 +55,15 @@ func Run(args []string) int {
 	}
 
 	return 0
+}
+
+func version() string {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return Version
+	}
+
+	return bi.Main.Version
 }
 
 func templateCommand() *cli.Command {
