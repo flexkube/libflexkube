@@ -26,10 +26,6 @@ issues:
     - linters:
         - forbidigo
       text: "use of `fmt.Println` forbidden by pattern"
-    # Allow replacements to force specific versions of dependencies.
-    - linters:
-        - gomoddirectives
-      text: "replacement are not allowed"
     # Allow some errors to be not wrapped, as it is not ambiguous where they come from.
     - linters:
         - wrapcheck

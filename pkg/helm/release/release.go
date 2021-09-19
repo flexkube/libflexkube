@@ -2,15 +2,16 @@
 package release
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/storage"
-	"helm.sh/helm/v3/pkg/storage/driver"
+	"github.com/flexkube/helm/v3/pkg/action"
+	"github.com/flexkube/helm/v3/pkg/chart"
+	"github.com/flexkube/helm/v3/pkg/chart/loader"
+	"github.com/flexkube/helm/v3/pkg/cli"
+	"github.com/flexkube/helm/v3/pkg/storage"
+	"github.com/flexkube/helm/v3/pkg/storage/driver"
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"
@@ -23,13 +24,13 @@ type Release interface {
 	ValidateChart() error
 
 	// Install installs configured release. If release already exists, error will be returned.
-	Install() error
+	Install(context.Context) error
 
 	// Upgrade upgrades configured release. If release does not exist, error will be returned.
-	Upgrade() error
+	Upgrade(context.Context) error
 
 	// InstallOrUpgrade either installs or upgrades the release, depends whether it exists or not.
-	InstallOrUpgrade() error
+	InstallOrUpgrade(context.Context) error
 
 	// Exists checks, if release exists. If cluster is not reachable, error is returned.
 	Exists() (bool, error)
@@ -168,7 +169,7 @@ func (r *release) ValidateChart() error {
 }
 
 // Install installs configured chart as release. Equivalent of 'helm install'.
-func (r *release) Install() error {
+func (r *release) Install(ctx context.Context) error {
 	if err := r.client.PingWait(client.PollInterval, client.RetryTimeout); err != nil {
 		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
 	}
@@ -184,7 +185,7 @@ func (r *release) Install() error {
 
 	// Install a release.
 	if err := retryOnEtcdError(func() error {
-		_, err = client.Run(chart, r.values)
+		_, err = client.RunWithContext(ctx, chart, r.values)
 
 		return err
 	}); err != nil {
@@ -195,7 +196,7 @@ func (r *release) Install() error {
 }
 
 // Upgrade upgrades already existing release. Equivalent of 'helm upgrade'.
-func (r *release) Upgrade() error {
+func (r *release) Upgrade(ctx context.Context) error {
 	if err := r.client.PingWait(client.PollInterval, client.RetryTimeout); err != nil {
 		return fmt.Errorf("timed out waiting for kube-apiserver to be reachable")
 	}
@@ -208,7 +209,7 @@ func (r *release) Upgrade() error {
 	}
 
 	if err := retryOnEtcdError(func() error {
-		_, err := client.Run(r.name, chart, r.values)
+		_, err := client.RunWithContext(ctx, r.name, chart, r.values)
 
 		return err
 	}); err != nil {
@@ -220,17 +221,17 @@ func (r *release) Upgrade() error {
 
 // InstallOrUpgrade checks if release already exists, and if it does it tries to upgrade it
 // If the release does not exist, it will be created.
-func (r *release) InstallOrUpgrade() error {
+func (r *release) InstallOrUpgrade(ctx context.Context) error {
 	e, err := r.Exists()
 	if err != nil {
 		return fmt.Errorf("checking release existence: %w", err)
 	}
 
 	if e {
-		return r.Upgrade()
+		return r.Upgrade(ctx)
 	}
 
-	return r.Install()
+	return r.Install(ctx)
 }
 
 // Exists checks if configured release exists.

@@ -3,7 +3,7 @@ package release
 import (
 	"fmt"
 
-	"helm.sh/helm/v3/pkg/kube"
+	"github.com/flexkube/helm/v3/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/cmd/util"
 

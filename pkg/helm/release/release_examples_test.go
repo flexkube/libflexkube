@@ -1,6 +1,7 @@
 package release_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/flexkube/libflexkube/pkg/helm/release"
@@ -37,7 +38,7 @@ labels:
 		return
 	}
 
-	if err := r.Install(); err != nil {
+	if err := r.Install(context.TODO()); err != nil {
 		fmt.Printf("Installing release failed: %v\n", err)
 
 		return
