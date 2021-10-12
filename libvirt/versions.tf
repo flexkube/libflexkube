@@ -7,8 +7,8 @@ terraform {
       version = "3.0.0"
     }
     libvirt = {
-      source  = "invidian/libvirt"
-      version = "0.6.10-rc1"
+      source  = "dmacvicar/libvirt"
+      version = "0.6.11"
     }
     ct = {
       source  = "poseidon/ct"
