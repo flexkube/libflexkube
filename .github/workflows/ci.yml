@@ -100,8 +100,6 @@ jobs:
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
         sudo apt-get update && sudo apt-get install terraform
-        wget https://download.opensuse.org/repositories/systemsmanagement:/terraform/Ubuntu_20.04/amd64/terraform-provider-libvirt_0.6.3+git.1604843676.67f4f2aa-13.1_amd64.deb
-        sudo apt install ./terraform-provider-libvirt_0.6.3+git.1604843676.67f4f2aa-13.1_amd64.deb
     - run: |
         terraform -chdir=libvirt init
         make test-terraform
