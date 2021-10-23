@@ -12,8 +12,8 @@ require (
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/urfave/cli/v2 v2.3.0
-	go.etcd.io/etcd/api/v3 v3.5.0
-	go.etcd.io/etcd/client/v3 v3.5.0
+	go.etcd.io/etcd/api/v3 v3.5.1
+	go.etcd.io/etcd/client/v3 v3.5.1
 	golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
