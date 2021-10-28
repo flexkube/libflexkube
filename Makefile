@@ -209,7 +209,7 @@ test-cover-upload: test-cover-upload-codecov test-cover-upload-codeclimate
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN_PATH) $(GOLANGCI_LINT_VERSION)
 
 .PHONY: install-cc-test-reporter
 install-cc-test-reporter:
