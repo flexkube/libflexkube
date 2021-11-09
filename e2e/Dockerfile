@@ -9,7 +9,7 @@ RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
     && chmod +x /usr/local/bin/kubectl \
     && echo -e 'source /usr/share/bash-completion/bash_completion\nsource <(kubectl completion bash)' >> $HOME/.bashrc
 
-RUN VERSION=0.54.0 OS=linux && \
+RUN VERSION=0.55.0 OS=linux && \
     wget "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${VERSION}/sonobuoy_${VERSION}_${OS}_amd64.tar.gz" -O sonobuoy.tar.gz && \
     tar -xzf sonobuoy.tar.gz -C /usr/local/bin && \
     chmod +x /usr/local/bin/sonobuoy && \
