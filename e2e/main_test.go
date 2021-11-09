@@ -51,7 +51,6 @@ type charts struct {
 type e2eConfig struct {
 	ControllersCount  int              `json:"controllersCount"`
 	NodesCIDR         string           `json:"nodesCIDR"`
-	FlatcarChannel    string           `json:"flatcarChannel"`
 	WorkersCount      int              `json:"workersCount"`
 	APIPort           int              `json:"apiPort"`
 	NodeSSHPort       int              `json:"nodeSSHPort"`
@@ -60,6 +59,7 @@ type e2eConfig struct {
 	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
 	CIDRIPsOffset     int              `json:"cidrIPsOffset"`
 	KubeletExtraArgs  []string         `json:"kubeletExtraArgs"`
+	CgroupDriver      string           `json:"cgroupDriver"`
 }
 
 type ContainerRuntime string
@@ -100,12 +100,12 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		ControllersCount:  parseInt(t, "TF_VAR_controllers_count", 1),
 		WorkersCount:      parseInt(t, "TF_VAR_workers_count", 0),
 		NodesCIDR:         util.PickString(os.Getenv("TF_VAR_nodes_cidr"), "192.168.50.0/24"),
-		FlatcarChannel:    util.PickString(os.Getenv("TF_VAR_flatcar_channel"), "stable"),
 		APIPort:           8443,
 		NodeSSHPort:       22,
 		SSHPrivateKeyPath: "/root/.ssh/id_rsa",
 		ContainerRuntime:  Containerd,
 		CIDRIPsOffset:     2,
+		CgroupDriver:      "systemd",
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
@@ -260,17 +260,18 @@ func TestE2e(t *testing.T) {
 	bootstrapTokenID := "64vxqx"
 	bootstrapTokenSecret := "z95f5ng9sek5i40v" // #nosec:G101
 
-	cgroupDriver := "cgroupfs"
-	if testConfig.FlatcarChannel == "edge" {
-		cgroupDriver = "systemd"
-	}
-
-	t.Logf("Using cgroup driver: %s", cgroupDriver)
-
 	networkPlugin := "cni"
 	hairpinMode := "hairpin-veth"
 
 	kubeletExtraMounts := []types.Mount{}
+
+	if testConfig.CgroupDriver == "systemd" {
+		kubeletExtraMounts = append(kubeletExtraMounts, types.Mount{
+			Source: "/run/systemd/",
+			Target: "/run/systemd",
+		})
+	}
+
 	kubeletExtraArgs := testConfig.KubeletExtraArgs
 
 	if testConfig.ContainerRuntime == Containerd {
@@ -356,7 +357,7 @@ func TestE2e(t *testing.T) {
 					Token:  fmt.Sprintf("%s.%s", bootstrapTokenID, bootstrapTokenSecret),
 				},
 				WaitForNodeReady: true,
-				CgroupDriver:     cgroupDriver,
+				CgroupDriver:     testConfig.CgroupDriver,
 				NetworkPlugin:    networkPlugin,
 				HairpinMode:      hairpinMode,
 				VolumePluginDir:  "/var/lib/kubelet/volumeplugins",
@@ -392,7 +393,7 @@ func TestE2e(t *testing.T) {
 				Token:  fmt.Sprintf("%s.%s", bootstrapTokenID, bootstrapTokenSecret),
 			},
 			WaitForNodeReady: true,
-			CgroupDriver:     cgroupDriver,
+			CgroupDriver:     testConfig.CgroupDriver,
 			NetworkPlugin:    networkPlugin,
 			HairpinMode:      hairpinMode,
 			VolumePluginDir:  "/var/lib/kubelet/volumeplugins",

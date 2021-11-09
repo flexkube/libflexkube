@@ -66,6 +66,7 @@ jobs:
           containerRuntime: docker
           cidrIPsOffset: 1
           kubeletExtraArgs: [--fail-swap-on=false]
+          cgroupDriver: cgroupfs
         EOF
         helm repo add flexkube https://flexkube.github.io/charts/
         sudo chown $(whoami): e2e/keys/id_rsa
