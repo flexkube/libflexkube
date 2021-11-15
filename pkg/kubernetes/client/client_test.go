@@ -51,7 +51,7 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := client.NewClient([]byte(kubeconfig))
+	testClient, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestLabelNodeFakeKubeconfig(t *testing.T) {
 		"foo": "bar",
 	}
 
-	if err := c.LabelNode("foo", l); err == nil {
+	if err := testClient.LabelNode("foo", l); err == nil {
 		t.Errorf("Labeling node should always fail with fake kubeconfig")
 	}
 }

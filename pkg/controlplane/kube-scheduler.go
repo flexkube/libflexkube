@@ -45,7 +45,7 @@ clientConnection:
   kubeconfig: /etc/kubernetes/kubeconfig
 `
 
-	c := container.Container{
+	containerConfig := container.Container{
 		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
@@ -79,7 +79,7 @@ clientConnection:
 	return &container.HostConfiguredContainer{
 		Host:        k.host,
 		ConfigFiles: configFiles,
-		Container:   c,
+		Container:   containerConfig,
 	}, nil
 }
 
@@ -108,12 +108,12 @@ func (k *KubeScheduler) New() (container.ResourceInstance, error) {
 
 // Validate validates kube-scheduler configuration.
 func (k *KubeScheduler) Validate() error {
-	v := validator{
+	schedulerValidator := validator{
 		Common:     k.Common,
 		Host:       k.Host,
 		Kubeconfig: k.Kubeconfig,
 		YAML:       k,
 	}
 
-	return v.validate(true)
+	return schedulerValidator.validate(true)
 }

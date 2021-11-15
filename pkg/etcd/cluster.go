@@ -97,13 +97,13 @@ type cluster struct {
 }
 
 // propagateMember fills given Member's empty fields with fields from Cluster.
-func (c *Cluster) propagateMember(i string, m *MemberConfig) {
+func (c *Cluster) propagateMember(memberName string, memberConfig *MemberConfig) {
 	initialClusterArr := []string{}
 	peerCertAllowedCNArr := []string{}
 
 	for n, m := range c.Members {
 		// If member has no name defined explicitly, use key passed as argument.
-		name := util.PickString(m.Name, n)
+		name := util.PickString(memberConfig.Name, n)
 
 		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", name, m.PeerAddress))
 		peerCertAllowedCNArr = append(peerCertAllowedCNArr, name)
@@ -112,41 +112,42 @@ func (c *Cluster) propagateMember(i string, m *MemberConfig) {
 	sort.Strings(initialClusterArr)
 	sort.Strings(peerCertAllowedCNArr)
 
-	m.Name = util.PickString(m.Name, i)
-	m.Image = util.PickString(m.Image, c.Image, defaults.EtcdImage)
-	m.InitialCluster = util.PickString(m.InitialCluster, strings.Join(initialClusterArr, ","))
-	m.PeerCertAllowedCN = util.PickString(m.PeerCertAllowedCN, c.PeerCertAllowedCN)
-	m.CACertificate = util.PickString(m.CACertificate, c.CACertificate)
+	memberConfig.Name = util.PickString(memberConfig.Name, memberName)
+	memberConfig.Image = util.PickString(memberConfig.Image, c.Image, defaults.EtcdImage)
+	memberConfig.InitialCluster = util.PickString(memberConfig.InitialCluster, strings.Join(initialClusterArr, ","))
+	memberConfig.PeerCertAllowedCN = util.PickString(memberConfig.PeerCertAllowedCN, c.PeerCertAllowedCN)
+	memberConfig.CACertificate = util.PickString(memberConfig.CACertificate, c.CACertificate)
 
-	if len(m.ExtraMounts) == 0 {
-		m.ExtraMounts = c.ExtraMounts
+	if len(memberConfig.ExtraMounts) == 0 {
+		memberConfig.ExtraMounts = c.ExtraMounts
 	}
 
 	// PKI integration.
 	if c.PKI != nil && c.PKI.Etcd != nil {
-		e := c.PKI.Etcd
+		etcdPKI := c.PKI.Etcd
 
-		m.CACertificate = util.PickString(m.CACertificate, c.CACertificate, string(e.CA.X509Certificate))
+		memberConfig.CACertificate = util.PickString(memberConfig.CACertificate, c.CACertificate,
+			string(etcdPKI.CA.X509Certificate))
 
-		if c, ok := e.PeerCertificates[m.Name]; ok {
-			m.PeerCertificate = util.PickString(m.PeerCertificate, string(c.X509Certificate))
-			m.PeerKey = util.PickString(m.PeerKey, string(c.PrivateKey))
+		if c, ok := etcdPKI.PeerCertificates[memberConfig.Name]; ok {
+			memberConfig.PeerCertificate = util.PickString(memberConfig.PeerCertificate, string(c.X509Certificate))
+			memberConfig.PeerKey = util.PickString(memberConfig.PeerKey, string(c.PrivateKey))
 		}
 
-		if c, ok := e.ServerCertificates[m.Name]; ok {
-			m.ServerCertificate = util.PickString(m.ServerCertificate, string(c.X509Certificate))
-			m.ServerKey = util.PickString(m.ServerKey, string(c.PrivateKey))
+		if c, ok := etcdPKI.ServerCertificates[memberConfig.Name]; ok {
+			memberConfig.ServerCertificate = util.PickString(memberConfig.ServerCertificate, string(c.X509Certificate))
+			memberConfig.ServerKey = util.PickString(memberConfig.ServerKey, string(c.PrivateKey))
 		}
 	}
 
-	m.ServerAddress = util.PickString(m.ServerAddress, m.PeerAddress)
+	memberConfig.ServerAddress = util.PickString(memberConfig.ServerAddress, memberConfig.PeerAddress)
 
-	m.Host = host.BuildConfig(m.Host, host.Host{
+	memberConfig.Host = host.BuildConfig(memberConfig.Host, host.Host{
 		SSHConfig: c.SSH,
 	})
 
 	if len(c.State) == 0 {
-		m.NewCluster = true
+		memberConfig.NewCluster = true
 	}
 }
 
@@ -156,7 +157,7 @@ func (c *Cluster) New() (types.Resource, error) {
 		return nil, fmt.Errorf("validating cluster configuration: %w", err)
 	}
 
-	cc := container.Containers{
+	containersConfig := container.Containers{
 		PreviousState: c.State,
 		DesiredState:  container.ContainersState{},
 	}
@@ -165,19 +166,19 @@ func (c *Cluster) New() (types.Resource, error) {
 		members: map[string]Member{},
 	}
 
-	for n, m := range c.Members {
+	for name, m := range c.Members {
 		m := m
-		c.propagateMember(n, &m)
+		c.propagateMember(name, &m)
 
 		mem, _ := m.New()                         //nolint:errcheck // We check it in Validate().
 		hcc, _ := mem.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
-		cc.DesiredState[n] = hcc
+		containersConfig.DesiredState[name] = hcc
 
-		cluster.members[n] = mem
+		cluster.members[name] = mem
 	}
 
-	co, _ := cc.New() //nolint:errcheck // We check it in Validate().
+	co, _ := containersConfig.New() //nolint:errcheck // We check it in Validate().
 
 	cluster.containers = co
 
@@ -202,33 +203,33 @@ func (c *Cluster) Validate() error {
 		}
 	}
 
-	cc := container.Containers{
+	containersConfig := container.Containers{
 		PreviousState: c.State,
 		DesiredState:  container.ContainersState{},
 	}
 
-	for n, m := range c.Members {
+	for name, m := range c.Members {
 		m := m
-		c.propagateMember(n, &m)
+		c.propagateMember(name, &m)
 
 		mem, err := m.New()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("validating member %q: %w", n, err))
+			errors = append(errors, fmt.Errorf("validating member %q: %w", name, err))
 
 			continue
 		}
 
 		hcc, err := mem.ToHostConfiguredContainer()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("validating member %q container: %w", n, err))
+			errors = append(errors, fmt.Errorf("validating member %q container: %w", name, err))
 
 			continue
 		}
 
-		cc.DesiredState[n] = hcc
+		containersConfig.DesiredState[name] = hcc
 	}
 
-	if _, err := cc.New(); err != nil {
+	if _, err := containersConfig.New(); err != nil {
 		errors = append(errors, fmt.Errorf("validating containers object: %w", err))
 	}
 
@@ -278,17 +279,17 @@ func (c *cluster) firstMember() (Member, error) {
 }
 
 func (c *cluster) getClient() (etcdClient, error) {
-	m, err := c.firstMember()
+	firstMember, err := c.firstMember()
 	if err != nil {
 		return nil, fmt.Errorf("getting member object: %w", err)
 	}
 
-	endpoints, err := m.forwardEndpoints(c.getExistingEndpoints())
+	endpoints, err := firstMember.forwardEndpoints(c.getExistingEndpoints())
 	if err != nil {
 		return nil, fmt.Errorf("forwarding endpoints: %w", err)
 	}
 
-	return m.getEtcdClient(endpoints)
+	return firstMember.getEtcdClient(endpoints)
 }
 
 type etcdClient interface {
@@ -299,49 +300,49 @@ type etcdClient interface {
 }
 
 func (c *cluster) membersToRemove() []string {
-	m := []string{}
+	membersToRemove := []string{}
 
 	e := c.containers.ToExported()
 
 	for i := range e.PreviousState {
 		if _, ok := e.DesiredState[i]; !ok {
-			m = append(m, i)
+			membersToRemove = append(membersToRemove, i)
 		}
 	}
 
-	return m
+	return membersToRemove
 }
 
 func (c *cluster) membersToAdd() []string {
-	m := []string{}
+	membersToAdd := []string{}
 
 	e := c.containers.ToExported()
 
 	for i := range e.DesiredState {
 		if _, ok := e.PreviousState[i]; !ok {
-			m = append(m, i)
+			membersToAdd = append(membersToAdd, i)
 		}
 	}
 
-	return m
+	return membersToAdd
 }
 
 // updateMembers adds and remove members from the cluster according to the configuration.
 func (c *cluster) updateMembers(cli etcdClient) error {
 	for _, name := range c.membersToRemove() {
-		m := &member{
+		member := &member{
 			config: &MemberConfig{
 				Name: name,
 			},
 		}
 
-		if err := m.remove(cli); err != nil {
+		if err := member.remove(cli); err != nil {
 			return fmt.Errorf("removing member: %w", err)
 		}
 	}
 
-	for _, m := range c.membersToAdd() {
-		if err := c.members[m].add(cli); err != nil {
+	for _, member := range c.membersToAdd() {
+		if err := c.members[member].add(cli); err != nil {
 			return fmt.Errorf("adding member: %w", err)
 		}
 	}

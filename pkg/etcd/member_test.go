@@ -152,20 +152,20 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	for c, p := range cases {
-		p := p
+	for c, testCase := range cases {
+		testCase := testCase
 
 		t.Run(c, func(t *testing.T) {
 			t.Parallel()
 
-			m := p.mutator(validMember(t))
+			m := testCase.mutator(validMember(t))
 			err := m.Validate()
 
-			if p.expectError && err == nil {
+			if testCase.expectError && err == nil {
 				t.Fatalf("Expected error")
 			}
 
-			if !p.expectError && err != nil {
+			if !testCase.expectError && err != nil {
 				t.Fatalf("Didn't expect error, got: %v", err)
 			}
 		})

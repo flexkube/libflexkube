@@ -114,7 +114,7 @@ func (c *Config) ToYAMLString() (string, error) {
 
 // renderKubeconfig renders Config as kubeconfig YAML.
 func (c *Config) renderKubeconfig() (string, error) {
-	t := `apiVersion: v1
+	kubeconfigTemplate := `apiVersion: v1
 kind: Config
 clusters:
 - name: static
@@ -157,7 +157,7 @@ contexts:
 
 	var buf bytes.Buffer
 
-	tpl := template.Must(template.New("t").Parse(t))
+	tpl := template.Must(template.New("t").Parse(kubeconfigTemplate))
 
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("executing template: %w", err)

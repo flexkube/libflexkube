@@ -259,8 +259,8 @@ func (k *Kubernetes) kubeSchedulerCR(defaultCertificate Certificate) *certificat
 	}
 }
 
-func defaultKubeAPIServerServerCertificate(k *KubeAPIServer) *Certificate {
-	c := &Certificate{
+func defaultKubeAPIServerServerCertificate(apiServer *KubeAPIServer) *Certificate {
+	cert := &Certificate{
 		CommonName:  "kube-apiserver",
 		IPAddresses: []string{"127.0.0.1"},
 		DNSNames: []string{
@@ -275,12 +275,12 @@ func defaultKubeAPIServerServerCertificate(k *KubeAPIServer) *Certificate {
 		KeyUsage: serverUsage(),
 	}
 
-	if k != nil {
-		c.DNSNames = append(c.DNSNames, k.ExternalNames...)
-		c.IPAddresses = append(c.IPAddresses, k.ServerIPs...)
+	if apiServer != nil {
+		cert.DNSNames = append(cert.DNSNames, apiServer.ExternalNames...)
+		cert.IPAddresses = append(cert.IPAddresses, apiServer.ServerIPs...)
 	}
 
-	return c
+	return cert
 }
 
 func defaultKubeAPIServerKubeletCertificate() *Certificate {

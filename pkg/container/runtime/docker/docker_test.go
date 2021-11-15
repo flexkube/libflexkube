@@ -85,16 +85,16 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 func TestStatus(t *testing.T) {
 	t.Parallel()
 
-	es := "running"
+	expectedStatus := "running"
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
 				return dockertypes.ContainerJSON{
 					ContainerJSONBase: &dockertypes.ContainerJSONBase{
 						State: &dockertypes.ContainerState{
-							Status: es,
+							Status: expectedStatus,
 						},
 					},
 				}, nil
@@ -102,24 +102,24 @@ func TestStatus(t *testing.T) {
 		},
 	}
 
-	s, err := d.Status("foo")
+	status, err := testClient.Status("foo")
 	if err != nil {
 		t.Fatalf("Checking for status should succeed, got: %v", err)
 	}
 
-	if s.ID == "" {
+	if status.ID == "" {
 		t.Fatalf("ID in status of existing container should not be empty")
 	}
 
-	if s.Status != es {
-		t.Fatalf("Received status should be %s, got %s", es, s.Status)
+	if status.Status != expectedStatus {
+		t.Fatalf("Received status should be %s, got %s", expectedStatus, status.Status)
 	}
 }
 
 func TestStatusNotFound(t *testing.T) {
 	t.Parallel()
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
@@ -128,7 +128,7 @@ func TestStatusNotFound(t *testing.T) {
 		},
 	}
 
-	s, err := d.Status("foo")
+	s, err := testClient.Status("foo")
 	if err != nil {
 		t.Fatalf("Checking for status should succeed, got: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestStatusNotFound(t *testing.T) {
 func TestStatusRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
@@ -150,7 +150,7 @@ func TestStatusRuntimeError(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Status("foo"); err == nil {
+	if _, err := testClient.Status("foo"); err == nil {
 		t.Fatalf("Checking for status should fail")
 	}
 }
@@ -159,7 +159,7 @@ func TestStatusRuntimeError(t *testing.T) {
 func TestCopyRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			CopyToContainerF: func(_ context.Context, _, _ string, _ io.Reader, _ dockertypes.CopyToContainerOptions) error {
@@ -168,7 +168,7 @@ func TestCopyRuntimeError(t *testing.T) {
 		},
 	}
 
-	if err := d.Copy("foo", []*types.File{}); err == nil {
+	if err := testClient.Copy("foo", []*types.File{}); err == nil {
 		t.Fatalf("Should fail when runtime returns error")
 	}
 }
@@ -177,14 +177,12 @@ func TestCopyRuntimeError(t *testing.T) {
 func TestReadRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	p := defaultPath
-
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			CopyFromContainerF: func(_ context.Context, _, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-				if path != p {
-					t.Fatalf("Should read path %s, got %s", p, path)
+				if path != defaultPath {
+					t.Fatalf("Should read path %s, got %s", defaultPath, path)
 				}
 
 				return nil, dockertypes.ContainerPathStat{}, fmt.Errorf("Copying failed")
@@ -192,7 +190,7 @@ func TestReadRuntimeError(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Read("foo", []string{p}); err == nil {
+	if _, err := testClient.Read("foo", []string{defaultPath}); err == nil {
 		t.Fatalf("Should fail when runtime returns error")
 	}
 }
@@ -205,27 +203,25 @@ const (
 func TestRead(t *testing.T) {
 	t.Parallel()
 
-	p := defaultPath
-
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
 				return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
-					Name: p,
+					Name: defaultPath,
 				}, nil
 			},
 		},
 	}
 
-	fs, err := d.Read("foo", []string{p})
+	readFiles, err := testClient.Read("foo", []string{defaultPath})
 	if err != nil {
 		t.Fatalf("Reading should succeed, got: %v", err)
 	}
 
-	files := []*types.File{
+	expectedFiles := []*types.File{
 		{
-			Path:    p,
+			Path:    defaultPath,
 			Content: "foo\n",
 			Mode:    defaultMode,
 			User:    "1000",
@@ -233,7 +229,7 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(files, fs); diff != "" {
+	if diff := cmp.Diff(readFiles, expectedFiles); diff != "" {
 		t.Fatalf("Got unexpected files: %s", diff)
 	}
 }
@@ -241,9 +237,7 @@ func TestRead(t *testing.T) {
 func TestReadFileMissing(t *testing.T) {
 	t.Parallel()
 
-	p := defaultPath
-
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
@@ -252,7 +246,7 @@ func TestReadFileMissing(t *testing.T) {
 		},
 	}
 
-	fs, err := d.Read("foo", []string{p})
+	fs, err := testClient.Read("foo", []string{defaultPath})
 	if err != nil {
 		t.Fatalf("Read should succeed, got: %v", err)
 	}
@@ -280,9 +274,7 @@ DT71fav/qfm/u1/vAAAAAAAAAAAAAAAAAABYbwIOFGnRACgAAA==`)
 func TestReadVerifyTarArchive(t *testing.T) {
 	t.Parallel()
 
-	p := defaultPath
-
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
@@ -291,7 +283,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Read("foo", []string{p}); err == nil {
+	if _, err := testClient.Read("foo", []string{defaultPath}); err == nil {
 		t.Fatalf("Read should fail on bad TAR archive")
 	}
 }
@@ -300,12 +292,12 @@ func TestReadVerifyTarArchive(t *testing.T) {
 func TestTarToFiles(t *testing.T) {
 	t.Parallel()
 
-	fs, err := tarToFiles(testTar(t))
+	filesFromArchive, err := tarToFiles(testTar(t))
 	if err != nil {
 		t.Fatalf("Reading should succeed, got: %v", err)
 	}
 
-	files := []*types.File{
+	expectedFiles := []*types.File{
 		{
 			Content: "foo\n",
 			Mode:    defaultMode,
@@ -314,7 +306,7 @@ func TestTarToFiles(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(files, fs); diff != "" {
+	if diff := cmp.Diff(filesFromArchive, expectedFiles); diff != "" {
 		t.Fatalf("Got unexpected files: %s", diff)
 	}
 }
@@ -323,78 +315,80 @@ func TestTarToFiles(t *testing.T) {
 func TestFilesToTar(t *testing.T) {
 	t.Parallel()
 
-	tn := "test"
-	f := &types.File{
+	testUser := "test"
+
+	testFile := &types.File{
 		Content: "foo\n",
 		Mode:    defaultMode,
 		Path:    defaultPath,
-		User:    tn,
-		Group:   tn,
+		User:    testUser,
+		Group:   testUser,
 	}
 
-	r, err := filesToTar([]*types.File{f})
+	r, err := filesToTar([]*types.File{testFile})
 	if err != nil {
 		t.Fatalf("Packing files should succeed, got: %v", err)
 	}
 
 	tr := tar.NewReader(r)
 
-	h, err := tr.Next()
+	header, err := tr.Next()
 	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 
-	if h.Name != f.Path {
-		t.Fatalf("Bad file name, expected %s, got %s", f.Path, h.Name)
+	if header.Name != testFile.Path {
+		t.Fatalf("Bad file name, expected %s, got %s", testFile.Path, header.Name)
 	}
 
-	if h.Mode != f.Mode {
-		t.Fatalf("Bad file mode, expected %d, got %d", f.Mode, h.Mode)
+	if header.Mode != testFile.Mode {
+		t.Fatalf("Bad file mode, expected %d, got %d", testFile.Mode, header.Mode)
 	}
 
-	if h.ModTime.IsZero() {
+	if header.ModTime.IsZero() {
 		t.Fatalf("Modification time in file should be set to current time")
 	}
 
-	if h.Uname != tn {
-		t.Fatalf("Expecter uname to be %s, got %s", tn, h.Uname)
+	if header.Uname != testUser {
+		t.Fatalf("Expecter uname to be %s, got %s", testUser, header.Uname)
 	}
 
-	if h.Gname != tn {
-		t.Fatalf("Expected gname to be %s, got %s", tn, h.Gname)
+	if header.Gname != testUser {
+		t.Fatalf("Expected gname to be %s, got %s", testUser, header.Gname)
 	}
 }
 
 func TestFilesToTarNumericUserGroup(t *testing.T) {
 	t.Parallel()
 
-	tn := 1001
-	f := &types.File{
+	expectedOwnerID := 1001
+
+	testFile := &types.File{
 		Content: "foo\n",
 		Mode:    defaultMode,
 		Path:    defaultPath,
-		User:    strconv.Itoa(tn),
-		Group:   strconv.Itoa(tn),
+		User:    strconv.Itoa(expectedOwnerID),
+		Group:   strconv.Itoa(expectedOwnerID),
 	}
 
-	r, err := filesToTar([]*types.File{f})
+	r, err := filesToTar([]*types.File{testFile})
 	if err != nil {
 		t.Fatalf("Packing files should succeed, got: %v", err)
 	}
 
 	tr := tar.NewReader(r)
 
-	h, err := tr.Next()
+	header, err := tr.Next()
 	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 		t.Fatalf("At least one file should be found in TAR archive")
 	}
 
-	if h.Uid != tn {
-		t.Fatalf("Expecter uid to be %d, got %d", tn, h.Uid)
+	if header.Uid != expectedOwnerID {
+		t.Fatalf("Expecter uid to be %d, got %d", expectedOwnerID, header.Uid)
 	}
 
-	if h.Gid != tn {
-		t.Fatalf("Expected gid to be %d, got %d", tn, h.Gid)
+	if header.Gid != expectedOwnerID {
+		t.Fatalf("Expected gid to be %d, got %d", expectedOwnerID, header.Gid)
 	}
 }
 
@@ -402,7 +396,7 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 func TestCreatePullImageFail(t *testing.T) {
 	t.Parallel()
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
@@ -411,7 +405,7 @@ func TestCreatePullImageFail(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Create(&types.ContainerConfig{}); err == nil {
+	if _, err := testClient.Create(&types.ContainerConfig{}); err == nil {
 		t.Fatalf("Should fail when runtime error occurs")
 	}
 }
@@ -419,11 +413,11 @@ func TestCreatePullImageFail(t *testing.T) {
 func TestCreateSetUser(t *testing.T) {
 	t.Parallel()
 
-	c := &types.ContainerConfig{
+	testConfig := &types.ContainerConfig{
 		User: "test",
 	}
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerCreateF: func(
@@ -434,8 +428,8 @@ func TestCreateSetUser(t *testing.T) {
 				_ *v1.Platform,
 				_ string,
 			) (containertypes.ContainerCreateCreatedBody, error) {
-				if config.User != c.User {
-					t.Fatalf("Configured user should be %q, got %q", c.User, config.User)
+				if config.User != testConfig.User {
+					t.Fatalf("Configured user should be %q, got %q", testConfig.User, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
@@ -449,7 +443,7 @@ func TestCreateSetUser(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Create(c); err != nil {
+	if _, err := testClient.Create(testConfig); err != nil {
 		t.Fatalf("Create should succeed, got: %v", err)
 	}
 }
@@ -457,14 +451,14 @@ func TestCreateSetUser(t *testing.T) {
 func TestCreateSetUserGroup(t *testing.T) {
 	t.Parallel()
 
-	c := &types.ContainerConfig{
+	testConfig := &types.ContainerConfig{
 		User:  "test",
 		Group: "bar",
 	}
 
-	e := fmt.Sprintf("%s:%s", c.User, c.Group)
+	expectedUser := fmt.Sprintf("%s:%s", testConfig.User, testConfig.Group)
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerCreateF: func(
@@ -475,8 +469,8 @@ func TestCreateSetUserGroup(t *testing.T) {
 				_ *v1.Platform,
 				_ string,
 			) (containertypes.ContainerCreateCreatedBody, error) {
-				if config.User != e {
-					t.Fatalf("Configured user should be %q, got %q", e, config.User)
+				if config.User != expectedUser {
+					t.Fatalf("Configured user should be %q, got %q", expectedUser, config.User)
 				}
 
 				return containertypes.ContainerCreateCreatedBody{}, nil
@@ -490,7 +484,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Create(c); err != nil {
+	if _, err := testClient.Create(testConfig); err != nil {
 		t.Fatalf("Create should succeed, got: %v", err)
 	}
 }
@@ -498,7 +492,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 func TestCreateRuntimeFail(t *testing.T) {
 	t.Parallel()
 
-	d := &docker{
+	testClient := &docker{
 		ctx: context.Background(),
 		cli: &FakeClient{
 			ContainerCreateF: func(
@@ -520,7 +514,7 @@ func TestCreateRuntimeFail(t *testing.T) {
 		},
 	}
 
-	if _, err := d.Create(&types.ContainerConfig{}); err == nil {
+	if _, err := testClient.Create(&types.ContainerConfig{}); err == nil {
 		t.Fatalf("Should fail when runtime error occurs")
 	}
 }
@@ -558,13 +552,13 @@ func TestGetAddressEmptyConfig(t *testing.T) {
 func TestGetAddress(t *testing.T) {
 	t.Parallel()
 
-	f := "foo"
+	expectedAddress := "foo"
 	c := &Config{
-		Host: f,
+		Host: expectedAddress,
 	}
 
-	if a := c.GetAddress(); a != f {
-		t.Fatalf("Expected %q, got %q", f, a)
+	if a := c.GetAddress(); a != expectedAddress {
+		t.Fatalf("Expected %q, got %q", expectedAddress, a)
 	}
 }
 
@@ -572,18 +566,18 @@ func TestGetAddress(t *testing.T) {
 func TestConvertContainerConfigEnvVariables(t *testing.T) {
 	t.Parallel()
 
-	c := &types.ContainerConfig{
+	testContainerConfig := &types.ContainerConfig{
 		Env: map[string]string{"foo": "bar"},
 	}
 
-	e := []string{"foo=bar"}
+	expectedEnvVariables := []string{"foo=bar"}
 
-	cc, _, err := convertContainerConfig(c)
+	cc, _, err := convertContainerConfig(testContainerConfig)
 	if err != nil {
 		t.Fatalf("Converting configuration should succeed, got: %v", err)
 	}
 
-	if !reflect.DeepEqual(cc.Env, e) {
+	if !reflect.DeepEqual(cc.Env, expectedEnvVariables) {
 		t.Fatalf("Configured environment variables should be included in container configuration")
 	}
 }

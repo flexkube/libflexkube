@@ -39,13 +39,13 @@ func TestWithPreHook(t *testing.T) {
 
 	pre := false
 
-	f := Hook(func() error {
+	hookF := Hook(func() error {
 		pre = true
 
 		return nil
 	})
 
-	if err := withHook(&f, func() error {
+	if err := withHook(&hookF, func() error {
 		return nil
 	}, nil); err != nil {
 		t.Fatalf("WithHook should not return error, got: %v", err)
@@ -61,7 +61,7 @@ func TestWithPostHook(t *testing.T) {
 
 	post := false
 
-	f := Hook(func() error {
+	hookF := Hook(func() error {
 		post = true
 
 		return nil
@@ -69,7 +69,7 @@ func TestWithPostHook(t *testing.T) {
 
 	if err := withHook(nil, func() error {
 		return nil
-	}, &f); err != nil {
+	}, &hookF); err != nil {
 		t.Fatalf("WithHook should not return error, got: %v", err)
 	}
 
@@ -91,13 +91,13 @@ func TestConnectAndForward(t *testing.T) {
 		t.Fatalf("Unable to listen on address %q: %v", addr, err)
 	}
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
 
-	s, err := h.connectAndForward(fmt.Sprintf("unix://%s", addr.String()))
+	s, err := testHCC.connectAndForward(fmt.Sprintf("unix://%s", addr.String()))
 	if err != nil {
 		t.Fatalf("Direct forwarding to open listener should work, got: %v", err)
 	}
@@ -115,11 +115,11 @@ func TestConnectAndForward(t *testing.T) {
 func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		container: &container{},
 	}
 
-	if err := h.Status(); err == nil {
+	if err := testHCC.Status(); err == nil {
 		t.Fatalf("Checking status of non existing container should fail, got: %v", err)
 	}
 }
@@ -127,7 +127,7 @@ func TestHostConfiguredContainerStatusNotExist(t *testing.T) {
 func TestHostConfiguredContainerStatus(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -141,13 +141,13 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 					},
 				},
 				status: types.ContainerStatus{
-					ID: foo,
+					ID: testContainerID,
 				},
 			},
 		},
 	}
 
-	if err := h.Status(); err != nil {
+	if err := testHCC.Status(); err != nil {
 		t.Fatalf("Checking status of existing container should succeed, got: %v", err)
 	}
 }
@@ -156,7 +156,7 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		container: &container{
 			base: base{
 				runtime: &runtime.Fake{
@@ -168,7 +168,7 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 		},
 	}
 
-	if err := h.createConfigurationContainer(); err == nil {
+	if err := testHCC.createConfigurationContainer(); err == nil {
 		t.Fatalf("Creating configuration container should fail")
 	}
 }
@@ -178,20 +178,20 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 	t.Parallel()
 
 	deleted := false
-	i := foo
+	expectedContainerID := testContainerID
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
 					StatusF: func(id string) (types.ContainerStatus, error) {
 						return types.ContainerStatus{
-							ID: i,
+							ID: expectedContainerID,
 						}, nil
 					},
 					DeleteF: func(id string) error {
-						if id != i {
-							t.Fatalf("Should remove container %q, got %q", i, id)
+						if id != expectedContainerID {
+							t.Fatalf("Should remove container %q, got %q", expectedContainerID, id)
 						}
 
 						deleted = true
@@ -200,13 +200,13 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 					},
 				},
 				status: types.ContainerStatus{
-					ID: i,
+					ID: expectedContainerID,
 				},
 			},
 		},
 	}
 
-	if err := h.removeConfigurationContainer(); err != nil {
+	if err := testHCC.removeConfigurationContainer(); err != nil {
 		t.Fatalf("Removing configuration container should succeed, got: %v", err)
 	}
 
@@ -218,7 +218,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -230,7 +230,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 		},
 	}
 
-	if err := h.removeConfigurationContainer(); err == nil {
+	if err := testHCC.removeConfigurationContainer(); err == nil {
 		t.Fatalf("Removing configuration container should fail")
 	}
 }
@@ -239,11 +239,11 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 func TestStatMountsNoMounts(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		container: &container{},
 	}
 
-	if _, err := h.statMounts(); err != nil {
+	if _, err := testHCC.statMounts(); err != nil {
 		t.Fatalf("Stating mounts when there is no mounts defined should always succeed, got: %v", err)
 	}
 }
@@ -251,7 +251,7 @@ func TestStatMountsNoMounts(t *testing.T) {
 func TestStatMountsRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -275,7 +275,7 @@ func TestStatMountsRuntimeError(t *testing.T) {
 		},
 	}
 
-	if _, err := h.statMounts(); err == nil {
+	if _, err := testHCC.statMounts(); err == nil {
 		t.Fatalf("Stating mount should fail when runtime error occurs")
 	}
 }
@@ -283,16 +283,16 @@ func TestStatMountsRuntimeError(t *testing.T) {
 func TestStatMounts(t *testing.T) {
 	t.Parallel()
 
-	m := map[string]os.FileMode{
+	expectedStatResult := map[string]os.FileMode{
 		"/etc": os.ModeDir,
 	}
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
 					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
-						return m, nil
+						return expectedStatResult, nil
 					},
 				},
 			},
@@ -311,12 +311,12 @@ func TestStatMounts(t *testing.T) {
 		},
 	}
 
-	s, err := h.statMounts()
+	statResult, err := testHCC.statMounts()
 	if err != nil {
 		t.Fatalf("Stating mount should succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(m, s); diff != "" {
+	if diff := cmp.Diff(statResult, expectedStatResult); diff != "" {
 		t.Fatalf("Received stat result differs from expected one: %s", diff)
 	}
 }
@@ -325,7 +325,7 @@ func TestStatMounts(t *testing.T) {
 func TestCreateMissingMountpointsStatFail(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -349,7 +349,7 @@ func TestCreateMissingMountpointsStatFail(t *testing.T) {
 		},
 	}
 
-	if err := h.createMissingMounts(); err == nil {
+	if err := testHCC.createMissingMounts(); err == nil {
 		t.Fatalf("Creating missing mountpoints should fail when stating mounts fails")
 	}
 }
@@ -357,7 +357,7 @@ func TestCreateMissingMountpointsStatFail(t *testing.T) {
 func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -383,7 +383,7 @@ func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
 		},
 	}
 
-	if err := h.createMissingMounts(); err == nil {
+	if err := testHCC.createMissingMounts(); err == nil {
 		t.Fatalf("Creating missing mountpoints should fail when stated mount is a file")
 	}
 }
@@ -391,7 +391,7 @@ func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
 func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -417,7 +417,7 @@ func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 		},
 	}
 
-	if err := h.createMissingMounts(); err != nil {
+	if err := testHCC.createMissingMounts(); err != nil {
 		t.Fatalf("Creating missing mountpoints without runtime should succeed, "+
 			"if there is no mountpoints to create, got: %v", err)
 	}
@@ -426,7 +426,7 @@ func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 func TestCreateMissingMountpointsCopyFail(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -453,7 +453,7 @@ func TestCreateMissingMountpointsCopyFail(t *testing.T) {
 		},
 	}
 
-	if err := h.createMissingMounts(); err == nil {
+	if err := testHCC.createMissingMounts(); err == nil {
 		t.Fatalf("Creating missing mountpoints should fail when copying fails")
 	}
 }
@@ -463,7 +463,7 @@ func TestCreateMissingMountpoints(t *testing.T) {
 
 	called := false
 
-	f := []*types.File{
+	expectedFiles := []*types.File{
 		{
 			Path:    fmt.Sprintf("%s/", path.Join(ConfigMountpoint, "/etc/")),
 			Mode:    mountpointDirMode,
@@ -471,7 +471,7 @@ func TestCreateMissingMountpoints(t *testing.T) {
 		},
 	}
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
@@ -479,7 +479,7 @@ func TestCreateMissingMountpoints(t *testing.T) {
 						return map[string]os.FileMode{}, nil
 					},
 					CopyF: func(id string, files []*types.File) error {
-						if diff := cmp.Diff(f, files); diff != "" {
+						if diff := cmp.Diff(files, expectedFiles); diff != "" {
 							t.Fatalf("Received files for creating differs from expected: %s", diff)
 						}
 
@@ -504,7 +504,7 @@ func TestCreateMissingMountpoints(t *testing.T) {
 		},
 	}
 
-	if err := h.createMissingMounts(); err != nil {
+	if err := testHCC.createMissingMounts(); err != nil {
 		t.Fatalf("Creating missing mountpoints should succeed, got: %v", err)
 	}
 
@@ -517,17 +517,17 @@ func TestCreateMissingMountpoints(t *testing.T) {
 func TestDirMounts(t *testing.T) {
 	t.Parallel()
 
-	m := types.Mount{
+	expectedMount := types.Mount{
 		Source: "/etc/",
 		Target: "/etc",
 	}
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		container: &container{
 			base{
 				config: types.ContainerConfig{
 					Mounts: []types.Mount{
-						m,
+						expectedMount,
 						{
 							Source: "/foo",
 							Target: "/bar",
@@ -538,7 +538,7 @@ func TestDirMounts(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(h.dirMounts(), []types.Mount{m}); diff != "" {
+	if diff := cmp.Diff(testHCC.dirMounts(), []types.Mount{expectedMount}); diff != "" {
 		t.Fatalf("Received wrong dir mounts than expected: %s", diff)
 	}
 }
@@ -547,7 +547,7 @@ func TestDirMounts(t *testing.T) {
 func TestWithForwardedRuntimeFailForward(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		container: &container{
 			base: base{
 				runtimeConfig: &runtime.FakeConfig{
@@ -557,7 +557,7 @@ func TestWithForwardedRuntimeFailForward(t *testing.T) {
 		},
 	}
 
-	if err := h.withForwardedRuntime(func() error {
+	if err := testHCC.withForwardedRuntime(func() error {
 		return nil
 	}); err == nil {
 		t.Fatalf("Should fail with bad host")
@@ -567,7 +567,7 @@ func TestWithForwardedRuntimeFailForward(t *testing.T) {
 func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -578,7 +578,7 @@ func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
 		},
 	}
 
-	if err := h.withForwardedRuntime(func() error {
+	if err := testHCC.withForwardedRuntime(func() error {
 		return nil
 	}); err == nil {
 		t.Fatalf("Should fail with bad runtime")
@@ -588,23 +588,23 @@ func TestWithForwardedRuntimeFailRuntime(t *testing.T) {
 func TestWithForwardedRuntime(t *testing.T) {
 	t.Parallel()
 
-	r := &runtime.Fake{}
+	fakeRuntime := &runtime.Fake{}
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 		container: &container{
 			base: base{
 				runtimeConfig: &runtime.FakeConfig{
-					Runtime: r,
+					Runtime: fakeRuntime,
 				},
 			},
 		},
 	}
 
 	// TODO: Test runtime manipulation here.
-	if err := h.withForwardedRuntime(func() error {
+	if err := testHCC.withForwardedRuntime(func() error {
 		return nil
 	}); err != nil {
 		t.Fatalf("Should work, got: %v", err)
@@ -615,7 +615,7 @@ func TestWithForwardedRuntime(t *testing.T) {
 func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -624,7 +624,7 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return foo, nil
+							return testContainerID, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -649,7 +649,7 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 		},
 	}
 
-	if err := h.Create(); err == nil {
+	if err := testHCC.Create(); err == nil {
 		t.Fatalf("Create with failing stat should fail")
 	}
 }
@@ -659,7 +659,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 
 	fail := false
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -674,7 +674,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 
 							fail = true
 
-							return foo, nil
+							return testContainerID, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -701,7 +701,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 		},
 	}
 
-	if err := h.Create(); err == nil {
+	if err := testHCC.Create(); err == nil {
 		t.Fatalf("Create with failing create from runtime should fail")
 	}
 }
@@ -711,7 +711,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 
 	fail := false
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -720,7 +720,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return foo, nil
+							return testContainerID, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -753,7 +753,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 		},
 	}
 
-	if err := h.Create(); err == nil {
+	if err := testHCC.Create(); err == nil {
 		t.Fatalf("Create with failing status from runtime should fail")
 	}
 }
@@ -761,7 +761,7 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 func TestHostConfiguredContainerCreate(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -770,7 +770,7 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return foo, nil
+							return testContainerID, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -799,11 +799,11 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 		},
 	}
 
-	if err := h.Create(); err != nil {
+	if err := testHCC.Create(); err != nil {
 		t.Fatalf("Create should succeed, got: %v", err)
 	}
 
-	if id := h.container.Status().ID; id != "bar" {
+	if id := testHCC.container.Status().ID; id != "bar" {
 		t.Fatalf("Expected ID %q, got %q", "bar", id)
 	}
 }
@@ -812,7 +812,7 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -821,7 +821,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
 						CreateF: func(config *types.ContainerConfig) (string, error) {
-							return foo, nil
+							return testContainerID, nil
 						},
 						DeleteF: func(id string) error {
 							return nil
@@ -832,7 +832,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 		},
 	}
 
-	if err := h.updateConfigurationStatus(); err != nil {
+	if err := testHCC.updateConfigurationStatus(); err != nil {
 		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
 	}
 }
@@ -840,7 +840,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",
 		},
@@ -851,7 +851,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.
 			base{
 				runtime: &runtime.Fake{
 					CreateF: func(config *types.ContainerConfig) (string, error) {
-						return foo, nil
+						return testContainerID, nil
 					},
 					DeleteF: func(id string) error {
 						return nil
@@ -868,11 +868,11 @@ func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.
 		},
 	}
 
-	if err := h.updateConfigurationStatus(); err != nil {
+	if err := testHCC.updateConfigurationStatus(); err != nil {
 		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(h.configFiles, map[string]string{}); diff != "" {
+	if diff := cmp.Diff(testHCC.configFiles, map[string]string{}); diff != "" {
 		t.Fatalf("Updating configuration status should reset configFiles map if no files were found, got: %s", diff)
 	}
 }
@@ -880,7 +880,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.
 func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",
 		},
@@ -891,7 +891,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 			base{
 				runtime: &runtime.Fake{
 					CreateF: func(config *types.ContainerConfig) (string, error) {
-						return foo, nil
+						return testContainerID, nil
 					},
 					DeleteF: func(id string) error {
 						return nil
@@ -909,7 +909,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 		},
 	}
 
-	if err := h.updateConfigurationStatus(); err != nil {
+	if err := testHCC.updateConfigurationStatus(); err != nil {
 		t.Fatalf("Updating configuration status without configuration files should always succeed, got: %v", err)
 	}
 
@@ -917,7 +917,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 		"/foo": "doh",
 	}
 
-	if diff := cmp.Diff(h.configFiles, e); diff != "" {
+	if diff := cmp.Diff(testHCC.configFiles, e); diff != "" {
 		t.Fatalf("Updating configuration status should update content of the file with one returned by runtime: %s", diff)
 	}
 }
@@ -925,7 +925,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	h := &hostConfiguredContainer{
+	testHCC := &hostConfiguredContainer{
 		configFiles: map[string]string{
 			"/foo": "bar",
 		},
@@ -936,7 +936,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *tes
 			base{
 				runtime: &runtime.Fake{
 					CreateF: func(config *types.ContainerConfig) (string, error) {
-						return foo, nil
+						return testContainerID, nil
 					},
 					DeleteF: func(id string) error {
 						return nil
@@ -949,7 +949,7 @@ func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *tes
 		},
 	}
 
-	if err := h.updateConfigurationStatus(); err == nil {
+	if err := testHCC.updateConfigurationStatus(); err == nil {
 		t.Fatalf("Updating configuration status should return error when runtime read fails")
 	}
 }

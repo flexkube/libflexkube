@@ -32,7 +32,7 @@ func TestPasswordAuth(t *testing.T) {
 		t.Fatalf("Reading password file %q: %v", passwordFilePath, err)
 	}
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "core",
 		ConnectionTimeout: "5s",
@@ -42,12 +42,12 @@ func TestPasswordAuth(t *testing.T) {
 		Password:          strings.TrimSpace(string(pass)),
 	}
 
-	s, err := c.New()
+	testSSH, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
-	if _, err := s.Connect(); err != nil {
+	if _, err := testSSH.Connect(); err != nil {
 		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 }
@@ -57,7 +57,7 @@ func TestPasswordAuth(t *testing.T) {
 func TestPasswordAuthFail(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "core",
 		ConnectionTimeout: "5s",
@@ -67,12 +67,12 @@ func TestPasswordAuthFail(t *testing.T) {
 		Password:          "badpassword",
 	}
 
-	s, err := c.New()
+	testSSH, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
-	if _, err := s.Connect(); err == nil {
+	if _, err := testSSH.Connect(); err == nil {
 		t.Fatalf("Connecting with bad password should fail")
 	}
 }
@@ -99,7 +99,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 		t.Fatalf("Reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
 	}
 
-	c := &Config{
+	withPrivateKeyConfig := &Config{
 		Address:           "localhost",
 		User:              "core",
 		ConnectionTimeout: "5s",
@@ -109,12 +109,12 @@ func withPrivateKey(t *testing.T) transport.Interface {
 		PrivateKey:        string(key),
 	}
 
-	ssh, err := c.New()
+	sshWithPrivateKey, err := withPrivateKeyConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %v", err)
 	}
 
-	return ssh
+	return sshWithPrivateKey
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
@@ -122,7 +122,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 func TestForwardUnixSocketFull(t *testing.T) {
 	ssh := withPrivateKey(t)
 
-	c, err := ssh.Connect()
+	connected, err := ssh.Connect()
 	if err != nil {
 		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestForwardUnixSocketFull(t *testing.T) {
 
 	go runServer(t, randomRequest, randomResponse)
 
-	localSocket, err := c.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
+	localSocket, err := connected.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
 	if err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
@@ -159,7 +159,7 @@ func TestForwardUnixSocketFull(t *testing.T) {
 func prepareTestSocket(t *testing.T) net.Listener {
 	t.Helper()
 
-	l, err := net.Listen("unix", testServerAddr)
+	listener, err := net.Listen("unix", testServerAddr)
 	if err != nil {
 		// Can't use t.Fatalf from go routine. use fmt.Printf + t.Fail() instead
 		//
@@ -169,7 +169,7 @@ func prepareTestSocket(t *testing.T) net.Listener {
 	}
 
 	t.Cleanup(func() {
-		if err := l.Close(); err != nil {
+		if err := listener.Close(); err != nil {
 			fmt.Printf("Failed closing local listener: %v\n", err)
 		}
 
@@ -185,7 +185,7 @@ func prepareTestSocket(t *testing.T) net.Listener {
 		t.Fail()
 	}
 
-	return l
+	return listener
 }
 
 //nolint:thelper // This function is actually part of the test.

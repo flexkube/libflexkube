@@ -139,7 +139,7 @@ const (
 
 // configFiles returns map of file for kube-apiserver.
 func (k *kubeAPIServer) configFiles() map[string]string {
-	m := map[string]string{
+	relativeConfigFiles := map[string]string{
 		clientCAFile:                 string(k.common.KubernetesCACertificate),
 		tlsCertFile:                  k.apiServerCertificate,
 		tlsPrivateKeyFile:            k.apiServerKey,
@@ -154,14 +154,14 @@ func (k *kubeAPIServer) configFiles() map[string]string {
 		etcdKeyfile:                  k.etcdClientKey,
 	}
 
-	r := map[string]string{}
+	configFiles := map[string]string{}
 
 	// Append base path to map.
-	for k, v := range m {
-		r[path.Join(hostConfigPath, k)] = v
+	for k, v := range relativeConfigFiles {
+		configFiles[path.Join(hostConfigPath, k)] = v
 	}
 
-	return r
+	return configFiles
 }
 
 // args returns kube-apiserver set of flags.
@@ -287,13 +287,13 @@ func (k *KubeAPIServer) New() (container.ResourceInstance, error) {
 func (k *KubeAPIServer) Validate() error {
 	var errors util.ValidateErrors
 
-	v := validator{
+	apiValidator := validator{
 		Common: k.Common,
 		Host:   k.Host,
 		YAML:   k,
 	}
 
-	if err := v.validate(false); err != nil {
+	if err := apiValidator.validate(false); err != nil {
 		errors = append(errors, err)
 	}
 

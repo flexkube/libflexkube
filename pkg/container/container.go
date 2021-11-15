@@ -124,7 +124,7 @@ func (c *Container) New() (Interface, error) {
 		return nil, fmt.Errorf("container configuration validation failed: %w", err)
 	}
 
-	nc := &container{
+	newContainer := &container{
 		base{
 			config:        c.Config,
 			runtimeConfig: c.Runtime.Docker,
@@ -132,14 +132,14 @@ func (c *Container) New() (Interface, error) {
 	}
 
 	if c.Status != nil {
-		nc.base.status = *c.Status
+		newContainer.base.status = *c.Status
 	}
 
-	if err := nc.selectRuntime(); err != nil {
+	if err := newContainer.selectRuntime(); err != nil {
 		return nil, fmt.Errorf("determining container runtime: %w", err)
 	}
 
-	return nc, nil
+	return newContainer, nil
 }
 
 // Validate validates container configuration.
@@ -177,7 +177,7 @@ func (c *container) selectRuntime() error {
 
 // Create creates container container from it's definition.
 func (c *container) Create() (InstanceInterface, error) {
-	id, err := c.runtime.Create(&c.config)
+	containerID, err := c.runtime.Create(&c.config)
 	if err != nil {
 		return nil, fmt.Errorf("creating container: %w", err)
 	}
@@ -187,7 +187,7 @@ func (c *container) Create() (InstanceInterface, error) {
 			config:  c.config,
 			runtime: c.runtime,
 			status: types.ContainerStatus{
-				ID: id,
+				ID: containerID,
 			},
 		},
 	}, nil

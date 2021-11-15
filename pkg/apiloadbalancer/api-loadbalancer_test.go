@@ -10,7 +10,7 @@ import (
 func TestToHostConfiguredContainer(t *testing.T) {
 	t.Parallel()
 
-	kk := &APILoadBalancer{
+	testLB := &APILoadBalancer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -18,7 +18,7 @@ func TestToHostConfiguredContainer(t *testing.T) {
 		BindAddress: "0.0.0.0:6434",
 	}
 
-	k, err := kk.New()
+	k, err := testLB.New()
 	if err != nil {
 		t.Fatalf("Creating new api loadbalancer should succeed, got: %v", err)
 	}
@@ -41,14 +41,14 @@ func TestToHostConfiguredContainer(t *testing.T) {
 func TestValidateRequireServers(t *testing.T) {
 	t.Parallel()
 
-	kk := &APILoadBalancer{
+	testLB := &APILoadBalancer{
 		BindAddress: "0.0.0.0:6434",
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
 
-	if err := kk.Validate(); err == nil {
+	if err := testLB.Validate(); err == nil {
 		t.Fatalf("Validate should require at least one server to be defined")
 	}
 }
@@ -56,14 +56,14 @@ func TestValidateRequireServers(t *testing.T) {
 func TestValidateRequireBindAddress(t *testing.T) {
 	t.Parallel()
 
-	kk := &APILoadBalancer{
+	testLB := &APILoadBalancer{
 		Servers: []string{"foo"},
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
 
-	if err := kk.Validate(); err == nil {
+	if err := testLB.Validate(); err == nil {
 		t.Fatalf("Validate should require at least one server to be defined")
 	}
 }
@@ -72,13 +72,13 @@ func TestValidateRequireBindAddress(t *testing.T) {
 func TestNewValidate(t *testing.T) {
 	t.Parallel()
 
-	kk := &APILoadBalancer{
+	testLB := &APILoadBalancer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
 	}
 
-	if _, err := kk.New(); err == nil {
+	if _, err := testLB.New(); err == nil {
 		t.Fatalf("New should validate configuration before creating object")
 	}
 }

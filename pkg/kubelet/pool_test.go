@@ -17,7 +17,7 @@ import (
 func getPool(t *testing.T) types.Resource {
 	t.Helper()
 
-	y := `
+	configTemplate := `
 ssh:
   address: localhost
   password: foo
@@ -50,7 +50,7 @@ kubelets:
 
 	var buf bytes.Buffer
 
-	tpl := template.Must(template.New("c").Parse(y))
+	tpl := template.Must(template.New("c").Parse(configTemplate))
 	if err := tpl.Execute(&buf, strings.TrimSpace(util.Indent(utiltest.GenerateX509Certificate(t), "  "))); err != nil {
 		t.Fatalf("Failed to generate config from template: %v", err)
 	}
@@ -67,7 +67,7 @@ kubelets:
 func TestPoolNewValidate(t *testing.T) {
 	t.Parallel()
 
-	y := `
+	testConfigRaw := `
 ssh:
   address: localhost
   password: foo
@@ -80,7 +80,7 @@ kubelets:
   name: foo
 `
 
-	if _, err := kubelet.FromYaml([]byte(y)); err == nil {
+	if _, err := kubelet.FromYaml([]byte(testConfigRaw)); err == nil {
 		t.Fatalf("Creating pool from bad YAML should fail")
 	}
 }
@@ -219,16 +219,16 @@ func Test_Pool_does_preserve_extra_args_defined_in_instance(t *testing.T) {
 func TestPoolPKIIntegration(t *testing.T) {
 	t.Parallel()
 
-	pk := &pki.PKI{
+	testPKI := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}
 
-	if err := pk.Generate(); err != nil {
+	if err := testPKI.Generate(); err != nil {
 		t.Fatalf("Generating PKI: %v", err)
 	}
 
-	p := &kubelet.Pool{
-		PKI: pk,
+	pool := &kubelet.Pool{
+		PKI: testPKI,
 		AdminConfig: &client.Config{
 			Server: "foo",
 		},
@@ -249,7 +249,7 @@ func TestPoolPKIIntegration(t *testing.T) {
 		},
 	}
 
-	if _, err := p.New(); err != nil {
+	if _, err := pool.New(); err != nil {
 		t.Fatalf("Creating kubelet pool with PKI integration should work, got: %v", err)
 	}
 }
@@ -257,23 +257,23 @@ func TestPoolPKIIntegration(t *testing.T) {
 func TestPoolNoKubelets(t *testing.T) {
 	t.Parallel()
 
-	pk := &pki.PKI{
+	testPKI := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}
 
-	if err := pk.Generate(); err != nil {
+	if err := testPKI.Generate(); err != nil {
 		t.Fatalf("Generating PKI: %v", err)
 	}
 
-	p := &kubelet.Pool{
-		PKI: pk,
+	pool := &kubelet.Pool{
+		PKI: testPKI,
 		BootstrapConfig: &client.Config{
 			Server: "bar",
 			Token:  "bar",
 		},
 	}
 
-	if _, err := p.New(); err == nil {
+	if _, err := pool.New(); err == nil {
 		t.Fatal("Creating kubelet pool with no kubelets and no state defined should fail")
 	}
 }

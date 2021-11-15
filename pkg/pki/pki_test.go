@@ -50,13 +50,13 @@ func TestGenerateDontCopyAllSettings(t *testing.T) {
 		t.Fatalf("Generating valid PKI should work, got: %v", err)
 	}
 
-	c := &pki.Certificate{
+	cert := &pki.Certificate{
 		X509Certificate: pkii.Kubernetes.KubeAPIServer.ServerCertificate.X509Certificate,
 		PrivateKey:      pkii.Kubernetes.KubeAPIServer.ServerCertificate.PrivateKey,
 		PublicKey:       pkii.Kubernetes.KubeAPIServer.ServerCertificate.PublicKey,
 	}
 
-	if diff := cmp.Diff(pkii.Kubernetes.KubeAPIServer.ServerCertificate, c); diff != "" {
+	if diff := cmp.Diff(pkii.Kubernetes.KubeAPIServer.ServerCertificate, cert); diff != "" {
 		t.Fatalf("Generated certificate should only have X.509 certificate and private key field populated, got: %v", diff)
 	}
 }
@@ -254,7 +254,7 @@ func TestGenerateEtcdCopyServers(t *testing.T) {
 func TestDecodeKeypair(t *testing.T) {
 	t.Parallel()
 
-	ca := &pki.Certificate{
+	caCert := &pki.Certificate{
 		PrivateKey: "foo",
 	}
 
@@ -263,7 +263,7 @@ func TestDecodeKeypair(t *testing.T) {
 		RSABits:          2048,
 	}
 
-	if err := c.Generate(ca); err == nil {
+	if err := c.Generate(caCert); err == nil {
 		t.Fatalf("Generating certificate with bad CA should fail")
 	}
 }

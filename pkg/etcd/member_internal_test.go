@@ -17,13 +17,13 @@ import (
 func TestNewCluster(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			NewCluster: true,
 		},
 	}
 
-	hcc, err := m.ToHostConfiguredContainer()
+	hcc, err := testMember.ToHostConfiguredContainer()
 	if err != nil {
 		t.Fatalf("Creating host configured container should succeed, got: %v", err)
 	}
@@ -46,13 +46,13 @@ func TestNewCluster(t *testing.T) {
 func TestExistingCluster(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			NewCluster: false,
 		},
 	}
 
-	hcc, err := m.ToHostConfiguredContainer()
+	hcc, err := testMember.ToHostConfiguredContainer()
 	if err != nil {
 		t.Fatalf("Creating host configured container should succeed, got: %v", err)
 	}
@@ -76,7 +76,7 @@ func TestExistingCluster(t *testing.T) {
 func TestPeerURLs(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerAddress: "1.1.1.1",
 		},
@@ -84,7 +84,7 @@ func TestPeerURLs(t *testing.T) {
 
 	e := "https://1.1.1.1:2380" //nolint:ifshort // Declare 2 variables in if statement is not common.
 
-	if urls := m.peerURLs(); urls[0] != e {
+	if urls := testMember.peerURLs(); urls[0] != e {
 		t.Fatalf("Expected %q, got %q", e, urls[0])
 	}
 }
@@ -93,7 +93,7 @@ func TestPeerURLs(t *testing.T) {
 func TestForwardEndpoints(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerAddress: "127.0.0.1",
 			Host: host.Host{
@@ -102,7 +102,7 @@ func TestForwardEndpoints(t *testing.T) {
 		},
 	}
 
-	fe, err := m.forwardEndpoints([]string{"127.0.0.1:2379"})
+	fe, err := testMember.forwardEndpoints([]string{"127.0.0.1:2379"})
 	if err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestForwardEndpoints(t *testing.T) {
 func TestForwardEndpointsFail(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerAddress: "127.0.0.1",
 			Host: host.Host{
@@ -124,7 +124,7 @@ func TestForwardEndpointsFail(t *testing.T) {
 		},
 	}
 
-	if _, err := m.forwardEndpoints([]string{"127.0.0.1"}); err == nil {
+	if _, err := testMember.forwardEndpoints([]string{"127.0.0.1"}); err == nil {
 		t.Fatalf("Forwarding bad address should fail")
 	}
 }
@@ -133,15 +133,15 @@ func TestForwardEndpointsFail(t *testing.T) {
 func TestGetIDFailToListMembers(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
 
-	m := &member{}
+	testMember := &member{}
 
-	if _, err := m.getID(f); err == nil {
+	if _, err := testMember.getID(testClient); err == nil {
 		t.Fatalf("Should return error when listing members fails")
 	}
 }
@@ -149,28 +149,28 @@ func TestGetIDFailToListMembers(t *testing.T) {
 func TestGetIDNotFound(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{}, nil
 		},
 	}
 
-	m := &member{}
+	testMember := &member{}
 
-	id, err := m.getID(f)
+	memberID, err := testMember.getID(testClient)
 	if err != nil {
 		t.Fatalf("Getting member ID should work, got: %v", err)
 	}
 
-	if id != 0 {
-		t.Fatalf("Member ID should be 0 when not found, got %d", id)
+	if memberID != 0 {
+		t.Fatalf("Member ID should be 0 when not found, got %d", memberID)
 	}
 }
 
 func TestGetIDByName(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -183,26 +183,26 @@ func TestGetIDByName(t *testing.T) {
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			Name: "etcd-foo",
 		},
 	}
 
-	id, err := m.getID(f)
+	memberID, err := testMember.getID(testClient)
 	if err != nil {
 		t.Fatalf("Getting member ID should work, got: %v", err)
 	}
 
-	if id != testID {
-		t.Fatalf("Member ID should be %d when member is present, got %d", testID, id)
+	if memberID != testID {
+		t.Fatalf("Member ID should be %d when member is present, got %d", testID, memberID)
 	}
 }
 
 func TestGetIDByPeerURL(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -216,19 +216,19 @@ func TestGetIDByPeerURL(t *testing.T) {
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerAddress: "foo",
 		},
 	}
 
-	id, err := m.getID(f)
+	memberID, err := testMember.getID(testClient)
 	if err != nil {
 		t.Fatalf("Getting member ID should work, got: %v", err)
 	}
 
-	if id != testID {
-		t.Fatalf("Member ID should be %d when member is present, got %d", testID, id)
+	if memberID != testID {
+		t.Fatalf("Member ID should be %d when member is present, got %d", testID, memberID)
 	}
 }
 
@@ -236,13 +236,13 @@ func TestGetIDByPeerURL(t *testing.T) {
 func TestGetEtcdClientNoEndpoints(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			CACertificate: utiltest.GenerateX509Certificate(t),
 		},
 	}
 
-	if _, err := m.getEtcdClient([]string{}); err == nil {
+	if _, err := testMember.getEtcdClient([]string{}); err == nil {
 		t.Fatalf("Creating etcd client with no endpoints should fail")
 	}
 }
@@ -250,7 +250,7 @@ func TestGetEtcdClientNoEndpoints(t *testing.T) {
 func TestGetEtcdClient(t *testing.T) {
 	t.Parallel()
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerCertificate: "",
 			PeerKey:         "",
@@ -261,7 +261,7 @@ func TestGetEtcdClient(t *testing.T) {
 		},
 	}
 
-	if _, err := m.getEtcdClient([]string{"foo"}); err != nil {
+	if _, err := testMember.getEtcdClient([]string{"foo"}); err != nil {
 		t.Fatalf("Creating etcd client should succeed, got: %v", err)
 	}
 }
@@ -272,7 +272,7 @@ const testID = 1
 func TestRemove(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -285,17 +285,17 @@ func TestRemove(t *testing.T) {
 			}, nil
 		},
 		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
-			return nil, nil
+			return &clientv3.MemberRemoveResponse{}, nil
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			Name: "foo",
 		},
 	}
 
-	if err := m.remove(f); err != nil {
+	if err := testMember.remove(testClient); err != nil {
 		t.Fatalf("Removing member should work, got: %v", err)
 	}
 }
@@ -303,20 +303,20 @@ func TestRemove(t *testing.T) {
 func TestRemoveNonExistent(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{},
 			}, nil
 		},
 		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
-			return nil, nil
+			return &clientv3.MemberRemoveResponse{}, nil
 		},
 	}
 
-	m := &member{}
+	testMember := &member{}
 
-	if err := m.remove(f); err != nil {
+	if err := testMember.remove(testClient); err != nil {
 		t.Fatalf("Removing non-existing member shouldn't return error, got: %v", err)
 	}
 }
@@ -324,7 +324,7 @@ func TestRemoveNonExistent(t *testing.T) {
 func TestRemoveMemberFail(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -341,17 +341,17 @@ func TestRemoveMemberFail(t *testing.T) {
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			Name: "foo",
 		},
 	}
 
-	if err := m.remove(f); err == nil {
+	if err := testMember.remove(testClient); err == nil {
 		t.Fatalf("Removing member should check for removal errors")
 	}
 
-	if err := f.Close(); err != nil {
+	if err := testClient.Close(); err != nil {
 		t.Logf("Failed closing etcd client: %v", err)
 	}
 }
@@ -359,15 +359,15 @@ func TestRemoveMemberFail(t *testing.T) {
 func TestRemoveGetIDFail(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
 
-	m := &member{}
+	testMember := &member{}
 
-	if err := m.remove(f); err == nil {
+	if err := testMember.remove(testClient); err == nil {
 		t.Fatalf("Removing member should fail, when getting member id fails")
 	}
 }
@@ -376,7 +376,7 @@ func TestRemoveGetIDFail(t *testing.T) {
 func TestAddMember(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -389,15 +389,15 @@ func TestAddMember(t *testing.T) {
 			}, nil
 		},
 		memberAddF: func(context context.Context, peerURLs []string) (*clientv3.MemberAddResponse, error) {
-			return nil, nil
+			return &clientv3.MemberAddResponse{}, nil
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{},
 	}
 
-	if err := m.add(f); err != nil {
+	if err := testMember.add(testClient); err != nil {
 		t.Fatalf("Adding member should work, got: %v", err)
 	}
 }
@@ -405,7 +405,7 @@ func TestAddMember(t *testing.T) {
 func TestAddMemberAlreadyExists(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -422,13 +422,13 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{
 			PeerAddress: "foo",
 		},
 	}
 
-	if err := m.add(f); err != nil {
+	if err := testMember.add(testClient); err != nil {
 		t.Fatalf("Adding already existing member shouldn't trigger adding, got error: %v", err)
 	}
 }
@@ -436,7 +436,7 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 func TestAddMemberFail(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -453,11 +453,11 @@ func TestAddMemberFail(t *testing.T) {
 		},
 	}
 
-	m := &member{
+	testMember := &member{
 		config: &MemberConfig{},
 	}
 
-	if err := m.add(f); err == nil {
+	if err := testMember.add(testClient); err == nil {
 		t.Fatalf("Adding member should check for adding errors")
 	}
 }
@@ -465,15 +465,15 @@ func TestAddMemberFail(t *testing.T) {
 func TestAddGetIDFail(t *testing.T) {
 	t.Parallel()
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
 
-	m := &member{}
+	testMember := &member{}
 
-	if err := m.add(f); err == nil {
+	if err := testMember.add(testClient); err == nil {
 		t.Fatalf("Adding member should fail, when getting member id fails")
 	}
 }

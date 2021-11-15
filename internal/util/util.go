@@ -87,13 +87,13 @@ func JoinSorted(values map[string]string, valueSeparator, keySeparator string) s
 
 	sort.Strings(keys)
 
-	v := []string{}
+	formattedKeys := []string{}
 
 	for _, k := range keys {
-		v = append(v, fmt.Sprintf("%s%s%s", k, valueSeparator, values[k]))
+		formattedKeys = append(formattedKeys, fmt.Sprintf("%s%s%s", k, valueSeparator, values[k]))
 	}
 
-	return strings.Join(v, keySeparator)
+	return strings.Join(formattedKeys, keySeparator)
 }
 
 // KeysStringMap returns keys from given map.
@@ -123,27 +123,27 @@ func ColorizeDiff(diff string) string {
 	}
 
 	lines := strings.Split(diff, "\n")
-	l := len(lines)
+	linesCount := len(lines)
 
 	output := ""
 
 	for i, line := range strings.Split(diff, "\n") {
-		nl := line + "\n"
+		coloredLine := line + "\n"
 
 		// If we process last line and the given diff does not end with newline, don't include it.
-		if !endsWithNewLine && i == l-1 {
-			nl = line
+		if !endsWithNewLine && i == linesCount-1 {
+			coloredLine = line
 		}
 
 		if len(line) > 0 && line[0] == '-' {
-			nl = aurora.Red(line + "\n").String()
+			coloredLine = aurora.Red(line + "\n").String()
 		}
 
 		if len(line) > 0 && line[0] == '+' {
-			nl = aurora.Green(line + "\n").String()
+			coloredLine = aurora.Green(line + "\n").String()
 		}
 
-		output += nl
+		output += coloredLine
 	}
 
 	return output

@@ -60,13 +60,13 @@ func Test_GenerateECPrivateKey_returns_PEM_encoded_EC_private_key(t *testing.T) 
 func TestGeneratePKI(t *testing.T) {
 	t.Parallel()
 
-	p := GeneratePKI(t)
+	testPKI := GeneratePKI(t)
 
-	if p.Certificate == "" {
+	if testPKI.Certificate == "" {
 		t.Errorf("PKI shouldn't have empty certificate field")
 	}
 
-	if p.PrivateKey == "" {
+	if testPKI.PrivateKey == "" {
 		t.Errorf("PKI shouldn't have empty private key")
 	}
 }

@@ -12,20 +12,20 @@ import (
 
 // TODO maybe we should return struct here?
 func newClients(kubeconfig string) (*client.Getter, *kube.Client, *kubernetes.Clientset, error) {
-	g, err := client.NewGetter([]byte(kubeconfig))
+	clientGetter, err := client.NewGetter([]byte(kubeconfig))
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("creating Kubernetes client getter: %w", err)
 	}
 
-	c := &kube.Client{
-		Factory: util.NewFactory(g),
+	client := &kube.Client{
+		Factory: util.NewFactory(clientGetter),
 		Log:     func(_ string, _ ...interface{}) {},
 	}
 
-	kc, err := c.Factory.KubernetesClientSet()
+	kc, err := client.Factory.KubernetesClientSet()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("creating Kubernetes client: %w", err)
 	}
 
-	return g, c, kc, nil
+	return clientGetter, client, kc, nil
 }

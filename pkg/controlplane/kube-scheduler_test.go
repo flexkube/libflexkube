@@ -15,7 +15,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 
 	pki := utiltest.GeneratePKI(t)
 
-	ks := &KubeScheduler{
+	kubeScheduler := &KubeScheduler{
 		Common: &Common{
 			FrontProxyCACertificate: types.Certificate(pki.Certificate),
 		},
@@ -30,7 +30,7 @@ func TestKubeSchedulerToHostConfiguredContainer(t *testing.T) {
 		},
 	}
 
-	o, err := ks.New()
+	o, err := kubeScheduler.New()
 	if err != nil {
 		t.Fatalf("New should not return error, got: %v", err)
 	}
@@ -125,18 +125,18 @@ func TestKubeSchedulerValidate(t *testing.T) {
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
 
-			err := c.Config.Validate()
-			if !c.Error && err != nil {
+			err := testCase.Config.Validate()
+			if !testCase.Error && err != nil {
 				t.Errorf("Didn't expect error, got: %v", err)
 			}
 
-			if c.Error && err == nil {
+			if testCase.Error && err == nil {
 				t.Errorf("Expected error")
 			}
 		})

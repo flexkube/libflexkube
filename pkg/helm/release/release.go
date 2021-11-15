@@ -92,18 +92,18 @@ func (r *Config) New() (Release, error) {
 	actionConfig := &action.Configuration{}
 	settings := cli.New()
 
-	g, kc, cs, _ := newClients(r.Kubeconfig) //nolint:errcheck // We check it in Validate().
+	getter, kc, clientSet, _ := newClients(r.Kubeconfig) //nolint:errcheck // We check it in Validate().
 
 	kc.Namespace = r.Namespace
 
-	actionConfig.RESTClientGetter = g
+	actionConfig.RESTClientGetter = getter
 	actionConfig.KubeClient = kc
-	actionConfig.Releases = storage.Init(driver.NewSecrets(cs.CoreV1().Secrets(r.Namespace)))
+	actionConfig.Releases = storage.Init(driver.NewSecrets(clientSet.CoreV1().Secrets(r.Namespace)))
 	actionConfig.Log = func(_ string, _ ...interface{}) {}
 
 	values, _ := r.parseValues() //nolint:errcheck // We check it in Validate().
 
-	c, _ := client.NewClient([]byte(r.Kubeconfig)) //nolint:errcheck // We check it in Validate().
+	client, _ := client.NewClient([]byte(r.Kubeconfig)) //nolint:errcheck // We check it in Validate().
 
 	release := &release{
 		actionConfig:    actionConfig,
@@ -113,7 +113,7 @@ func (r *Config) New() (Release, error) {
 		namespace:       r.Namespace,
 		version:         r.Version,
 		chart:           r.Chart,
-		client:          c,
+		client:          client,
 		createNamespace: r.CreateNamespace,
 		wait:            r.Wait,
 	}
@@ -282,13 +282,13 @@ func retryOnEtcdError(f func() error) error {
 // Uninstall removes the release from the cluster. This function is idempotent.
 func (r *release) Uninstall() error {
 	// Check if release exists.
-	e, err := r.Exists()
+	releaseExists, err := r.Exists()
 	if err != nil {
 		return fmt.Errorf("checking if release exists: %w", err)
 	}
 
 	// If it does not exist anymore, simply return.
-	if !e {
+	if !releaseExists {
 		return nil
 	}
 
@@ -368,13 +368,13 @@ func (r *Config) parseValues() (map[string]interface{}, error) {
 
 // FromYaml allows to quickly create new release object from YAML format.
 func FromYaml(data []byte) (Release, error) {
-	r := Config{}
+	newConfig := &Config{}
 
-	if err := yaml.Unmarshal(data, &r); err != nil {
+	if err := yaml.Unmarshal(data, newConfig); err != nil {
 		return nil, fmt.Errorf("unmarshaling release: %w", err)
 	}
 
-	release, err := r.New()
+	release, err := newConfig.New()
 	if err != nil {
 		return nil, fmt.Errorf("creating release: %w", err)
 	}

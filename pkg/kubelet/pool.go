@@ -161,61 +161,61 @@ func (p *Pool) pkiIntegration() {
 }
 
 // kubeletPKIIntegration merges certificates from PKI into given kubelet configuration.
-func (p *Pool) kubeletPKIIntegration(k *Kubelet) {
-	kubeletCACert := string(k.KubernetesCACertificate)
+func (p *Pool) kubeletPKIIntegration(kubelet *Kubelet) {
+	kubeletCACert := string(kubelet.KubernetesCACertificate)
 	poolCACert := string(p.KubernetesCACertificate)
 
-	k.KubernetesCACertificate = types.Certificate(util.PickString(kubeletCACert, poolCACert))
+	kubelet.KubernetesCACertificate = types.Certificate(util.PickString(kubeletCACert, poolCACert))
 
-	if p.BootstrapConfig != nil && k.BootstrapConfig == nil {
-		k.BootstrapConfig = p.BootstrapConfig
+	if p.BootstrapConfig != nil && kubelet.BootstrapConfig == nil {
+		kubelet.BootstrapConfig = p.BootstrapConfig
 	}
 
-	if p.AdminConfig != nil && k.AdminConfig == nil {
-		k.AdminConfig = p.AdminConfig
+	if p.AdminConfig != nil && kubelet.AdminConfig == nil {
+		kubelet.AdminConfig = p.AdminConfig
 	}
 
-	if k.BootstrapConfig != nil && k.BootstrapConfig.CACertificate == "" {
-		k.BootstrapConfig.CACertificate = p.KubernetesCACertificate
+	if kubelet.BootstrapConfig != nil && kubelet.BootstrapConfig.CACertificate == "" {
+		kubelet.BootstrapConfig.CACertificate = p.KubernetesCACertificate
 	}
 
-	if k.AdminConfig != nil && k.AdminConfig.CACertificate == "" {
-		k.AdminConfig.CACertificate = p.KubernetesCACertificate
+	if kubelet.AdminConfig != nil && kubelet.AdminConfig.CACertificate == "" {
+		kubelet.AdminConfig.CACertificate = p.KubernetesCACertificate
 	}
 }
 
 // propagateKubelet fills given kubelet with values from Pool object.
-func (p *Pool) propagateKubelet(k *Kubelet) {
-	k.Image = util.PickString(k.Image, p.Image)
-	k.ClusterDNSIPs = util.PickStringSlice(k.ClusterDNSIPs, p.ClusterDNSIPs)
-	k.Labels = util.PickStringMap(k.Labels, p.Labels)
-	k.PrivilegedLabels = util.PickStringMap(k.PrivilegedLabels, p.PrivilegedLabels)
-	k.Taints = util.PickStringMap(k.Taints, p.Taints)
-	k.CgroupDriver = util.PickString(k.CgroupDriver, p.CgroupDriver)
-	k.NetworkPlugin = util.PickString(k.NetworkPlugin, p.NetworkPlugin, DefaultNetworkPlugin)
-	k.SystemReserved = util.PickStringMap(k.SystemReserved, p.SystemReserved)
-	k.KubeReserved = util.PickStringMap(k.KubeReserved, p.KubeReserved)
-	k.HairpinMode = util.PickString(k.HairpinMode, p.HairpinMode, DefaultHairpinMode)
-	k.VolumePluginDir = util.PickString(k.VolumePluginDir, p.VolumePluginDir, defaults.VolumePluginDir)
+func (p *Pool) propagateKubelet(kubelet *Kubelet) {
+	kubelet.Image = util.PickString(kubelet.Image, p.Image)
+	kubelet.ClusterDNSIPs = util.PickStringSlice(kubelet.ClusterDNSIPs, p.ClusterDNSIPs)
+	kubelet.Labels = util.PickStringMap(kubelet.Labels, p.Labels)
+	kubelet.PrivilegedLabels = util.PickStringMap(kubelet.PrivilegedLabels, p.PrivilegedLabels)
+	kubelet.Taints = util.PickStringMap(kubelet.Taints, p.Taints)
+	kubelet.CgroupDriver = util.PickString(kubelet.CgroupDriver, p.CgroupDriver)
+	kubelet.NetworkPlugin = util.PickString(kubelet.NetworkPlugin, p.NetworkPlugin, DefaultNetworkPlugin)
+	kubelet.SystemReserved = util.PickStringMap(kubelet.SystemReserved, p.SystemReserved)
+	kubelet.KubeReserved = util.PickStringMap(kubelet.KubeReserved, p.KubeReserved)
+	kubelet.HairpinMode = util.PickString(kubelet.HairpinMode, p.HairpinMode, DefaultHairpinMode)
+	kubelet.VolumePluginDir = util.PickString(kubelet.VolumePluginDir, p.VolumePluginDir, defaults.VolumePluginDir)
 
-	if len(k.ExtraMounts) == 0 {
-		k.ExtraMounts = p.ExtraMounts
+	if len(kubelet.ExtraMounts) == 0 {
+		kubelet.ExtraMounts = p.ExtraMounts
 	}
 
-	if len(k.ExtraArgs) == 0 {
-		k.ExtraArgs = p.ExtraArgs
+	if len(kubelet.ExtraArgs) == 0 {
+		kubelet.ExtraArgs = p.ExtraArgs
 	}
 
-	k.Host = host.BuildConfig(k.Host, host.Host{
+	kubelet.Host = host.BuildConfig(kubelet.Host, host.Host{
 		SSHConfig: p.SSH,
 	})
 
 	p.pkiIntegration()
 
-	p.kubeletPKIIntegration(k)
+	p.kubeletPKIIntegration(kubelet)
 
-	if !k.WaitForNodeReady && p.WaitForNodeReady {
-		k.WaitForNodeReady = p.WaitForNodeReady
+	if !kubelet.WaitForNodeReady && p.WaitForNodeReady {
+		kubelet.WaitForNodeReady = p.WaitForNodeReady
 	}
 }
 
@@ -225,11 +225,12 @@ func (p *Pool) New() (types.Resource, error) {
 		return nil, fmt.Errorf("validating pool configuration: %w", err)
 	}
 
-	cc := &container.Containers{
+	containers := &container.Containers{
 		PreviousState: p.State,
 		DesiredState:  container.ContainersState{},
 	}
 
+	//nolint:varnamelen // i is fine as iterator.
 	for i := range p.Kubelets {
 		k := &p.Kubelets[i]
 
@@ -238,10 +239,10 @@ func (p *Pool) New() (types.Resource, error) {
 		kubelet, _ := k.New()                                //nolint:errcheck // This is checked in Validate().
 		kubeletHcc, _ := kubelet.ToHostConfiguredContainer() //nolint:errcheck // This is checked in Validate().
 
-		cc.DesiredState[strconv.Itoa(i)] = kubeletHcc
+		containers.DesiredState[strconv.Itoa(i)] = kubeletHcc
 	}
 
-	c, _ := cc.New() //nolint:errcheck // This is checked in Validate().
+	c, _ := containers.New() //nolint:errcheck // This is checked in Validate().
 
 	return &pool{
 		containers: c,
@@ -252,11 +253,12 @@ func (p *Pool) New() (types.Resource, error) {
 func (p *Pool) Validate() error {
 	var errors util.ValidateErrors
 
-	cc := &container.Containers{
+	containers := &container.Containers{
 		PreviousState: p.State,
 		DesiredState:  container.ContainersState{},
 	}
 
+	//nolint:varnamelen // i is fine as iterator.
 	for i := range p.Kubelets {
 		// Make a copy of Kubelet struct to avoid modifying original one.
 		k := p.Kubelets[i]
@@ -277,7 +279,7 @@ func (p *Pool) Validate() error {
 			continue
 		}
 
-		cc.DesiredState[strconv.Itoa(i)] = hcc
+		containers.DesiredState[strconv.Itoa(i)] = hcc
 	}
 
 	noContainersDefined := len(p.State) == 0 && len(p.Kubelets) == 0
@@ -285,7 +287,7 @@ func (p *Pool) Validate() error {
 		errors = append(errors, fmt.Errorf("at least one kubelet must be defined if state is empty"))
 	}
 
-	if _, err := cc.New(); !noContainersDefined && err != nil {
+	if _, err := containers.New(); !noContainersDefined && err != nil {
 		errors = append(errors, fmt.Errorf("validating containers configuration: %w", err))
 	}
 

@@ -117,15 +117,15 @@ type apiLoadBalancers struct {
 	containers container.ContainersInterface
 }
 
-func (a *APILoadBalancers) propagateInstance(i *APILoadBalancer) {
-	i.Image = util.PickString(i.Image, a.Image)
-	i.Servers = util.PickStringSlice(i.Servers, a.Servers)
-	i.Host = host.BuildConfig(i.Host, host.Host{
+func (a *APILoadBalancers) propagateInstance(instance *APILoadBalancer) {
+	instance.Image = util.PickString(instance.Image, a.Image)
+	instance.Servers = util.PickStringSlice(instance.Servers, a.Servers)
+	instance.Host = host.BuildConfig(instance.Host, host.Host{
 		SSHConfig: a.SSH,
 	})
-	i.Name = util.PickString(i.Name, a.Name)
-	i.HostConfigPath = util.PickString(i.HostConfigPath, a.HostConfigPath)
-	i.BindAddress = util.PickString(i.BindAddress, a.BindAddress)
+	instance.Name = util.PickString(instance.Name, a.Name)
+	instance.HostConfigPath = util.PickString(instance.HostConfigPath, a.HostConfigPath)
+	instance.BindAddress = util.PickString(instance.BindAddress, a.BindAddress)
 }
 
 // New validates APILoadBalancers struct and fills all required fields in members with default values
@@ -137,22 +137,22 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 		return nil, fmt.Errorf("validating API Load balancers configuration: %w", err)
 	}
 
-	cc := &container.Containers{
+	containersConfig := &container.Containers{
 		PreviousState: a.State,
 		DesiredState:  container.ContainersState{},
 	}
 
-	for i, lb := range a.APILoadBalancers {
+	for instanceName, lb := range a.APILoadBalancers {
 		lb := lb
 		a.propagateInstance(&lb)
 
 		lbx, _ := lb.New()                           //nolint:errcheck // Already checked in Validate().
 		lbxHcc, _ := lbx.ToHostConfiguredContainer() //nolint:errcheck // Already checked in Validate().
 
-		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
+		containersConfig.DesiredState[strconv.Itoa(instanceName)] = lbxHcc
 	}
 
-	c, _ := cc.New() //nolint:errcheck // Already checked in Validate().
+	c, _ := containersConfig.New() //nolint:errcheck // Already checked in Validate().
 
 	return &apiLoadBalancers{
 		containers: c,
@@ -163,30 +163,30 @@ func (a *APILoadBalancers) New() (types.Resource, error) {
 func (a *APILoadBalancers) Validate() error {
 	var errors util.ValidateErrors
 
-	cc := &container.Containers{
+	containersConfig := &container.Containers{
 		PreviousState: a.State,
 		DesiredState:  container.ContainersState{},
 	}
 
-	for i, lb := range a.APILoadBalancers {
+	for instanceName, lb := range a.APILoadBalancers {
 		lb := lb
 		a.propagateInstance(&lb)
 
 		lbx, err := lb.New()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("creating load balancer instance %q: %w", i, err))
+			errors = append(errors, fmt.Errorf("creating load balancer instance %q: %w", instanceName, err))
 
 			continue
 		}
 
 		lbxHcc, err := lbx.ToHostConfiguredContainer()
 		if err != nil {
-			errors = append(errors, fmt.Errorf("creating load balancer %q container configuration: %w", i, err))
+			errors = append(errors, fmt.Errorf("creating load balancer %q container configuration: %w", instanceName, err))
 
 			continue
 		}
 
-		cc.DesiredState[strconv.Itoa(i)] = lbxHcc
+		containersConfig.DesiredState[strconv.Itoa(instanceName)] = lbxHcc
 	}
 
 	noContainersDefined := len(a.State) == 0 && len(a.APILoadBalancers) == 0
@@ -194,7 +194,7 @@ func (a *APILoadBalancers) Validate() error {
 		errors = append(errors, fmt.Errorf("at least one load balancer must be defined if state is empty"))
 	}
 
-	if _, err := cc.New(); !noContainersDefined && err != nil {
+	if _, err := containersConfig.New(); !noContainersDefined && err != nil {
 		errors = append(errors, fmt.Errorf("creating containers object: %w", err))
 	}
 

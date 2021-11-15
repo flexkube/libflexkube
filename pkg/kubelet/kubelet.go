@@ -2,7 +2,7 @@ package kubelet
 
 import (
 	"fmt"
-	"path/filepath"
+	"strings"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
@@ -131,15 +131,15 @@ func (k *Kubelet) New() (container.ResourceInstance, error) {
 		return nil, fmt.Errorf("validating kubelet configuration: %w", err)
 	}
 
-	nk := &kubelet{
+	newKubelet := &kubelet{
 		config: *k,
 	}
 
-	if nk.config.Image == "" {
-		nk.config.Image = defaults.KubeletImage
+	if newKubelet.config.Image == "" {
+		newKubelet.config.Image = defaults.KubeletImage
 	}
 
-	return nk, nil
+	return newKubelet, nil
 }
 
 // Validate validates kubelet configuration.
@@ -451,14 +451,14 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return
 			Target: "/run/xtables.lock",
 		},
 		{
-			Source: fmt.Sprintf("%s/", filepath.Join(k.config.VolumePluginDir)),
+			Source: fmt.Sprintf("%s/", strings.TrimSuffix(k.config.VolumePluginDir, "/")),
 			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
 	}, k.config.ExtraMounts...)
 }
 
 func (k *kubelet) args() []string {
-	a := append([]string{
+	args := append([]string{
 		// Tell kubelet to use config file.
 		"--config=/etc/kubernetes/kubelet.yaml",
 		// Specify kubeconfig file for kubelet. This enabled API server mode and
@@ -484,14 +484,14 @@ func (k *kubelet) args() []string {
 	}, k.config.ExtraArgs...)
 
 	if len(k.config.Labels) > 0 {
-		a = append(a, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.config.Labels, "=", ",")))
+		args = append(args, fmt.Sprintf("--node-labels=%s", util.JoinSorted(k.config.Labels, "=", ",")))
 	}
 
 	if len(k.config.Taints) > 0 {
-		a = append(a, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.config.Taints, "=:", ",")))
+		args = append(args, fmt.Sprintf("--register-with-taints=%s", util.JoinSorted(k.config.Taints, "=:", ",")))
 	}
 
-	return a
+	return args
 }
 
 // ToHostConfiguredContainer takes configured kubelet and converts it to generic HostConfiguredContainer.
@@ -501,7 +501,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 		return nil, fmt.Errorf("building config files map: %w", err)
 	}
 
-	c := container.Container{
+	kubeletContainer := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
@@ -528,7 +528,7 @@ func (k *kubelet) ToHostConfiguredContainer() (*container.HostConfiguredContaine
 	return &container.HostConfiguredContainer{
 		Host:        k.config.Host,
 		ConfigFiles: configFiles,
-		Container:   c,
+		Container:   kubeletContainer,
 		Hooks:       k.getHooks(),
 	}, nil
 }
@@ -566,7 +566,7 @@ func (k *kubelet) waitForNodeReady() error {
 
 // postStartHook defines actions which will be executed after new kubelet instance is created.
 func (k *kubelet) postStartHook() *container.Hook {
-	f := container.Hook(func() error {
+	hookF := container.Hook(func() error {
 		if len(k.config.PrivilegedLabels) > 0 {
 			if err := k.applyPrivilegedLabels(); err != nil {
 				return fmt.Errorf("applying privileged labels: %w", err)
@@ -582,5 +582,5 @@ func (k *kubelet) postStartHook() *container.Hook {
 		return nil
 	})
 
-	return &f
+	return &hookF
 }

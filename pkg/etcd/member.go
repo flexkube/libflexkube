@@ -203,7 +203,7 @@ func (m *member) args() []string {
 
 // ToHostConfiguredContainer takes configured member and converts it to generic HostConfiguredContainer.
 func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer, error) {
-	c := container.Container{
+	memberContainer := container.Container{
 		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
@@ -237,12 +237,12 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 		initialClusterTokenArgument = "--initial-cluster-token=etcd-cluster-2"
 	}
 
-	c.Config.Args = append(c.Config.Args, initialClusterTokenArgument)
+	memberContainer.Config.Args = append(memberContainer.Config.Args, initialClusterTokenArgument)
 
 	return &container.HostConfiguredContainer{
 		Host:        m.config.Host,
 		ConfigFiles: m.configFiles(),
-		Container:   c,
+		Container:   memberContainer,
 	}, nil
 }
 
@@ -287,13 +287,13 @@ func (m *MemberConfig) Validate() error {
 		"server certificate": m.ServerCertificate,
 	}
 
-	for k, v := range certificates {
+	for certName, cert := range certificates {
 		caCert := &pki.Certificate{
-			X509Certificate: types.Certificate(v),
+			X509Certificate: types.Certificate(cert),
 		}
 
 		if _, err := caCert.DecodeX509Certificate(); err != nil {
-			errors = append(errors, fmt.Errorf("parsing %s as X.509 certificate: %w", k, err))
+			errors = append(errors, fmt.Errorf("parsing %s as X.509 certificate: %w", certName, err))
 		}
 	}
 
@@ -327,13 +327,13 @@ func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 
 	h, _ := m.config.Host.New() //nolint:errcheck // We check it in Validate().
 
-	hc, err := h.Connect()
+	connectedHost, err := h.Connect()
 	if err != nil {
 		return nil, fmt.Errorf("opening forwarding connection to host: %w", err)
 	}
 
 	for _, e := range endpoints {
-		e, err := hc.ForwardTCP(e)
+		e, err := connectedHost.ForwardTCP(e)
 		if err != nil {
 			return nil, fmt.Errorf("opening forwarding to member: %w", err)
 		}
@@ -353,15 +353,15 @@ func (m *member) getID(cli etcdClient) (uint64, error) {
 		return 0, fmt.Errorf("listing existing cluster members: %w", err)
 	}
 
-	for _, v := range resp.Members {
-		if v.Name == m.config.Name {
-			return v.ID, nil
+	for _, member := range resp.Members {
+		if member.Name == m.config.Name {
+			return member.ID, nil
 		}
 
-		for _, p := range v.PeerURLs {
+		for _, p := range member.PeerURLs {
 			for _, u := range m.peerURLs() {
 				if p == u {
-					return v.ID, nil
+					return member.ID, nil
 				}
 			}
 		}
@@ -379,8 +379,8 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 	der, _ := pem.Decode([]byte(m.config.CACertificate))
 	ca, _ := x509.ParseCertificate(der.Bytes) //nolint:errcheck // We check it in Validate().
 
-	p := x509.NewCertPool()
-	p.AddCert(ca)
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
 
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:            endpoints,
@@ -388,7 +388,7 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 		DialKeepAliveTimeout: defaultDialTimeout,
 		TLS: &tls.Config{
 			Certificates: []tls.Certificate{cert},
-			RootCAs:      p,
+			RootCAs:      certPool,
 			MinVersion:   tls.VersionTLS12,
 		},
 	})
@@ -403,13 +403,13 @@ func (m *member) getEtcdClient(endpoints []string) (etcdClient, error) {
 //
 // If member is part of the cluster already, no error is returned.
 func (m *member) add(cli etcdClient) error {
-	id, err := m.getID(cli)
+	memberID, err := m.getID(cli)
 	if err != nil {
 		return fmt.Errorf("getting member ID: %w", err)
 	}
 
 	// If no error is returned, and ID is 0, it means member is already added.
-	if id != 0 {
+	if memberID != 0 {
 		return nil
 	}
 
@@ -424,17 +424,17 @@ func (m *member) add(cli etcdClient) error {
 //
 // If member is not part of the cluster anymore, no error is returned.
 func (m *member) remove(cli etcdClient) error {
-	id, err := m.getID(cli)
+	memberID, err := m.getID(cli)
 	if err != nil {
 		return fmt.Errorf("getting member ID: %w", err)
 	}
 
 	// If no error is returned, and ID is 0, it means member is already returned.
-	if id == 0 {
+	if memberID == 0 {
 		return nil
 	}
 
-	if _, err = cli.MemberRemove(context.Background(), id); err != nil {
+	if _, err = cli.MemberRemove(context.Background(), memberID); err != nil {
 		return fmt.Errorf("removing member: %w", err)
 	}
 

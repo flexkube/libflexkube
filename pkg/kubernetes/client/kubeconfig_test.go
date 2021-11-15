@@ -19,7 +19,7 @@ func GetKubeconfig(t *testing.T) string {
 
 	pki := utiltest.GeneratePKI(t)
 
-	y := fmt.Sprintf(`server: %s
+	testConfig := fmt.Sprintf(`server: %s
 caCertificate: |
   %s
 clientCertificate: |
@@ -33,13 +33,13 @@ clientKey: |
 		strings.TrimSpace(util.Indent(pki.PrivateKey, "  ")),
 	)
 
-	c := &client.Config{}
+	clientConfig := &client.Config{}
 
-	if err := yaml.Unmarshal([]byte(y), c); err != nil {
+	if err := yaml.Unmarshal([]byte(testConfig), clientConfig); err != nil {
 		t.Fatalf("Unmarshaling config should succeed, got: %v", err)
 	}
 
-	kubeconfig, err := c.ToYAMLString()
+	kubeconfig, err := clientConfig.ToYAMLString()
 	if err != nil {
 		t.Fatalf("Generating kubeconfig should work, got: %v", err)
 	}
@@ -148,8 +148,8 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			t.Parallel()
@@ -163,11 +163,11 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 				ClientKey:         types.PrivateKey(pki.PrivateKey),
 			}
 
-			c.f(config)
+			testCase.f(config)
 
 			_, err := config.ToYAMLString()
 
-			c.err(t, err)
+			testCase.err(t, err)
 		})
 	}
 }
@@ -177,13 +177,13 @@ func TestToYAMLStringValidate(t *testing.T) {
 
 	pki := utiltest.GeneratePKI(t)
 
-	c := &client.Config{
+	clientConfig := &client.Config{
 		CACertificate:     types.Certificate(pki.Certificate),
 		ClientCertificate: types.Certificate(pki.Certificate),
 		ClientKey:         types.PrivateKey(pki.PrivateKey),
 	}
 
-	if _, err := c.ToYAMLString(); err == nil {
+	if _, err := clientConfig.ToYAMLString(); err == nil {
 		t.Fatalf("ToYAMLString should validate the configuration")
 	}
 }
@@ -247,8 +247,8 @@ func TestValidate(t *testing.T) { //nolint:funlen // There are just many test ca
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			t.Parallel()
@@ -262,9 +262,9 @@ func TestValidate(t *testing.T) { //nolint:funlen // There are just many test ca
 				ClientKey:         types.PrivateKey(pki.PrivateKey),
 			}
 
-			c.f(config)
+			testCase.f(config)
 
-			c.err(t, config.Validate())
+			testCase.err(t, config.Validate())
 		})
 	}
 }

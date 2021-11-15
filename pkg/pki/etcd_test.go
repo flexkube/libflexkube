@@ -34,7 +34,7 @@ func TestGenerateEtcdPeerCertificates(t *testing.T) {
 func TestGenerateEtcdPeerCertificatesPropagate(t *testing.T) {
 	t.Parallel()
 
-	e := []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("127.0.0.1")}
+	expectedIPs := []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("127.0.0.1")}
 
 	pki := &pki.PKI{
 		Etcd: &pki.Etcd{
@@ -62,7 +62,7 @@ func TestGenerateEtcdPeerCertificatesPropagate(t *testing.T) {
 		t.Fatalf("Decoding generated certificate should work, got: %v", err)
 	}
 
-	if diff := cmp.Diff(c.IPAddresses, e); diff != "" {
+	if diff := cmp.Diff(c.IPAddresses, expectedIPs); diff != "" {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }

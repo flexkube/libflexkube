@@ -83,13 +83,13 @@ func (h *Host) Validate() error {
 //
 // It returns error if transport protocol configuration is invalid.
 func (h *host) Connect() (transport.Connected, error) {
-	c, err := h.transport.Connect()
+	connected, err := h.transport.Connect()
 	if err != nil {
 		return nil, fmt.Errorf("connecting: %w", err)
 	}
 
 	return &hostConnected{
-		transport: c,
+		transport: connected,
 	}, nil
 }
 

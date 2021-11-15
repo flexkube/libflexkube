@@ -114,7 +114,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 
 	configFiles["/etc/kubernetes/kube-controller-manager/pki/front-proxy-ca.crt"] = frontProxyCA
 
-	c := container.Container{
+	containerConfig := container.Container{
 		// TODO this is weird. This sets docker as default runtime config
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
@@ -135,7 +135,7 @@ func (k *kubeControllerManager) ToHostConfiguredContainer() (*container.HostConf
 	return &container.HostConfiguredContainer{
 		Host:        k.host,
 		ConfigFiles: configFiles,
-		Container:   c,
+		Container:   containerConfig,
 	}, nil
 }
 
@@ -155,7 +155,7 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 
 	kubeconfig, _ := k.Kubeconfig.ToYAMLString() //nolint:errcheck // We check it in Validate().
 
-	nk := &kubeControllerManager{
+	return &kubeControllerManager{
 		common:                   *k.Common,
 		host:                     *k.Host,
 		kubernetesCAKey:          string(k.KubernetesCAKey),
@@ -163,19 +163,17 @@ func (k *KubeControllerManager) New() (container.ResourceInstance, error) {
 		rootCACertificate:        string(k.RootCACertificate),
 		kubeconfig:               kubeconfig,
 		flexVolumePluginDir:      k.FlexVolumePluginDir,
-	}
-
-	return nk, nil
+	}, nil
 }
 
 // Validate validates KubeControllerManager configuration.
 func (k *KubeControllerManager) Validate() error {
-	v := validator{
+	kcmValidator := validator{
 		Common:     k.Common,
 		Host:       k.Host,
 		Kubeconfig: k.Kubeconfig,
 		YAML:       k,
 	}
 
-	return v.validate(true)
+	return kcmValidator.validate(true)
 }
