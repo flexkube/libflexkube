@@ -73,15 +73,19 @@ linters:
     - goerr113
     # To be able to make use of Go zero-value feature.
     - exhaustivestruct
-    # This linter has been deprecated.
-    - interfacer
-    # This linter has been deprecated.
-    - maligned
+    # To allow defensive approach when initializing structs.
+    - ireturn
+    # For testing
+    #- varnamelen
     # This linter has been deprecated.
     - golint
+    - interfacer
+    - maligned
   enable:
     - asciicheck
+    - bidichk
     - bodyclose
+    - contextcheck
     - cyclop
     - deadcode
     - depguard
@@ -121,6 +125,7 @@ linters:
     - nakedret
     - nestif
     - nilerr
+    - nilnil
     - nlreturn
     - noctx
     - nolintlint
@@ -135,12 +140,14 @@ linters:
     - structcheck
     - stylecheck
     - tagliatelle
+    - tenv
     - thelper
     - tparallel
     - typecheck
     - unconvert
     - unparam
     - varcheck
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck

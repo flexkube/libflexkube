@@ -23,7 +23,7 @@ func TestNewEmptyConfiguration(t *testing.T) {
 func TestNewGoodConfiguration(t *testing.T) {
 	t.Parallel()
 
-	c := &Container{
+	testContainer := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -32,7 +32,7 @@ func TestNewGoodConfiguration(t *testing.T) {
 			Image: "nonexistent",
 		},
 	}
-	if _, err := c.New(); err != nil {
+	if _, err := testContainer.New(); err != nil {
 		t.Errorf("Creating container with good configuration should pass, got: %v", err)
 	}
 }
@@ -41,10 +41,10 @@ func TestNewGoodConfiguration(t *testing.T) {
 func TestValidateNoName(t *testing.T) {
 	t.Parallel()
 
-	c := &Container{
+	testContainer := &Container{
 		Config: types.ContainerConfig{},
 	}
-	if err := c.Validate(); err == nil {
+	if err := testContainer.Validate(); err == nil {
 		t.Errorf("Validating container without name should fail")
 	}
 }
@@ -52,7 +52,7 @@ func TestValidateNoName(t *testing.T) {
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
-	c := &Container{
+	testContainer := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -61,7 +61,7 @@ func TestValidate(t *testing.T) {
 			Image: "nonexistent",
 		},
 	}
-	if err := c.Validate(); err != nil {
+	if err := testContainer.Validate(); err != nil {
 		t.Errorf("Validating container with valid configuration should pass, got: %v", err)
 	}
 }
@@ -69,13 +69,13 @@ func TestValidate(t *testing.T) {
 func TestValidateUnsupportedRuntime(t *testing.T) {
 	t.Parallel()
 
-	c := &Container{
+	testContainer := &Container{
 		Config: types.ContainerConfig{
 			Name:  "foo",
 			Image: "nonexistent",
 		},
 	}
-	if err := c.Validate(); err == nil {
+	if err := testContainer.Validate(); err == nil {
 		t.Errorf("Validating container with unsupported container runtime should fail")
 	}
 }
@@ -83,12 +83,12 @@ func TestValidateUnsupportedRuntime(t *testing.T) {
 func TestValidateRequireImage(t *testing.T) {
 	t.Parallel()
 
-	c := &Container{
+	testContainer := &Container{
 		Config: types.ContainerConfig{
 			Name: "foo",
 		},
 	}
-	if err := c.Validate(); err == nil {
+	if err := testContainer.Validate(); err == nil {
 		t.Errorf("Validating container with no image set should fail")
 	}
 }
@@ -97,17 +97,17 @@ func TestValidateRequireImage(t *testing.T) {
 func TestSelectDockerRuntime(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtimeConfig: &docker.Config{},
 			status:        types.ContainerStatus{},
 		},
 	}
-	if err := c.selectRuntime(); err != nil {
+	if err := testContainer.selectRuntime(); err != nil {
 		t.Errorf("Selecting Docker container runtime should succeed, got: %v", err)
 	}
 
-	if c.runtime == nil {
+	if testContainer.runtime == nil {
 		t.Errorf("Selecting container runtime should set container runtime field")
 	}
 }
@@ -116,14 +116,14 @@ func TestSelectDockerRuntime(t *testing.T) {
 func TestFromStatusValid(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{
 				ID: "nonexistent",
 			},
 		},
 	}
-	if _, err := c.FromStatus(); err != nil {
+	if _, err := testContainer.FromStatus(); err != nil {
 		t.Fatalf("Container instance should be created from valid container, got: %v", err)
 	}
 }
@@ -131,12 +131,12 @@ func TestFromStatusValid(t *testing.T) {
 func TestFromStatusNoID(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{},
 		},
 	}
-	if _, err := c.FromStatus(); err == nil {
+	if _, err := testContainer.FromStatus(); err == nil {
 		t.Fatalf("Container instance should not be created from container with no container ID")
 	}
 }
@@ -145,7 +145,7 @@ func TestFromStatusNoID(t *testing.T) {
 func TestStatus(t *testing.T) {
 	t.Parallel()
 
-	c := &containerInstance{
+	testContainer := &containerInstance{
 		base: base{
 			runtime: runtime.Fake{
 				StatusF: func(ID string) (types.ContainerStatus, error) {
@@ -155,7 +155,7 @@ func TestStatus(t *testing.T) {
 		},
 	}
 
-	if _, err := c.Status(); err == nil {
+	if _, err := testContainer.Status(); err == nil {
 		t.Fatalf("Checking container status should propagate failure")
 	}
 }
@@ -164,9 +164,9 @@ func TestStatus(t *testing.T) {
 func TestContainerUpdateStatusEmptyStatus(t *testing.T) {
 	t.Parallel()
 
-	c := &container{}
+	testContainer := &container{}
 
-	if err := c.UpdateStatus(); err == nil {
+	if err := testContainer.UpdateStatus(); err == nil {
 		t.Fatalf("Updating status of non-existing container should fail")
 	}
 }
@@ -174,7 +174,7 @@ func TestContainerUpdateStatusEmptyStatus(t *testing.T) {
 func TestContainerUpdateStatusFail(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StatusF: func(ID string) (types.ContainerStatus, error) {
@@ -187,7 +187,7 @@ func TestContainerUpdateStatusFail(t *testing.T) {
 		},
 	}
 
-	if err := c.UpdateStatus(); err == nil {
+	if err := testContainer.UpdateStatus(); err == nil {
 		t.Fatalf("Updating status with failing runtime should fail")
 	}
 }
@@ -195,16 +195,16 @@ func TestContainerUpdateStatusFail(t *testing.T) {
 func TestContainerUpdateStatus(t *testing.T) {
 	t.Parallel()
 
-	ns := types.ContainerStatus{
+	expectedStatus := types.ContainerStatus{
 		ID:     "foo",
 		Status: "running",
 	}
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StatusF: func(ID string) (types.ContainerStatus, error) {
-					return ns, nil
+					return expectedStatus, nil
 				},
 			},
 			status: types.ContainerStatus{
@@ -214,11 +214,11 @@ func TestContainerUpdateStatus(t *testing.T) {
 		},
 	}
 
-	if err := c.UpdateStatus(); err != nil {
+	if err := testContainer.UpdateStatus(); err != nil {
 		t.Fatalf("Updating status should succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(ns, c.status); diff != "" {
+	if diff := cmp.Diff(testContainer.status, expectedStatus); diff != "" {
 		t.Fatalf("Container status should be set to received status: %s", diff)
 	}
 }
@@ -227,13 +227,13 @@ func TestContainerUpdateStatus(t *testing.T) {
 func TestContainerStartBadState(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{},
 		},
 	}
 
-	if err := c.Start(); err == nil {
+	if err := testContainer.Start(); err == nil {
 		t.Fatalf("Starting non-existing container should fail")
 	}
 }
@@ -241,7 +241,7 @@ func TestContainerStartBadState(t *testing.T) {
 func TestContainerStartRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StartF: func(ID string) error {
@@ -255,7 +255,7 @@ func TestContainerStartRuntimeError(t *testing.T) {
 		},
 	}
 
-	if err := c.Start(); err == nil {
+	if err := testContainer.Start(); err == nil {
 		t.Fatalf("Starting container should fail when runtime error occurs")
 	}
 }
@@ -263,19 +263,19 @@ func TestContainerStartRuntimeError(t *testing.T) {
 func TestContainerStart(t *testing.T) {
 	t.Parallel()
 
-	ns := types.ContainerStatus{
+	expectedStatus := types.ContainerStatus{
 		ID:     "foo",
 		Status: "running",
 	}
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StartF: func(ID string) error {
 					return nil
 				},
 				StatusF: func(ID string) (types.ContainerStatus, error) {
-					return ns, nil
+					return expectedStatus, nil
 				},
 			},
 			status: types.ContainerStatus{
@@ -285,11 +285,11 @@ func TestContainerStart(t *testing.T) {
 		},
 	}
 
-	if err := c.Start(); err != nil {
+	if err := testContainer.Start(); err != nil {
 		t.Fatalf("Starting should succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(ns, c.status); diff != "" {
+	if diff := cmp.Diff(testContainer.status, expectedStatus); diff != "" {
 		t.Fatalf("Container status should be updated after starting: %s", diff)
 	}
 }
@@ -298,13 +298,13 @@ func TestContainerStart(t *testing.T) {
 func TestContainerStopBadState(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{},
 		},
 	}
 
-	if err := c.Stop(); err == nil {
+	if err := testContainer.Stop(); err == nil {
 		t.Fatalf("Stopping non-existing container should fail")
 	}
 }
@@ -312,7 +312,7 @@ func TestContainerStopBadState(t *testing.T) {
 func TestContainerStopRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StopF: func(ID string) error {
@@ -326,7 +326,7 @@ func TestContainerStopRuntimeError(t *testing.T) {
 		},
 	}
 
-	if err := c.Stop(); err == nil {
+	if err := testContainer.Stop(); err == nil {
 		t.Fatalf("Stopping container should fail when runtime error occurs")
 	}
 }
@@ -334,19 +334,19 @@ func TestContainerStopRuntimeError(t *testing.T) {
 func TestContainerStop(t *testing.T) {
 	t.Parallel()
 
-	ns := types.ContainerStatus{
+	expectedStatus := types.ContainerStatus{
 		ID:     "foo",
 		Status: "stopped",
 	}
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				StopF: func(ID string) error {
 					return nil
 				},
 				StatusF: func(ID string) (types.ContainerStatus, error) {
-					return ns, nil
+					return expectedStatus, nil
 				},
 			},
 			status: types.ContainerStatus{
@@ -356,11 +356,11 @@ func TestContainerStop(t *testing.T) {
 		},
 	}
 
-	if err := c.Stop(); err != nil {
+	if err := testContainer.Stop(); err != nil {
 		t.Fatalf("Stopping should succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(ns, c.status); diff != "" {
+	if diff := cmp.Diff(testContainer.status, expectedStatus); diff != "" {
 		t.Fatalf("Container status should be updated after starting: %s", diff)
 	}
 }
@@ -369,13 +369,13 @@ func TestContainerStop(t *testing.T) {
 func TestContainerDeleteBadState(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{},
 		},
 	}
 
-	if err := c.Delete(); err == nil {
+	if err := testContainer.Delete(); err == nil {
 		t.Fatalf("Deleting non-existing container should fail")
 	}
 }
@@ -383,7 +383,7 @@ func TestContainerDeleteBadState(t *testing.T) {
 func TestContainerDeleteRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				DeleteF: func(ID string) error {
@@ -397,7 +397,7 @@ func TestContainerDeleteRuntimeError(t *testing.T) {
 		},
 	}
 
-	if err := c.Delete(); err == nil {
+	if err := testContainer.Delete(); err == nil {
 		t.Fatalf("Deleting container should fail when runtime error occurs")
 	}
 }
@@ -405,7 +405,7 @@ func TestContainerDeleteRuntimeError(t *testing.T) {
 func TestContainerDelete(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
 				DeleteF: func(ID string) error {
@@ -419,11 +419,11 @@ func TestContainerDelete(t *testing.T) {
 		},
 	}
 
-	if err := c.Delete(); err != nil {
+	if err := testContainer.Delete(); err != nil {
 		t.Fatalf("Deleting should succeed, got: %v", err)
 	}
 
-	if c.status.ID != "" {
+	if testContainer.status.ID != "" {
 		t.Fatalf("Delete should remove ID from status")
 	}
 }
@@ -432,7 +432,7 @@ func TestContainerDelete(t *testing.T) {
 func TestContainerSetStatus(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			status: types.ContainerStatus{
 				ID:     "foo",
@@ -441,14 +441,14 @@ func TestContainerSetStatus(t *testing.T) {
 		},
 	}
 
-	e := types.ContainerStatus{
+	expectedStatus := types.ContainerStatus{
 		ID:     "bar",
 		Status: "boom",
 	}
 
-	c.SetStatus(e)
+	testContainer.SetStatus(expectedStatus)
 
-	if diff := cmp.Diff(c.base.status, e); diff != "" {
+	if diff := cmp.Diff(testContainer.base.status, expectedStatus); diff != "" {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }

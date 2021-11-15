@@ -53,14 +53,14 @@ func newConfig(t *testing.T) *release.Config {
 		t.Fatalf("Generating PKI: %v", err)
 	}
 
-	c := client.Config{
+	clientConfig := client.Config{
 		Server:            "foo",
 		CACertificate:     pki.Kubernetes.CA.X509Certificate,
 		ClientCertificate: pki.Kubernetes.AdminCertificate.X509Certificate,
 		ClientKey:         pki.Kubernetes.AdminCertificate.PrivateKey,
 	}
 
-	kubeconfig, err := c.ToYAMLString()
+	kubeconfig, err := clientConfig.ToYAMLString()
 	if err != nil {
 		t.Fatalf("Rendering kubeconfig: %v", err)
 	}

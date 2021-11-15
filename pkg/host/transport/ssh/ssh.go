@@ -82,27 +82,27 @@ func (d *Config) New() (transport.Interface, error) {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
 
-	ct, _ := time.ParseDuration(d.ConnectionTimeout) //nolint:errcheck // This is checked in Validate().
-	rt, _ := time.ParseDuration(d.RetryTimeout)      //nolint:errcheck // This is checked in Validate().
-	ri, _ := time.ParseDuration(d.RetryInterval)     //nolint:errcheck // This is checked in Validate().
+	connectionTimeout, _ := time.ParseDuration(d.ConnectionTimeout) //nolint:errcheck // This is checked in Validate().
+	retryTimeout, _ := time.ParseDuration(d.RetryTimeout)           //nolint:errcheck // This is checked in Validate().
+	retryInterval, _ := time.ParseDuration(d.RetryInterval)         //nolint:errcheck // This is checked in Validate().
 
-	s := &ssh{
+	newSSH := &ssh{
 		address:           fmt.Sprintf("%s:%d", d.Address, d.Port),
 		user:              d.User,
-		connectionTimeout: ct,
-		retryTimeout:      rt,
-		retryInterval:     ri,
+		connectionTimeout: connectionTimeout,
+		retryTimeout:      retryTimeout,
+		retryInterval:     retryInterval,
 		auth:              []gossh.AuthMethod{},
 		sshClientGetter:   gossh.Dial,
 	}
 
 	if d.Password != "" {
-		s.auth = append(s.auth, gossh.Password(d.Password))
+		newSSH.auth = append(newSSH.auth, gossh.Password(d.Password))
 	}
 
 	if d.PrivateKey != "" {
 		signer, _ := gossh.ParsePrivateKey([]byte(d.PrivateKey)) //nolint:errcheck // This is checked in Validate().
-		s.auth = append(s.auth, gossh.PublicKeys(signer))
+		newSSH.auth = append(newSSH.auth, gossh.PublicKeys(signer))
 	}
 
 	// Multiple auth methods might be used, so if SSH_AUTH_SOCK is defined, try to use it
@@ -124,10 +124,10 @@ func (d *Config) New() (transport.Interface, error) {
 			return nil, fmt.Errorf("getting public keys from SSH agent: %w", err)
 		}
 
-		s.auth = append(s.auth, gossh.PublicKeys(signers...))
+		newSSH.auth = append(newSSH.auth, gossh.PublicKeys(signers...))
 	}
 
-	return s, nil
+	return newSSH, nil
 }
 
 // Validate validates given configuration.
@@ -280,16 +280,16 @@ func handleClient(client, remote io.ReadWriteCloser) {
 // forwardConnection accepts local connections, and forwards them to remote address.
 //
 // TODO: Should we do some error handling here?
-func forwardConnection(l net.Listener, connection dialer, remoteAddress, connectionType string) {
+func forwardConnection(listener net.Listener, connection dialer, remoteAddress, connectionType string) {
 	defer func() {
-		if err := l.Close(); err != nil {
+		if err := listener.Close(); err != nil {
 			fmt.Printf("Failed closing listener: %v\n", err)
 		}
 	}()
 
 	for {
 		// Accept connection from the client.
-		c, err := l.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection: %v\n", err)
 			// Handle error (and then for example indicate acceptor is down).
@@ -305,7 +305,7 @@ func forwardConnection(l net.Listener, connection dialer, remoteAddress, connect
 		}
 
 		// Schedule data transfers.
-		go handleClient(c, remoteSock)
+		go handleClient(conn, remoteSock)
 	}
 }
 
@@ -329,13 +329,13 @@ func extractPath(path string) (string, error) {
 func (d *sshConnected) randomUnixSocket() (*net.UnixAddr, error) {
 	// TODO: Rather than connecting again every time ForwardUnixSocket is called
 	// we should cache and reuse the connections.
-	id, err := d.uuid()
+	socketUUID, err := d.uuid()
 	if err != nil {
 		return nil, fmt.Errorf("generating random UUID for abstract UNIX socket: %w", err)
 	}
 
 	return &net.UnixAddr{
-		Name: fmt.Sprintf("@%s-%s", d.address, id),
+		Name: fmt.Sprintf("@%s-%s", d.address, socketUUID),
 		Net:  "unix",
 	}, nil
 }

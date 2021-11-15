@@ -150,13 +150,13 @@ func containersCommand() *cli.Command {
 }
 
 // apiLoadBalancerPoolAction implements 'apiloadbalancer-pool' subcommand.
-func apiLoadBalancerPoolAction(c *cli.Context, r *Resource) error {
+func apiLoadBalancerPoolAction(c *cli.Context, resource *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
 		return fmt.Errorf("getting pool name: %w", err)
 	}
 
-	return r.RunAPILoadBalancerPool(poolName)
+	return resource.RunAPILoadBalancerPool(poolName)
 }
 
 // controlplaneAction implements 'controlplane' subcommand.
@@ -171,15 +171,15 @@ func etcdAction(c *cli.Context, r *Resource) error {
 
 // getTemplate reads the template either from path given as an argument
 // or from stdin.
-func getTemplate(c *cli.Context) (string, error) {
-	if c.NArg() > 1 {
+func getTemplate(cliCtx *cli.Context) (string, error) {
+	if cliCtx.NArg() > 1 {
 		return "", fmt.Errorf("only one template file can be evaluated at a time")
 	}
 
 	template := []byte{}
 
-	if c.NArg() == 1 {
-		p := c.Args().Get(0)
+	if cliCtx.NArg() == 1 {
+		p := cliCtx.Args().Get(0)
 
 		c, err := ioutil.ReadFile(p) // #nosec G304
 		if err != nil {
@@ -189,7 +189,7 @@ func getTemplate(c *cli.Context) (string, error) {
 		template = c
 	}
 
-	if c.NArg() == 0 {
+	if cliCtx.NArg() == 0 {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			return "", fmt.Errorf("reading template from stdin: %w", err)
@@ -202,13 +202,13 @@ func getTemplate(c *cli.Context) (string, error) {
 }
 
 // templateActions runs Resource.Template().
-func templateAction(c *cli.Context, r *Resource) error {
+func templateAction(c *cli.Context, resource *Resource) error {
 	template, err := getTemplate(c)
 	if err != nil {
 		return fmt.Errorf("getting template: %w", err)
 	}
 
-	o, err := r.Template(template)
+	o, err := resource.Template(template)
 	if err != nil {
 		return fmt.Errorf("templating: %w", err)
 	}
@@ -218,8 +218,8 @@ func templateAction(c *cli.Context, r *Resource) error {
 	return nil
 }
 
-func kubeconfigAction(c *cli.Context, r *Resource) error {
-	k, err := r.Kubeconfig()
+func kubeconfigAction(c *cli.Context, resource *Resource) error {
+	k, err := resource.Kubeconfig()
 	if err != nil {
 		return fmt.Errorf("generating kubeconfig: %w", err)
 	}
@@ -229,13 +229,13 @@ func kubeconfigAction(c *cli.Context, r *Resource) error {
 	return nil
 }
 
-func kubeletPoolAction(c *cli.Context, r *Resource) error {
+func kubeletPoolAction(c *cli.Context, resource *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
 		return fmt.Errorf("getting pool name %w", err)
 	}
 
-	return r.RunKubeletPool(poolName)
+	return resource.RunKubeletPool(poolName)
 }
 
 func pkiAction(c *cli.Context, r *Resource) error {
@@ -255,32 +255,32 @@ func getPoolName(c *cli.Context) (string, error) {
 	return poolName, nil
 }
 
-func containersAction(c *cli.Context, r *Resource) error {
+func containersAction(c *cli.Context, resource *Resource) error {
 	poolName, err := getPoolName(c)
 	if err != nil {
 		return fmt.Errorf("getting pool name: %w", err)
 	}
 
-	return r.RunContainers(poolName)
+	return resource.RunContainers(poolName)
 }
 
 // withResource is a helper for action functions.
-func withResource(c *cli.Context, rf func(*cli.Context, *Resource) error) error {
-	r, err := LoadResourceFromFiles()
+func withResource(cliCtx *cli.Context, resourceF func(*cli.Context, *Resource) error) error {
+	resource, err := LoadResourceFromFiles()
 	if err != nil {
 		return fmt.Errorf("reading configuration and state failed: %w", err)
 	}
 
-	r.Confirmed = c.Bool(YesFlag)
-	r.Noop = c.Bool(NoopFlag)
+	resource.Confirmed = cliCtx.Bool(YesFlag)
+	resource.Noop = cliCtx.Bool(NoopFlag)
 
-	if r.Confirmed && r.Noop {
+	if resource.Confirmed && resource.Noop {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive", YesFlag, NoopFlag)
 	}
 
-	if r.Noop {
+	if resource.Noop {
 		fmt.Println("No-op run, no changes will be made.")
 	}
 
-	return rf(c, r)
+	return resourceF(cliCtx, resource)
 }

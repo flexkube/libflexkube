@@ -33,18 +33,18 @@ type containers struct {
 //
 // This method will validate all the configuration provided.
 func (c *Containers) New() (types.Resource, error) {
-	co := container.Containers{
+	containersConfig := container.Containers{
 		PreviousState: c.State,
 		DesiredState:  c.Containers,
 	}
 
-	ci, err := co.New()
+	newContainers, err := containersConfig.New()
 	if err != nil {
 		return nil, fmt.Errorf("creating containers object: %w", err)
 	}
 
 	return &containers{
-		containers: ci,
+		containers: newContainers,
 	}, nil
 }
 

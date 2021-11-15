@@ -20,12 +20,12 @@ type Certificate string
 // UnmarshalJSON implements encoding/json.Unmarshaler interface and tries
 // to parse obtained data as PEM encoded X.509 certificate.
 func (c *Certificate) UnmarshalJSON(data []byte) error {
-	p, err := strconv.Unquote(string(data))
+	unquoted, err := strconv.Unquote(string(data))
 	if err != nil {
 		return fmt.Errorf("unquoting string: %w", err)
 	}
 
-	der, _ := pem.Decode([]byte(p))
+	der, _ := pem.Decode([]byte(unquoted))
 	if der == nil {
 		return fmt.Errorf("decoding PEM format")
 	}
@@ -34,7 +34,7 @@ func (c *Certificate) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("parsing certificate: %w", err)
 	}
 
-	*c = Certificate(p)
+	*c = Certificate(unquoted)
 
 	return nil
 }

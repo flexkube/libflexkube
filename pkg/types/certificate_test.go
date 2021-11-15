@@ -33,21 +33,21 @@ func TestCertificateParse(t *testing.T) {
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
 
 			bar := &Foo{}
 
-			err := yaml.Unmarshal([]byte(c.YAML), bar)
+			err := yaml.Unmarshal([]byte(testCase.YAML), bar)
 
-			if c.Error && err == nil {
+			if testCase.Error && err == nil {
 				t.Fatalf("Expected error and didn't get any.")
 			}
 
-			if !c.Error && err != nil {
+			if !testCase.Error && err != nil {
 				t.Fatalf("Didn't expect error, got: %v", err)
 			}
 

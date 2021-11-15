@@ -23,16 +23,16 @@ func ValidatePrivateKey(key string) error {
 
 // parsePrivateKey tries to parse various private key types and
 // returns error if none of them works.
-func parsePrivateKey(b []byte) error {
-	if _, err := x509.ParsePKCS8PrivateKey(b); err == nil {
+func parsePrivateKey(rawPrivateKey []byte) error {
+	if _, err := x509.ParsePKCS8PrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 
-	if _, err := x509.ParsePKCS1PrivateKey(b); err == nil {
+	if _, err := x509.ParsePKCS1PrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 
-	if _, err := x509.ParseECPrivateKey(b); err == nil {
+	if _, err := x509.ParseECPrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 

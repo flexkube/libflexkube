@@ -21,12 +21,12 @@ type PrivateKey string
 // to decode obtained data using PEM format and then tries to parse the
 // private key as PKCS8, PPKCS1 or EC private keys.
 func (p *PrivateKey) UnmarshalJSON(data []byte) error {
-	up, err := strconv.Unquote(string(data))
+	unquoted, err := strconv.Unquote(string(data))
 	if err != nil {
 		return fmt.Errorf("unquoting string: %w", err)
 	}
 
-	der, _ := pem.Decode([]byte(up))
+	der, _ := pem.Decode([]byte(unquoted))
 	if der == nil {
 		return fmt.Errorf("decoding PEM format")
 	}
@@ -35,23 +35,23 @@ func (p *PrivateKey) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("parsing private key: %w", err)
 	}
 
-	*p = PrivateKey(up)
+	*p = PrivateKey(unquoted)
 
 	return nil
 }
 
 // parsePrivateKey tries to parse various private key types and
 // returns error if none of them works.
-func parsePrivateKey(b []byte) error {
-	if _, err := x509.ParsePKCS8PrivateKey(b); err == nil {
+func parsePrivateKey(rawPrivateKey []byte) error {
+	if _, err := x509.ParsePKCS8PrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 
-	if _, err := x509.ParsePKCS1PrivateKey(b); err == nil {
+	if _, err := x509.ParsePKCS1PrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 
-	if _, err := x509.ParseECPrivateKey(b); err == nil {
+	if _, err := x509.ParseECPrivateKey(rawPrivateKey); err == nil {
 		return nil
 	}
 

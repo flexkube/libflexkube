@@ -40,19 +40,19 @@ aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
 
-			err := pki.ValidatePrivateKey(c.key)
+			err := pki.ValidatePrivateKey(testCase.key)
 
-			if c.err && err == nil {
+			if testCase.err && err == nil {
 				t.Fatalf("Expected error and didn't get any.")
 			}
 
-			if !c.err && err != nil {
+			if !testCase.err && err != nil {
 				t.Fatalf("Didn't expect error, got: %v", err)
 			}
 		})

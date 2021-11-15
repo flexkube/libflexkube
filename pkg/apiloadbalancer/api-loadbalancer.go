@@ -85,7 +85,7 @@ type apiLoadBalancer struct {
 }
 
 func (a apiLoadBalancer) config() (string, error) {
-	c := `
+	configTemplateRaw := `
 defaults
   # Do TLS passthrough
   mode tcp
@@ -107,11 +107,11 @@ backend kube-apiserver
   {{- end }}
 `
 
-	t := template.Must(template.New("haproxy.cfg").Parse(c))
+	configTemplate := template.Must(template.New("haproxy.cfg").Parse(configTemplateRaw))
 
 	var buf bytes.Buffer
 
-	d := struct {
+	templateData := struct {
 		Servers     []string
 		BindAddress string
 	}{
@@ -119,7 +119,7 @@ backend kube-apiserver
 		a.bindAddress,
 	}
 
-	if err := t.Execute(&buf, d); err != nil {
+	if err := configTemplate.Execute(&buf, templateData); err != nil {
 		return "", fmt.Errorf("executing template failed: %w", err)
 	}
 
@@ -149,7 +149,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 		return nil, fmt.Errorf("generating config: %w", err)
 	}
 
-	c := container.Container{
+	containerConfig := container.Container{
 		// TODO: This is weird. This sets docker as default runtime config.
 		Runtime: container.RuntimeConfig{
 			Docker: docker.DefaultConfig(),
@@ -175,7 +175,7 @@ func (a *apiLoadBalancer) ToHostConfiguredContainer() (*container.HostConfigured
 		ConfigFiles: map[string]string{
 			a.hostConfigPath: config,
 		},
-		Container: c,
+		Container: containerConfig,
 	}, nil
 }
 
@@ -188,7 +188,7 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 		return nil, fmt.Errorf("validating API Load balancer configuration: %w", err)
 	}
 
-	na := &apiLoadBalancer{
+	newLoadBalancer := &apiLoadBalancer{
 		image:          a.Image,
 		host:           a.Host,
 		servers:        a.Servers,
@@ -198,11 +198,11 @@ func (a *APILoadBalancer) New() (container.ResourceInstance, error) {
 	}
 
 	// Fill empty fields with default values.
-	if na.image == "" {
-		na.image = defaults.HAProxyImage
+	if newLoadBalancer.image == "" {
+		newLoadBalancer.image = defaults.HAProxyImage
 	}
 
-	return na, nil
+	return newLoadBalancer, nil
 }
 
 // Validate contains all validation rules for APILoadBalancer struct.

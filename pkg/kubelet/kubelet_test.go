@@ -18,17 +18,17 @@ import (
 func getClientConfig(t *testing.T) *client.Config {
 	t.Helper()
 
-	p := &pki.PKI{
+	testPKI := &pki.PKI{
 		Kubernetes: &pki.Kubernetes{},
 	}
 
-	if err := p.Generate(); err != nil {
+	if err := testPKI.Generate(); err != nil {
 		t.Fatalf("Failed generating testing PKI: %v", err)
 	}
 
 	return &client.Config{
 		Server:        "foo",
-		CACertificate: p.Kubernetes.CA.X509Certificate,
+		CACertificate: testPKI.Kubernetes.CA.X509Certificate,
 		Token:         "foob",
 	}
 }
@@ -36,10 +36,10 @@ func getClientConfig(t *testing.T) *client.Config {
 func TestToHostConfiguredContainer(t *testing.T) {
 	t.Parallel()
 
-	cc := getClientConfig(t)
+	clientConfig := getClientConfig(t)
 
-	kk := &kubelet.Kubelet{
-		BootstrapConfig:         cc,
+	testKubelet := &kubelet.Kubelet{
+		BootstrapConfig:         clientConfig,
 		Name:                    "fooz",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
@@ -57,11 +57,11 @@ func TestToHostConfiguredContainer(t *testing.T) {
 			"baz": "bar",
 		},
 
-		AdminConfig:   cc,
+		AdminConfig:   clientConfig,
 		ClusterDNSIPs: []string{"10.0.0.1"},
 	}
 
-	k, err := kk.New()
+	k, err := testKubelet.New()
 	if err != nil {
 		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
 	}
@@ -207,16 +207,16 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 		},
 	}
 
-	for i, tc := range cases {
-		tc := tc
+	for i, testCase := range cases {
+		testCase := testCase
 
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 
-			cc := getClientConfig(t)
+			clientConfig := getClientConfig(t)
 
-			k := &kubelet.Kubelet{
-				BootstrapConfig:         cc,
+			testKubelet := &kubelet.Kubelet{
+				BootstrapConfig:         clientConfig,
 				Name:                    "foo",
 				NetworkPlugin:           "cni",
 				VolumePluginDir:         "/foo",
@@ -226,9 +226,9 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 				},
 			}
 
-			tc.MutationF(k)
+			testCase.MutationF(testKubelet)
 
-			tc.TestF(t, k.Validate())
+			testCase.TestF(t, testKubelet.Validate())
 		})
 	}
 }
@@ -236,15 +236,15 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 func TestKubeletIncludeExtraMounts(t *testing.T) {
 	t.Parallel()
 
-	em := containertypes.Mount{
+	expectedExtraMount := containertypes.Mount{
 		Source: "/tmp/",
 		Target: "/foo",
 	}
 
-	cc := getClientConfig(t)
+	clientConfig := getClientConfig(t)
 
-	kk := &kubelet.Kubelet{
-		BootstrapConfig:         cc,
+	testKubeletConfig := &kubelet.Kubelet{
+		BootstrapConfig:         clientConfig,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
@@ -261,25 +261,25 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",
 		},
-		ExtraMounts:   []containertypes.Mount{em},
-		AdminConfig:   cc,
+		ExtraMounts:   []containertypes.Mount{expectedExtraMount},
+		AdminConfig:   clientConfig,
 		ClusterDNSIPs: []string{"10.0.0.1"},
 	}
 
-	k, err := kk.New()
+	testKubelet, err := testKubeletConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
 	}
 
 	found := false
 
-	hcc, err := k.ToHostConfiguredContainer()
+	hcc, err := testKubelet.ToHostConfiguredContainer()
 	if err != nil {
 		t.Fatalf("Converting kubelet to HostConfiguredContainer: %v", err)
 	}
 
 	for _, v := range hcc.Container.Config.Mounts {
-		if reflect.DeepEqual(v, em) {
+		if reflect.DeepEqual(v, expectedExtraMount) {
 			found = true
 		}
 	}
@@ -294,10 +294,10 @@ func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testi
 
 	extraArg := "--foo"
 
-	cc := getClientConfig(t)
+	clientConfig := getClientConfig(t)
 
-	kk := &kubelet.Kubelet{
-		BootstrapConfig:         cc,
+	testKubeletConfig := &kubelet.Kubelet{
+		BootstrapConfig:         clientConfig,
 		Name:                    "foo",
 		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
@@ -314,19 +314,19 @@ func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testi
 		PrivilegedLabels: map[string]string{
 			"baz": "bar",
 		},
-		AdminConfig:   cc,
+		AdminConfig:   clientConfig,
 		ClusterDNSIPs: []string{"10.0.0.1"},
 		ExtraArgs:     []string{extraArg},
 	}
 
-	k, err := kk.New()
+	testKubelet, err := testKubeletConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new kubelet should succeed, got: %v", err)
 	}
 
 	found := false
 
-	hcc, err := k.ToHostConfiguredContainer()
+	hcc, err := testKubelet.ToHostConfiguredContainer()
 	if err != nil {
 		t.Fatalf("Converting kubelet to HostConfiguredContainer: %v", err)
 	}

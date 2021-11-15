@@ -51,13 +51,13 @@ func TestValidate(t *testing.T) {
 func TestValidateMarshalFail(t *testing.T) {
 	t.Parallel()
 
-	v := validValidator(t)
+	testValidator := validValidator(t)
 
-	v.YAML = map[string]interface{}{
+	testValidator.YAML = map[string]interface{}{
 		"foo": make(chan int),
 	}
 
-	if err := v.validate(true); err == nil {
+	if err := testValidator.validate(true); err == nil {
 		t.Fatalf("Validating unmarshalable struct should fail")
 	}
 }

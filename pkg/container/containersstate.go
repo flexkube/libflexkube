@@ -63,7 +63,7 @@ func (s ContainersState) New() (ContainersStateInterface, error) {
 // CheckState updates the state of all previously configured containers
 // and their configuration on the host.
 func (s containersState) CheckState() error {
-	for i, hcc := range s {
+	for containerName, hcc := range s {
 		if err := hcc.Status(); err != nil {
 			hcc.container.SetStatus(types.ContainerStatus{
 				Status: err.Error(),
@@ -79,7 +79,7 @@ func (s containersState) CheckState() error {
 		}
 
 		if err := hcc.ConfigurationStatus(); err != nil {
-			return fmt.Errorf("checking container %q configuration status: %w", i, err)
+			return fmt.Errorf("checking container %q configuration status: %w", containerName, err)
 		}
 	}
 
@@ -130,30 +130,30 @@ func (s containersState) CreateAndStart(containerName string) error {
 
 // Export converts unexported containersState to exported type, so it can be serialized and stored.
 func (s containersState) Export() ContainersState {
-	cs := ContainersState{}
+	exportedState := ContainersState{}
 
-	for i, m := range s {
-		h := &HostConfiguredContainer{
+	for containerName, hcc := range s {
+		exportedHCC := &HostConfiguredContainer{
 			Container: Container{
-				Config: m.container.Config(),
+				Config: hcc.container.Config(),
 				Runtime: RuntimeConfig{
-					Docker: m.container.RuntimeConfig().(*docker.Config),
+					Docker: hcc.container.RuntimeConfig().(*docker.Config),
 				},
 			},
-			Host:        m.host,
-			ConfigFiles: m.configFiles,
+			Host:        hcc.host,
+			ConfigFiles: hcc.configFiles,
 		}
 
-		if s := m.container.Status(); s.ID != "" || s.Status != "" {
-			h.Container.Status = s
+		if s := hcc.container.Status(); s.ID != "" || s.Status != "" {
+			exportedHCC.Container.Status = s
 		}
 
-		if h.ConfigFiles == nil {
-			h.ConfigFiles = map[string]string{}
+		if exportedHCC.ConfigFiles == nil {
+			exportedHCC.ConfigFiles = map[string]string{}
 		}
 
-		cs[i] = h
+		exportedState[containerName] = exportedHCC
 	}
 
-	return cs
+	return exportedState
 }

@@ -93,16 +93,16 @@ type controlplane struct {
 
 // propagateKubeconfig merges given client config with values stored in Controlplane.
 // Values in given config has priority over ones from the Controlplane.
-func (c *Controlplane) propagateKubeconfig(d *client.Config) {
+func (c *Controlplane) propagateKubeconfig(clientConfig *client.Config) {
 	pkiCA := types.Certificate("")
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.CA != nil {
 		pkiCA = c.PKI.Kubernetes.CA.X509Certificate
 	}
 
-	d.CACertificate = d.CACertificate.Pick(c.Common.KubernetesCACertificate, pkiCA)
+	clientConfig.CACertificate = clientConfig.CACertificate.Pick(c.Common.KubernetesCACertificate, pkiCA)
 
 	if c.APIServerAddress != "" && c.APIServerPort != 0 {
-		d.Server = util.PickString(d.Server, fmt.Sprintf("%s:%d", c.APIServerAddress, c.APIServerPort))
+		clientConfig.Server = util.PickString(clientConfig.Server, fmt.Sprintf("%s:%d", c.APIServerAddress, c.APIServerPort))
 	}
 }
 
@@ -122,16 +122,16 @@ func (c *Controlplane) propagateHost(h *host.Host) *host.Host {
 
 // propagateCommon merges given common configuration with values stored in Controlplane.
 // Values in given common configuration has priority over ones from the Controlplane.
-func (c *Controlplane) propagateCommon(co *Common) {
-	if co == nil {
-		co = &Common{}
+func (c *Controlplane) propagateCommon(common *Common) {
+	if common == nil {
+		common = &Common{}
 	}
 
 	if c.Common == nil {
 		c.Common = &Common{}
 	}
 
-	co.Image = util.PickString(co.Image, c.Common.Image)
+	common.Image = util.PickString(common.Image, c.Common.Image)
 
 	var pkiCA types.Certificate
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.CA != nil {
@@ -143,61 +143,63 @@ func (c *Controlplane) propagateCommon(co *Common) {
 		frontProxyCA = c.PKI.Kubernetes.FrontProxyCA.X509Certificate
 	}
 
-	co.KubernetesCACertificate = co.KubernetesCACertificate.Pick(c.Common.KubernetesCACertificate, pkiCA)
-	co.FrontProxyCACertificate = co.FrontProxyCACertificate.Pick(c.Common.FrontProxyCACertificate, frontProxyCA)
+	common.KubernetesCACertificate = common.KubernetesCACertificate.Pick(c.Common.KubernetesCACertificate, pkiCA)
+	common.FrontProxyCACertificate = common.FrontProxyCACertificate.Pick(c.Common.FrontProxyCACertificate, frontProxyCA)
 }
 
 // buildKubeScheduler fills KubeSheduler struct with all default values.
 func (c *Controlplane) buildKubeScheduler() {
-	k := &c.KubeScheduler
+	ksc := &c.KubeScheduler
 
-	c.propagateKubeconfig(&k.Kubeconfig)
+	c.propagateKubeconfig(&ksc.Kubeconfig)
 
-	c.propagateCommon(k.Common)
+	c.propagateCommon(ksc.Common)
 
 	// TODO: can be moved to function, which takes Kubeconfig and *pki.Certificate as an input
 	if c.PKI != nil && c.PKI.Kubernetes != nil && c.PKI.Kubernetes.KubeSchedulerCertificate != nil {
-		k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(
+		ksc.Kubeconfig.ClientCertificate = ksc.Kubeconfig.ClientCertificate.Pick(
 			c.PKI.Kubernetes.KubeSchedulerCertificate.X509Certificate)
 
-		k.Kubeconfig.ClientKey = k.Kubeconfig.ClientKey.Pick(c.PKI.Kubernetes.KubeSchedulerCertificate.PrivateKey)
+		ksc.Kubeconfig.ClientKey = ksc.Kubeconfig.ClientKey.Pick(c.PKI.Kubernetes.KubeSchedulerCertificate.PrivateKey)
 	}
 
-	k.Host = c.propagateHost(k.Host)
+	ksc.Host = c.propagateHost(ksc.Host)
 }
 
 // buildKubeControllerManager fills KubeControllerManager with all default values.
 func (c *Controlplane) buildKubeControllerManager() {
-	k := &c.KubeControllerManager
+	kcmc := &c.KubeControllerManager
 
-	c.propagateKubeconfig(&k.Kubeconfig)
+	c.propagateKubeconfig(&kcmc.Kubeconfig)
 
-	c.propagateCommon(k.Common)
+	c.propagateCommon(kcmc.Common)
 
 	if c.PKI != nil && c.PKI.Kubernetes != nil {
 		if c.PKI.Kubernetes.KubeControllerManagerCertificate != nil {
-			k.Kubeconfig.ClientCertificate = k.Kubeconfig.ClientCertificate.Pick(
+			kcmc.Kubeconfig.ClientCertificate = kcmc.Kubeconfig.ClientCertificate.Pick(
 				c.PKI.Kubernetes.KubeControllerManagerCertificate.X509Certificate)
 
-			k.Kubeconfig.ClientKey = k.Kubeconfig.ClientKey.Pick(c.PKI.Kubernetes.KubeControllerManagerCertificate.PrivateKey)
+			kcmc.Kubeconfig.ClientKey = kcmc.Kubeconfig.ClientKey.Pick(
+				c.PKI.Kubernetes.KubeControllerManagerCertificate.PrivateKey)
 		}
 
 		if c.PKI.Kubernetes.CA != nil {
-			k.KubernetesCAKey = k.KubernetesCAKey.Pick(c.PKI.Kubernetes.CA.PrivateKey)
+			kcmc.KubernetesCAKey = kcmc.KubernetesCAKey.Pick(c.PKI.Kubernetes.CA.PrivateKey)
 		}
 
 		if c.PKI.RootCA != nil {
-			k.RootCACertificate = k.RootCACertificate.Pick(c.PKI.RootCA.X509Certificate)
+			kcmc.RootCACertificate = kcmc.RootCACertificate.Pick(c.PKI.RootCA.X509Certificate)
 		}
 
 		if c.PKI.Kubernetes.ServiceAccountCertificate != nil {
-			k.ServiceAccountPrivateKey = k.ServiceAccountPrivateKey.Pick(c.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey)
+			kcmc.ServiceAccountPrivateKey = kcmc.ServiceAccountPrivateKey.Pick(
+				c.PKI.Kubernetes.ServiceAccountCertificate.PrivateKey)
 		}
 	}
 
-	k.Host = c.propagateHost(k.Host)
+	kcmc.Host = c.propagateHost(kcmc.Host)
 
-	k.FlexVolumePluginDir = util.PickString(k.FlexVolumePluginDir, defaults.VolumePluginDir)
+	kcmc.FlexVolumePluginDir = util.PickString(kcmc.FlexVolumePluginDir, defaults.VolumePluginDir)
 }
 
 // kubeAPIServerPKIIntegration injects missing certificates and keys from PKI object
@@ -207,7 +209,7 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 		return
 	}
 
-	k := &c.KubeAPIServer
+	apiConfig := &c.KubeAPIServer
 
 	if p := c.PKI.Etcd; p != nil {
 		c.mergeEtcdCertificatesFromPKI(*p)
@@ -218,7 +220,7 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 	}
 
 	if p := c.PKI.Kubernetes.ServiceAccountCertificate; p != nil {
-		k.ServiceAccountPrivateKey = util.PickString(k.ServiceAccountPrivateKey, string(p.PrivateKey))
+		apiConfig.ServiceAccountPrivateKey = util.PickString(apiConfig.ServiceAccountPrivateKey, string(p.PrivateKey))
 	}
 
 	p := c.PKI.Kubernetes.KubeAPIServer
@@ -231,68 +233,68 @@ func (c *Controlplane) kubeAPIServerPKIIntegration() {
 
 // mergeEtcdCertificatesFromPKI merges given etcd certificates from PKI into
 // KubeAPIServer field.
-func (c *Controlplane) mergeEtcdCertificatesFromPKI(p pki.Etcd) {
+func (c *Controlplane) mergeEtcdCertificatesFromPKI(etcdPKI pki.Etcd) {
 	if c.PKI == nil {
 		return
 	}
 
-	k := &c.KubeAPIServer
+	apiConfig := &c.KubeAPIServer
 
-	if p.CA != nil {
-		k.EtcdCACertificate = k.EtcdCACertificate.Pick(p.CA.X509Certificate)
+	if etcdPKI.CA != nil {
+		apiConfig.EtcdCACertificate = apiConfig.EtcdCACertificate.Pick(etcdPKI.CA.X509Certificate)
 	}
 
 	// "root" and "kube-apiserver" are common CNs for etcd client certificate for kube-apiserver.
 	for _, cn := range []string{"root", "kube-apiserver"} {
-		if c, ok := p.ClientCertificates[cn]; ok {
-			k.EtcdClientCertificate = k.EtcdClientCertificate.Pick(c.X509Certificate)
-			k.EtcdClientKey = k.EtcdClientKey.Pick(c.PrivateKey)
+		if c, ok := etcdPKI.ClientCertificates[cn]; ok {
+			apiConfig.EtcdClientCertificate = apiConfig.EtcdClientCertificate.Pick(c.X509Certificate)
+			apiConfig.EtcdClientKey = apiConfig.EtcdClientKey.Pick(c.PrivateKey)
 		}
 	}
 }
 
 // mergeKubeAPIServerCertificatesFromPKI merges given kube-apiserver certificates from PKI into
 // KubeAPIServer field.
-func (c *Controlplane) mergeKubeAPIServerCertificatesFromPKI(p pki.KubeAPIServer) {
-	k := &c.KubeAPIServer
+func (c *Controlplane) mergeKubeAPIServerCertificatesFromPKI(apiPKI pki.KubeAPIServer) {
+	apiConfig := &c.KubeAPIServer
 
-	if c := p.ServerCertificate; c != nil {
-		k.APIServerCertificate = k.APIServerCertificate.Pick(c.X509Certificate)
-		k.APIServerKey = k.APIServerKey.Pick(c.PrivateKey)
+	if c := apiPKI.ServerCertificate; c != nil {
+		apiConfig.APIServerCertificate = apiConfig.APIServerCertificate.Pick(c.X509Certificate)
+		apiConfig.APIServerKey = apiConfig.APIServerKey.Pick(c.PrivateKey)
 	}
 
-	if c := p.FrontProxyClientCertificate; c != nil {
-		k.FrontProxyCertificate = k.FrontProxyCertificate.Pick(c.X509Certificate)
-		k.FrontProxyKey = k.FrontProxyKey.Pick(c.PrivateKey)
+	if c := apiPKI.FrontProxyClientCertificate; c != nil {
+		apiConfig.FrontProxyCertificate = apiConfig.FrontProxyCertificate.Pick(c.X509Certificate)
+		apiConfig.FrontProxyKey = apiConfig.FrontProxyKey.Pick(c.PrivateKey)
 	}
 
-	if c := p.KubeletCertificate; c != nil {
-		k.KubeletClientCertificate = k.KubeletClientCertificate.Pick(c.X509Certificate)
-		k.KubeletClientKey = k.KubeletClientKey.Pick(c.PrivateKey)
+	if c := apiPKI.KubeletCertificate; c != nil {
+		apiConfig.KubeletClientCertificate = apiConfig.KubeletClientCertificate.Pick(c.X509Certificate)
+		apiConfig.KubeletClientKey = apiConfig.KubeletClientKey.Pick(c.PrivateKey)
 	}
 }
 
 // buildKubeAPIServer fills KubeAPIServer with all default values.
 func (c *Controlplane) buildKubeAPIServer() {
-	k := &c.KubeAPIServer
+	apiConfig := &c.KubeAPIServer
 
-	if k.BindAddress == "" && c.APIServerAddress != "" {
-		k.BindAddress = c.APIServerAddress
+	if apiConfig.BindAddress == "" && c.APIServerAddress != "" {
+		apiConfig.BindAddress = c.APIServerAddress
 	}
 
-	if k.AdvertiseAddress == "" && c.APIServerAddress != "" {
-		k.AdvertiseAddress = c.APIServerAddress
+	if apiConfig.AdvertiseAddress == "" && c.APIServerAddress != "" {
+		apiConfig.AdvertiseAddress = c.APIServerAddress
 	}
 
-	if k.SecurePort == 0 && c.APIServerPort != 0 {
-		k.SecurePort = c.APIServerPort
+	if apiConfig.SecurePort == 0 && c.APIServerPort != 0 {
+		apiConfig.SecurePort = c.APIServerPort
 	}
 
-	c.propagateCommon(k.Common)
+	c.propagateCommon(apiConfig.Common)
 
 	c.kubeAPIServerPKIIntegration()
 
-	k.Host = c.propagateHost(k.Host)
+	apiConfig.Host = c.propagateHost(apiConfig.Host)
 }
 
 // New validates Controlplane configuration and fills populates all values provided by the users
@@ -302,7 +304,7 @@ func (c *Controlplane) New() (types.Resource, error) {
 		return nil, fmt.Errorf("validating controlplane configuration: %w", err)
 	}
 
-	controlplane, cc, _ := c.containersWithState() //nolint:errcheck // We check it in Validate().
+	controlplane, containersConfig, _ := c.containersWithState() //nolint:errcheck // We check it in Validate().
 
 	// If shutdown is requested, don't fill DesiredState to remove everything.
 	if c.Destroy {
@@ -321,13 +323,13 @@ func (c *Controlplane) New() (types.Resource, error) {
 	ks, _ := c.KubeScheduler.New()             //nolint:errcheck // We check it in Validate().
 	ksHcc, _ := ks.ToHostConfiguredContainer() //nolint:errcheck // We check it in Validate().
 
-	cc.DesiredState = container.ContainersState{
+	containersConfig.DesiredState = container.ContainersState{
 		"kube-apiserver":          kasHcc,
 		"kube-controller-manager": kcmHcc,
 		"kube-scheduler":          ksHcc,
 	}
 
-	co, _ := cc.New() //nolint:errcheck // We check it in Validate().
+	co, _ := containersConfig.New() //nolint:errcheck // We check it in Validate().
 
 	controlplane.containers = co
 
@@ -343,24 +345,24 @@ func (c *Controlplane) buildComponents() {
 }
 
 func (c *Controlplane) containersWithState() (*controlplane, *container.Containers, error) {
-	cp := &controlplane{}
-	cc := &container.Containers{}
+	newControlplane := &controlplane{}
+	containersConfig := &container.Containers{}
 
 	// If state is empty, just return initialized containers config and controlplane.
 	if c.State == nil || len(*c.State) == 0 {
-		return cp, cc, nil
+		return newControlplane, containersConfig, nil
 	}
 
-	cc.PreviousState = *c.State
+	containersConfig.PreviousState = *c.State
 
-	ci, err := cc.New()
+	ci, err := containersConfig.New()
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating containers state: %w", err)
 	}
 
-	cp.containers = ci
+	newControlplane.containers = ci
 
-	return cp, cc, nil
+	return newControlplane, containersConfig, nil
 }
 
 // controlplaneComponentConfiguration is a simple interface wrapping all controlplane
@@ -399,7 +401,7 @@ func (c *Controlplane) Validate() error {
 		errors = append(errors, fmt.Errorf("can't destroy non-existent controlplane"))
 	}
 
-	_, cc, err := c.containersWithState()
+	_, containersConfig, err := c.containersWithState()
 	if err != nil {
 		errors = append(errors, fmt.Errorf("malformed containers state: %w", err))
 	}
@@ -417,9 +419,9 @@ func (c *Controlplane) Validate() error {
 		return errors.Return()
 	}
 
-	cc.DesiredState = containersState
+	containersConfig.DesiredState = containersState
 
-	if _, err = cc.New(); err != nil {
+	if _, err = containersConfig.New(); err != nil {
 		errors = append(errors, fmt.Errorf("generating containers configuration: %w", err))
 	}
 

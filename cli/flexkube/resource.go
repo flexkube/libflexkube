@@ -266,33 +266,33 @@ func validateAndNew(rc types.ResourceConfig) (types.Resource, error) {
 	return r, nil
 }
 
-func (r *Resource) checkState(rs types.Resource) (string, error) {
+func checkState(resource types.Resource) (string, error) {
 	// Check current state.
 	fmt.Println("Checking current state")
 
-	if err := rs.CheckCurrentState(); err != nil {
+	if err := resource.CheckCurrentState(); err != nil {
 		return "", fmt.Errorf("checking current state: %w", err)
 	}
 
 	// Calculate and print diff.
 	fmt.Printf("Calculating diff...\n\n")
 
-	d := cmp.Diff(rs.Containers().ToExported().PreviousState, rs.Containers().DesiredState())
+	diff := cmp.Diff(resource.Containers().ToExported().PreviousState, resource.Containers().DesiredState())
 
-	if d == "" {
+	if diff == "" {
 		fmt.Println("No changes required")
 
-		return d, nil
+		return diff, nil
 	}
 
-	fmt.Printf("Following changes required:\n\n%s\n\n", util.ColorizeDiff(d))
+	fmt.Printf("Following changes required:\n\n%s\n\n", util.ColorizeDiff(diff))
 
-	return d, nil
+	return diff, nil
 }
 
 // execute checks current state of the deployment and triggers the deployment if needed.
-func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) error {
-	diff, err := r.checkState(rs)
+func (r *Resource) execute(resource types.Resource, saveStateF func(types.Resource)) error {
+	diff, err := checkState(resource)
 	if err != nil {
 		return fmt.Errorf("checking current state: %w", err)
 	}
@@ -301,11 +301,11 @@ func (r *Resource) execute(rs types.Resource, saveStateF func(types.Resource)) e
 		return nil
 	}
 
-	return r.deploy(rs, saveStateF)
+	return r.deploy(resource, saveStateF)
 }
 
 // deploy confirms the deployment with the user and persists the state after the deployment.
-func (r *Resource) deploy(rs types.Resource, saveStateF func(types.Resource)) error {
+func (r *Resource) deploy(resource types.Resource, saveStateF func(types.Resource)) error {
 	if !r.Confirmed {
 		confirmed, err := askForConfirmation()
 		if err != nil {
@@ -319,13 +319,13 @@ func (r *Resource) deploy(rs types.Resource, saveStateF func(types.Resource)) er
 		}
 	}
 
-	deployErr := rs.Deploy()
+	deployErr := resource.Deploy()
 
 	if r.State == nil {
 		r.State = &ResourceState{}
 	}
 
-	saveStateF(rs)
+	saveStateF(resource)
 
 	return r.StateToFile(deployErr)
 }
@@ -361,38 +361,38 @@ func readYamlFile(file string) ([]byte, error) {
 	// are static.
 	//
 	// #nosec G304
-	c, err := ioutil.ReadFile(file)
+	configRaw, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	// Workaround for empty YAML file.
-	if string(c) == "{}\n" {
+	if string(configRaw) == "{}\n" {
 		return []byte{}, nil
 	}
 
-	return c, nil
+	return configRaw, nil
 }
 
 // LoadResourceFromFiles loads Resource struct from config.yaml and state.yaml files.
 func LoadResourceFromFiles() (*Resource, error) {
-	r := &Resource{}
+	resource := &Resource{}
 
-	c, err := readYamlFile("config.yaml")
+	configRaw, err := readYamlFile("config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml file: %w", err)
 	}
 
-	s, err := readYamlFile("state.yaml")
+	stateRaw, err := readYamlFile("state.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("reading state.yaml file: %w", err)
 	}
 
-	if err := yaml.Unmarshal([]byte(string(c)+string(s)), r); err != nil {
+	if err := yaml.Unmarshal([]byte(string(configRaw)+string(stateRaw)), resource); err != nil {
 		return nil, fmt.Errorf("parsing files: %w", err)
 	}
 
-	return r, nil
+	return resource, nil
 }
 
 // StateToFile saves resource state into state.yaml file.
@@ -401,18 +401,18 @@ func (r *Resource) StateToFile(actionErr error) error {
 		State: r.State,
 	}
 
-	rb, err := yaml.Marshal(rs)
+	stateRaw, err := yaml.Marshal(rs)
 	if err != nil {
 		return fmt.Errorf("serializing state: %w", err)
 	}
 
-	if string(rb) == "{}\n" {
-		rb = []byte{}
+	if string(stateRaw) == "{}\n" {
+		stateRaw = []byte{}
 	}
 
 	readWriteOwnerOnly := 0o600
 
-	if err := ioutil.WriteFile("state.yaml", rb, fs.FileMode(readWriteOwnerOnly)); err != nil {
+	if err := ioutil.WriteFile("state.yaml", stateRaw, fs.FileMode(readWriteOwnerOnly)); err != nil {
 		if actionErr == nil {
 			return fmt.Errorf("writing new state to file: %w", err)
 		}
@@ -491,14 +491,14 @@ func (r *Resource) Kubeconfig() (string, error) {
 		return "", fmt.Errorf("validating kubeconfig: %w", err)
 	}
 
-	cc := &client.Config{
+	clientConfig := &client.Config{
 		Server:            fmt.Sprintf("%s:%d", r.Controlplane.APIServerAddress, r.Controlplane.APIServerPort),
 		CACertificate:     r.State.PKI.Kubernetes.CA.X509Certificate,
 		ClientCertificate: r.State.PKI.Kubernetes.AdminCertificate.X509Certificate,
 		ClientKey:         r.State.PKI.Kubernetes.AdminCertificate.PrivateKey,
 	}
 
-	k, err := cc.ToYAMLString()
+	k, err := clientConfig.ToYAMLString()
 	if err != nil {
 		return "", fmt.Errorf("generating client configuration: %w", err)
 	}
@@ -508,7 +508,7 @@ func (r *Resource) Kubeconfig() (string, error) {
 
 // RunAPILoadBalancerPool deploys given API Load Balancer pool.
 func (r *Resource) RunAPILoadBalancerPool(name string) error {
-	p, err := r.getAPILoadBalancerPool(name)
+	pool, err := r.getAPILoadBalancerPool(name)
 	if err != nil {
 		return fmt.Errorf("getting API Load Balancer pool %q from configuration: %w", name, err)
 	}
@@ -518,43 +518,43 @@ func (r *Resource) RunAPILoadBalancerPool(name string) error {
 			r.State.APILoadBalancerPools = map[string]*container.ContainersState{}
 		}
 
-		r.State.APILoadBalancerPools[name] = &p.Containers().ToExported().PreviousState
+		r.State.APILoadBalancerPools[name] = &pool.Containers().ToExported().PreviousState
 	}
 
-	return r.execute(p, saveStateF)
+	return r.execute(pool, saveStateF)
 }
 
 // RunControlplane deploys configured static controlplane.
 func (r *Resource) RunControlplane() error {
-	e, err := r.getControlplane()
+	controlplaneResource, err := r.getControlplane()
 	if err != nil {
 		return fmt.Errorf("getting controlplane from the configuration: %w", err)
 	}
 
 	saveStateF := func(rs types.Resource) {
-		r.State.Controlplane = &e.Containers().ToExported().PreviousState
+		r.State.Controlplane = &controlplaneResource.Containers().ToExported().PreviousState
 	}
 
-	return r.execute(e, saveStateF)
+	return r.execute(controlplaneResource, saveStateF)
 }
 
 // RunEtcd deploys configured etcd cluster.
 func (r *Resource) RunEtcd() error {
-	e, err := r.getEtcd()
+	etcdResource, err := r.getEtcd()
 	if err != nil {
 		return fmt.Errorf("getting etcd from the configuration: %w", err)
 	}
 
 	saveStateF := func(rs types.Resource) {
-		r.State.Etcd = &e.Containers().ToExported().PreviousState
+		r.State.Etcd = &etcdResource.Containers().ToExported().PreviousState
 	}
 
-	return r.execute(e, saveStateF)
+	return r.execute(etcdResource, saveStateF)
 }
 
 // RunKubeletPool deploys given kubelet pool.
 func (r *Resource) RunKubeletPool(name string) error {
-	p, err := r.getKubeletPool(name)
+	kubeletPool, err := r.getKubeletPool(name)
 	if err != nil {
 		return fmt.Errorf("getting kubelet pool %q from configuration: %w", name, err)
 	}
@@ -564,10 +564,10 @@ func (r *Resource) RunKubeletPool(name string) error {
 			r.State.KubeletPools = map[string]*container.ContainersState{}
 		}
 
-		r.State.KubeletPools[name] = &p.Containers().ToExported().PreviousState
+		r.State.KubeletPools[name] = &kubeletPool.Containers().ToExported().PreviousState
 	}
 
-	return r.execute(p, saveStateF)
+	return r.execute(kubeletPool, saveStateF)
 }
 
 // RunPKI generates configured PKI.
@@ -592,7 +592,7 @@ func (r *Resource) RunPKI() error {
 
 // RunContainers deploys given containers group.
 func (r *Resource) RunContainers(name string) error {
-	p, err := r.getContainers(name)
+	containersResource, err := r.getContainers(name)
 	if err != nil {
 		return fmt.Errorf("getting containers group %q from configuration: %w", name, err)
 	}
@@ -602,10 +602,10 @@ func (r *Resource) RunContainers(name string) error {
 			r.State.Containers = map[string]*container.ContainersState{}
 		}
 
-		r.State.Containers[name] = &p.Containers().ToExported().PreviousState
+		r.State.Containers[name] = &containersResource.Containers().ToExported().PreviousState
 	}
 
-	return r.execute(p, saveStateF)
+	return r.execute(containersResource, saveStateF)
 }
 
 // Template executes given Go template using configuration and state.

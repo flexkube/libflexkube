@@ -142,21 +142,21 @@ func TestKubeAPIServerValidate(t *testing.T) {
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
 
 			config := validKubeAPIServer(t)
-			c.MutateF(config)
+			testCase.MutateF(config)
 
 			err := config.Validate()
-			if !c.Error && err != nil {
+			if !testCase.Error && err != nil {
 				t.Errorf("Didn't expect error, got: %v", err)
 			}
 
-			if c.Error && err == nil {
+			if testCase.Error && err == nil {
 				t.Errorf("Expected error")
 			}
 		})
@@ -178,7 +178,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 		FrontProxyCACertificate: cert,
 	}
 
-	c := &KubeAPIServer{
+	testConfig := &KubeAPIServer{
 		Common:                   common,
 		APIServerCertificate:     cert,
 		APIServerKey:             privateKey,
@@ -198,7 +198,7 @@ func TestKubeAPIServerConfigFiles(t *testing.T) {
 		KubeletClientCertificate: cert,
 	}
 
-	ki, err := c.New()
+	ki, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("KubeAPIServer object should be created, got: %v", err)
 	}

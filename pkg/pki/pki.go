@@ -52,7 +52,7 @@ const (
 	RootCACN = "root-ca"
 )
 
-func keyUsage(k string) x509.KeyUsage {
+func keyUsageFromString(usageRaw string) x509.KeyUsage {
 	return map[string]x509.KeyUsage{
 		"digital_signature":  x509.KeyUsageDigitalSignature,
 		"content_commitment": x509.KeyUsageContentCommitment,
@@ -63,10 +63,10 @@ func keyUsage(k string) x509.KeyUsage {
 		"crl_signing":        x509.KeyUsageCRLSign,
 		"encipher_only":      x509.KeyUsageEncipherOnly,
 		"decipher_only":      x509.KeyUsageDecipherOnly,
-	}[k]
+	}[usageRaw]
 }
 
-func extKeyUsage(k string) x509.ExtKeyUsage {
+func extendedKeyUsageFromString(usageRaw string) x509.ExtKeyUsage {
 	return map[string]x509.ExtKeyUsage{
 		"any_extended":                  x509.ExtKeyUsageAny,
 		"server_auth":                   x509.ExtKeyUsageServerAuth,
@@ -80,7 +80,7 @@ func extKeyUsage(k string) x509.ExtKeyUsage {
 		"ocsp_signing":                  x509.ExtKeyUsageOCSPSigning,
 		"microsoft_server_gated_crypto": x509.ExtKeyUsageMicrosoftServerGatedCrypto,
 		"netscape_server_gated_crypto":  x509.ExtKeyUsageNetscapeServerGatedCrypto,
-	}[k]
+	}[usageRaw]
 }
 
 // Certificate defines configurable options for each certificate.
@@ -211,23 +211,23 @@ type certificateRequest struct {
 }
 
 func buildAndGenerate(crs ...*certificateRequest) error {
-	for _, cr := range crs {
-		r, err := buildCertificate(cr.Certificates...)
+	for _, certRequest := range crs {
+		cert, err := buildCertificate(certRequest.Certificates...)
 		if err != nil {
 			return fmt.Errorf("builing certificate configuration: %w", err)
 		}
 
-		if err := r.Generate(cr.CA); err != nil {
+		if err := cert.Generate(certRequest.CA); err != nil {
 			return fmt.Errorf("generating the certificate: %w", err)
 		}
 
-		if cr.Target == nil {
+		if certRequest.Target == nil {
 			return fmt.Errorf("target certificate is not set")
 		}
 
-		cr.Target.X509Certificate = r.X509Certificate
-		cr.Target.PrivateKey = r.PrivateKey
-		cr.Target.PublicKey = r.PublicKey
+		certRequest.Target.X509Certificate = cert.X509Certificate
+		certRequest.Target.PrivateKey = cert.PrivateKey
+		certRequest.Target.PublicKey = cert.PublicKey
 	}
 
 	return nil
@@ -238,7 +238,7 @@ func (p *PKI) generateRootCA() error {
 		p.RootCA = &Certificate{}
 	}
 
-	cr := &certificateRequest{
+	certRequest := &certificateRequest{
 		Target: p.RootCA,
 		Certificates: []*Certificate{
 			&p.Certificate,
@@ -247,7 +247,7 @@ func (p *PKI) generateRootCA() error {
 		},
 	}
 
-	if err := buildAndGenerate(cr); err != nil {
+	if err := buildAndGenerate(certRequest); err != nil {
 		return fmt.Errorf("generating root CA certificate: %w", err)
 	}
 
@@ -282,7 +282,7 @@ func (p *PKI) Generate() error {
 // buildCertificate merges N number of given certificates. Properties of last given certificate takes
 // precedence over previous ones.
 func buildCertificate(certs ...*Certificate) (*Certificate, error) {
-	r := &Certificate{
+	cert := &Certificate{
 		Organization:     Organization,
 		RSABits:          RSABits,
 		ValidityDuration: ValidityDuration,
@@ -295,12 +295,12 @@ func buildCertificate(certs ...*Certificate) (*Certificate, error) {
 			return nil, fmt.Errorf("marshaling certificate: %w", err)
 		}
 
-		if err := yaml.Unmarshal(rc, r); err != nil {
+		if err := yaml.Unmarshal(rc, cert); err != nil {
 			return nil, fmt.Errorf("unmarshaling the certificate: %w", err)
 		}
 	}
 
-	return r, nil
+	return cert, nil
 }
 
 func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
@@ -354,12 +354,12 @@ func (c *Certificate) persistPublicKey(k *rsa.PublicKey) error {
 
 func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 	// generate RSA private key.
-	k, err := rsa.GenerateKey(rand.Reader, c.RSABits)
+	privateKey, err := rsa.GenerateKey(rand.Reader, c.RSABits)
 	if err != nil {
 		return nil, fmt.Errorf("generating RSA key: %w", err)
 	}
 
-	privBytes := x509.MarshalPKCS1PrivateKey(k)
+	privBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 
 	var buf bytes.Buffer
 	if err := pem.Encode(&buf, &pem.Block{Type: RSAPrivateKeyPEMHeader, Bytes: privBytes}); err != nil {
@@ -368,11 +368,11 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 
 	c.PrivateKey = types.PrivateKey(buf.String())
 
-	if err := c.persistPublicKey(k.Public().(*rsa.PublicKey)); err != nil {
+	if err := c.persistPublicKey(privateKey.Public().(*rsa.PublicKey)); err != nil {
 		return nil, fmt.Errorf("persisting RSA public key: %w", err)
 	}
 
-	return k, nil
+	return privateKey, nil
 }
 
 func (c *Certificate) getPrivateKey() (*rsa.PrivateKey, error) {
@@ -403,26 +403,26 @@ func (c *Certificate) Validate() error {
 }
 
 func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
-	ku := 0
-	eku := []x509.ExtKeyUsage{}
+	keyUsage := 0
+	extendedKeyUsage := []x509.ExtKeyUsage{}
 
-	for _, k := range c.KeyUsage {
-		r := int(keyUsage(k))
+	for _, rawKeyUsage := range c.KeyUsage {
+		r := int(keyUsageFromString(rawKeyUsage))
 		if r != 0 {
-			ku |= r
+			keyUsage |= r
 
 			continue
 		}
 
-		if e := extKeyUsage(k); e != 0 {
-			eku = append(eku, e)
+		if e := extendedKeyUsageFromString(rawKeyUsage); e != 0 {
+			extendedKeyUsage = append(extendedKeyUsage, e)
 		}
 	}
 
-	return x509.KeyUsage(ku), eku
+	return x509.KeyUsage(keyUsage), extendedKeyUsage
 }
 
-func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
+func (c *Certificate) generateX509Certificate(certPK *rsa.PrivateKey, caCert *Certificate) error {
 	// Generate serial number for X.509 certificate.
 	//
 	//nolint:gomnd // As in https://golang.org/src/crypto/tls/generate_cert.go.
@@ -433,9 +433,9 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 		return fmt.Errorf("generating serial number for certificate: %w", err)
 	}
 
-	vd, _ := time.ParseDuration(c.ValidityDuration) //nolint:errcheck // Already done in Validate().
+	validityDuration, _ := time.ParseDuration(c.ValidityDuration) //nolint:errcheck // Already done in Validate().
 
-	ku, eku := c.decodeKeyUsage()
+	keyUsage, extendedKeyUsage := c.decodeKeyUsage()
 
 	cert := x509.Certificate{
 		SerialNumber: serialNumber,
@@ -444,10 +444,10 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 			CommonName:   c.CommonName,
 		},
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(vd),
+		NotAfter:  time.Now().Add(validityDuration),
 
-		KeyUsage:              ku,
-		ExtKeyUsage:           eku,
+		KeyUsage:              keyUsage,
+		ExtKeyUsage:           extendedKeyUsage,
 		BasicConstraintsValid: true,
 		IsCA:                  c.CA,
 		DNSNames:              c.DNSNames,
@@ -457,30 +457,30 @@ func (c *Certificate) generateX509Certificate(k *rsa.PrivateKey, ca *Certificate
 		cert.IPAddresses = append(cert.IPAddresses, net.ParseIP(i))
 	}
 
-	pk := k
-	caCert := &cert
+	caPK := certPK
+	x509CACert := &cert
 
-	if ca != nil {
+	if caCert != nil {
 		var err error
 
-		caCert, pk, err = ca.decodeKeypair()
+		x509CACert, caPK, err = caCert.decodeKeypair()
 		if err != nil {
 			return fmt.Errorf("decoding CA key pair: %w", err)
 		}
 	}
 
-	subjectKeyID, err := bigIntHash(pk.N)
+	subjectKeyID, err := bigIntHash(certPK.N)
 	if err != nil {
 		return fmt.Errorf("generating certificate subject Key ID: %w", err)
 	}
 
 	cert.SubjectKeyId = subjectKeyID
 
-	return c.createAndPersist(&cert, caCert, k, pk)
+	return c.createAndPersist(&cert, x509CACert, certPK, caPK)
 }
 
-func (c *Certificate) createAndPersist(cert, caCert *x509.Certificate, k, pk *rsa.PrivateKey) error {
-	der, err := x509.CreateCertificate(rand.Reader, cert, caCert, &k.PublicKey, pk)
+func (c *Certificate) createAndPersist(cert, caCert *x509.Certificate, certPK, caPK *rsa.PrivateKey) error {
+	der, err := x509.CreateCertificate(rand.Reader, cert, caCert, &certPK.PublicKey, caPK)
 	if err != nil {
 		return fmt.Errorf("creating certificate: %w", err)
 	}
@@ -490,18 +490,18 @@ func (c *Certificate) createAndPersist(cert, caCert *x509.Certificate, k, pk *rs
 
 // Taken from https://play.golang.org/p/tispiUVmdm.
 func bigIntHash(n *big.Int) ([]byte, error) {
-	h := sha1.New() // #nosec G401
+	hash := sha1.New() // #nosec G401
 
-	if _, err := h.Write(n.Bytes()); err != nil {
+	if _, err := hash.Write(n.Bytes()); err != nil {
 		return nil, fmt.Errorf("writing bytes to SHA1 function: %w", err)
 	}
 
-	return h.Sum(nil), nil
+	return hash.Sum(nil), nil
 }
 
 // decodeKeypair decodes both X.509 certificate and private key.
 func (c *Certificate) decodeKeypair() (*x509.Certificate, *rsa.PrivateKey, error) {
-	pk, err := c.decodePrivateKey()
+	privateKey, err := c.decodePrivateKey()
 	if err != nil {
 		return nil, nil, fmt.Errorf("decoding private key: %w", err)
 	}
@@ -511,7 +511,7 @@ func (c *Certificate) decodeKeypair() (*x509.Certificate, *rsa.PrivateKey, error
 		return nil, nil, fmt.Errorf("decoding X.509 certificate: %w", err)
 	}
 
-	return cert, pk, nil
+	return cert, privateKey, nil
 }
 
 func (c *Certificate) persistX509Certificate(der []byte) error {
@@ -544,7 +544,7 @@ func (c *Certificate) persistX509Certificate(der []byte) error {
 // - Renewing X.509 certificate after RSA private key renewal.
 //
 // - Renewing issued certificate during CA renewal.
-func (c *Certificate) Generate(ca *Certificate) error {
+func (c *Certificate) Generate(caCert *Certificate) error {
 	if err := c.Validate(); err != nil {
 		return fmt.Errorf("validating the certificate: %w", err)
 	}
@@ -554,19 +554,19 @@ func (c *Certificate) Generate(ca *Certificate) error {
 		return fmt.Errorf("getting private key: %w", err)
 	}
 
-	return c.ensureX509Certificate(k, ca)
+	return c.ensureX509Certificate(k, caCert)
 }
 
 // ensureX509Certificate checks if the certificate is up to date and if not, triggers
 // certificate generation.
-func (c *Certificate) ensureX509Certificate(k *rsa.PrivateKey, ca *Certificate) error {
+func (c *Certificate) ensureX509Certificate(privateKey *rsa.PrivateKey, caCert *Certificate) error {
 	upToDate, err := c.IsX509CertificateUpToDate()
 	if err != nil {
 		return fmt.Errorf("checking if X.509 certificate is up to date: %w", err)
 	}
 
 	if !upToDate {
-		return c.generateX509Certificate(k, ca)
+		return c.generateX509Certificate(privateKey, caCert)
 	}
 
 	return nil

@@ -388,14 +388,14 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen // Just many test cases.
 		},
 	}
 
-	for i, c := range cases {
-		c := c
+	for i, testCase := range cases {
+		testCase := testCase
 
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			if nc := ssh.BuildConfig(c.config, c.defaults); !reflect.DeepEqual(nc, c.result) {
-				t.Fatalf("Expected %+v, got %+v", c.result, nc)
+			if nc := ssh.BuildConfig(testCase.config, testCase.defaults); !reflect.DeepEqual(nc, testCase.result) {
+				t.Fatalf("Expected %+v, got %+v", testCase.result, nc)
 			}
 		})
 	}

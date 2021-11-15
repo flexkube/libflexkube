@@ -12,14 +12,14 @@ import (
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	h := BuildConfig(Host{
+	testHostConfig := BuildConfig(Host{
 		SSHConfig: &ssh.Config{
 			Address:  "localhost",
 			Password: "foo",
 		},
 	}, Host{})
 
-	if _, err := h.New(); err != nil {
+	if _, err := testHostConfig.New(); err != nil {
 		t.Fatalf("Built config should be valid, got: %v", err)
 	}
 }
@@ -65,18 +65,18 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			t.Parallel()
 
-			err := c.Host.Validate()
-			if c.Error && err == nil {
-				t.Fatalf(c.Message)
+			err := testCase.Host.Validate()
+			if testCase.Error && err == nil {
+				t.Fatalf(testCase.Message)
 			}
-			if !c.Error && err != nil {
-				t.Errorf(c.Message)
+			if !testCase.Error && err != nil {
+				t.Errorf(testCase.Message)
 			}
 		})
 	}
@@ -163,15 +163,15 @@ func TestBuildConfigDirectByDefault(t *testing.T) {
 func TestBuildConfigFirstPriorityDirect(t *testing.T) {
 	t.Parallel()
 
-	c := Host{
+	firstHost := Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	d := Host{
+	secondHost := Host{
 		SSHConfig: &ssh.Config{},
 	}
 
-	h := BuildConfig(c, d)
+	h := BuildConfig(firstHost, secondHost)
 	if err := h.Validate(); err != nil {
 		t.Errorf("Config returned by default should be valid, got: %v", err)
 	}
@@ -184,18 +184,18 @@ func TestBuildConfigFirstPriorityDirect(t *testing.T) {
 func TestBuildConfigFirstPriotitySSH(t *testing.T) {
 	t.Parallel()
 
-	c := Host{
+	firstHost := Host{
 		SSHConfig: &ssh.Config{
 			Address:  "foo",
 			Password: "foo",
 		},
 	}
 
-	d := Host{
+	secondHost := Host{
 		DirectConfig: &direct.Config{},
 	}
 
-	h := BuildConfig(c, d)
+	h := BuildConfig(firstHost, secondHost)
 	if err := h.Validate(); err != nil {
 		t.Errorf("Config returned should be valid, got: %v", err)
 	}
@@ -208,19 +208,19 @@ func TestBuildConfigFirstPriotitySSH(t *testing.T) {
 func TestBuildConfigSSH(t *testing.T) {
 	t.Parallel()
 
-	u := Host{
+	firstHost := Host{
 		SSHConfig: &ssh.Config{
 			Address: "foo",
 		},
 	}
 
-	d := Host{
+	secondHost := Host{
 		SSHConfig: &ssh.Config{
 			Port: 33,
 		},
 	}
 
-	if h := BuildConfig(u, d); h.SSHConfig.Port != 33 || h.SSHConfig.Address != "foo" {
+	if h := BuildConfig(firstHost, secondHost); h.SSHConfig.Port != 33 || h.SSHConfig.Address != "foo" {
 		t.Fatalf("BuildConfig should merge ssh config, got: %+v", h)
 	}
 }

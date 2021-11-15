@@ -168,8 +168,8 @@ func TestValidateValidateBadCACertificate(t *testing.T) {
 func TestExistingEndpointsNoEndpoints(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{}
-	if len(c.getExistingEndpoints()) != 0 {
+	testCluster := &cluster{}
+	if len(testCluster.getExistingEndpoints()) != 0 {
 		t.Fatalf("No endpoints should be returned for empty cluster")
 	}
 }
@@ -177,7 +177,7 @@ func TestExistingEndpointsNoEndpoints(t *testing.T) {
 func TestExistingEndpoints(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{
+	testCluster := &cluster{
 		containers: getContainers(t),
 		members: map[string]Member{
 			"foo": &member{
@@ -190,7 +190,7 @@ func TestExistingEndpoints(t *testing.T) {
 
 	e := []string{"1.1.1.1:2379"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
-	if ee := c.getExistingEndpoints(); !reflect.DeepEqual(e, ee) {
+	if ee := testCluster.getExistingEndpoints(); !reflect.DeepEqual(e, ee) {
 		t.Fatalf("Expected %+v, got %+v", e, ee)
 	}
 }
@@ -199,9 +199,9 @@ func TestExistingEndpoints(t *testing.T) {
 func TestFirstMemberNoMembers(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{}
+	testCluster := &cluster{}
 
-	if _, err := c.firstMember(); err == nil {
+	if _, err := testCluster.firstMember(); err == nil {
 		t.Fatalf("Selecting first member on empty cluster should fail")
 	}
 }
@@ -209,37 +209,37 @@ func TestFirstMemberNoMembers(t *testing.T) {
 func TestFirstMember(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{
+	testCluster := &cluster{
 		members: map[string]Member{
 			"foo": &member{},
 		},
 	}
 
-	f, err := c.firstMember()
+	firstMember, err := testCluster.firstMember()
 	if err != nil {
 		t.Fatalf("Selecting first member should succeed, got: %v", err)
 	}
 
-	if !reflect.DeepEqual(f, c.members["foo"]) {
-		t.Fatalf("Expected %+v, got %+v", c.members["foo"], f)
+	if !reflect.DeepEqual(firstMember, testCluster.members["foo"]) {
+		t.Fatalf("Expected %+v, got %+v", testCluster.members["foo"], firstMember)
 	}
 }
 
 func getContainers(t *testing.T) container.ContainersInterface {
 	t.Helper()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	return co
+	return testContainers
 }
 
 func getFakeHostConfiguredContainer() *container.HostConfiguredContainer {
@@ -263,8 +263,8 @@ func getFakeHostConfiguredContainer() *container.HostConfiguredContainer {
 func TestGetClientEmptyCluster(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{}
-	if _, err := c.getClient(); err == nil {
+	testCluster := &cluster{}
+	if _, err := testCluster.getClient(); err == nil {
 		t.Fatalf("Getting client on empty cluster should fail")
 	}
 }
@@ -272,7 +272,7 @@ func TestGetClientEmptyCluster(t *testing.T) {
 func TestGetClientForwardFail(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{
+	testCluster := &cluster{
 		containers: getContainers(t),
 		members: map[string]Member{
 			"foo": &member{
@@ -291,7 +291,7 @@ func TestGetClientForwardFail(t *testing.T) {
 		},
 	}
 
-	if _, err := c.getClient(); err == nil {
+	if _, err := testCluster.getClient(); err == nil {
 		t.Fatalf("Getting client on empty cluster should fail")
 	}
 }
@@ -299,7 +299,7 @@ func TestGetClientForwardFail(t *testing.T) {
 func TestGetClient(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{
+	testCluster := &cluster{
 		containers: getContainers(t),
 		members: map[string]Member{
 			"foo": &member{
@@ -315,7 +315,7 @@ func TestGetClient(t *testing.T) {
 		},
 	}
 
-	if _, err := c.getClient(); err != nil {
+	if _, err := testCluster.getClient(); err != nil {
 		t.Fatalf("Getting client should succeed, got: %v", err)
 	}
 }
@@ -324,7 +324,7 @@ func TestGetClient(t *testing.T) {
 func TestMembersToRemove(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
 			"bar": getFakeHostConfiguredContainer(),
@@ -334,18 +334,18 @@ func TestMembersToRemove(t *testing.T) {
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 	}
 
 	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
-	if r := c.membersToRemove(); !reflect.DeepEqual(r, e) {
+	if r := testCluster.membersToRemove(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)
 	}
 }
@@ -354,7 +354,7 @@ func TestMembersToRemove(t *testing.T) {
 func TestMembersToAdd(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		PreviousState: container.ContainersState{
 			"bar": getFakeHostConfiguredContainer(),
 		},
@@ -364,18 +364,18 @@ func TestMembersToAdd(t *testing.T) {
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 	}
 
 	e := []string{"foo"} //nolint:ifshort // Declare 2 variables in if statement is not common.
 
-	if r := c.membersToAdd(); !reflect.DeepEqual(r, e) {
+	if r := testCluster.membersToAdd(); !reflect.DeepEqual(r, e) {
 		t.Fatalf("Expected %+v, got %+v", e, r)
 	}
 }
@@ -384,7 +384,7 @@ func TestMembersToAdd(t *testing.T) {
 func TestUpdateMembersNoUpdates(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		PreviousState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
 		},
@@ -393,13 +393,13 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 		members: map[string]Member{
 			"foo": &member{
 				config: &MemberConfig{
@@ -416,7 +416,7 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 
 	f := &fakeClient{}
 
-	if err := c.updateMembers(f); err != nil {
+	if err := testCluster.updateMembers(f); err != nil {
 		t.Fatalf("Updating members without any pending updates should succeed, got: %v", err)
 	}
 }
@@ -424,7 +424,7 @@ func TestUpdateMembersNoUpdates(t *testing.T) {
 func TestUpdateMembersRemoveMember(t *testing.T) {
 	t.Parallel()
 
-	c := &cluster{
+	testCluster := &cluster{
 		containers: getContainers(t),
 		members: map[string]Member{
 			"foo": &member{
@@ -441,7 +441,7 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 		},
 	}
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
@@ -458,7 +458,7 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 		},
 	}
 
-	if err := c.updateMembers(f); err == nil {
+	if err := testCluster.updateMembers(testClient); err == nil {
 		t.Fatalf("Removing member should fail")
 	}
 }
@@ -466,19 +466,19 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 func TestUpdateMembersAddMember(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		DesiredState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 		members: map[string]Member{
 			"foo": &member{
 				config: &MemberConfig{
@@ -494,7 +494,7 @@ func TestUpdateMembersAddMember(t *testing.T) {
 		},
 	}
 
-	f := &fakeClient{
+	testClient := &fakeClient{
 		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{},
@@ -505,7 +505,7 @@ func TestUpdateMembersAddMember(t *testing.T) {
 		},
 	}
 
-	if err := c.updateMembers(f); err == nil {
+	if err := testCluster.updateMembers(testClient); err == nil {
 		t.Fatalf("Adding member should fail")
 	}
 }
@@ -514,23 +514,23 @@ func TestUpdateMembersAddMember(t *testing.T) {
 func TestDeploy(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		DesiredState: container.ContainersState{
 			"foo": getFakeHostConfiguredContainer(),
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 		members:    map[string]Member{},
 	}
 
-	err = c.Deploy()
+	err = testCluster.Deploy()
 	if err == nil {
 		t.Fatalf("Deploying bad containers should fail")
 	}
@@ -543,7 +543,7 @@ func TestDeploy(t *testing.T) {
 func TestDeployUpdateMembers(t *testing.T) {
 	t.Parallel()
 
-	cc := &container.Containers{
+	testContainersConfig := &container.Containers{
 		PreviousState: container.ContainersState{
 			"bar": getFakeHostConfiguredContainer(),
 		},
@@ -552,17 +552,17 @@ func TestDeployUpdateMembers(t *testing.T) {
 		},
 	}
 
-	co, err := cc.New()
+	testContainers, err := testContainersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating containers should succeed, got: %v", err)
 	}
 
-	c := &cluster{
-		containers: co,
+	testCluster := &cluster{
+		containers: testContainers,
 		members:    map[string]Member{},
 	}
 
-	err = c.Deploy()
+	err = testCluster.Deploy()
 	if err == nil {
 		t.Fatalf("Deploying should trigger updateMembers and fail")
 	}
@@ -588,7 +588,7 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 		t.Fatalf("Generating PKI should succeed, got: %v", err)
 	}
 
-	c := &Cluster{
+	testClusterConfig := &Cluster{
 		PKI: pki,
 		Members: map[string]MemberConfig{
 			"test": {
@@ -597,7 +597,7 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 		},
 	}
 
-	if _, err := c.New(); err != nil {
+	if _, err := testClusterConfig.New(); err != nil {
 		t.Fatalf("Creating new cluster with valid PKI should succeed, got: %v", err)
 	}
 }

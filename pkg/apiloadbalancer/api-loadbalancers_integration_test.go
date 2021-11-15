@@ -33,20 +33,20 @@ ssh:
 `
 	config += util.Indent(string(key), "    ")
 
-	c, err := FromYaml([]byte(config))
+	loadBalancers, err := FromYaml([]byte(config))
 	if err != nil {
 		t.Fatalf("Creating apiloadbalancers object should succeed, got: %v", err)
 	}
 
-	if err := c.CheckCurrentState(); err != nil {
+	if err := loadBalancers.CheckCurrentState(); err != nil {
 		t.Fatalf("Checking current state should succeed, got: %v", err)
 	}
 
-	if err := c.Deploy(); err != nil {
+	if err := loadBalancers.Deploy(); err != nil {
 		t.Fatalf("Deploying should succeed, got: %v", err)
 	}
 
-	state, err := c.StateToYaml()
+	state, err := loadBalancers.StateToYaml()
 	if err != nil {
 		t.Fatalf("Dumping state should succeed, got: %v", err)
 	}
@@ -57,16 +57,16 @@ servers:
 apiLoadBalancers: []
 `
 
-	c, err = FromYaml([]byte(tearDownConfig + string(state)))
+	loadBalancers, err = FromYaml([]byte(tearDownConfig + string(state)))
 	if err != nil {
 		t.Fatalf("Creating apiloadbalancers object for teardown should succeed, got: %v", err)
 	}
 
-	if err := c.CheckCurrentState(); err != nil {
+	if err := loadBalancers.CheckCurrentState(); err != nil {
 		t.Fatalf("Checking current state for teardown should succeed, got: %v", err)
 	}
 
-	if err := c.Deploy(); err != nil {
+	if err := loadBalancers.Deploy(); err != nil {
 		t.Fatalf("Tearing down should succeed, got: %v", err)
 	}
 }

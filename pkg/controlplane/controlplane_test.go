@@ -102,24 +102,24 @@ func controlplaneYAML(t *testing.T) string {
 func TestControlplaneFromYaml(t *testing.T) {
 	t.Parallel()
 
-	co, err := FromYaml([]byte(controlplaneYAML(t)))
+	testControlplane, err := FromYaml([]byte(controlplaneYAML(t)))
 	if err != nil {
 		t.Fatalf("Creating controlplane from YAML should succeed, got: %v", err)
 	}
 
-	if cc := co.Containers(); cc == nil {
+	if cc := testControlplane.Containers(); cc == nil {
 		t.Fatalf("Containers() should return non-nil value")
 	}
 
-	if _, err := co.StateToYaml(); err != nil {
+	if _, err := testControlplane.StateToYaml(); err != nil {
 		t.Fatalf("Dumping state to YAML should work, got: %v", err)
 	}
 
-	if err := co.CheckCurrentState(); err != nil {
+	if err := testControlplane.CheckCurrentState(); err != nil {
 		t.Fatalf("Checking current state of empty controlplane should work, got: %v", err)
 	}
 
-	if err := co.Deploy(); err == nil {
+	if err := testControlplane.Deploy(); err == nil {
 		t.Fatalf("Deploying in testing environment should fail")
 	}
 }
@@ -138,11 +138,11 @@ func TestControlplaneNewValidate(t *testing.T) {
 func TestControlplaneDestroyNoState(t *testing.T) {
 	t.Parallel()
 
-	y := controlplaneYAML(t)
+	testConfigRaw := controlplaneYAML(t)
 
-	y += `destroy: true`
+	testConfigRaw += `destroy: true`
 
-	if _, err := FromYaml([]byte(y)); err == nil {
+	if _, err := FromYaml([]byte(testConfigRaw)); err == nil {
 		t.Fatalf("Creating controlplane config to destroy without state should fail")
 	}
 }
@@ -150,14 +150,14 @@ func TestControlplaneDestroyNoState(t *testing.T) {
 func TestControlplaneDestroyValidateState(t *testing.T) {
 	t.Parallel()
 
-	y := controlplaneYAML(t)
+	testConfigRaw := controlplaneYAML(t)
 
-	y += `destroy: true
+	testConfigRaw += `destroy: true
 state:
   foo: {}
 `
 
-	if _, err := FromYaml([]byte(y)); err == nil {
+	if _, err := FromYaml([]byte(testConfigRaw)); err == nil {
 		t.Fatalf("Creating controlplane config to destroy with invalid state should fail")
 	}
 }
@@ -165,7 +165,7 @@ state:
 func TestControlplaneDestroyValidState(t *testing.T) {
 	t.Parallel()
 
-	y := `destroy: true
+	testConfigRaw := `destroy: true
 state:
   foo:
     host:
@@ -182,7 +182,7 @@ state:
         status: running
 `
 
-	if _, err := FromYaml([]byte(y)); err != nil {
+	if _, err := FromYaml([]byte(testConfigRaw)); err != nil {
 		t.Fatalf("Creating controlplane config to destroy with only state should succeed, got: %v", err)
 	}
 }
@@ -201,7 +201,7 @@ func TestControlplaneNewPKIIntegration(t *testing.T) {
 		t.Fatalf("Generating PKI should succeed, got: %v", err)
 	}
 
-	c := &Controlplane{
+	testConfig := &Controlplane{
 		PKI:              pki,
 		APIServerAddress: "127.0.0.1",
 		APIServerPort:    6443,
@@ -210,7 +210,7 @@ func TestControlplaneNewPKIIntegration(t *testing.T) {
 		},
 	}
 
-	if _, err := c.New(); err != nil {
+	if _, err := testConfig.New(); err != nil {
 		t.Fatalf("Creating new controlplane with valid PKI should succeed, got: %v", err)
 	}
 }

@@ -18,13 +18,13 @@ type Getter struct {
 
 // ToRESTMapper is part of k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter interface.
 func (c *Getter) ToRESTMapper() (meta.RESTMapper, error) {
-	d, err := c.ToDiscoveryClient()
+	discoveryClient, err := c.ToDiscoveryClient()
 	if err != nil {
 		return nil, err
 	}
 
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(d)
-	expander := restmapper.NewShortcutExpander(mapper, d)
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	expander := restmapper.NewShortcutExpander(mapper, discoveryClient)
 
 	return expander, nil
 }
@@ -57,12 +57,12 @@ func (c *Getter) ToRESTConfig() (*rest.Config, error) {
 // NewGetter takes content of kubeconfig file as an argument and returns implementation of
 // RESTClientGetter k8s interface.
 func NewGetter(data []byte) (*Getter, error) {
-	c, err := clientcmd.NewClientConfigFromBytes(data)
+	clientConfig, err := clientcmd.NewClientConfigFromBytes(data)
 	if err != nil {
 		return nil, fmt.Errorf("creating client config: %w", err)
 	}
 
 	return &Getter{
-		c: c,
+		c: clientConfig,
 	}, nil
 }

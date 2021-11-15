@@ -160,14 +160,14 @@ func TestE2e(t *testing.T) {
 
 	t.Logf("Running with following configuration: \n%s\n", cmp.Diff("", testConfig))
 
-	ip, ipnet, err := net.ParseCIDR(testConfig.NodesCIDR)
+	nodesCIDR, ipnet, err := net.ParseCIDR(testConfig.NodesCIDR)
 	if err != nil {
 		t.Fatalf("Parsing nodes CIDR %q: %v", testConfig.NodesCIDR, err)
 	}
 
 	// Calculate controllers IPs and names.
 	var ips []string
-	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+	for ip := nodesCIDR.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
 		ips = append(ips, ip.String())
 	}
 
@@ -184,11 +184,11 @@ func TestE2e(t *testing.T) {
 
 	for i := 0; i < testConfig.WorkersCount; i++ {
 		name := fmt.Sprintf("worker%02d", i+1)
-		ip := ips[i+testConfig.CIDRIPsOffset+10]
+		workerIP := ips[i+testConfig.CIDRIPsOffset+10]
 
 		host := host.Host{
 			SSHConfig: &ssh.Config{
-				Address: ip,
+				Address: workerIP,
 			},
 		}
 
@@ -198,30 +198,30 @@ func TestE2e(t *testing.T) {
 
 		workerKubelets = append(workerKubelets, kubelet.Kubelet{
 			Name:    name,
-			Address: ip,
+			Address: workerIP,
 			Host:    host,
 		})
 	}
 
 	for i := 0; i < testConfig.ControllersCount; i++ {
 		name := fmt.Sprintf("controller%02d", i+1)
-		ip := ips[i+testConfig.CIDRIPsOffset]
+		controllerIP := ips[i+testConfig.CIDRIPsOffset]
 
 		controllerNames = append(controllerNames, name)
-		controllerIPs = append(controllerIPs, ip)
-		peers[name] = ip
-		servers = append(servers, fmt.Sprintf("%s:%d", ip, testConfig.APIPort))
+		controllerIPs = append(controllerIPs, controllerIP)
+		peers[name] = controllerIP
+		servers = append(servers, fmt.Sprintf("%s:%d", controllerIP, testConfig.APIPort))
 
 		host := host.Host{
 			SSHConfig: &ssh.Config{
-				Address: ip,
+				Address: controllerIP,
 			},
 		}
 
 		members[name] = etcd.MemberConfig{
 			Name:          name,
-			PeerAddress:   ip,
-			ServerAddress: ip,
+			PeerAddress:   controllerIP,
+			ServerAddress: controllerIP,
 			Host:          host,
 		}
 
@@ -229,11 +229,11 @@ func TestE2e(t *testing.T) {
 			Host: host,
 		})
 
-		etcdServers = append(etcdServers, fmt.Sprintf("https://%s:2379", ip))
+		etcdServers = append(etcdServers, fmt.Sprintf("https://%s:2379", controllerIP))
 
 		controllerKubelets = append(controllerKubelets, kubelet.Kubelet{
 			Name:    name,
-			Address: ip,
+			Address: controllerIP,
 			Host:    host,
 		})
 	}
@@ -297,7 +297,7 @@ func TestE2e(t *testing.T) {
 	}
 
 	// Generate PKI.
-	r := &flexkube.Resource{
+	resource := &flexkube.Resource{
 		Confirmed: true,
 		PKI: &pki.PKI{
 			Etcd: &pki.Etcd{
@@ -387,7 +387,7 @@ func TestE2e(t *testing.T) {
 	}
 
 	if testConfig.WorkersCount > 0 {
-		r.KubeletPools["workers"] = &kubelet.Pool{
+		resource.KubeletPools["workers"] = &kubelet.Pool{
 			BootstrapConfig: &client.Config{
 				Server: "127.0.0.1:7443",
 				Token:  fmt.Sprintf("%s.%s", bootstrapTokenID, bootstrapTokenSecret),
@@ -415,7 +415,7 @@ func TestE2e(t *testing.T) {
 			ExtraArgs:   kubeletExtraArgs,
 		}
 
-		r.APILoadBalancerPools["workers"] = &apiloadbalancer.APILoadBalancers{
+		resource.APILoadBalancerPools["workers"] = &apiloadbalancer.APILoadBalancers{
 			Name:             "api-loadbalancer-workers",
 			HostConfigPath:   "/etc/haproxy/workers.cfg",
 			BindAddress:      "127.0.0.1:7443",
@@ -424,12 +424,12 @@ func TestE2e(t *testing.T) {
 			APILoadBalancers: workerLBs,
 		}
 
-		r.KubeletPools["controller"].Taints = map[string]string{
+		resource.KubeletPools["controller"].Taints = map[string]string{
 			"node-role.kubernetes.io/master": "NoSchedule",
 		}
 	}
 
-	resourceRaw, err := yaml.Marshal(r)
+	resourceRaw, err := yaml.Marshal(resource)
 	if err != nil {
 		t.Fatalf("Serializing resource configuration: %v", err)
 	}
@@ -446,31 +446,31 @@ func TestE2e(t *testing.T) {
 		t.Fatalf("Reading state file %q: %v", resourceStateFile, err)
 	}
 
-	if err := yaml.Unmarshal(s, r); err != nil {
+	if err := yaml.Unmarshal(s, resource); err != nil {
 		t.Fatalf("Loading PKI state failed: %v", err)
 	}
 
 	// Deploy things.
-	if err := r.StateToFile(r.RunPKI()); err != nil {
+	if err := resource.StateToFile(resource.RunPKI()); err != nil {
 		t.Fatalf("Running PKI: %v", err)
 	}
 
-	if err := r.StateToFile(r.RunEtcd()); err != nil {
+	if err := resource.StateToFile(resource.RunEtcd()); err != nil {
 		t.Fatalf("Running etcd: %v", err)
 	}
 
-	for k := range r.APILoadBalancerPools {
-		if err := r.StateToFile(r.RunAPILoadBalancerPool(k)); err != nil {
+	for k := range resource.APILoadBalancerPools {
+		if err := resource.StateToFile(resource.RunAPILoadBalancerPool(k)); err != nil {
 			t.Fatalf("Running API load balancer pool %q: %v", k, err)
 		}
 	}
 
-	if err := r.StateToFile(r.RunControlplane()); err != nil {
+	if err := resource.StateToFile(resource.RunControlplane()); err != nil {
 		t.Fatalf("Running controlplane: %v", err)
 	}
 
 	// Kubeconfig.
-	k, err := r.Kubeconfig()
+	kubeconfig, err := resource.Kubeconfig()
 	if err != nil {
 		t.Fatalf("Getting kubeconfig: %v", err)
 	}
@@ -489,14 +489,17 @@ export ETCDCTL_KEY=%s
 export ETCDCTL_ENDPOINTS=%s
 `
 
-	prometheusClientCert := string(r.State.PKI.Etcd.ClientCertificates["prometheus"].X509Certificate)
-	prometheusClientKey := string(r.State.PKI.Etcd.ClientCertificates["prometheus"].PrivateKey)
+	prometheusClientCert := string(resource.State.PKI.Etcd.ClientCertificates["prometheus"].X509Certificate)
+	prometheusClientKey := string(resource.State.PKI.Etcd.ClientCertificates["prometheus"].PrivateKey)
+
+	rootClientCert := string(resource.State.PKI.Etcd.ClientCertificates["root"].X509Certificate)
+	rootClientKey := string(resource.State.PKI.Etcd.ClientCertificates["root"].PrivateKey)
 
 	files := map[string]string{
-		"kubeconfig":                                     k,
-		"./resources/etcd-cluster/ca.pem":                string(r.State.PKI.Etcd.CA.X509Certificate),
-		"./resources/etcd-cluster/client.pem":            string(r.State.PKI.Etcd.ClientCertificates["root"].X509Certificate),
-		"./resources/etcd-cluster/client.key":            string(r.State.PKI.Etcd.ClientCertificates["root"].PrivateKey),
+		"kubeconfig":                                     kubeconfig,
+		"./resources/etcd-cluster/ca.pem":                string(resource.State.PKI.Etcd.CA.X509Certificate),
+		"./resources/etcd-cluster/client.pem":            rootClientCert,
+		"./resources/etcd-cluster/client.key":            rootClientKey,
 		"./resources/etcd-cluster/prometheus_client.pem": prometheusClientCert,
 		"./resources/etcd-cluster/prometheus_client.key": prometheusClientKey,
 		"./resources/etcd-cluster/environment.sh": fmt.Sprintf(etcdTemplate,
@@ -536,7 +539,7 @@ tokens:
 
 	files["./values/tls-bootstrapping.yaml"] = tlsBootstrapValues
 
-	kubeProxyValues, err := r.TemplateFromFile("./templates/kube-proxy-values.yaml.tmpl")
+	kubeProxyValues, err := resource.TemplateFromFile("./templates/kube-proxy-values.yaml.tmpl")
 	if err != nil {
 		t.Fatalf("Executing kube-proxy values template: %v", err)
 	}
@@ -550,14 +553,14 @@ flexVolumePluginDir: /var/lib/kubelet/volumeplugins
 
 	files["./values/calico.yaml"] = calicoValues
 
-	kubeAPIServerValues, err := r.TemplateFromFile("./templates/kube-apiserver-values.yaml.tmpl")
+	kubeAPIServerValues, err := resource.TemplateFromFile("./templates/kube-apiserver-values.yaml.tmpl")
 	if err != nil {
 		t.Fatalf("Executing template: %v", err)
 	}
 
 	files["./values/kube-apiserver.yaml"] = kubeAPIServerValues
 
-	kubernetesValues, err := r.TemplateFromFile("./templates/kubernetes-values.yaml.tmpl")
+	kubernetesValues, err := resource.TemplateFromFile("./templates/kubernetes-values.yaml.tmpl")
 	if err != nil {
 		t.Fatalf("Executing Kubernetes values template: %v", err)
 	}
@@ -603,7 +606,7 @@ resources:
 	}
 
 	config := &release.Config{
-		Kubeconfig: k,
+		Kubeconfig: kubeconfig,
 		Namespace:  "kube-system",
 		Name:       "tls-bootstrapping",
 		Version:    testConfig.Charts.TLSBootstrapping.Version,
@@ -614,15 +617,15 @@ resources:
 	installOrUpgradeRelease(t, config)
 
 	// Deploy kubelets.
-	for k := range r.KubeletPools {
-		if err := r.StateToFile(r.RunKubeletPool(k)); err != nil {
+	for k := range resource.KubeletPools {
+		if err := resource.StateToFile(resource.RunKubeletPool(k)); err != nil {
 			t.Fatalf("Running kubelet pool %q: %v", k, err)
 		}
 	}
 
 	releases := []*release.Config{
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "kube-proxy",
 			Version:    testConfig.Charts.KubeProxy.Version,
@@ -631,7 +634,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "calico",
 			Version:    testConfig.Charts.Calico.Version,
@@ -640,7 +643,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "kube-apiserver",
 			Version:    testConfig.Charts.KubeAPIServer.Version,
@@ -649,7 +652,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "kubernetes",
 			Version:    testConfig.Charts.Kubernetes.Version,
@@ -658,7 +661,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "coredns",
 			Version:    testConfig.Charts.CoreDNS.Version,
@@ -667,7 +670,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "kubelet-rubber-stamp",
 			Version:    testConfig.Charts.KubeletRubberStamp.Version,
@@ -675,7 +678,7 @@ resources:
 			Wait:       true,
 		},
 		{
-			Kubeconfig: k,
+			Kubeconfig: kubeconfig,
 			Namespace:  "kube-system",
 			Name:       "metrics-server",
 			Version:    testConfig.Charts.MetricsServer.Version,
@@ -725,17 +728,17 @@ func readYamlFile(file string) ([]byte, error) {
 	// are static.
 	//
 	// #nosec G304
-	c, err := ioutil.ReadFile(file)
+	fileContentRaw, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	// Workaround for empty YAML file.
-	if string(c) == "{}\n" {
+	if string(fileContentRaw) == "{}\n" {
 		return []byte{}, nil
 	}
 
-	return c, nil
+	return fileContentRaw, nil
 }
 
 const (

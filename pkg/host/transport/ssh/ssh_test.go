@@ -39,9 +39,9 @@ func unsetSSHAuthSockEnv(t *testing.T) {
 func TestNew(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := testConfig(t)
+	testConfig := newTestConfig(t)
 
-	if _, err := c.New(); err != nil {
+	if _, err := testConfig.New(); err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 }
@@ -51,10 +51,10 @@ func TestNew(t *testing.T) {
 func TestNewSetPassword(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := testConfig(t)
-	c.PrivateKey = ""
+	testConfig := newTestConfig(t)
+	testConfig.PrivateKey = ""
 
-	s, err := c.New()
+	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
@@ -69,10 +69,10 @@ func TestNewSetPassword(t *testing.T) {
 func TestNewSetPrivateKey(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := testConfig(t)
-	c.Password = ""
+	testConfig := newTestConfig(t)
+	testConfig.Password = ""
 
-	s, err := c.New()
+	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
@@ -85,8 +85,8 @@ func TestNewSetPrivateKey(t *testing.T) {
 func TestNewValidate(t *testing.T) {
 	t.Parallel()
 
-	c := &Config{}
-	if _, err := c.New(); err == nil {
+	testConfig := &Config{}
+	if _, err := testConfig.New(); err == nil {
 		t.Fatalf("Creating new SSH object should validate it")
 	}
 }
@@ -96,7 +96,7 @@ func TestNewValidate(t *testing.T) {
 func TestValidateRequireAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := testConfig(t)
+	c := newTestConfig(t)
 	c.PrivateKey = ""
 	c.Password = ""
 
@@ -125,7 +125,7 @@ func Test_Validating_config_returns_error_when(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			c := testConfig(t)
+			c := newTestConfig(t)
 			mutateF(c)
 
 			if err := c.Validate(); err == nil {
@@ -135,7 +135,7 @@ func Test_Validating_config_returns_error_when(t *testing.T) {
 	}
 }
 
-func testConfig(t *testing.T) *Config {
+func newTestConfig(t *testing.T) *Config {
 	t.Helper()
 
 	return &Config{
@@ -305,13 +305,13 @@ func TestExtractPath(t *testing.T) {
 
 	expectedPath := "/tmp/foo.sock"
 
-	p, err := extractPath(fmt.Sprintf("unix://%s", expectedPath))
+	path, err := extractPath(fmt.Sprintf("unix://%s", expectedPath))
 	if err != nil {
 		t.Fatalf("Extracting valid path should succeed, got: %v", err)
 	}
 
-	if p != expectedPath {
-		t.Fatalf("Expected %s, got %s", expectedPath, p)
+	if path != expectedPath {
+		t.Fatalf("Expected %s, got %s", expectedPath, path)
 	}
 }
 
@@ -346,15 +346,15 @@ func testNewConnected(t *testing.T) *sshConnected {
 func TestRandomUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	unixAddr, err := d.randomUnixSocket()
+	unixAddr, err := connected.randomUnixSocket()
 	if err != nil {
 		t.Fatalf("Creating random unix socket shouldn't fail, got: %v", err)
 	}
 
-	if !strings.Contains(unixAddr.String(), d.address) {
-		t.Fatalf("Generated UNIX address should contain original address %s, got: %s", d.address, unixAddr.String())
+	if !strings.Contains(unixAddr.String(), connected.address) {
+		t.Fatalf("Generated UNIX address should contain original address %s, got: %s", connected.address, unixAddr.String())
 	}
 
 	if unixAddr.Net != "unix" {
@@ -365,12 +365,12 @@ func TestRandomUnixSocket(t *testing.T) {
 func TestRandomUnixSocketBadUUID(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
-	d.uuid = func() (uuid.UUID, error) {
+	connected := testNewConnected(t)
+	connected.uuid = func() (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("happened")
 	}
 
-	if _, err := d.randomUnixSocket(); err == nil {
+	if _, err := connected.randomUnixSocket(); err == nil {
 		t.Fatalf("Creating random unix socket should fail")
 	}
 }
@@ -379,19 +379,19 @@ func TestRandomUnixSocketBadUUID(t *testing.T) {
 func TestForwardConnection(t *testing.T) {
 	t.Parallel()
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	forwardListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
 
-	r, err := net.Listen("tcp", "127.0.0.1:0")
+	targetListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
 
-	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+	go forwardConnection(forwardListener, &net.Dialer{}, targetListener.Addr().String(), "tcp")
 
-	conn, err := net.Dial("tcp", l.Addr().String())
+	conn, err := net.Dial("tcp", forwardListener.Addr().String())
 	if err != nil {
 		t.Fatalf("Failed opening connection to listener: %v", err)
 	}
@@ -407,7 +407,7 @@ func TestForwardConnection(t *testing.T) {
 		t.Fatalf("Closing connection failed: %v", err)
 	}
 
-	c, err := r.Accept()
+	c, err := targetListener.Accept()
 	if err != nil {
 		t.Fatalf("Failed accepting forwarded connection: %v", err)
 	}
@@ -425,7 +425,7 @@ func TestForwardConnection(t *testing.T) {
 func TestForwardConnectionBadType(t *testing.T) {
 	t.Parallel()
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	forwardListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
@@ -435,16 +435,16 @@ func TestForwardConnectionBadType(t *testing.T) {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
 
-	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "doh")
+	go forwardConnection(forwardListener, &net.Dialer{}, r.Addr().String(), "doh")
 
 	// Try to open connection, so forwarding loop breaks.
-	if _, err := net.Dial("tcp", l.Addr().String()); err != nil {
+	if _, err := net.Dial("tcp", forwardListener.Addr().String()); err != nil {
 		t.Logf("Opening first connection should succeed, got: %v", err)
 	}
 
 	time.Sleep(time.Second)
 
-	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+	if _, err := net.Dial("tcp", forwardListener.Addr().String()); err == nil {
 		t.Fatalf("Opening connection to bad type should fail")
 	}
 }
@@ -452,12 +452,12 @@ func TestForwardConnectionBadType(t *testing.T) {
 func TestForwardConnectionClosedListener(t *testing.T) {
 	t.Parallel()
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	forwardListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
 
-	if err := l.Close(); err != nil {
+	if err := forwardListener.Close(); err != nil {
 		t.Logf("Failed to close listener: %v", err)
 	}
 
@@ -466,9 +466,9 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 		t.Fatalf("Unable to listen on random TCP port: %v", err)
 	}
 
-	go forwardConnection(l, &net.Dialer{}, r.Addr().String(), "tcp")
+	go forwardConnection(forwardListener, &net.Dialer{}, r.Addr().String(), "tcp")
 
-	if _, err := net.Dial("tcp", l.Addr().String()); err == nil {
+	if _, err := net.Dial("tcp", forwardListener.Addr().String()); err == nil {
 		t.Fatalf("Opening connection to closed listener should fail")
 	}
 }
@@ -480,7 +480,7 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 func TestConnect(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "root",
 		Password:          "foo",
@@ -491,21 +491,21 @@ func TestConnect(t *testing.T) {
 		PrivateKey:        generateRSAPrivateKey(t),
 	}
 
-	s, err := c.New()
+	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	ss, ok := s.(*ssh)
+	testSSH, ok := s.(*ssh)
 	if !ok {
 		t.Fatalf("Converting SSH to internal SSH object")
 	}
 
-	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
-		return nil, nil
+	testSSH.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+		return &gossh.Client{}, nil
 	}
 
-	if _, err := ss.Connect(); err != nil {
+	if _, err := testSSH.Connect(); err != nil {
 		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 }
@@ -515,7 +515,7 @@ func TestConnect(t *testing.T) {
 func TestConnectFail(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "root",
 		Password:          "foo",
@@ -526,21 +526,21 @@ func TestConnectFail(t *testing.T) {
 		PrivateKey:        generateRSAPrivateKey(t),
 	}
 
-	s, err := c.New()
+	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	ss, ok := s.(*ssh)
+	testSSH, ok := s.(*ssh)
 	if !ok {
 		t.Fatalf("Converting SSH to internal SSH object")
 	}
 
-	ss.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
+	testSSH.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
-	if _, err := ss.Connect(); err == nil {
+	if _, err := testSSH.Connect(); err == nil {
 		t.Fatalf("Connecting should fail")
 	}
 }
@@ -549,9 +549,9 @@ func TestConnectFail(t *testing.T) {
 func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	d.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(n, a string) (net.Listener, error) {
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatalf("Unable to listen on random TCP port: %v", err)
@@ -560,7 +560,7 @@ func TestForwardTCP(t *testing.T) {
 		return l, nil
 	}
 
-	if _, err := d.ForwardTCP("localhost:90"); err != nil {
+	if _, err := connected.ForwardTCP("localhost:90"); err != nil {
 		t.Fatalf("Forwarding TCP shouldn't fail, got: %v", err)
 	}
 }
@@ -568,13 +568,13 @@ func TestForwardTCP(t *testing.T) {
 func TestForwardTCPFailListen(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	d.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
-	if _, err := d.ForwardTCP("localhost:90"); err == nil {
+	if _, err := connected.ForwardTCP("localhost:90"); err == nil {
 		t.Fatalf("Forwarding TCP should fail")
 	}
 }
@@ -582,13 +582,13 @@ func TestForwardTCPFailListen(t *testing.T) {
 func TestForwardTCPValidateAddress(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	d.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
-	if _, err := d.ForwardTCP("localhost"); err == nil {
+	if _, err := connected.ForwardTCP("localhost"); err == nil {
 		t.Fatalf("Forwarding TCP should fail when forwarding bad address")
 	}
 }
@@ -597,13 +597,13 @@ func TestForwardTCPValidateAddress(t *testing.T) {
 func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	d.uuid = func() (uuid.UUID, error) {
+	connected.uuid = func() (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("happened")
 	}
 
-	if _, err := d.ForwardUnixSocket("foo"); err == nil {
+	if _, err := connected.ForwardUnixSocket("foo"); err == nil {
 		t.Fatalf("Forwarding with bad unix socket should fail")
 	}
 }
@@ -611,13 +611,13 @@ func TestForwardUnixSocketNoRandomUnixSocket(t *testing.T) {
 func TestForwardUnixSocketCantListen(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	d.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(n, a string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
-	if _, err := d.ForwardUnixSocket("foo"); err == nil {
+	if _, err := connected.ForwardUnixSocket("foo"); err == nil {
 		t.Fatalf("Forwarding with failed listening should fail")
 	}
 }
@@ -625,9 +625,9 @@ func TestForwardUnixSocketCantListen(t *testing.T) {
 func TestForwardUnixSocketBadPath(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	if _, err := d.ForwardUnixSocket("foo\t"); err == nil {
+	if _, err := connected.ForwardUnixSocket("foo\t"); err == nil {
 		t.Fatalf("Forwarding with invalid unix socket name should fail")
 	}
 }
@@ -635,9 +635,9 @@ func TestForwardUnixSocketBadPath(t *testing.T) {
 func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	if _, err := d.ForwardUnixSocket("unix:///foo"); err != nil {
+	if _, err := connected.ForwardUnixSocket("unix:///foo"); err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
 }
@@ -645,19 +645,19 @@ func TestForwardUnixSocket(t *testing.T) {
 func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 	t.Parallel()
 
-	d := testNewConnected(t)
+	connected := testNewConnected(t)
 
-	a, err := d.ForwardUnixSocket("unix:///foo")
+	firstForwardedSocket, err := connected.ForwardUnixSocket("unix:///foo")
 	if err != nil {
 		t.Fatalf("Forwarding unix socket should succeed, got: %v", err)
 	}
 
-	b, err := d.ForwardUnixSocket("unix:///foo")
+	secondForwardedSocket, err := connected.ForwardUnixSocket("unix:///foo")
 	if err != nil {
 		t.Fatalf("Forwarding 2nd random unix socket should succeed, got: %v", err)
 	}
 
-	if diff := cmp.Diff(a, b); diff == "" {
+	if diff := cmp.Diff(firstForwardedSocket, secondForwardedSocket); diff == "" {
 		t.Fatalf("Forwarded random unix sockets should differ")
 	}
 }
@@ -667,7 +667,7 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 func TestNewBadSSHAgentEnv(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
@@ -676,46 +676,44 @@ func TestNewBadSSHAgentEnv(t *testing.T) {
 		Port:              Port,
 	}
 
-	if _, err := c.New(); err == nil {
+	if _, err := testConfig.New(); err == nil {
 		t.Fatalf("Creating new SSH object with bad ssh-agent environment variable should fail")
 	}
 }
 
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgent(t *testing.T) {
-	t.Parallel()
-
-	a := agent.NewKeyring()
+	agentKeyring := agent.NewKeyring()
 
 	addr := &net.UnixAddr{
 		Name: "@foo",
 		Net:  "unix",
 	}
 
-	l, err := net.Listen("unix", addr.String())
+	agentListener, err := net.Listen("unix", addr.String())
 	if err != nil {
 		t.Fatalf("Failed to listen on address %q: %v", addr.String(), err)
 	}
 
 	go func() {
-		c, err := l.Accept()
+		c, err := agentListener.Accept()
 		if err != nil {
 			fmt.Printf("Accepting connection failed: %v\n", err)
 		}
 
-		if err := agent.ServeAgent(a, c); err != nil {
+		if err := agent.ServeAgent(agentKeyring, c); err != nil {
 			fmt.Printf("Serving agent failed: %v\n", err)
 		}
 
-		if err := l.Close(); err != nil {
+		if err := agentListener.Close(); err != nil {
 			fmt.Printf("Closing listener failed: %v\n", err)
 		}
 	}()
 
-	if err := os.Setenv(SSHAuthSockEnv, addr.String()); err != nil {
-		t.Fatalf("Failed setting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	t.Setenv(SSHAuthSockEnv, addr.String())
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
@@ -724,26 +722,26 @@ func TestNewSSHAgent(t *testing.T) {
 		Port:              Port,
 	}
 
-	if _, err := c.New(); err != nil {
+	if _, err := testConfig.New(); err != nil {
 		t.Fatalf("Creating new SSH object with good ssh-agent should work, got: %v", err)
 	}
 }
 
+//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
+// which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgentWrongSocket(t *testing.T) {
-	t.Parallel()
-
 	addr := &net.UnixAddr{
 		Name: "@bar",
 		Net:  "unix",
 	}
 
-	l, err := net.Listen("unix", addr.String())
+	badAgentListener, err := net.Listen("unix", addr.String())
 	if err != nil {
 		t.Fatalf("Failed to listen on address %q: %v", addr.String(), err)
 	}
 
 	go func() {
-		c, err := l.Accept()
+		c, err := badAgentListener.Accept()
 		if err != nil {
 			t.Logf("Accepting connection failed: %v", err)
 		}
@@ -753,11 +751,9 @@ func TestNewSSHAgentWrongSocket(t *testing.T) {
 		}
 	}()
 
-	if err := os.Setenv(SSHAuthSockEnv, addr.String()); err != nil {
-		t.Fatalf("Failed setting environment variable %q: %v", SSHAuthSockEnv, err)
-	}
+	t.Setenv(SSHAuthSockEnv, addr.String())
 
-	c := &Config{
+	testConfig := &Config{
 		Address:           "localhost",
 		User:              "root",
 		ConnectionTimeout: "30s",
@@ -766,7 +762,7 @@ func TestNewSSHAgentWrongSocket(t *testing.T) {
 		Port:              Port,
 	}
 
-	if _, err := c.New(); err == nil {
+	if _, err := testConfig.New(); err == nil {
 		t.Fatalf("Creating new SSH object with bad ssh-agent socket should fail")
 	}
 }

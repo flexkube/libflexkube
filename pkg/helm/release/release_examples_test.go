@@ -31,14 +31,14 @@ labels:
 		Version: "1.12.0",
 	}
 
-	r, err := config.New()
+	exampleRelease, err := config.New()
 	if err != nil {
 		fmt.Printf("Creating release object failed: %v\n", err)
 
 		return
 	}
 
-	if err := r.Install(context.TODO()); err != nil {
+	if err := exampleRelease.Install(context.TODO()); err != nil {
 		fmt.Printf("Installing release failed: %v\n", err)
 
 		return

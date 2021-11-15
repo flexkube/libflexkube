@@ -15,11 +15,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
 )
 
-const (
-	foo = "foo"
-	bar = "bar"
-)
-
 // New() tests.
 func TestContainersNew(t *testing.T) {
 	t.Parallel()
@@ -30,9 +25,9 @@ func TestContainersNew(t *testing.T) {
 func GetContainers(t *testing.T) ContainersInterface {
 	t.Helper()
 
-	cc := &Containers{
+	containersConfig := &Containers{
 		DesiredState: ContainersState{
-			foo: &HostConfiguredContainer{
+			testContainerName: &HostConfiguredContainer{
 				Host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -41,7 +36,7 @@ func GetContainers(t *testing.T) ContainersInterface {
 						Docker: &docker.Config{},
 					},
 					Config: types.ContainerConfig{
-						Name:  foo,
+						Name:  testConfigContainerName,
 						Image: "busybox:latest",
 					},
 				},
@@ -49,7 +44,7 @@ func GetContainers(t *testing.T) ContainersInterface {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containersConfig.New()
 	if err != nil {
 		t.Fatalf("Creating empty containers object should work, got: %v", err)
 	}
@@ -61,9 +56,9 @@ func GetContainers(t *testing.T) ContainersInterface {
 func TestContainersContainers(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{}
+	testContainers := &containers{}
 
-	if !reflect.DeepEqual(c, c.Containers()) {
+	if !reflect.DeepEqual(testContainers, testContainers.Containers()) {
 		t.Fatalf("Containers() should return self")
 	}
 }
@@ -111,7 +106,7 @@ func TestContainersFromYamlBad(t *testing.T) {
 func TestContainersFromYaml(t *testing.T) {
 	t.Parallel()
 
-	y := `
+	containersConfigRaw := `
 desiredState:
  foo:
    host:
@@ -124,7 +119,7 @@ desiredState:
        image: busybox
 `
 
-	if _, err := FromYaml([]byte(y)); err != nil {
+	if _, err := FromYaml([]byte(containersConfigRaw)); err != nil {
 		t.Fatalf("Creating containers from valid YAML should work, got: %v", err)
 	}
 }
@@ -133,16 +128,16 @@ desiredState:
 func TestFilesToUpdateEmpty(t *testing.T) {
 	t.Parallel()
 
-	expected := []string{foo} //nolint:ifshort // Declare 2 variables in if statement is not common.
+	expected := []string{testConfigPath}
 
-	d := hostConfiguredContainer{
+	hcc := hostConfiguredContainer{
 		configFiles: map[string]string{
-			foo: bar,
+			testConfigPath: testConfigContent,
 		},
 	}
 
-	if v := filesToUpdate(d, nil); !reflect.DeepEqual(expected, v) {
-		t.Fatalf("Expected %v, got %v", expected, d)
+	if v := filesToUpdate(hcc, nil); !reflect.DeepEqual(expected, v) {
+		t.Fatalf("Expected %v, got %v", expected, hcc)
 	}
 }
 
@@ -183,14 +178,14 @@ func TestValidateNoContainers(t *testing.T) {
 func TestValidateBadDesiredContainers(t *testing.T) {
 	t.Parallel()
 
-	cc := &Containers{
+	containersConfig := &Containers{
 		DesiredState: ContainersState{
-			foo: &HostConfiguredContainer{},
+			testContainerName: &HostConfiguredContainer{},
 		},
 		PreviousState: ContainersState{},
 	}
 
-	if err := cc.Validate(); err == nil {
+	if err := containersConfig.Validate(); err == nil {
 		t.Fatalf("Containers object with bad desired container shouldn't be valid")
 	}
 }
@@ -198,14 +193,14 @@ func TestValidateBadDesiredContainers(t *testing.T) {
 func TestValidateBadCurrentContainers(t *testing.T) {
 	t.Parallel()
 
-	cc := &Containers{
+	containersConfig := &Containers{
 		DesiredState: ContainersState{},
 		PreviousState: ContainersState{
-			foo: &HostConfiguredContainer{},
+			testContainerName: &HostConfiguredContainer{},
 		},
 	}
 
-	if err := cc.Validate(); err == nil {
+	if err := containersConfig.Validate(); err == nil {
 		t.Fatalf("Containers object with bad current container shouldn't be valid")
 	}
 }
@@ -214,13 +209,13 @@ func TestValidateBadCurrentContainers(t *testing.T) {
 func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable(foo); err == nil {
+	if err := testContainers.isUpdatable(testContainerName); err == nil {
 		t.Fatalf("Container without current state shouldn't be updatable.")
 	}
 }
@@ -228,13 +223,13 @@ func TestIsUpdatableWithoutCurrentState(t *testing.T) {
 func TestIsUpdatableToBeDeleted(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable(foo); err == nil {
+	if err := testContainers.isUpdatable(testContainerName); err == nil {
 		t.Fatalf("Container without desired state shouldn't be updatable.")
 	}
 }
@@ -242,16 +237,16 @@ func TestIsUpdatableToBeDeleted(t *testing.T) {
 func TestIsUpdatable(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 	}
 
-	if err := c.isUpdatable(foo); err != nil {
+	if err := testContainers.isUpdatable(testContainerName); err != nil {
 		t.Fatalf("Container with current and desired state should be updatable, got: %v", err)
 	}
 }
@@ -260,13 +255,13 @@ func TestIsUpdatable(t *testing.T) {
 func TestDiffHostNotUpdatable(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 	}
 
-	if _, err := c.diffHost(foo); err == nil {
+	if _, err := testContainers.diffHost(testContainerName); err == nil {
 		t.Fatalf("Not updatable container shouldn't return diff")
 	}
 }
@@ -274,20 +269,20 @@ func TestDiffHostNotUpdatable(t *testing.T) {
 func TestDiffHostNoDiff(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 	}
 
-	diff, err := c.diffHost(foo)
+	diff, err := testContainers.diffHost(testContainerName)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -300,22 +295,22 @@ func TestDiffHostNoDiff(t *testing.T) {
 func TestDiffHost(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{},
 			},
 		},
 	}
 
-	diff, err := c.diffHost(foo)
+	diff, err := testContainers.diffHost(testContainerName)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -329,13 +324,13 @@ func TestDiffHost(t *testing.T) {
 func TestDiffContainerNotUpdatable(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{
-			foo: &hostConfiguredContainer{},
+			testContainerName: &hostConfiguredContainer{},
 		},
 	}
 
-	if _, err := c.diffContainer(foo); err == nil {
+	if _, err := testContainers.diffContainer(testContainerName); err == nil {
 		t.Fatalf("Not updatable container shouldn't return diff")
 	}
 }
@@ -343,9 +338,9 @@ func TestDiffContainerNotUpdatable(t *testing.T) {
 func TestDiffContainerNoDiff(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -354,7 +349,7 @@ func TestDiffContainerNoDiff(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -364,7 +359,7 @@ func TestDiffContainerNoDiff(t *testing.T) {
 		},
 	}
 
-	diff, err := c.diffContainer(foo)
+	diff, err := testContainers.diffContainer(testContainerName)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -377,9 +372,9 @@ func TestDiffContainerNoDiff(t *testing.T) {
 func TestDiffContainer(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -388,11 +383,11 @@ func TestDiffContainer(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Name: foo,
+							Name: testConfigContainerName,
 						},
 					},
 				},
@@ -400,7 +395,7 @@ func TestDiffContainer(t *testing.T) {
 		},
 	}
 
-	diff, err := c.diffContainer(foo)
+	diff, err := testContainers.diffContainer(testContainerName)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -413,9 +408,9 @@ func TestDiffContainer(t *testing.T) {
 func TestDiffContainerRuntimeConfig(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config:        types.ContainerConfig{},
@@ -425,7 +420,7 @@ func TestDiffContainerRuntimeConfig(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -438,7 +433,7 @@ func TestDiffContainerRuntimeConfig(t *testing.T) {
 		},
 	}
 
-	diff, err := c.diffContainer(foo)
+	diff, err := testContainers.diffContainer(testContainerName)
 	if err != nil {
 		t.Fatalf("Updatable container should return diff, got: %v", err)
 	}
@@ -452,11 +447,11 @@ func TestDiffContainerRuntimeConfig(t *testing.T) {
 func TestEnsureRunningNonExistent(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{},
 	}
 
-	if err := ensureRunning(c.currentState[bar]); err == nil {
+	if err := ensureRunning(testContainers.currentState[testAnotherContainerName]); err == nil {
 		t.Fatalf("Ensuring that non existing container is running should fail")
 	}
 }
@@ -464,9 +459,9 @@ func TestEnsureRunningNonExistent(t *testing.T) {
 func TestEnsureRunning(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -480,7 +475,7 @@ func TestEnsureRunning(t *testing.T) {
 		},
 	}
 
-	if err := ensureRunning(c.currentState[foo]); err != nil {
+	if err := ensureRunning(testContainers.currentState[testContainerName]); err != nil {
 		t.Fatalf("Ensuring that running container is running should succeed, got: %v", err)
 	}
 }
@@ -489,9 +484,9 @@ func TestEnsureRunning(t *testing.T) {
 func TestEnsureExistsAlreadyExists(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -504,7 +499,7 @@ func TestEnsureExistsAlreadyExists(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureExists(foo); err != nil {
+	if err := testContainers.ensureExists(testContainerName); err != nil {
 		t.Fatalf("Ensuring that existing container exists should succeed, got: %v", err)
 	}
 }
@@ -517,10 +512,10 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 		return "", fmt.Errorf("create fail")
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -534,11 +529,11 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureExists(foo); err == nil {
+	if err := testContainers.ensureExists(testContainerName); err == nil {
 		t.Fatalf("Ensuring that new container exists should propagate create error")
 	}
 
-	if len(c.currentState) != 0 {
+	if len(testContainers.currentState) != 0 {
 		t.Fatalf("If creation failed, current state should not be updated")
 	}
 }
@@ -546,10 +541,10 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 func TestEnsureExistsFailStart(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
@@ -564,11 +559,11 @@ func TestEnsureExistsFailStart(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureExists(foo); err == nil {
+	if err := testContainers.ensureExists(testContainerName); err == nil {
 		t.Fatalf("Ensuring that new container exists should fail")
 	}
 
-	if _, ok := c.currentState[foo]; !ok {
+	if _, ok := testContainers.currentState[testContainerName]; !ok {
 		t.Fatalf("EnsureExists should save state of created container even if starting failed")
 	}
 }
@@ -576,10 +571,10 @@ func TestEnsureExistsFailStart(t *testing.T) {
 func TestEnsureExist(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		currentState: containersState{},
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
@@ -594,11 +589,11 @@ func TestEnsureExist(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureExists(foo); err != nil {
+	if err := testContainers.ensureExists(testContainerName); err != nil {
 		t.Fatalf("Ensuring that new container exists should succeed, got: %v", err)
 	}
 
-	if _, ok := c.currentState[foo]; !ok {
+	if _, ok := testContainers.currentState[testContainerName]; !ok {
 		t.Fatalf("EnsureExists should save state of created container when creation succeeds")
 	}
 }
@@ -607,16 +602,16 @@ func TestEnsureExist(t *testing.T) {
 func TestEnsureHostNoDiff(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -624,7 +619,7 @@ func TestEnsureHostNoDiff(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureHost(foo); err != nil {
+	if err := testContainers.ensureHost(testContainerName); err != nil {
 		t.Fatalf("Ensuring that container's host configuration is up to date should succeed, got: %v", err)
 	}
 }
@@ -632,9 +627,24 @@ func TestEnsureHostNoDiff(t *testing.T) {
 func TestEnsureHostFailStart(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
+		currentState: containersState{
+			testContainerName: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: testContainerID,
+						},
+						runtimeConfig: asRuntime(fakeRuntime()),
+					},
+				},
+			},
+		},
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{
@@ -648,28 +658,15 @@ func TestEnsureHostFailStart(t *testing.T) {
 				},
 			},
 		},
-		currentState: containersState{
-			foo: &hostConfiguredContainer{
-				host: host.Host{
-					DirectConfig: &direct.Config{},
-				},
-				container: &container{
-					base: base{
-						status: types.ContainerStatus{
-							ID: foo,
-						},
-						runtimeConfig: asRuntime(fakeRuntime()),
-					},
-				},
-			},
-		},
 	}
 
-	if err := c.ensureHost(foo); err == nil {
+	if err := testContainers.ensureHost(testContainerName); err == nil {
 		t.Fatalf("Ensuring that container's host configuration is up to date should fail")
 	}
 
-	if c.currentState[foo].container.Status().ID != bar {
+	if gotID := testContainers.currentState[testContainerName].container.Status().ID; gotID != testAnotherContainerID {
+		t.Logf("Expected container ID %q, got %q", testAnotherContainerID, gotID)
+
 		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
@@ -677,9 +674,9 @@ func TestEnsureHostFailStart(t *testing.T) {
 func TestEnsureHost(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{
@@ -694,14 +691,14 @@ func TestEnsureHost(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 				container: &container{
 					base: base{
 						status: types.ContainerStatus{
-							ID: foo,
+							ID: testContainerID,
 						},
 						runtimeConfig: asRuntime(fakeRuntime()),
 					},
@@ -710,11 +707,11 @@ func TestEnsureHost(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureHost(foo); err != nil {
+	if err := testContainers.ensureHost(testContainerName); err != nil {
 		t.Fatalf("Ensuring that container's host configuration is up to date should succeed, got: %v", err)
 	}
 
-	if c.currentState[foo].container.Status().ID != bar {
+	if testContainers.currentState[testContainerName].container.Status().ID != testAnotherContainerID {
 		t.Fatalf("Ensure host should persist state changes even if process fails")
 	}
 }
@@ -723,9 +720,9 @@ func TestEnsureHost(t *testing.T) {
 func TestEnsureContainerNoDiff(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -734,7 +731,7 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -744,7 +741,7 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureContainer(foo); err != nil {
+	if err := testContainers.ensureContainer(testContainerName); err != nil {
 		t.Fatalf("Ensuring that container configuration is up to date should succeed, got: %v", err)
 	}
 }
@@ -752,9 +749,27 @@ func TestEnsureContainerNoDiff(t *testing.T) {
 func TestEnsureContainerFailStart(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
+		currentState: containersState{
+			testContainerName: &hostConfiguredContainer{
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						status: types.ContainerStatus{
+							ID: testContainerID,
+						},
+						config: types.ContainerConfig{
+							Image: testImage,
+						},
+						runtimeConfig: asRuntime(fakeRuntime()),
+					},
+				},
+			},
+		},
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
@@ -762,38 +777,20 @@ func TestEnsureContainerFailStart(t *testing.T) {
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Image: foo,
+							Image: testImage,
 						},
 						runtimeConfig: asRuntime(failingStartRuntime()),
 					},
 				},
 			},
 		},
-		currentState: containersState{
-			foo: &hostConfiguredContainer{
-				host: host.Host{
-					DirectConfig: &direct.Config{},
-				},
-				container: &container{
-					base: base{
-						status: types.ContainerStatus{
-							ID: foo,
-						},
-						config: types.ContainerConfig{
-							Image: bar,
-						},
-						runtimeConfig: asRuntime(fakeRuntime()),
-					},
-				},
-			},
-		},
 	}
 
-	if err := c.ensureContainer(foo); err == nil {
+	if err := testContainers.ensureContainer(testContainerName); err == nil {
 		t.Fatalf("Ensuring that container configuration is up to date should fail")
 	}
 
-	if c.currentState[foo].container.Status().ID != bar {
+	if gotID := testContainers.currentState[testContainerName].container.Status().ID; gotID != testAnotherContainerID {
 		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
@@ -801,9 +798,9 @@ func TestEnsureContainerFailStart(t *testing.T) {
 func TestEnsureContainer(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				hooks: &Hooks{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
@@ -811,7 +808,7 @@ func TestEnsureContainer(t *testing.T) {
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Image: foo,
+							Image: testImage,
 						},
 						runtimeConfig: asRuntime(fakeRuntime()),
 					},
@@ -819,17 +816,17 @@ func TestEnsureContainer(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 				container: &container{
 					base: base{
 						status: types.ContainerStatus{
-							ID: foo,
+							ID: testContainerID,
 						},
 						config: types.ContainerConfig{
-							Image: bar,
+							Image: testAnotherImage,
 						},
 						runtimeConfig: asRuntime(fakeRuntime()),
 					},
@@ -838,11 +835,11 @@ func TestEnsureContainer(t *testing.T) {
 		},
 	}
 
-	if err := c.ensureContainer(foo); err != nil {
+	if err := testContainers.ensureContainer(testContainerName); err != nil {
 		t.Fatalf("Ensuring that container configuration is up to date should succeed, got: %v", err)
 	}
 
-	if c.currentState[foo].container.Status().ID != bar {
+	if testContainers.currentState[testContainerName].container.Status().ID != testAnotherContainerID {
 		t.Fatalf("Ensure container should persist state changes even if process fails")
 	}
 }
@@ -851,8 +848,8 @@ func TestEnsureContainer(t *testing.T) {
 func TestRecreateNonExistent(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{}
-	if err := c.recreate(foo); err == nil {
+	testContainers := &containers{}
+	if err := testContainers.recreate(testContainerName); err == nil {
 		t.Fatalf("Recreating on empty containers should fail")
 	}
 }
@@ -861,8 +858,8 @@ func TestRecreateNonExistent(t *testing.T) {
 func TestDeployNoCurrentState(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{}
-	if err := c.Deploy(); err == nil {
+	testContainers := &containers{}
+	if err := testContainers.Deploy(); err == nil {
 		t.Fatalf("Execute without current state should fail")
 	}
 }
@@ -871,9 +868,9 @@ func TestDeployNoCurrentState(t *testing.T) {
 func TestHasUpdatesHost(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -885,7 +882,7 @@ func TestHasUpdatesHost(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -896,7 +893,7 @@ func TestHasUpdatesHost(t *testing.T) {
 		},
 	}
 
-	u, err := c.hasUpdates(foo)
+	u, err := testContainers.hasUpdates(testContainerName)
 	if err != nil {
 		t.Fatalf("Checking for updates should succeed, got: %v", err)
 	}
@@ -909,21 +906,21 @@ func TestHasUpdatesHost(t *testing.T) {
 func TestHasUpdatesConfig(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
 					},
 				},
 				configFiles: map[string]string{
-					foo: foo,
+					testConfigPath: testConfigContent,
 				},
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -933,7 +930,7 @@ func TestHasUpdatesConfig(t *testing.T) {
 		},
 	}
 
-	u, err := c.hasUpdates(foo)
+	u, err := testContainers.hasUpdates(testContainerName)
 	if err != nil {
 		t.Fatalf("Checking for updates should succeed, got: %v", err)
 	}
@@ -946,9 +943,9 @@ func TestHasUpdatesConfig(t *testing.T) {
 func TestHasUpdatesContainer(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -957,11 +954,11 @@ func TestHasUpdatesContainer(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Name: foo,
+							Name: testConfigContainerName,
 						},
 					},
 				},
@@ -969,7 +966,7 @@ func TestHasUpdatesContainer(t *testing.T) {
 		},
 	}
 
-	u, err := c.hasUpdates(foo)
+	u, err := testContainers.hasUpdates(testContainerName)
 	if err != nil {
 		t.Fatalf("Checking for updates should succeed, got: %v", err)
 	}
@@ -982,9 +979,9 @@ func TestHasUpdatesContainer(t *testing.T) {
 func TestHasUpdatesNoUpdates(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -993,7 +990,7 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{},
@@ -1003,7 +1000,7 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 		},
 	}
 
-	u, err := c.hasUpdates(foo)
+	u, err := testContainers.hasUpdates(testContainerName)
 	if err != nil {
 		t.Fatalf("Checking for updates should succeed, got: %v", err)
 	}
@@ -1017,16 +1014,16 @@ func TestHasUpdatesNoUpdates(t *testing.T) {
 func TestEnsureConfiguredDisposable(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				configFiles: map[string]string{},
 			},
 		},
 	}
 
-	if err := c.ensureConfigured(foo); err != nil {
+	if err := testContainers.ensureConfigured(testContainerName); err != nil {
 		t.Fatalf("Ensure configured should succeed when container is going to be removed, got: %v", err)
 	}
 }
@@ -1034,53 +1031,48 @@ func TestEnsureConfiguredDisposable(t *testing.T) {
 func TestEnsureConfiguredNoUpdates(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				configFiles: map[string]string{},
 			},
 		},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				configFiles: map[string]string{},
 			},
 		},
 	}
 
-	if err := c.ensureConfigured(foo); err != nil {
+	if err := testContainers.ensureConfigured(testContainerName); err != nil {
 		t.Fatalf("Ensure configured should succeed, got: %v", err)
 	}
 }
+
+const (
+	testImage                = "test-image"
+	testAnotherImage         = "test-another-image"
+	testConfigContent        = "test-config-content"
+	testConfigPath           = "/tmp/foo"
+	testContainerID          = "test-container-id"
+	testAnotherContainerID   = "test-another-container-id"
+	testContainerName        = "test-container-name"
+	testConfigContainerName  = "test-config-container-name"
+	testAnotherContainerName = "test-another-container-name"
+)
 
 func TestEnsureConfigured(t *testing.T) {
 	t.Parallel()
 
 	called := false
 
-	f := foo
-	cf := map[string]string{
-		f: bar,
+	testConfigFiles := map[string]string{
+		testConfigPath: testConfigContent,
 	}
 
-	c := &containers{
-		desiredState: containersState{
-			f: &hostConfiguredContainer{
-				configFiles: cf,
-				host: host.Host{
-					DirectConfig: &direct.Config{},
-				},
-				container: &container{
-					base: base{
-						config: types.ContainerConfig{
-							Image: f,
-						},
-						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, f, cf)),
-					},
-				},
-			},
-		},
+	testContainers := &containers{
 		currentState: containersState{
-			f: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				configFiles: map[string]string{},
 				host: host.Host{
 					DirectConfig: &direct.Config{},
@@ -1088,16 +1080,32 @@ func TestEnsureConfigured(t *testing.T) {
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Image: f,
+							Image: testImage,
 						},
 						runtimeConfig: asRuntime(fakeRuntime()),
 					},
 				},
 			},
 		},
+		desiredState: containersState{
+			testContainerName: &hostConfiguredContainer{
+				configFiles: testConfigFiles,
+				host: host.Host{
+					DirectConfig: &direct.Config{},
+				},
+				container: &container{
+					base: base{
+						config: types.ContainerConfig{
+							Image: testImage,
+						},
+						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, testContainerID, testConfigFiles)),
+					},
+				},
+			},
+		},
 	}
 
-	if err := c.ensureConfigured(f); err != nil {
+	if err := testContainers.ensureConfigured(testContainerName); err != nil {
 		t.Fatalf("Ensure configured should succeed, got: %v", err)
 	}
 
@@ -1111,24 +1119,23 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 
 	called := false
 
-	f := foo
-	cf := map[string]string{
-		f: bar,
+	testConfigFiles := map[string]string{
+		testConfigPath: testConfigContent,
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			f: &hostConfiguredContainer{
-				configFiles: cf,
+			testContainerName: &hostConfiguredContainer{
+				configFiles: testConfigFiles,
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Image: f,
+							Image: testImage,
 						},
-						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, f, cf)),
+						runtimeConfig: asRuntime(testCopyingRuntime(t, &called, testContainerID, testConfigFiles)),
 					},
 				},
 			},
@@ -1136,7 +1143,7 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 		currentState: containersState{},
 	}
 
-	if err := c.ensureConfigured(f); err != nil {
+	if err := testContainers.ensureConfigured(testContainerName); err != nil {
 		t.Fatalf("Ensure configured should succeed, got: %v", err)
 	}
 
@@ -1148,28 +1155,26 @@ func TestEnsureConfiguredFreshState(t *testing.T) {
 func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 	t.Parallel()
 
-	f := foo
-
-	cf := map[string]string{
-		f: bar,
+	testConfigFiles := map[string]string{
+		testConfigPath: testConfigContent,
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			f: &hostConfiguredContainer{
-				configFiles: cf,
+			testContainerName: &hostConfiguredContainer{
+				configFiles: testConfigFiles,
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
-							Image: f,
+							Image: testImage,
 						},
 						runtimeConfig: &runtime.FakeConfig{
 							Runtime: &runtime.Fake{
 								CreateF: func(config *types.ContainerConfig) (string, error) {
-									return f, nil
+									return testContainerID, nil
 								},
 								StatusF: func(id string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{}, nil
@@ -1186,11 +1191,11 @@ func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 		currentState: containersState{},
 	}
 
-	if err := c.ensureConfigured(f); err == nil {
+	if err := testContainers.ensureConfigured(testContainerName); err == nil {
 		t.Fatalf("Ensure configured should fail")
 	}
 
-	if len(c.currentState) != 0 {
+	if len(testContainers.currentState) != 0 {
 		t.Fatalf("If no files has been updated, current state should not be set")
 	}
 }
@@ -1199,17 +1204,17 @@ func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 func TestSelectRuntime(t *testing.T) {
 	t.Parallel()
 
-	c := &container{
+	testContainer := &container{
 		base: base{
 			runtimeConfig: &docker.Config{},
 		},
 	}
 
-	if err := c.selectRuntime(); err != nil {
+	if err := testContainer.selectRuntime(); err != nil {
 		t.Fatalf("Selecting runtime should succeed, got: %v", err)
 	}
 
-	if c.base.runtime == nil {
+	if testContainer.base.runtime == nil {
 		t.Fatalf("SelectRuntime should set container runtime")
 	}
 }
@@ -1218,11 +1223,11 @@ func TestSelectRuntime(t *testing.T) {
 func TestContainersDesiredStateEmpty(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{}
+	testContainers := &containers{}
 
 	e := ContainersState{}
 
-	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+	if diff := cmp.Diff(e, testContainers.DesiredState()); diff != "" {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }
@@ -1230,9 +1235,9 @@ func TestContainersDesiredStateEmpty(t *testing.T) {
 func TestContainersDesiredStateOldID(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
@@ -1244,7 +1249,7 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 			},
 		},
 		previousState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
@@ -1261,8 +1266,8 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 		},
 	}
 
-	e := ContainersState{
-		foo: {
+	expectedContainersState := ContainersState{
+		testContainerName: {
 			Container: Container{
 				Config: types.ContainerConfig{Image: "a"},
 				Status: &types.ContainerStatus{ID: "foo", Status: "running"},
@@ -1274,7 +1279,7 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+	if diff := cmp.Diff(testContainers.DesiredState(), expectedContainersState); diff != "" {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }
@@ -1282,9 +1287,9 @@ func TestContainersDesiredStateOldID(t *testing.T) {
 func TestContainersDesiredStateStatusRunning(t *testing.T) {
 	t.Parallel()
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
@@ -1296,7 +1301,7 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 			},
 		},
 		previousState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				container: &container{
 					base: base{
 						config: types.ContainerConfig{
@@ -1312,8 +1317,8 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 		},
 	}
 
-	e := ContainersState{
-		foo: {
+	expectedContainersState := ContainersState{
+		testContainerName: {
 			Container: Container{
 				Config: types.ContainerConfig{Image: "a"},
 				Status: &types.ContainerStatus{Status: "running"},
@@ -1325,7 +1330,7 @@ func TestContainersDesiredStateStatusRunning(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(e, c.DesiredState()); diff != "" {
+	if diff := cmp.Diff(testContainers.DesiredState(), expectedContainersState); diff != "" {
 		t.Fatalf("Unexpected diff: %s", diff)
 	}
 }
@@ -1350,10 +1355,10 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 		}, nil
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{},
 		currentState: containersState{
-			foo: &hostConfiguredContainer{
+			testContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -1367,7 +1372,7 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 					},
 				},
 			},
-			bar: &hostConfiguredContainer{
+			testAnotherContainerName: &hostConfiguredContainer{
 				host: host.Host{
 					DirectConfig: &direct.Config{},
 				},
@@ -1384,11 +1389,11 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 		},
 	}
 
-	if err := c.updateExistingContainers(); err != nil {
+	if err := testContainers.updateExistingContainers(); err != nil {
 		t.Fatalf("Updating existing containers should succeed, got: %v", err)
 	}
 
-	if len(c.desiredState) != len(c.currentState) {
+	if len(testContainers.desiredState) != len(testContainers.currentState) {
 		t.Fatalf("All containers from current state should be removed")
 	}
 }
@@ -1415,16 +1420,16 @@ func TestEnsureCurrentContainer(t *testing.T) {
 		},
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hcc,
+			testContainerName: &hcc,
 		},
 		currentState: containersState{
-			foo: &hcc,
+			testContainerName: &hcc,
 		},
 	}
 
-	_, err := c.ensureCurrentContainer(foo, hcc)
+	_, err := testContainers.ensureCurrentContainer(testContainerName, hcc)
 	if err == nil {
 		t.Fatalf("Ensure stopped container should try to start the container and fail")
 	}
@@ -1455,20 +1460,20 @@ func TestEnsureCurrentContainerNonExisting(t *testing.T) {
 		},
 	}
 
-	c := &containers{
+	testContainers := &containers{
 		desiredState: containersState{
-			foo: &hcc,
+			testContainerName: &hcc,
 		},
 		currentState: containersState{
-			foo: &hcc,
+			testContainerName: &hcc,
 		},
 	}
 
-	if _, err := c.ensureCurrentContainer(foo, hcc); err != nil {
+	if _, err := testContainers.ensureCurrentContainer(testContainerName, hcc); err != nil {
 		t.Fatalf("Ensure stopped container should not fail on non-existing container, got: %v", err)
 	}
 
-	if len(c.currentState) > 0 {
+	if len(testContainers.currentState) > 0 {
 		t.Fatalf("Ensuring removed container should remove it from current state to trigger creation")
 	}
 }
@@ -1476,11 +1481,11 @@ func TestEnsureCurrentContainerNonExisting(t *testing.T) {
 func fakeRuntime() *runtime.Fake {
 	return &runtime.Fake{
 		CreateF: func(config *types.ContainerConfig) (string, error) {
-			return foo, nil
+			return testContainerID, nil
 		},
 		StatusF: func(id string) (types.ContainerStatus, error) {
 			return types.ContainerStatus{
-				ID: bar,
+				ID: testAnotherContainerID,
 			}, nil
 		},
 		DeleteF: func(id string) error {
@@ -1504,10 +1509,11 @@ func failingStartRuntime() *runtime.Fake {
 	return r
 }
 
-//nolint:thelper // This is actually a test function.
 func testCopyingRuntime(t *testing.T, called *bool, containerID string, config map[string]string) *runtime.Fake {
-	r := fakeRuntime()
-	r.CopyF = func(id string, files []*types.File) error {
+	t.Helper()
+
+	testRuntime := fakeRuntime()
+	testRuntime.CopyF = func(id string, files []*types.File) error {
 		if id != containerID {
 			t.Errorf("Should copy to configuration container %q, not to %q", containerID, id)
 		}
@@ -1516,8 +1522,8 @@ func testCopyingRuntime(t *testing.T, called *bool, containerID string, config m
 			t.Fatalf("Should copy just one file")
 		}
 
-		if files[0].Content != bar {
-			t.Fatalf("Expected content 'bar', got %q", files[0].Content)
+		if files[0].Content != testConfigContent {
+			t.Fatalf("Expected content %q, got %q", testConfigContent, files[0].Content)
 		}
 
 		*called = true
@@ -1525,7 +1531,7 @@ func testCopyingRuntime(t *testing.T, called *bool, containerID string, config m
 		return nil
 	}
 
-	return r
+	return testRuntime
 }
 
 func asRuntime(r *runtime.Fake) *runtime.FakeConfig {

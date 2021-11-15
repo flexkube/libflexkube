@@ -145,8 +145,8 @@ func buildPorts(ports []types.PortMap) (nat.PortMap, nat.PortSet, error) {
 	portBindings := nat.PortMap{}
 	exposedPorts := nat.PortSet{}
 
-	for _, ip := range ports {
-		port, err := nat.NewPort(ip.Protocol, strconv.Itoa(ip.Port))
+	for _, portMap := range ports {
+		port, err := nat.NewPort(portMap.Protocol, strconv.Itoa(portMap.Port))
 		if err != nil {
 			return nil, nil, fmt.Errorf("mapping ports: %w", err)
 		}
@@ -156,8 +156,8 @@ func buildPorts(ports []types.PortMap) (nat.PortMap, nat.PortSet, error) {
 		}
 
 		portBindings[port] = append(portBindings[port], nat.PortBinding{
-			HostIP:   ip.IP,
-			HostPort: strconv.Itoa(ip.Port),
+			HostIP:   portMap.IP,
+			HostPort: strconv.Itoa(portMap.Port),
 		})
 		exposedPorts[port] = struct{}{}
 	}
@@ -166,22 +166,22 @@ func buildPorts(ports []types.PortMap) (nat.PortMap, nat.PortSet, error) {
 }
 
 // mounts converts container Mount to Docker mount type.
-func mounts(m []types.Mount) []mount.Mount {
-	mounts := []mount.Mount{}
+func mounts(containerMounts []types.Mount) []mount.Mount {
+	dockerMounts := []mount.Mount{}
 
-	for _, m := range m {
-		mounts = append(mounts, mount.Mount{
+	for _, containerMount := range containerMounts {
+		dockerMounts = append(dockerMounts, mount.Mount{
 			Type:   "bind",
-			Source: m.Source,
-			Target: m.Target,
+			Source: containerMount.Source,
+			Target: containerMount.Target,
 			// TODO validate!
 			BindOptions: &mount.BindOptions{
-				Propagation: mount.Propagation(m.Propagation),
+				Propagation: mount.Propagation(containerMount.Propagation),
 			},
 		})
 	}
 
-	return mounts
+	return dockerMounts
 }
 
 func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Config, *containertypes.HostConfig, error) {
@@ -191,9 +191,9 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 		return nil, nil, fmt.Errorf("building ports: %w", err)
 	}
 
-	u := config.User
+	user := config.User
 	if config.Group != "" {
-		u = fmt.Sprintf("%s:%s", config.User, config.Group)
+		user = fmt.Sprintf("%s:%s", config.User, config.Group)
 	}
 
 	env := []string{}
@@ -207,7 +207,7 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 		Cmd:          config.Args,
 		Entrypoint:   config.Entrypoint,
 		ExposedPorts: exposedPorts,
-		User:         u,
+		User:         user,
 		Env:          env,
 	}
 	hostConfig := containertypes.HostConfig{
@@ -260,7 +260,7 @@ func (d *docker) Stop(id string) error {
 
 // Status returns container status.
 func (d *docker) Status(id string) (types.ContainerStatus, error) {
-	s := types.ContainerStatus{
+	containerStatus := types.ContainerStatus{
 		ID: id,
 	}
 
@@ -268,17 +268,17 @@ func (d *docker) Status(id string) (types.ContainerStatus, error) {
 	if err != nil {
 		// If container is missing, return status with empty ID.
 		if client.IsErrNotFound(err) {
-			s.ID = ""
+			containerStatus.ID = ""
 
-			return s, nil
+			return containerStatus, nil
 		}
 
-		return s, fmt.Errorf("inspecting container: %w", err)
+		return containerStatus, fmt.Errorf("inspecting container: %w", err)
 	}
 
-	s.Status = status.State.Status
+	containerStatus.Status = status.State.Status
 
-	return s, nil
+	return containerStatus, nil
 }
 
 // Delete removes the container.
@@ -289,48 +289,48 @@ func (d *docker) Delete(id string) error {
 // Copy takes map of files and their content and copies it to the container using TAR archive.
 //
 // TODO Add support for base64 encoded content to support copying binary files.
-func (d *docker) Copy(id string, files []*types.File) error {
+func (d *docker) Copy(containerID string, files []*types.File) error {
 	t, err := filesToTar(files)
 	if err != nil {
 		return fmt.Errorf("packing files to TAR archive: %w", err)
 	}
 
-	return d.cli.CopyToContainer(d.ctx, id, "/", t, dockertypes.CopyToContainerOptions{})
+	return d.cli.CopyToContainer(d.ctx, containerID, "/", t, dockertypes.CopyToContainerOptions{})
 }
 
 // filesToTar converts list of container files to tar archive format.
 func filesToTar(files []*types.File) (io.Reader, error) {
 	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
+	tarWriter := tar.NewWriter(buf)
 
-	for _, f := range files {
-		h := &tar.Header{
-			Name:    f.Path,
-			Mode:    f.Mode,
-			Size:    int64(len(f.Content)),
+	for _, file := range files {
+		header := &tar.Header{
+			Name:    file.Path,
+			Mode:    file.Mode,
+			Size:    int64(len(file.Content)),
 			ModTime: time.Now(),
-			Uname:   f.User,
-			Gname:   f.Group,
+			Uname:   file.User,
+			Gname:   file.Group,
 		}
 
-		if uid, err := strconv.Atoi(f.User); err == nil {
-			h.Uid = uid
+		if uid, err := strconv.Atoi(file.User); err == nil {
+			header.Uid = uid
 		}
 
-		if gid, err := strconv.Atoi(f.Group); err == nil {
-			h.Gid = gid
+		if gid, err := strconv.Atoi(file.Group); err == nil {
+			header.Gid = gid
 		}
 
-		if err := tw.WriteHeader(h); err != nil {
+		if err := tarWriter.WriteHeader(header); err != nil {
 			return nil, fmt.Errorf("writing header: %w", err)
 		}
 
-		if _, err := tw.Write([]byte(f.Content)); err != nil {
+		if _, err := tarWriter.Write([]byte(file.Content)); err != nil {
 			return nil, fmt.Errorf("writing content: %w", err)
 		}
 	}
 
-	if err := tw.Close(); err != nil {
+	if err := tarWriter.Close(); err != nil {
 		return nil, fmt.Errorf("closing writer: %w", err)
 	}
 
@@ -341,10 +341,10 @@ func filesToTar(files []*types.File) (io.Reader, error) {
 func tarToFiles(rc io.Reader) ([]*types.File, error) {
 	files := []*types.File{}
 	buf := new(bytes.Buffer)
-	tr := tar.NewReader(rc)
+	tarReader := tar.NewReader(rc)
 
 	for {
-		header, err := tr.Next()
+		header, err := tarReader.Next()
 		if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
 			break
 		}
@@ -357,18 +357,18 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 			continue
 		}
 
-		if _, err := buf.ReadFrom(tr); err != nil {
+		if _, err := buf.ReadFrom(tarReader); err != nil {
 			return nil, fmt.Errorf("reading from tar archive: %w", err)
 		}
 
-		f := &types.File{
+		file := &types.File{
 			User:    util.PickString(strconv.Itoa(header.Uid), header.Uname),
 			Group:   util.PickString(strconv.Itoa(header.Gid), header.Gname),
 			Content: buf.String(),
 			Mode:    header.Mode,
 		}
 
-		files = append(files, f)
+		files = append(files, file)
 	}
 
 	return files, nil
@@ -378,14 +378,14 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 func (d *docker) Stat(id string, paths []string) (map[string]os.FileMode, error) {
 	result := map[string]os.FileMode{}
 
-	for _, p := range paths {
-		s, err := d.cli.ContainerStatPath(d.ctx, id, p)
+	for _, path := range paths {
+		stat, err := d.cli.ContainerStatPath(d.ctx, id, path)
 		if err != nil && !client.IsErrNotFound(err) {
-			return nil, fmt.Errorf("statting path %q: %w", p, err)
+			return nil, fmt.Errorf("statting path %q: %w", path, err)
 		}
 
-		if s.Name != "" {
-			result[p] = s.Mode
+		if stat.Name != "" {
+			result[path] = stat.Mode
 		}
 	}
 
@@ -396,29 +396,29 @@ func (d *docker) Stat(id string, paths []string) (map[string]os.FileMode, error)
 func (d *docker) Read(id string, srcPaths []string) ([]*types.File, error) {
 	files := []*types.File{}
 
-	for _, p := range srcPaths {
-		rc, _, err := d.cli.CopyFromContainer(d.ctx, id, p)
+	for _, path := range srcPaths {
+		stat, _, err := d.cli.CopyFromContainer(d.ctx, id, path)
 		if err != nil && !client.IsErrNotFound(err) {
 			return nil, fmt.Errorf("copying from container: %w", err)
 		}
 
 		// File does not exist.
-		if rc == nil {
+		if stat == nil {
 			continue
 		}
 
-		fs, err := tarToFiles(rc)
+		filesFromTar, err := tarToFiles(stat)
 		if err != nil {
-			return nil, fmt.Errorf("extracting file %s from archive: %w", p, err)
+			return nil, fmt.Errorf("extracting file %s from archive: %w", path, err)
 		}
 
-		if err := rc.Close(); err != nil {
+		if err := stat.Close(); err != nil {
 			return nil, fmt.Errorf("closing file: %w", err)
 		}
 
-		fs[0].Path = p
+		filesFromTar[0].Path = path
 
-		files = append(files, fs[0])
+		files = append(files, filesFromTar[0])
 	}
 
 	return files, nil

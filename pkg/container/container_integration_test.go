@@ -18,7 +18,7 @@ import (
 func TestDockerCreateNonExistingImage(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -28,7 +28,7 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestDockerCreateNonExistingImage(t *testing.T) {
 func TestDockerCreate(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -51,18 +51,18 @@ func TestDockerCreate(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if err := ci.Delete(); err != nil {
+		if err := containerID.Delete(); err != nil {
 			t.Logf("Removing container should succeed, got: %v", err)
 		}
 	})
@@ -72,7 +72,7 @@ func TestDockerCreate(t *testing.T) {
 func TestDockerStatus(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -82,22 +82,22 @@ func TestDockerStatus(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if _, err := ci.Status(); err != nil {
+	if _, err := containerID.Status(); err != nil {
 		t.Fatalf("Checking container status should succeed, got: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if err := ci.Delete(); err != nil {
+		if err := containerID.Delete(); err != nil {
 			t.Logf("Removing container should succeed, got: %v", err)
 		}
 	})
@@ -106,7 +106,7 @@ func TestDockerStatus(t *testing.T) {
 func TestDockerStatusNonExistingContainer(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -116,21 +116,21 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	originalCIID := ci.(*containerInstance).status.ID
+	originalCIID := containerID.(*containerInstance).status.ID
 
-	ci.(*containerInstance).status.ID = ""
+	containerID.(*containerInstance).status.ID = ""
 
-	status, err := ci.Status()
+	status, err := containerID.Status()
 	if err != nil {
 		t.Fatalf("Checking container status for non existing container should succeed")
 	}
@@ -139,10 +139,10 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Container ID for non existing container should be empty")
 	}
 
-	ci.(*containerInstance).status.ID = originalCIID
+	containerID.(*containerInstance).status.ID = originalCIID
 
 	t.Cleanup(func() {
-		if err := ci.Delete(); err != nil {
+		if err := containerID.Delete(); err != nil {
 			t.Logf("Removing container should succeed, got: %v", err)
 		}
 	})
@@ -152,7 +152,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 func TestDockerStart(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -162,29 +162,29 @@ func TestDockerStart(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := ci.Start(); err != nil {
+	if err := containerID.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if err := ci.Stop(); err != nil {
+		if err := containerID.Stop(); err != nil {
 			t.Logf("Stopping container should succeed, got: %v", err)
 
 			// Deleting not stopped container will fail, so return early.
 			return
 		}
 
-		if err := ci.Delete(); err != nil {
+		if err := containerID.Delete(); err != nil {
 			t.Logf("Removing container should succeed, got: %v", err)
 		}
 	})
@@ -194,7 +194,7 @@ func TestDockerStart(t *testing.T) {
 func TestDockerStop(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -204,26 +204,26 @@ func TestDockerStop(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := ci.Start(); err != nil {
+	if err := containerID.Start(); err != nil {
 		t.Fatalf("Starting container should succeed, got: %v", err)
 	}
 
-	if err := ci.Stop(); err != nil {
+	if err := containerID.Stop(); err != nil {
 		t.Fatalf("Stopping container should succeed, got: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if err := ci.Delete(); err != nil {
+		if err := containerID.Delete(); err != nil {
 			t.Logf("Removing container should succeed, got: %v", err)
 		}
 	})
@@ -233,7 +233,7 @@ func TestDockerStop(t *testing.T) {
 func TestDockerDelete(t *testing.T) {
 	t.Parallel()
 
-	cc := &Container{
+	containerConfig := &Container{
 		Runtime: RuntimeConfig{
 			Docker: &docker.Config{},
 		},
@@ -243,17 +243,17 @@ func TestDockerDelete(t *testing.T) {
 		},
 	}
 
-	c, err := cc.New()
+	c, err := containerConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing container should succeed, got: %v", err)
 	}
 
-	ci, err := c.Create()
+	containerID, err := c.Create()
 	if err != nil {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	if err := ci.Delete(); err != nil {
+	if err := containerID.Delete(); err != nil {
 		t.Fatalf("Removing container should succeed, got: %v", err)
 	}
 }

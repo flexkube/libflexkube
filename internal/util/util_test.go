@@ -207,14 +207,14 @@ func TestColorizeDiff(t *testing.T) {
 		},
 	}
 
-	for n, c := range cases {
-		c := c
+	for n, testCase := range cases {
+		testCase := testCase
 
 		t.Run(strconv.Itoa(n), func(t *testing.T) {
 			t.Parallel()
 
-			if result := ColorizeDiff(c.input); result != c.output {
-				t.Errorf("Expected %q, got %q", c.output, result)
+			if result := ColorizeDiff(testCase.input); result != testCase.output {
+				t.Errorf("Expected %q, got %q", testCase.output, result)
 			}
 		})
 	}

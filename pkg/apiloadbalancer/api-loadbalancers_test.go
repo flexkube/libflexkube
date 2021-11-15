@@ -19,7 +19,7 @@ func TestPoolNoInstancesDefined(t *testing.T) {
 func GetLoadBalancers(t *testing.T) types.Resource {
 	t.Helper()
 
-	y := `
+	testConfigRaw := `
 ssh:
   address: localhost
   password: foo
@@ -33,7 +33,7 @@ servers:
 - localhost:6443
 `
 
-	p, err := FromYaml([]byte(y))
+	p, err := FromYaml([]byte(testConfigRaw))
 	if err != nil {
 		t.Fatalf("Creating load balancers from YAML should succeed, got: %v", err)
 	}
@@ -45,7 +45,7 @@ servers:
 func TestLoadBalancersNewValidate(t *testing.T) {
 	t.Parallel()
 
-	y := `
+	testConfigRaw := `
 ssh:
   address: localhost
   password: foo
@@ -57,7 +57,7 @@ apiLoadBalancers:
 - {}
 `
 
-	if _, err := FromYaml([]byte(y)); err == nil {
+	if _, err := FromYaml([]byte(testConfigRaw)); err == nil {
 		t.Fatalf("Creating load balancers from bad YAML should fail")
 	}
 }

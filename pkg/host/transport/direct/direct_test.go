@@ -34,20 +34,20 @@ func TestForwardUnixSocket(t *testing.T) {
 	t.Parallel()
 
 	d := newDirect(t)
-	p := "/foo"
+	targetPath := "/foo"
 
 	dc, err := d.Connect()
 	if err != nil {
 		t.Fatalf("Connecting: %v", err)
 	}
 
-	fp, err := dc.ForwardUnixSocket(p)
+	forwardedPath, err := dc.ForwardUnixSocket(targetPath)
 	if err != nil {
 		t.Fatalf("Forwarding socket: %v", err)
 	}
 
-	if fp != p {
-		t.Fatalf("Expected %q, got %q", p, fp)
+	if forwardedPath != targetPath {
+		t.Fatalf("Expected %q, got %q", targetPath, forwardedPath)
 	}
 }
 
@@ -65,20 +65,20 @@ func TestForwardTCP(t *testing.T) {
 	t.Parallel()
 
 	d := newDirect(t)
-	a := "localhost:80"
+	targetAddress := "localhost:80"
 
 	dc, err := d.Connect()
 	if err != nil {
 		t.Fatalf("Connecting: %v", err)
 	}
 
-	fa, err := dc.ForwardTCP(a)
+	forwardedAddress, err := dc.ForwardTCP(targetAddress)
 	if err != nil {
 		t.Fatalf("Forwarding TCP: %v", err)
 	}
 
-	if fa != a {
-		t.Fatalf("Expected %q, got %q", a, fa)
+	if forwardedAddress != targetAddress {
+		t.Fatalf("Expected %q, got %q", targetAddress, forwardedAddress)
 	}
 }
 
@@ -87,14 +87,14 @@ func TestForwardTCPBadAddress(t *testing.T) {
 
 	d := newDirect(t)
 
-	dc, err := d.Connect()
+	directConnected, err := d.Connect()
 	if err != nil {
 		t.Fatalf("Connecting: %v", err)
 	}
 
 	a := "localhost"
 
-	if _, err := dc.ForwardTCP(a); err == nil {
+	if _, err := directConnected.ForwardTCP(a); err == nil {
 		t.Fatalf("TCP forwarding should fail when forwarding bad address")
 	}
 }

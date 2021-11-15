@@ -137,7 +137,7 @@ func (m *HostConfiguredContainer) Validate() error {
 // forwards given UNIX socket using this connection.
 //
 // It returns address of local UNIX socket, where user can connect.
-func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
+func (m *hostConfiguredContainer) connectAndForward(targetAddress string) (string, error) {
 	h, err := m.host.New()
 	if err != nil {
 		return "", fmt.Errorf("initializing host: %w", err)
@@ -148,7 +148,7 @@ func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 		return "", fmt.Errorf("connecting: %w", err)
 	}
 
-	s, err := hc.ForwardUnixSocket(a)
+	s, err := hc.ForwardUnixSocket(targetAddress)
 	if err != nil {
 		return "", fmt.Errorf("forwarding unix socket: %w", err)
 	}
@@ -159,37 +159,37 @@ func (m *hostConfiguredContainer) connectAndForward(a string) (string, error) {
 // withForwardedRuntime takes action function as an argument and before executing it, it configures the runtime
 // address to be forwarded using SSH. After the action is finished, it restores original address of the runtime.
 func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) error {
-	c := m.container.RuntimeConfig()
+	oldRuntimeConfig := m.container.RuntimeConfig()
 
 	// Store originally configured address so we can restore it later.
-	a := c.GetAddress()
+	oldAddress := oldRuntimeConfig.GetAddress()
 
-	s, err := m.connectAndForward(a)
+	newAddress, err := m.connectAndForward(oldAddress)
 	if err != nil {
 		return fmt.Errorf("forwarding host: %w", err)
 	}
 
 	// Override configuration with forwarded address and create Runtime from it.
-	c.SetAddress(s)
+	oldRuntimeConfig.SetAddress(newAddress)
 
-	r, err := c.New()
+	forwardedRuntime, err := oldRuntimeConfig.New()
 	if err != nil {
 		return fmt.Errorf("initializing forwarded runtime: %w", err)
 	}
 
 	// Use forwarded Runtime for managing container.
-	m.container.SetRuntime(r)
+	m.container.SetRuntime(forwardedRuntime)
 
 	// Restore original address in the runtime configuration (as nested forwarding won't work).
-	c.SetAddress(a)
+	oldRuntimeConfig.SetAddress(oldAddress)
 
-	ro, err := c.New()
+	originalRuntime, err := oldRuntimeConfig.New()
 	if err != nil {
 		return fmt.Errorf("initializing original runtime: %w", err)
 	}
 
 	// After we're done calling action, restore original runtime to the container.
-	defer m.container.SetRuntime(ro)
+	defer m.container.SetRuntime(originalRuntime)
 
 	return action()
 }
@@ -197,7 +197,7 @@ func (m *hostConfiguredContainer) withForwardedRuntime(action func() error) erro
 // createConfigurationContainer creates container used for reading and updating configuration and
 // stores saves it reference.
 func (m *hostConfiguredContainer) createConfigurationContainer() error {
-	cc := &container{
+	containerConfig := &container{
 		base: base{
 			config: types.ContainerConfig{
 				Name:  fmt.Sprintf("%s-config", m.container.Config().Name),
@@ -215,7 +215,7 @@ func (m *hostConfiguredContainer) createConfigurationContainer() error {
 
 	// Docker container does not need to run (be started) to be able to copy files from it.
 	// TODO: This might not be the case for other container runtimes.
-	ci, err := cc.Create()
+	ci, err := containerConfig.Create()
 	if err != nil {
 		return fmt.Errorf("creating config container while checking configuration: %w", err)
 	}
@@ -261,15 +261,15 @@ func (m *hostConfiguredContainer) updateConfigurationStatus() error {
 		paths[cpath] = p
 	}
 
-	f, err := m.configContainer.Read(files)
+	configFiles, err := m.configContainer.Read(files)
 	if err != nil {
 		return fmt.Errorf("reading configuration status: %w", err)
 	}
 
 	m.configFiles = map[string]string{}
 
-	for _, f := range f {
-		m.configFiles[paths[f.Path]] = f.Content
+	for _, configFile := range configFiles {
+		m.configFiles[paths[configFile.Path]] = configFile.Content
 	}
 
 	return nil
@@ -330,17 +330,17 @@ func (m *hostConfiguredContainer) Configure(paths []string) error {
 
 // copyConfigFiles takes list of configuration files which should be created in the container
 // and creates them in batch. This function requires functional config container.
-func (m *hostConfiguredContainer) copyConfigFiles(paths []string) error {
+func (m *hostConfiguredContainer) copyConfigFiles(pathsToCopy []string) error {
 	files := []*types.File{}
 
-	for _, p := range paths {
-		content, exists := m.configFiles[p]
+	for _, pathToCopy := range pathsToCopy {
+		content, exists := m.configFiles[pathToCopy]
 		if !exists {
-			return fmt.Errorf("can't configure file which do not exist: %s", p)
+			return fmt.Errorf("can't configure file which do not exist: %s", pathToCopy)
 		}
 
 		files = append(files, &types.File{
-			Path:    path.Join(ConfigMountpoint, p),
+			Path:    path.Join(ConfigMountpoint, pathToCopy),
 			Content: content,
 			Mode:    configFileMode,
 			User:    m.container.Config().User,
@@ -375,15 +375,15 @@ func (m *hostConfiguredContainer) statMounts() (map[string]os.FileMode, error) {
 // isDirMount checks if given path is intended to be a directory by checking for a
 // trailing slash.
 func (m *hostConfiguredContainer) dirMounts() []types.Mount {
-	r := []types.Mount{}
+	mounts := []types.Mount{}
 
 	for _, m := range m.container.Config().Mounts {
 		if m.Source[len(m.Source)-1:] == "/" {
-			r = append(r, m)
+			mounts = append(mounts, m)
 		}
 	}
 
-	return r
+	return mounts
 }
 
 // createMissingMounts creates missing host directories, which are requested for container.
@@ -392,7 +392,7 @@ func (m *hostConfiguredContainer) dirMounts() []types.Mount {
 // If requested directory mount is found on host file system as a file, the error is returned.
 func (m *hostConfiguredContainer) createMissingMounts() error {
 	// Get information about existing mountpoints.
-	rc, err := m.statMounts()
+	statResult, err := m.statMounts()
 	if err != nil {
 		return fmt.Errorf("checking if mountpoints exist: %w", err)
 	}
@@ -400,19 +400,19 @@ func (m *hostConfiguredContainer) createMissingMounts() error {
 	// Collect missing mountpoints.
 	files := []*types.File{}
 
-	for _, m := range m.dirMounts() {
-		p := path.Join(ConfigMountpoint, m.Source)
-		fm, exists := rc[p]
+	for _, mount := range m.dirMounts() {
+		filePath := path.Join(ConfigMountpoint, mount.Source)
+		fm, exists := statResult[filePath]
 
 		// If path exists as a file, it can't be mounted as a directory, so fail.
 		if exists && !fm.IsDir() {
-			return fmt.Errorf("mountpoint %q exists as file", m.Source)
+			return fmt.Errorf("mountpoint %q exists as file", mount.Source)
 		}
 
 		// If mountpoint does not exist, and it's name has a trailing slash, we should create it as a directory.
 		if !exists {
 			files = append(files, &types.File{
-				Path: fmt.Sprintf("%s/", p),
+				Path: fmt.Sprintf("%s/", filePath),
 				Mode: mountpointDirMode,
 			})
 		}

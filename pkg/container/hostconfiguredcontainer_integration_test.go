@@ -26,10 +26,10 @@ const (
 func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 	t.Parallel()
 
-	p := "/tmp/foo"
-	f := path.Join(p, randomContainerName(t))
+	basePath := "/tmp/foo"
+	filePath := path.Join(basePath, randomContainerName(t))
 
-	h := &HostConfiguredContainer{
+	hccConfig := &HostConfiguredContainer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -42,28 +42,28 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 				Image: "nginx",
 				Mounts: []types.Mount{
 					{
-						Source: fmt.Sprintf("%s/", p),
-						Target: p,
+						Source: fmt.Sprintf("%s/", basePath),
+						Target: basePath,
 					},
 				},
 				Entrypoint: []string{"/bin/sh"},
 				Args: []string{
 					"-c",
-					fmt.Sprintf("grep baz %s && tail -f /dev/null", f),
+					fmt.Sprintf("grep baz %s && tail -f /dev/null", filePath),
 				},
 			},
 		},
 		ConfigFiles: map[string]string{
-			f: "baz",
+			filePath: "baz",
 		},
 	}
 
-	hcc, err := h.New()
+	hcc, err := hccConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing host configured container should succeed, got: %v", err)
 	}
 
-	if err = hcc.Configure([]string{f}); err != nil {
+	if err = hcc.Configure([]string{filePath}); err != nil {
 		t.Fatalf("Configuring host configured container should succeed, got: %v", err)
 	}
 
@@ -101,13 +101,13 @@ func TestHostConfiguredContainerPostStartHook(t *testing.T) {
 
 	hookCalled := false
 
-	f := Hook(func() error {
+	hookF := Hook(func() error {
 		hookCalled = true
 
 		return nil
 	})
 
-	h := &HostConfiguredContainer{
+	hccConfig := &HostConfiguredContainer{
 		Host: host.Host{
 			DirectConfig: &direct.Config{},
 		},
@@ -121,11 +121,11 @@ func TestHostConfiguredContainerPostStartHook(t *testing.T) {
 			},
 		},
 		Hooks: &Hooks{
-			PostStart: &f,
+			PostStart: &hookF,
 		},
 	}
 
-	hcc, err := h.New()
+	hcc, err := hccConfig.New()
 	if err != nil {
 		t.Fatalf("Initializing host configured container should succeed, got: %v", err)
 	}

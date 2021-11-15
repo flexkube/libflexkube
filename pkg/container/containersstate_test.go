@@ -17,7 +17,7 @@ import (
 func TestToExported(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			container: &container{
 				base: base{
@@ -44,7 +44,7 @@ func TestToExported(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(expected, c.Export()); diff != "" {
+	if diff := cmp.Diff(expected, testState.Export()); diff != "" {
 		t.Fatalf("Unexpected diff %s", diff)
 	}
 }
@@ -53,7 +53,7 @@ func TestToExported(t *testing.T) {
 func TestContainersStateCheckStateFailStatus(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -68,22 +68,22 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 						},
 					},
 					status: types.ContainerStatus{
-						ID: foo,
+						ID: testContainerID,
 					},
 				},
 			},
 		},
 	}
 
-	if err := c.CheckState(); err != nil {
+	if err := testState.CheckState(); err != nil {
 		t.Fatalf("Should not fail with failing status")
 	}
 
-	if c["foo"].container.Status().ID != "" {
+	if testState["foo"].container.Status().ID != "" {
 		t.Errorf("Failing status call should reset container ID, so we assume container is gone")
 	}
 
-	if c["foo"].container.Status().Status == "fail" {
+	if testState["foo"].container.Status().Status == "fail" {
 		t.Errorf("Container status should include error message returned by status function")
 	}
 }
@@ -91,7 +91,7 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 func TestContainersStateCheckStateGone(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -101,7 +101,7 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 					runtimeConfig: &runtime.FakeConfig{
 						Runtime: &runtime.Fake{
 							CreateF: func(config *types.ContainerConfig) (string, error) {
-								return foo, nil
+								return testContainerID, nil
 							},
 							DeleteF: func(id string) error {
 								return nil
@@ -112,19 +112,20 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 						},
 					},
 					status: types.ContainerStatus{
-						ID: foo,
+						ID: testContainerID,
 					},
 				},
 			},
 		},
 	}
 
-	if err := c.CheckState(); err != nil {
+	if err := testState.CheckState(); err != nil {
 		t.Fatalf("Checking state should succeed, got: %v", err)
 	}
 
-	if c["foo"].container.Status().Status != StatusMissing {
-		t.Fatalf("Non existing container should have status %q, got: %q", StatusMissing, c["foo"].container.Status().Status)
+	if testState["foo"].container.Status().Status != StatusMissing {
+		t.Fatalf("Non existing container should have status %q, got: %q",
+			StatusMissing, testState["foo"].container.Status().Status)
 	}
 }
 
@@ -149,7 +150,7 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 		}, nil
 	}
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -166,7 +167,7 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 		},
 	}
 
-	if err := c.RemoveContainer("foo"); err != nil {
+	if err := testState.RemoveContainer("foo"); err != nil {
 		t.Fatalf("Removing stopped container shouldn't try to stop it again")
 	}
 }
@@ -174,7 +175,7 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -200,7 +201,7 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 		},
 	}
 
-	if err := c.RemoveContainer("foo"); err != nil {
+	if err := testState.RemoveContainer("foo"); err != nil {
 		t.Fatalf("Removing missing container shouldn't try to remove it again, got: %v", err)
 	}
 }
@@ -216,7 +217,7 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 		}, nil
 	}
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -233,7 +234,7 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 		},
 	}
 
-	if err := c.RemoveContainer("foo"); err == nil {
+	if err := testState.RemoveContainer("foo"); err == nil {
 		t.Fatalf("Removing stopped container should propagate stop error")
 	}
 }
@@ -241,7 +242,7 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{
+	testState := containersState{
 		"foo": &hostConfiguredContainer{
 			host: host.Host{
 				DirectConfig: &direct.Config{},
@@ -273,7 +274,7 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 		},
 	}
 
-	if err := c.RemoveContainer("foo"); err == nil {
+	if err := testState.RemoveContainer("foo"); err == nil {
 		t.Fatalf("Removing stopped container should propagate delete error")
 	}
 }
@@ -282,9 +283,9 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 func TestCreateAndStartFailOnMissingContainer(t *testing.T) {
 	t.Parallel()
 
-	c := containersState{}
+	testState := containersState{}
 
-	if err := c.CreateAndStart("foo"); err == nil {
+	if err := testState.CreateAndStart("foo"); err == nil {
 		t.Fatalf("Creating and starting non existing container should give error")
 	}
 }

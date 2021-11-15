@@ -54,7 +54,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 
 	e.initializeCertificatesMaps(servers)
 
-	cr := &certificateRequest{
+	caRequest := &certificateRequest{
 		Target: e.CA,
 		CA:     rootCA,
 		Certificates: []*Certificate{
@@ -66,7 +66,7 @@ func (e *Etcd) Generate(rootCA *Certificate, defaultCertificate Certificate) err
 	}
 
 	// etcd CA Certificate
-	if err := buildAndGenerate(cr); err != nil {
+	if err := buildAndGenerate(caRequest); err != nil {
 		return fmt.Errorf("generating etcd CA certificate: %w", err)
 	}
 
@@ -100,22 +100,22 @@ func (e *Etcd) initializeCertificatesMaps(servers map[string]string) {
 }
 
 // certificateFromCNIPMap produces a certificate from given common name and IP address.
-func certificateFromCNIPMap(commonName, ip string, server bool) *Certificate {
-	c := &Certificate{
+func certificateFromCNIPMap(commonName, ipAddress string, server bool) *Certificate {
+	cert := &Certificate{
 		CommonName: commonName,
 		KeyUsage:   clientUsage(),
 	}
 
 	if server {
-		c.KeyUsage = clientServerUsage()
-		c.DNSNames = []string{commonName, "localhost"}
+		cert.KeyUsage = clientServerUsage()
+		cert.DNSNames = []string{commonName, "localhost"}
 	}
 
-	if ip != "" && server {
-		c.IPAddresses = append(c.IPAddresses, ip, "127.0.0.1")
+	if ipAddress != "" && server {
+		cert.IPAddresses = append(cert.IPAddresses, ipAddress, "127.0.0.1")
 	}
 
-	return c
+	return cert
 }
 
 // peerCRs builds list of certificate requests for peer certificates by combining
@@ -145,7 +145,7 @@ func (e *Etcd) crsFromMap(
 		}
 	}
 
-	for commonName, ip := range cnIPs {
+	for commonName, ipAddress := range cnIPs {
 		// If certificate request is already created for a given common name, it will
 		// have peers information included, so we jump to another one.
 		if _, ok := crs[commonName]; ok {
@@ -163,7 +163,7 @@ func (e *Etcd) crsFromMap(
 			Certificates: []*Certificate{
 				defaultCertificate,
 				&e.Certificate,
-				certificateFromCNIPMap(commonName, ip, server),
+				certificateFromCNIPMap(commonName, ipAddress, server),
 			},
 		}
 	}
