@@ -56,7 +56,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Fetch dependencies and configure tests
       run: |
-        curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         docker-compose -f e2e/docker-compose.yml up -d
         cat <<EOF > e2e/test-config.yaml
           sshPrivateKeyPath: $(pwd)/e2e/keys/id_rsa
