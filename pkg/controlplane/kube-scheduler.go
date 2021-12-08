@@ -3,6 +3,11 @@ package controlplane
 import (
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	componentbaseconfig "k8s.io/component-base/config/v1alpha1"
+	kubeschedulerconfig "k8s.io/kube-scheduler/config/v1beta2"
+	"sigs.k8s.io/yaml"
+
 	"github.com/flexkube/libflexkube/internal/util"
 	"github.com/flexkube/libflexkube/pkg/container"
 	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
@@ -39,11 +44,23 @@ func (k *kubeScheduler) ToHostConfiguredContainer() (*container.HostConfiguredCo
 	configFiles["/etc/kubernetes/kube-scheduler/kubeconfig"] = k.kubeconfig
 	configFiles["/etc/kubernetes/kube-scheduler/pki/ca.crt"] = string(k.common.KubernetesCACertificate)
 	configFiles["/etc/kubernetes/kube-scheduler/pki/front-proxy-ca.crt"] = string(k.common.FrontProxyCACertificate)
-	configFiles["/etc/kubernetes/kube-scheduler/kube-scheduler.yaml"] = `apiVersion: kubescheduler.config.k8s.io/v1beta1
-kind: KubeSchedulerConfiguration
-clientConnection:
-  kubeconfig: /etc/kubernetes/kubeconfig
-`
+
+	config := &kubeschedulerconfig.KubeSchedulerConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "KubeSchedulerConfiguration",
+			APIVersion: kubeschedulerconfig.SchemeGroupVersion.String(),
+		},
+		ClientConnection: componentbaseconfig.ClientConnectionConfiguration{
+			Kubeconfig: "/etc/kubernetes/kubeconfig",
+		},
+	}
+
+	configRaw, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling configuration: %w", err)
+	}
+
+	configFiles["/etc/kubernetes/kube-scheduler/kube-scheduler.yaml"] = string(configRaw)
 
 	containerConfig := container.Container{
 		// TODO: This is weird. This sets docker as default runtime config.
