@@ -10,15 +10,17 @@ require (
 	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.3.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
-	github.com/opencontainers/image-spec v1.0.1
+	github.com/opencontainers/image-spec v1.0.2
 	github.com/urfave/cli/v2 v2.3.0
 	go.etcd.io/etcd/api/v3 v3.5.1
 	go.etcd.io/etcd/client/v3 v3.5.1
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	k8s.io/api v0.22.3
-	k8s.io/apimachinery v0.22.3
-	k8s.io/client-go v0.22.3
-	k8s.io/kubectl v0.22.3
-	k8s.io/kubelet v0.22.3
+	k8s.io/api v0.23.0
+	k8s.io/apimachinery v0.23.0
+	k8s.io/client-go v0.23.0
+	k8s.io/component-base v0.23.0
+	k8s.io/kube-scheduler v0.23.0
+	k8s.io/kubectl v0.23.0
+	k8s.io/kubelet v0.23.0
 	sigs.k8s.io/yaml v1.3.0
 )
