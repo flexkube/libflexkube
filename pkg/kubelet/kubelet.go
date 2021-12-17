@@ -445,12 +445,6 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return
 			Target: "/sys",
 		},
 		{
-			// As kubelet is adding some chains to the iptables, it should share the lock with the host,
-			// to avoid races with kube-proxy.
-			Source: "/run/xtables.lock",
-			Target: "/run/xtables.lock",
-		},
-		{
 			Source: fmt.Sprintf("%s/", strings.TrimSuffix(k.config.VolumePluginDir, "/")),
 			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
