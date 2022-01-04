@@ -60,6 +60,8 @@ linters-settings:
     allow-leading-space: false
     require-explanation: true
     require-specific: true
+  revive:
+    enable-all-rules: true
   wsl:
     force-err-cuddling: true
 
