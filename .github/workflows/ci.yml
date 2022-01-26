@@ -23,7 +23,7 @@ jobs:
         fetch-depth: 0
     - name: Install required binaries
       run: make install-cc-test-reporter install-changelog BIN_PATH=/usr/local/bin
-    - run: make build build-test test-update-linters lint test-tidy test-cover-upload test-changelog
+    - run: make build build-test test-update-linters lint test-tidy test-integration-cover-upload test-changelog
   build-docker:
     runs-on: ubuntu-latest
     steps:
