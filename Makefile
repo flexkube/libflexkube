@@ -101,6 +101,10 @@ test-integration: build-test
 test-cover: build-test
 	$(GOTEST) -run $(GO_TESTS) -coverprofile=$(COVERPROFILE) $(GO_PACKAGES)
 
+.PHONY: test-integration-cover
+test-integration-cover: build-test
+	$(GOTEST) -run $(GO_TESTS) -tags=integration -coverprofile=$(COVERPROFILE) $(GO_PACKAGES)
+
 .PHONY: test-mutate
 test-mutate: install-go-mutesting
 	go-mutesting --verbose $(GO_PACKAGES)
@@ -206,6 +210,20 @@ test-cover-upload-codeclimate:
 
 .PHONY: test-cover-upload
 test-cover-upload: test-cover-upload-codecov test-cover-upload-codeclimate
+
+.PHONY: test-integration-cover-upload-codecov
+test-integration-cover-upload-codecov: SHELL=/bin/bash
+test-integration-cover-upload-codecov: test-integration-cover
+test-integration-cover-upload-codecov:
+	bash <(curl -s https://codecov.io/bash) -f $(COVERPROFILE)
+
+.PHONY: test-integration-cover-upload-codeclimate
+test-integration-cover-upload-codeclimate: test-integration-cover
+test-integration-cover-upload-codeclimate:
+	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m)
+
+.PHONY: test-integration-cover-upload
+test-integration-cover-upload: test-integration-cover-upload-codecov test-integration-cover-upload-codeclimate
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
