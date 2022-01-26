@@ -15,10 +15,14 @@ services:
       - PUID=0
       - PGID=0
       - PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD_FILE=/root/.ssh/password
       - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
     volumes:
       - ./secrets:/root/.ssh
+      - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./98-ssh-as-root-with-password:/config/custom-cont-init.d/98-ssh-as-root-with-password
     ports:
       - 2222:2222
     # Workaround for flaky network inside container.
