@@ -4,11 +4,10 @@ services:
   generate-secrets:
     image: ghcr.io/linuxserver/openssh-server
     entrypoint:
-      - /bin/sh
-      - -c
-      - 'test -f /root/.ssh/id_rsa || ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""'
+      - /usr/local/bin/generate-secrets.sh
     volumes:
       - ./keys:/root/.ssh
+      - ./generate-secrets.sh:/usr/local/bin/generate-secrets.sh
   openssh-server:
     image: ghcr.io/linuxserver/openssh-server
     environment:
