@@ -5,15 +5,23 @@ package apiloadbalancer
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/flexkube/libflexkube/internal/util"
 )
 
+//nolint:funlen // Just lengthy test function.
 func TestDeploy(t *testing.T) {
 	t.Parallel()
 
-	key, err := ioutil.ReadFile("/home/core/.ssh/id_rsa")
+	sshPrivateKeyPath := os.Getenv("TEST_INTEGRATION_SSH_PRIVATE_KEY_PATH")
+
+	if sshPrivateKeyPath == "" {
+		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
+	}
+
+	key, err := ioutil.ReadFile(sshPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key shouldn't fail, got: %v", err)
 	}

@@ -9,23 +9,25 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/flexkube/libflexkube/pkg/host/transport"
 )
 
-// This socket must be created on SSH target host (so when running tests in container,
-// share /run with the host).
-const testServerAddr = "/run/test.sock"
-
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
 // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPasswordAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	passwordFilePath := "/home/core/.password"
+	passwordFilePath := os.Getenv("TEST_INTEGRATION_SSH_PASSWORD_FILE")
+
+	if passwordFilePath == "" {
+		passwordFilePath = "/home/core/.ssh/password"
+	}
 
 	pass, err := ioutil.ReadFile(passwordFilePath)
 	if err != nil {
@@ -38,7 +40,7 @@ func TestPasswordAuth(t *testing.T) {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              Port,
+		Port:              testPort(t),
 		Password:          strings.TrimSpace(string(pass)),
 	}
 
@@ -63,7 +65,7 @@ func TestPasswordAuthFail(t *testing.T) {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              Port,
+		Port:              testPort(t),
 		Password:          "badpassword",
 	}
 
@@ -92,7 +94,11 @@ func withPrivateKey(t *testing.T) transport.Interface {
 
 	unsetSSHAuthSockEnv(t)
 
-	sshPrivateKeyPath := "/home/core/.ssh/id_rsa"
+	sshPrivateKeyPath := os.Getenv("TEST_INTEGRATION_SSH_PRIVATE_KEY_PATH")
+
+	if sshPrivateKeyPath == "" {
+		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
+	}
 
 	key, err := ioutil.ReadFile(sshPrivateKeyPath)
 	if err != nil {
@@ -105,7 +111,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 		ConnectionTimeout: "5s",
 		RetryTimeout:      "5s",
 		RetryInterval:     "1s",
-		Port:              Port,
+		Port:              testPort(t),
 		PrivateKey:        string(key),
 	}
 
@@ -130,9 +136,11 @@ func TestForwardUnixSocketFull(t *testing.T) {
 	randomRequest, _ := testMessage(t)
 	randomResponse, _ := testMessage(t)
 
-	go runServer(t, randomRequest, randomResponse)
+	socket := testServerAddr(t)
 
-	localSocket, err := connected.ForwardUnixSocket(fmt.Sprintf("unix://%s", testServerAddr))
+	go runServer(t, socket, randomRequest, randomResponse)
+
+	localSocket, err := connected.ForwardUnixSocket(fmt.Sprintf("unix://%s", socket))
 	if err != nil {
 		t.Fatalf("Forwarding should succeed, got: %v", err)
 	}
@@ -156,10 +164,16 @@ func TestForwardUnixSocketFull(t *testing.T) {
 	}
 }
 
-func prepareTestSocket(t *testing.T) net.Listener {
+func testServerAddr(t *testing.T) string {
 	t.Helper()
 
-	listener, err := net.Listen("unix", testServerAddr)
+	return filepath.Join(t.TempDir(), "test.sock")
+}
+
+func prepareTestSocket(t *testing.T, socket string) net.Listener {
+	t.Helper()
+
+	listener, err := net.Listen("unix", socket)
 	if err != nil {
 		// Can't use t.Fatalf from go routine. use fmt.Printf + t.Fail() instead
 		//
@@ -172,25 +186,29 @@ func prepareTestSocket(t *testing.T) net.Listener {
 		if err := listener.Close(); err != nil {
 			fmt.Printf("Failed closing local listener: %v\n", err)
 		}
-
-		if err := os.Remove(testServerAddr); err != nil {
-			fmt.Printf("Failed removing UNIX socket %q: %v\n", testServerAddr, err)
-		}
 	})
 
-	// We may SSH into host as unprivileged user, so make sure we are allowed to access the
-	// socket file.
-	if err := os.Chmod(testServerAddr, 0o777); err != nil {
-		fmt.Printf("Socket chmod should succeed, got: %v\n", err)
-		t.Fail()
+	parentDir := filepath.Dir(socket)
+
+	for _, path := range []string{
+		socket,
+		parentDir,
+		filepath.Dir(parentDir),
+	} {
+		// We may SSH into host as unprivileged user, so make sure we are allowed to access the
+		// socket file.
+		if err := os.Chmod(path, 0o777); err != nil {
+			fmt.Printf("Socket chmod should succeed, got: %v\n", err)
+			t.Fail()
+		}
 	}
 
 	return listener
 }
 
 //nolint:thelper // This function is actually part of the test.
-func runServer(t *testing.T, expectedRequest, response []byte) {
-	l := prepareTestSocket(t)
+func runServer(t *testing.T, socket string, expectedRequest, response []byte) {
+	l := prepareTestSocket(t, socket)
 
 	conn, err := l.Accept()
 	if err != nil {
@@ -230,4 +248,20 @@ func runServer(t *testing.T, expectedRequest, response []byte) {
 		fmt.Printf("Failed closing connection: %v\n", err)
 		t.Fail()
 	}
+}
+
+func testPort(t *testing.T) int {
+	t.Helper()
+
+	envPort := os.Getenv("TEST_INTEGRATION_SSH_PORT")
+	if envPort == "" {
+		return Port
+	}
+
+	port, err := strconv.Atoi(envPort)
+	if err != nil {
+		t.Fatalf("Failed parsing test port %q: %v", envPort, err)
+	}
+
+	return port
 }
