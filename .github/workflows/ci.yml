@@ -18,12 +18,37 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     - uses: actions/checkout@v2
+    - run: make install-changelog BIN_PATH=/usr/local/bin
+    - run: make build build-test test-update-linters lint test-tidy test-changelog
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    - uses: actions/checkout@v2
       with:
         # Required for Codecov report uploading.
         fetch-depth: 0
     - name: Install required binaries
-      run: make install-cc-test-reporter install-changelog BIN_PATH=/usr/local/bin
-    - run: make build build-test test-update-linters lint test-tidy test-integration-cover-upload test-changelog
+      run: |
+        docker-compose -f e2e/docker-compose.yml up generate-secrets
+        sudo chown $(whoami): ./e2e/secrets/*
+        docker-compose -f e2e/docker-compose.yml up -d
+        make install-cc-test-reporter BIN_PATH=/usr/local/bin
+    - run: |
+        export TEST_INTEGRATION_SSH_PORT=2222
+        export TEST_INTEGRATION_SSH_PASSWORD_FILE=$(pwd)/e2e/secrets/password
+        export TEST_INTEGRATION_SSH_PRIVATE_KEY_PATH=$(pwd)/e2e/secrets/id_rsa
+        make test-integration-cover-upload
   build-docker:
     runs-on: ubuntu-latest
     steps:
