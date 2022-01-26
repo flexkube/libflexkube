@@ -1,7 +1,7 @@
 ---
 version: "3.8"
 services:
-  generate-keys:
+  generate-secrets:
     image: ghcr.io/linuxserver/openssh-server
     entrypoint:
       - /bin/sh
