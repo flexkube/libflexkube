@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"io"
+	"io/ioutil"
+	"strings"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -135,6 +137,10 @@ func (f *FakeClient) ImageList(
 	ctx context.Context,
 	options dockertypes.ImageListOptions,
 ) ([]dockertypes.ImageSummary, error) {
+	if f.ImageListF == nil {
+		return []dockertypes.ImageSummary{}, nil
+	}
+
 	return f.ImageListF(ctx, options)
 }
 
@@ -144,5 +150,9 @@ func (f *FakeClient) ImagePull(
 	ref string,
 	options dockertypes.ImagePullOptions,
 ) (io.ReadCloser, error) {
+	if f.ImagePullF == nil {
+		return ioutil.NopCloser(strings.NewReader("")), nil
+	}
+
 	return f.ImagePullF(ctx, ref, options)
 }
