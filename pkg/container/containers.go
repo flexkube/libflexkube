@@ -87,8 +87,8 @@ func (c *Containers) New() (ContainersInterface, error) {
 	desiredState, _ := c.DesiredState.New()   //nolint:errcheck // Checked in Validate().
 
 	return &containers{
-		previousState: previousState.(containersState),
-		desiredState:  desiredState.(containersState),
+		previousState: previousState.(containersState), //nolint:forcetypeassert // This should be avoided.
+		desiredState:  desiredState.(containersState),  //nolint:forcetypeassert // This should be avoided.
 	}, nil
 }
 

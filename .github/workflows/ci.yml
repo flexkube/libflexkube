@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.43.0
+    container: golangci/golangci-lint:v1.44.0
     steps:
     - uses: actions/cache@v2
       with:
@@ -77,7 +77,7 @@ jobs:
     - uses: codespell-project/actions-codespell@master
       with:
         skip: .git,go.sum
-        ignore_words_list: uptodate
+        ignore_words_list: uptodate,decorder
         check_filenames: true
         check_hidden: true
   vagrant:

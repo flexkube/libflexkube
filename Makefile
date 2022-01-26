@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -ldflags $(LD_FLAGS) -trimpath
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.43.0
+GOLANGCI_LINT_VERSION=v1.44.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -190,7 +190,7 @@ test-update-linters: test-working-tree-clean
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate,decorder
 
 .PHONY: codespell-pr
 codespell-pr:

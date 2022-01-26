@@ -126,9 +126,14 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Creating container should succeed, got: %v", err)
 	}
 
-	originalCIID := containerID.(*containerInstance).status.ID
+	testContainerInstance, ok := containerID.(*containerInstance)
+	if !ok {
+		t.Fatalf("Unexpected type for containerID: %T", containerID)
+	}
 
-	containerID.(*containerInstance).status.ID = ""
+	originalCIID := testContainerInstance.status.ID
+
+	testContainerInstance.status.ID = ""
 
 	status, err := containerID.Status()
 	if err != nil {
@@ -139,7 +144,7 @@ func TestDockerStatusNonExistingContainer(t *testing.T) {
 		t.Fatalf("Container ID for non existing container should be empty")
 	}
 
-	containerID.(*containerInstance).status.ID = originalCIID
+	testContainerInstance.status.ID = originalCIID
 
 	t.Cleanup(func() {
 		if err := containerID.Delete(); err != nil {

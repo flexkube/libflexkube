@@ -143,7 +143,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 	}
 }
 
-//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo // Test function, splitting it decreases readability.
+//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo,maintidx // Test function, splitting it decreases readability.
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 

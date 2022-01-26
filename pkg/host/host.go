@@ -39,18 +39,18 @@ func (h *Host) New() (transport.Interface, error) {
 	}
 
 	// TODO that seems ugly, is there a better way to generalize it?
-	var t transport.Interface
+	var configuredTransport transport.Interface
 
 	if h.DirectConfig != nil {
-		t, _ = h.DirectConfig.New() //nolint:errcheck // We check it in Validate().
+		configuredTransport, _ = h.DirectConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	if h.SSHConfig != nil {
-		t, _ = h.SSHConfig.New() //nolint:errcheck // We check it in Validate().
+		configuredTransport, _ = h.SSHConfig.New() //nolint:errcheck // We check it in Validate().
 	}
 
 	return &host{
-		transport: t,
+		transport: configuredTransport,
 	}, nil
 }
 

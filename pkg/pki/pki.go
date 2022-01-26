@@ -335,7 +335,7 @@ func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 }
 
 // persistPublicKey persist given RSA public key into the certificate object.
-func (c *Certificate) persistPublicKey(k *rsa.PublicKey) error {
+func (c *Certificate) persistPublicKey(k interface{}) error {
 	pubBytes, err := x509.MarshalPKIXPublicKey(k)
 	if err != nil {
 		return fmt.Errorf("marshaling RSA public key: %w", err)
@@ -368,7 +368,7 @@ func (c *Certificate) generatePrivateKey() (*rsa.PrivateKey, error) {
 
 	c.PrivateKey = types.PrivateKey(buf.String())
 
-	if err := c.persistPublicKey(privateKey.Public().(*rsa.PublicKey)); err != nil {
+	if err := c.persistPublicKey(privateKey.Public()); err != nil {
 		return nil, fmt.Errorf("persisting RSA public key: %w", err)
 	}
 

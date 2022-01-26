@@ -133,7 +133,7 @@ func (s containersState) Export() ContainersState {
 	exportedState := ContainersState{}
 
 	for containerName, hcc := range s {
-		exportedHCC := &HostConfiguredContainer{
+		exportedHCC := &HostConfiguredContainer{ //nolint:forcetypeassert // False positive?.
 			Container: Container{
 				Config: hcc.container.Config(),
 				Runtime: RuntimeConfig{
