@@ -58,7 +58,7 @@ jobs:
       run: |
         docker-compose -f e2e/docker-compose.yml up -d
         cat <<EOF > e2e/test-config.yaml
-          sshPrivateKeyPath: $(pwd)/e2e/keys/id_rsa
+          sshPrivateKeyPath: $(pwd)/e2e/secrets/id_rsa
           nodesCIDR: 172.17.0.0/24
           nodeSSHPort: 2222
           workersCount: 0
@@ -68,7 +68,7 @@ jobs:
           cgroupDriver: cgroupfs
         EOF
         helm repo add flexkube https://flexkube.github.io/charts/
-        sudo chown $(whoami): e2e/keys/id_rsa
+        sudo chown $(whoami): e2e/secrets/id_rsa
     - run: make test-e2e
   codespell:
     runs-on: ubuntu-latest

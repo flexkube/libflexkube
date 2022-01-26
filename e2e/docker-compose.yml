@@ -6,7 +6,7 @@ services:
     entrypoint:
       - /usr/local/bin/generate-secrets.sh
     volumes:
-      - ./keys:/root/.ssh
+      - ./secrets:/root/.ssh
       - ./generate-secrets.sh:/usr/local/bin/generate-secrets.sh
   openssh-server:
     image: ghcr.io/linuxserver/openssh-server
@@ -17,7 +17,7 @@ services:
       - PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
       - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
     volumes:
-      - ./keys:/root/.ssh
+      - ./secrets:/root/.ssh
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 2222:2222
