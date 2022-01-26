@@ -110,8 +110,8 @@ EOF
         config.vm.provision "shell", inline: <<-EOF
           set -e
           echo "#{ssh_private_key}" > /home/core/.ssh/id_rsa && chmod 0600 /home/core/.ssh/id_rsa
-          openssl rand -base64 14 > /home/core/.password
-          yes $(cat /home/core/.password) | sudo passwd core
+          openssl rand -base64 14 > /home/core/.ssh/password
+          yes $(cat /home/core/.ssh/password) | sudo passwd core
         EOF
       end
 

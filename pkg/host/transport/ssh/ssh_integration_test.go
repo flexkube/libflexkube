@@ -25,7 +25,7 @@ const testServerAddr = "/run/test.sock"
 func TestPasswordAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
-	passwordFilePath := "/home/core/.password"
+	passwordFilePath := "/home/core/.ssh/password"
 
 	pass, err := ioutil.ReadFile(passwordFilePath)
 	if err != nil {
