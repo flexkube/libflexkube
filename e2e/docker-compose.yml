@@ -21,3 +21,5 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 2222:2222
+    # Workaround for flaky network inside container.
+    network_mode: bridge
