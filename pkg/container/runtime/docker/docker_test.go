@@ -1,4 +1,4 @@
-package docker
+package docker_test
 
 import (
 	"archive/tar"
@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	"github.com/flexkube/libflexkube/pkg/container/runtime/docker"
 	"github.com/flexkube/libflexkube/pkg/container/types"
 )
 
@@ -30,33 +31,36 @@ func TestNewClient(t *testing.T) {
 
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
-	c := &Config{}
-
-	d, err := c.New()
-	if err != nil {
-		t.Errorf("Creating new docker client should work, got: %s", err)
+	c := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) { return nil, nil },
 	}
 
-	if d.(*docker).cli == nil {
-		t.Fatalf("New should set docker cli field")
+	if _, err := c.New(); err != nil {
+		t.Fatalf("Creating new docker client should work, got: %s", err)
 	}
 }
 
-// getDockerClient() tests.
+// getClient() tests.
 func TestNewClientWithHost(t *testing.T) {
 	t.Parallel()
 
-	config := &Config{
+	config := &docker.Config{
 		Host: "unix:///foo.sock",
+		ClientGetter: func(opts ...client.Opt) (docker.Client, error) {
+			for k, v := range opts {
+				/*
+					if dh := c.DaemonHost(); dh != config.Host {
+						t.Fatalf("Client with host set should have %q as host, got: %q", config.Host, dh)
+					}*/
+				t.Log(k, v)
+			}
+
+			return nil, nil
+		},
 	}
 
-	c, err := config.getDockerClient()
-	if err != nil {
+	if _, err := config.New(); err != nil {
 		t.Fatalf("Creating new docker client should work, got: %s", err)
-	}
-
-	if dh := c.DaemonHost(); dh != config.Host {
-		t.Fatalf("Client with host set should have %q as host, got: %q", config.Host, dh)
 	}
 }
 
@@ -64,20 +68,96 @@ func TestNewClientWithHost(t *testing.T) {
 func TestSanitizeImageName(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:latest" //nolint:ifshort // Declare 2 variables in if statement is not common.
+	expectedImage := "foo:latest"
 
-	if g := sanitizeImageName("foo"); g != e {
-		t.Fatalf("Expected %q, got %q", e, g)
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					ctx context.Context,
+					config *containertypes.Config,
+					hostConfig *containertypes.HostConfig,
+					networkingConfig *networktypes.NetworkingConfig,
+					platform *v1.Platform,
+					containerName string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					return containertypes.ContainerCreateCreatedBody{}, nil
+				},
+				ImageListF: func(
+					ctx context.Context,
+					options dockertypes.ImageListOptions,
+				) ([]dockertypes.ImageSummary, error) {
+					return []dockertypes.ImageSummary{
+						{
+							ID: "nonemptystring",
+							RepoTags: []string{
+								expectedImage,
+							},
+						},
+					}, nil
+				},
+				ImagePullF: func(
+					ctx context.Context,
+					ref string,
+					options dockertypes.ImagePullOptions,
+				) (io.ReadCloser, error) {
+					t.Fatalf("Unexpected call to image pull")
+
+					return nil, nil
+				},
+			}, nil
+		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	containerConfig := &types.ContainerConfig{
+		Image: "foo",
+	}
+
+	if _, err := testClient.Create(containerConfig); err != nil {
+		t.Fatalf("Unexpected error creating test container: %v", err)
 	}
 }
 
 func TestSanitizeImageNameWithTag(t *testing.T) {
 	t.Parallel()
 
-	e := "foo:v0.1.0" //nolint:ifshort // Declare 2 variables in if statement is not common.
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					ctx context.Context,
+					config *containertypes.Config,
+					hostConfig *containertypes.HostConfig,
+					networkingConfig *networktypes.NetworkingConfig,
+					platform *v1.Platform,
+					containerName string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					if config.Image != "foo:v0.1.0" {
+						t.Fatal()
+					}
 
-	if g := sanitizeImageName(e); g != e {
-		t.Fatalf("Expected %q, got %q", e, g)
+					return containertypes.ContainerCreateCreatedBody{}, nil
+				},
+			}, nil
+		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	containerConfig := &types.ContainerConfig{
+		Image: "foo:v0.1.0",
+	}
+
+	if _, err := testClient.Create(containerConfig); err != nil {
+		t.Fatalf("Unexpected error creating test container: %v", err)
 	}
 }
 
@@ -87,19 +167,25 @@ func TestStatus(t *testing.T) {
 
 	expectedStatus := "running"
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
-				return dockertypes.ContainerJSON{
-					ContainerJSONBase: &dockertypes.ContainerJSONBase{
-						State: &dockertypes.ContainerState{
-							Status: expectedStatus,
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+					return dockertypes.ContainerJSON{
+						ContainerJSONBase: &dockertypes.ContainerJSONBase{
+							State: &dockertypes.ContainerState{
+								Status: expectedStatus,
+							},
 						},
-					},
-				}, nil
-			},
+					}, nil
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	status, err := testClient.Status("foo")
@@ -119,13 +205,19 @@ func TestStatus(t *testing.T) {
 func TestStatusNotFound(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
-				return dockertypes.ContainerJSON{}, errdefs.NotFound(fmt.Errorf("not found"))
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+					return dockertypes.ContainerJSON{}, errdefs.NotFound(fmt.Errorf("not found"))
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	s, err := testClient.Status("foo")
@@ -141,13 +233,19 @@ func TestStatusNotFound(t *testing.T) {
 func TestStatusRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
-				return dockertypes.ContainerJSON{}, fmt.Errorf("can't check status of container")
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+					return dockertypes.ContainerJSON{}, fmt.Errorf("can't check status of container")
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if _, err := testClient.Status("foo"); err == nil {
@@ -159,13 +257,19 @@ func TestStatusRuntimeError(t *testing.T) {
 func TestCopyRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			CopyToContainerF: func(_ context.Context, _, _ string, _ io.Reader, _ dockertypes.CopyToContainerOptions) error {
-				return fmt.Errorf("Copying failed")
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyToContainerF: func(_ context.Context, _, _ string, _ io.Reader, _ dockertypes.CopyToContainerOptions) error {
+					return fmt.Errorf("Copying failed")
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if err := testClient.Copy("foo", []*types.File{}); err == nil {
@@ -177,17 +281,23 @@ func TestCopyRuntimeError(t *testing.T) {
 func TestReadRuntimeError(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			CopyFromContainerF: func(_ context.Context, _, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-				if path != defaultPath {
-					t.Fatalf("Should read path %s, got %s", defaultPath, path)
-				}
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyFromContainerF: func(_ context.Context, _, path string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+					if path != defaultPath {
+						t.Fatalf("Should read path %s, got %s", defaultPath, path)
+					}
 
-				return nil, dockertypes.ContainerPathStat{}, fmt.Errorf("Copying failed")
-			},
+					return nil, dockertypes.ContainerPathStat{}, fmt.Errorf("Copying failed")
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if _, err := testClient.Read("foo", []string{defaultPath}); err == nil {
@@ -203,15 +313,21 @@ const (
 func TestRead(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-				return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
-					Name: defaultPath,
-				}, nil
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+					return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
+						Name: defaultPath,
+					}, nil
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	readFiles, err := testClient.Read("foo", []string{defaultPath})
@@ -237,13 +353,19 @@ func TestRead(t *testing.T) {
 func TestReadFileMissing(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-				return nil, dockertypes.ContainerPathStat{}, nil
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+					return nil, dockertypes.ContainerPathStat{}, nil
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	fs, err := testClient.Read("foo", []string{defaultPath})
@@ -274,13 +396,19 @@ DT71fav/qfm/u1/vAAAAAAAAAAAAAAAAAABYbwIOFGnRACgAAA==`)
 func TestReadVerifyTarArchive(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-				return ioutil.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+					return ioutil.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if _, err := testClient.Read("foo", []string{defaultPath}); err == nil {
@@ -292,13 +420,29 @@ func TestReadVerifyTarArchive(t *testing.T) {
 func TestTarToFiles(t *testing.T) {
 	t.Parallel()
 
-	filesFromArchive, err := tarToFiles(testTar(t))
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
+					return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{}, nil
+				},
+			}, nil
+		},
+	}
+
+	testClient, err := testConfig.New()
 	if err != nil {
-		t.Fatalf("Reading should succeed, got: %v", err)
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	filesFromArchive, err := testClient.Read("foo", []string{defaultPath})
+	if err != nil {
+		t.Fatalf("Unexpected error reading from container: %v", err)
 	}
 
 	expectedFiles := []*types.File{
 		{
+			Path:    "/foo",
 			Content: "foo\n",
 			Mode:    defaultMode,
 			User:    "1000",
@@ -312,6 +456,8 @@ func TestTarToFiles(t *testing.T) {
 }
 
 // filesToTar() tests.
+//
+//nolint:funlen // Just lengthy test.
 func TestFilesToTar(t *testing.T) {
 	t.Parallel()
 
@@ -325,36 +471,56 @@ func TestFilesToTar(t *testing.T) {
 		Group:   testUser,
 	}
 
-	r, err := filesToTar([]*types.File{testFile})
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyToContainerF: func(
+					ctx context.Context,
+					container,
+					path string,
+					r io.Reader,
+					options dockertypes.CopyToContainerOptions,
+				) error {
+					tr := tar.NewReader(r)
+
+					header, err := tr.Next()
+					if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
+						t.Fatalf("At least one file should be found in TAR archive")
+					}
+
+					if header.Name != testFile.Path {
+						t.Fatalf("Bad file name, expected %s, got %s", testFile.Path, header.Name)
+					}
+
+					if header.Mode != testFile.Mode {
+						t.Fatalf("Bad file mode, expected %d, got %d", testFile.Mode, header.Mode)
+					}
+
+					if header.ModTime.IsZero() {
+						t.Fatalf("Modification time in file should be set to current time")
+					}
+
+					if header.Uname != testUser {
+						t.Fatalf("Expecter uname to be %s, got %s", testUser, header.Uname)
+					}
+
+					if header.Gname != testUser {
+						t.Fatalf("Expected gname to be %s, got %s", testUser, header.Gname)
+					}
+
+					return nil
+				},
+			}, nil
+		},
+	}
+
+	testClient, err := testConfig.New()
 	if err != nil {
-		t.Fatalf("Packing files should succeed, got: %v", err)
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
-	tr := tar.NewReader(r)
-
-	header, err := tr.Next()
-	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
-		t.Fatalf("At least one file should be found in TAR archive")
-	}
-
-	if header.Name != testFile.Path {
-		t.Fatalf("Bad file name, expected %s, got %s", testFile.Path, header.Name)
-	}
-
-	if header.Mode != testFile.Mode {
-		t.Fatalf("Bad file mode, expected %d, got %d", testFile.Mode, header.Mode)
-	}
-
-	if header.ModTime.IsZero() {
-		t.Fatalf("Modification time in file should be set to current time")
-	}
-
-	if header.Uname != testUser {
-		t.Fatalf("Expecter uname to be %s, got %s", testUser, header.Uname)
-	}
-
-	if header.Gname != testUser {
-		t.Fatalf("Expected gname to be %s, got %s", testUser, header.Gname)
+	if err := testClient.Copy("", []*types.File{testFile}); err != nil {
+		t.Fatalf("Unexpected error while copying: %v", err)
 	}
 }
 
@@ -362,6 +528,42 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 	t.Parallel()
 
 	expectedOwnerID := 1001
+
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				CopyToContainerF: func(
+					ctx context.Context,
+					container,
+					path string,
+					r io.Reader,
+					options dockertypes.CopyToContainerOptions,
+				) error {
+					tr := tar.NewReader(r)
+
+					header, err := tr.Next()
+					if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
+						t.Fatalf("At least one file should be found in TAR archive")
+					}
+
+					if header.Uid != expectedOwnerID {
+						t.Fatalf("Expecter uid to be %d, got %d", expectedOwnerID, header.Uid)
+					}
+
+					if header.Gid != expectedOwnerID {
+						t.Fatalf("Expected gid to be %d, got %d", expectedOwnerID, header.Gid)
+					}
+
+					return nil
+				},
+			}, nil
+		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
 
 	testFile := &types.File{
 		Content: "foo\n",
@@ -371,24 +573,8 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 		Group:   strconv.Itoa(expectedOwnerID),
 	}
 
-	r, err := filesToTar([]*types.File{testFile})
-	if err != nil {
-		t.Fatalf("Packing files should succeed, got: %v", err)
-	}
-
-	tr := tar.NewReader(r)
-
-	header, err := tr.Next()
-	if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
-		t.Fatalf("At least one file should be found in TAR archive")
-	}
-
-	if header.Uid != expectedOwnerID {
-		t.Fatalf("Expecter uid to be %d, got %d", expectedOwnerID, header.Uid)
-	}
-
-	if header.Gid != expectedOwnerID {
-		t.Fatalf("Expected gid to be %d, got %d", expectedOwnerID, header.Gid)
+	if err := testClient.Copy("", []*types.File{testFile}); err != nil {
+		t.Fatalf("Unexpected error while copying: %v", err)
 	}
 }
 
@@ -396,13 +582,19 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 func TestCreatePullImageFail(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-				return []dockertypes.ImageSummary{}, fmt.Errorf("runtime error")
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return []dockertypes.ImageSummary{}, fmt.Errorf("runtime error")
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if _, err := testClient.Create(&types.ContainerConfig{}); err == nil {
@@ -413,37 +605,43 @@ func TestCreatePullImageFail(t *testing.T) {
 func TestCreateSetUser(t *testing.T) {
 	t.Parallel()
 
-	testConfig := &types.ContainerConfig{
+	testContainerConfig := &types.ContainerConfig{
 		User: "test",
 	}
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerCreateF: func(
-				_ context.Context,
-				config *containertypes.Config,
-				_ *containertypes.HostConfig,
-				_ *networktypes.NetworkingConfig,
-				_ *v1.Platform,
-				_ string,
-			) (containertypes.ContainerCreateCreatedBody, error) {
-				if config.User != testConfig.User {
-					t.Fatalf("Configured user should be %q, got %q", testConfig.User, config.User)
-				}
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					_ context.Context,
+					config *containertypes.Config,
+					_ *containertypes.HostConfig,
+					_ *networktypes.NetworkingConfig,
+					_ *v1.Platform,
+					_ string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					if config.User != testContainerConfig.User {
+						t.Fatalf("Configured user should be %q, got %q", testContainerConfig.User, config.User)
+					}
 
-				return containertypes.ContainerCreateCreatedBody{}, nil
-			},
-			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-				return ioutil.NopCloser(strings.NewReader("")), nil
-			},
-			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-				return []dockertypes.ImageSummary{}, nil
-			},
+					return containertypes.ContainerCreateCreatedBody{}, nil
+				},
+				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+					return ioutil.NopCloser(strings.NewReader("")), nil
+				},
+				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return []dockertypes.ImageSummary{}, nil
+				},
+			}, nil
 		},
 	}
 
-	if _, err := testClient.Create(testConfig); err != nil {
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	if _, err := testClient.Create(testContainerConfig); err != nil {
 		t.Fatalf("Create should succeed, got: %v", err)
 	}
 }
@@ -451,40 +649,46 @@ func TestCreateSetUser(t *testing.T) {
 func TestCreateSetUserGroup(t *testing.T) {
 	t.Parallel()
 
-	testConfig := &types.ContainerConfig{
+	testContainerConfig := &types.ContainerConfig{
 		User:  "test",
 		Group: "bar",
 	}
 
-	expectedUser := fmt.Sprintf("%s:%s", testConfig.User, testConfig.Group)
+	expectedUser := fmt.Sprintf("%s:%s", testContainerConfig.User, testContainerConfig.Group)
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerCreateF: func(
-				_ context.Context,
-				config *containertypes.Config,
-				_ *containertypes.HostConfig,
-				_ *networktypes.NetworkingConfig,
-				_ *v1.Platform,
-				_ string,
-			) (containertypes.ContainerCreateCreatedBody, error) {
-				if config.User != expectedUser {
-					t.Fatalf("Configured user should be %q, got %q", expectedUser, config.User)
-				}
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					_ context.Context,
+					config *containertypes.Config,
+					_ *containertypes.HostConfig,
+					_ *networktypes.NetworkingConfig,
+					_ *v1.Platform,
+					_ string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					if config.User != expectedUser {
+						t.Fatalf("Configured user should be %q, got %q", expectedUser, config.User)
+					}
 
-				return containertypes.ContainerCreateCreatedBody{}, nil
-			},
-			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-				return ioutil.NopCloser(strings.NewReader("")), nil
-			},
-			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-				return []dockertypes.ImageSummary{}, nil
-			},
+					return containertypes.ContainerCreateCreatedBody{}, nil
+				},
+				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+					return ioutil.NopCloser(strings.NewReader("")), nil
+				},
+				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return []dockertypes.ImageSummary{}, nil
+				},
+			}, nil
 		},
 	}
 
-	if _, err := testClient.Create(testConfig); err != nil {
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	if _, err := testClient.Create(testContainerConfig); err != nil {
 		t.Fatalf("Create should succeed, got: %v", err)
 	}
 }
@@ -492,26 +696,32 @@ func TestCreateSetUserGroup(t *testing.T) {
 func TestCreateRuntimeFail(t *testing.T) {
 	t.Parallel()
 
-	testClient := &docker{
-		ctx: context.Background(),
-		cli: &FakeClient{
-			ContainerCreateF: func(
-				_ context.Context,
-				_ *containertypes.Config,
-				_ *containertypes.HostConfig,
-				_ *networktypes.NetworkingConfig,
-				_ *v1.Platform,
-				_ string,
-			) (containertypes.ContainerCreateCreatedBody, error) {
-				return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
-			},
-			ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-				return ioutil.NopCloser(strings.NewReader("")), nil
-			},
-			ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-				return []dockertypes.ImageSummary{}, nil
-			},
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					_ context.Context,
+					_ *containertypes.Config,
+					_ *containertypes.HostConfig,
+					_ *networktypes.NetworkingConfig,
+					_ *v1.Platform,
+					_ string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
+				},
+				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+					return ioutil.NopCloser(strings.NewReader("")), nil
+				},
+				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return []dockertypes.ImageSummary{}, nil
+				},
+			}, nil
 		},
+	}
+
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
 	}
 
 	if _, err := testClient.Create(&types.ContainerConfig{}); err == nil {
@@ -523,8 +733,8 @@ func TestCreateRuntimeFail(t *testing.T) {
 func TestDefaultConfig(t *testing.T) {
 	t.Parallel()
 
-	if DefaultConfig().Host != client.DefaultDockerHost {
-		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, DefaultConfig().Host)
+	if docker.DefaultConfig().Host != client.DefaultDockerHost {
+		t.Fatalf("Host should be set to %s, got %s", client.DefaultDockerHost, docker.DefaultConfig().Host)
 	}
 }
 
@@ -532,7 +742,7 @@ func TestDefaultConfig(t *testing.T) {
 func TestGetAddressNilConfig(t *testing.T) {
 	t.Parallel()
 
-	var c *Config
+	var c *docker.Config
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
 		t.Fatalf("Expected %q, got %q", client.DefaultDockerHost, a)
@@ -542,7 +752,7 @@ func TestGetAddressNilConfig(t *testing.T) {
 func TestGetAddressEmptyConfig(t *testing.T) {
 	t.Parallel()
 
-	c := &Config{}
+	c := &docker.Config{}
 
 	if a := c.GetAddress(); a != client.DefaultDockerHost {
 		t.Fatalf("Expected %q, got %q", client.DefaultDockerHost, a)
@@ -553,7 +763,7 @@ func TestGetAddress(t *testing.T) {
 	t.Parallel()
 
 	expectedAddress := "foo"
-	c := &Config{
+	c := &docker.Config{
 		Host: expectedAddress,
 	}
 
@@ -572,12 +782,33 @@ func TestConvertContainerConfigEnvVariables(t *testing.T) {
 
 	expectedEnvVariables := []string{"foo=bar"}
 
-	cc, _, err := convertContainerConfig(testContainerConfig)
-	if err != nil {
-		t.Fatalf("Converting configuration should succeed, got: %v", err)
+	testConfig := &docker.Config{
+		ClientGetter: func(...client.Opt) (docker.Client, error) {
+			return &docker.FakeClient{
+				ContainerCreateF: func(
+					ctx context.Context,
+					config *containertypes.Config,
+					hostConfig *containertypes.HostConfig,
+					networkingConfig *networktypes.NetworkingConfig,
+					platform *v1.Platform,
+					containerName string,
+				) (containertypes.ContainerCreateCreatedBody, error) {
+					if !reflect.DeepEqual(config.Env, expectedEnvVariables) {
+						t.Fatalf("Configured environment variables should be included in container configuration")
+					}
+
+					return containertypes.ContainerCreateCreatedBody{}, nil
+				},
+			}, nil
+		},
 	}
 
-	if !reflect.DeepEqual(cc.Env, expectedEnvVariables) {
-		t.Fatalf("Configured environment variables should be included in container configuration")
+	testClient, err := testConfig.New()
+	if err != nil {
+		t.Fatalf("Unexpected error creating test client: %v", err)
+	}
+
+	if _, err := testClient.Create(testContainerConfig); err != nil {
+		t.Fatalf("Unexpected error creating test container: %v", err)
 	}
 }

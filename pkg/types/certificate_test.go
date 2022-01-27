@@ -67,10 +67,7 @@ func TestCertificatePickNil(t *testing.T) {
 
 	var c types.Certificate
 
-	d := types.Certificate("bar")
-	e := types.Certificate("baz")
-
-	if c.Pick(d, e) != "bar" {
+	if c.Pick(types.Certificate("bar"), types.Certificate("baz")) != "bar" {
 		t.Fatalf("First non empty certificate should be picked")
 	}
 }
@@ -79,9 +76,8 @@ func TestCertificatePick(t *testing.T) {
 	t.Parallel()
 
 	d := types.Certificate("foo")
-	e := types.Certificate("baz")
 
-	if d.Pick(e) != "foo" {
+	if d.Pick(types.Certificate("baz")) != "foo" {
 		t.Fatalf("First non empty certificate should be picked")
 	}
 }

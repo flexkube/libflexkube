@@ -11,7 +11,7 @@ GORUN=$(GOCMD) run
 GOBUILD=$(GOCMD) build -v -ldflags $(LD_FLAGS) -trimpath
 
 CC_TEST_REPORTER_ID=6e107e510c5479f40b0ce9166a254f3f1ee0bc547b3e48281bada1a5a32bb56d
-GOLANGCI_LINT_VERSION=v1.43.0
+GOLANGCI_LINT_VERSION=v1.44.0
 BIN_PATH=$$HOME/bin
 
 GO_PACKAGES=./...
@@ -19,13 +19,13 @@ GO_TESTS=^.*$
 
 INTEGRATION_IMAGE=flexkube/libflexkube-integration
 
-INTEGRATION_CMD=docker run -it --rm -v /run:/run -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.password:/home/core/.password -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host $(INTEGRATION_IMAGE)
+INTEGRATION_CMD=docker run -it --rm -v /tmp:/tmp -v /run:/run -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.ssh:/home/core/.ssh -v /home/core/.cache:/root/.cache -w /usr/src/libflexkube --net host $(INTEGRATION_IMAGE)
 
 E2E_IMAGE=flexkube/libflexkube-e2e
 
 E2E_CMD=docker run -it --rm -v /home/core/libflexkube:/root/libflexkube -v /home/core/.ssh:/root/.ssh -v /home/core/go:/go -w /root/libflexkube --net host --entrypoint /bin/bash -e TF_VAR_flatcar_channel=$(FLATCAR_CHANNEL) -e TF_VAR_controllers_count=$(CONTROLLERS) -e TF_VAR_workers_count=$(WORKERS) -e TF_VAR_nodes_cidr=$(NODES_CIDR) $(E2E_IMAGE)
 
-BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
+BUILD_CMD=docker run -it --rm -v /home/core/libflexkube:/usr/src/libflexkube -v /home/core/go:/go -v /home/core/.cache:/root/.cache -v /tmp:/tmp -v /run:/run -w /usr/src/libflexkube $(INTEGRATION_IMAGE)
 
 BINARY_IMAGE=flexkube/libflexkube
 
@@ -100,6 +100,10 @@ test-integration: build-test
 .PHONY: test-cover
 test-cover: build-test
 	$(GOTEST) -run $(GO_TESTS) -coverprofile=$(COVERPROFILE) $(GO_PACKAGES)
+
+.PHONY: test-integration-cover
+test-integration-cover: build-test
+	$(GOTEST) -run $(GO_TESTS) -tags=integration -coverprofile=$(COVERPROFILE) $(GO_PACKAGES)
 
 .PHONY: test-mutate
 test-mutate: install-go-mutesting
@@ -186,7 +190,7 @@ test-update-linters: test-working-tree-clean
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate,decorder
 
 .PHONY: codespell-pr
 codespell-pr:
@@ -206,6 +210,20 @@ test-cover-upload-codeclimate:
 
 .PHONY: test-cover-upload
 test-cover-upload: test-cover-upload-codecov test-cover-upload-codeclimate
+
+.PHONY: test-integration-cover-upload-codecov
+test-integration-cover-upload-codecov: SHELL=/bin/bash
+test-integration-cover-upload-codecov: test-integration-cover
+test-integration-cover-upload-codecov:
+	bash <(curl -s https://codecov.io/bash) -f $(COVERPROFILE)
+
+.PHONY: test-integration-cover-upload-codeclimate
+test-integration-cover-upload-codeclimate: test-integration-cover
+test-integration-cover-upload-codeclimate:
+	env CC_TEST_REPORTER_ID=$(CC_TEST_REPORTER_ID) cc-test-reporter after-build -t gocov -p $$(go list -m)
+
+.PHONY: test-integration-cover-upload
+test-integration-cover-upload: test-integration-cover-upload-codecov test-integration-cover-upload-codeclimate
 
 .PHONY: install-golangci-lint
 install-golangci-lint:

@@ -38,12 +38,15 @@ type Config struct {
 	// Host is a Docker runtime URL. Usually 'unix:///run/docker.sock'. If empty
 	// Docker's default URL will be used.
 	Host string `json:"host,omitempty"`
+
+	// ClientGetter allows to use custom Docker client.
+	ClientGetter func(...client.Opt) (Client, error) `json:"-"`
 }
 
-// dockerClient is a wrapper interface over
+// Client is a wrapper interface over
 // https://godoc.org/github.com/docker/docker/client#ContainerAPIClient
 // with the functions we use.
-type dockerClient interface {
+type Client interface {
 	ContainerCreate(
 		ctx context.Context,
 		config *containertypes.Config,
@@ -52,18 +55,15 @@ type dockerClient interface {
 		platform *v1.Platform,
 		containerName string,
 	) (containertypes.ContainerCreateCreatedBody, error)
-
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
 	ContainerInspect(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
 	ContainerRemove(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
-
 	CopyFromContainer(
 		ctx context.Context,
 		container,
 		srcPath string,
 	) (io.ReadCloser, dockertypes.ContainerPathStat, error)
-
 	CopyToContainer(
 		ctx context.Context,
 		container,
@@ -71,7 +71,6 @@ type dockerClient interface {
 		content io.Reader,
 		options dockertypes.CopyToContainerOptions,
 	) error
-
 	ContainerStatPath(ctx context.Context, container, path string) (dockertypes.ContainerPathStat, error)
 	ImageList(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error)
 	ImagePull(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error)
@@ -79,8 +78,8 @@ type dockerClient interface {
 
 // docker struct is a struct, which can be used to manage Docker containers.
 type docker struct {
-	ctx context.Context
-	cli dockerClient
+	ctx context.Context //nolint:containedctx // Ignore until runtime interface supports context.
+	cli Client
 }
 
 // SetAddress sets runtime config address where it should connect.
@@ -111,7 +110,7 @@ func (c *Config) New() (runtime.Runtime, error) {
 	}, nil
 }
 
-func (c *Config) getDockerClient() (*client.Client, error) {
+func (c *Config) getDockerClient() (Client, error) {
 	opts := []client.Opt{
 		client.WithVersion(defaults.DockerAPIVersion),
 	}
@@ -120,7 +119,11 @@ func (c *Config) getDockerClient() (*client.Client, error) {
 		opts = append(opts, client.WithHost(c.Host))
 	}
 
-	return client.NewClientWithOpts(opts...)
+	if c.ClientGetter == nil {
+		return client.NewClientWithOpts(opts...)
+	}
+
+	return c.ClientGetter(opts...)
 }
 
 // pullImageIfNotPresent pulls image if it's not already present on the host.

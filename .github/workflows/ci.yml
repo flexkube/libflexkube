@@ -7,8 +7,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.43.0
+    container: golangci/golangci-lint:v1.44.0
     steps:
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    - uses: actions/checkout@v2
+    - run: make install-changelog BIN_PATH=/usr/local/bin
+    - run: make build build-test test-update-linters lint test-tidy test-changelog
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
     - uses: actions/cache@v2
       with:
         path: |
@@ -22,8 +39,16 @@ jobs:
         # Required for Codecov report uploading.
         fetch-depth: 0
     - name: Install required binaries
-      run: make install-cc-test-reporter install-changelog BIN_PATH=/usr/local/bin
-    - run: make build build-test test-update-linters lint test-tidy test-cover-upload test-changelog
+      run: |
+        docker-compose -f e2e/docker-compose.yml up generate-secrets
+        sudo chown $(whoami): ./e2e/secrets/*
+        docker-compose -f e2e/docker-compose.yml up -d
+        make install-cc-test-reporter BIN_PATH=/usr/local/bin
+    - run: |
+        export TEST_INTEGRATION_SSH_PORT=2222
+        export TEST_INTEGRATION_SSH_PASSWORD_FILE=$(pwd)/e2e/secrets/password
+        export TEST_INTEGRATION_SSH_PRIVATE_KEY_PATH=$(pwd)/e2e/secrets/id_rsa
+        make test-integration-cover-upload
   build-docker:
     runs-on: ubuntu-latest
     steps:
@@ -58,7 +83,7 @@ jobs:
       run: |
         docker-compose -f e2e/docker-compose.yml up -d
         cat <<EOF > e2e/test-config.yaml
-          sshPrivateKeyPath: $(pwd)/e2e/keys/id_rsa
+          sshPrivateKeyPath: $(pwd)/e2e/secrets/id_rsa
           nodesCIDR: 172.17.0.0/24
           nodeSSHPort: 2222
           workersCount: 0
@@ -68,7 +93,7 @@ jobs:
           cgroupDriver: cgroupfs
         EOF
         helm repo add flexkube https://flexkube.github.io/charts/
-        sudo chown $(whoami): e2e/keys/id_rsa
+        sudo chown $(whoami): e2e/secrets/id_rsa
     - run: make test-e2e
   codespell:
     runs-on: ubuntu-latest
@@ -77,7 +102,7 @@ jobs:
     - uses: codespell-project/actions-codespell@master
       with:
         skip: .git,go.sum
-        ignore_words_list: uptodate
+        ignore_words_list: uptodate,decorder
         check_filenames: true
         check_hidden: true
   vagrant:

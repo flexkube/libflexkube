@@ -41,4 +41,4 @@ test-config.yaml
 # e2e artifacts.
 /e2e/resources
 /e2e/values
-/e2e/keys
+/e2e/secrets

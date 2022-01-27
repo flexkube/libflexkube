@@ -53,14 +53,21 @@ func TestNewSetPassword(t *testing.T) {
 
 	testConfig := newTestConfig(t)
 	testConfig.PrivateKey = ""
+	testConfig.Dialer = func(network, address string, config *gossh.ClientConfig) (Dialer, error) {
+		if len(config.Auth) != authMethods {
+			t.Fatalf("Unexpected auth methods, expected %d, got %v", authMethods, config.Auth)
+		}
+
+		return &gossh.Client{}, nil
+	}
 
 	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	if len(s.(*ssh).auth) != authMethods {
-		t.Fatalf("When Password field is set, object should include one auth method")
+	if _, err := s.Connect(); err != nil {
+		t.Fatalf("Unexpected error connecting with dialer: %v", err)
 	}
 }
 
@@ -71,14 +78,21 @@ func TestNewSetPrivateKey(t *testing.T) {
 
 	testConfig := newTestConfig(t)
 	testConfig.Password = ""
+	testConfig.Dialer = func(network, address string, config *gossh.ClientConfig) (Dialer, error) {
+		if len(config.Auth) != authMethods {
+			t.Fatalf("Unexpected auth methods, expected %d, got %v", authMethods, config.Auth)
+		}
+
+		return &gossh.Client{}, nil
+	}
 
 	s, err := testConfig.New()
 	if err != nil {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	if len(s.(*ssh).auth) != authMethods {
-		t.Fatalf("When PrivateKey field is set, object should include one auth method")
+	if _, err := s.Connect(); err != nil {
+		t.Fatalf("Unexpected error connecting with dialer: %v", err)
 	}
 }
 
@@ -489,6 +503,9 @@ func TestConnect(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 		PrivateKey:        generateRSAPrivateKey(t),
+		Dialer: func(n, a string, config *gossh.ClientConfig) (Dialer, error) {
+			return &gossh.Client{}, nil
+		},
 	}
 
 	s, err := testConfig.New()
@@ -496,16 +513,7 @@ func TestConnect(t *testing.T) {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	testSSH, ok := s.(*ssh)
-	if !ok {
-		t.Fatalf("Converting SSH to internal SSH object")
-	}
-
-	testSSH.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
-		return &gossh.Client{}, nil
-	}
-
-	if _, err := testSSH.Connect(); err != nil {
+	if _, err := s.Connect(); err != nil {
 		t.Fatalf("Connecting should succeed, got: %v", err)
 	}
 }
@@ -524,6 +532,9 @@ func TestConnectFail(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 		PrivateKey:        generateRSAPrivateKey(t),
+		Dialer: func(n, a string, config *gossh.ClientConfig) (Dialer, error) {
+			return nil, fmt.Errorf("expected")
+		},
 	}
 
 	s, err := testConfig.New()
@@ -531,16 +542,7 @@ func TestConnectFail(t *testing.T) {
 		t.Fatalf("Creating new SSH object should succeed, got: %s", err)
 	}
 
-	testSSH, ok := s.(*ssh)
-	if !ok {
-		t.Fatalf("Converting SSH to internal SSH object")
-	}
-
-	testSSH.sshClientGetter = func(n, a string, config *gossh.ClientConfig) (*gossh.Client, error) {
-		return nil, fmt.Errorf("expected")
-	}
-
-	if _, err := testSSH.Connect(); err == nil {
+	if _, err := s.Connect(); err == nil {
 		t.Fatalf("Connecting should fail")
 	}
 }

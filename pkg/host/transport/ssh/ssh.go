@@ -52,6 +52,13 @@ type Config struct {
 	// PrivateKey adds private key as authentication method.
 	// It must be defined as valid SSH private key in PEM format.
 	PrivateKey string `json:"privateKey,omitempty"`
+
+	Dialer func(network, address string, config *gossh.ClientConfig) (Dialer, error) `json:"-"`
+}
+
+// Dialer represents expected functionality from constructed SSH client.
+type Dialer interface {
+	Dial(network, address string) (net.Conn, error)
 }
 
 // ssh is an implementation of Transport interface over SSH protocol.
@@ -62,18 +69,14 @@ type ssh struct {
 	retryTimeout      time.Duration
 	retryInterval     time.Duration
 	auth              []gossh.AuthMethod
-	sshClientGetter   func(network, address string, config *gossh.ClientConfig) (*gossh.Client, error)
+	dialer            func(network, address string, config *gossh.ClientConfig) (Dialer, error)
 }
 
 type sshConnected struct {
-	client   dialer
+	client   Dialer
 	address  string
 	uuid     func() (uuid.UUID, error)
 	listener func(string, string) (net.Listener, error)
-}
-
-type dialer interface {
-	Dial(network, address string) (net.Conn, error)
 }
 
 // New validates SSH configuration and returns new instance of transport interface.
@@ -93,7 +96,11 @@ func (d *Config) New() (transport.Interface, error) {
 		retryTimeout:      retryTimeout,
 		retryInterval:     retryInterval,
 		auth:              []gossh.AuthMethod{},
-		sshClientGetter:   gossh.Dial,
+		dialer:            d.Dialer,
+	}
+
+	if newSSH.dialer == nil {
+		newSSH.dialer = defaultDialF
 	}
 
 	if d.Password != "" {
@@ -159,6 +166,10 @@ func (d *Config) Validate() error {
 	return errors.Return()
 }
 
+func defaultDialF(network, address string, config *gossh.ClientConfig) (Dialer, error) {
+	return gossh.Dial(network, address, config)
+}
+
 func (d *Config) validateDurations() util.ValidateErrors {
 	var errors util.ValidateErrors
 
@@ -192,7 +203,7 @@ func (d *ssh) Connect() (transport.Connected, error) {
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
-	var connection *gossh.Client
+	var connection Dialer
 
 	var err error
 
@@ -200,7 +211,7 @@ func (d *ssh) Connect() (transport.Connected, error) {
 
 	// Try until we timeout.
 	for time.Since(start) < d.retryTimeout {
-		if connection, err = d.sshClientGetter("tcp", d.address, sshConfig); err == nil {
+		if connection, err = d.dialer("tcp", d.address, sshConfig); err == nil {
 			return newConnected(d.address, connection), nil
 		}
 
@@ -210,7 +221,7 @@ func (d *ssh) Connect() (transport.Connected, error) {
 	return nil, err
 }
 
-func newConnected(address string, connection dialer) transport.Connected {
+func newConnected(address string, connection Dialer) transport.Connected {
 	return &sshConnected{
 		client:   connection,
 		address:  address,
@@ -280,7 +291,7 @@ func handleClient(client, remote io.ReadWriteCloser) {
 // forwardConnection accepts local connections, and forwards them to remote address.
 //
 // TODO: Should we do some error handling here?
-func forwardConnection(listener net.Listener, connection dialer, remoteAddress, connectionType string) {
+func forwardConnection(listener net.Listener, connection Dialer, remoteAddress, connectionType string) {
 	defer func() {
 		if err := listener.Close(); err != nil {
 			fmt.Printf("Failed closing listener: %v\n", err)

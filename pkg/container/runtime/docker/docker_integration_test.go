@@ -271,23 +271,33 @@ func getDockerRuntime(t *testing.T) (runtime.Runtime, *docker) {
 
 	dc := &Config{}
 
-	r, err := dc.New()
+	dockerClient, err := dc.New()
 	if err != nil {
 		t.Fatalf("Creating new docker runtime should succeed, got: %s", err)
 	}
 
-	return r, (r.(*docker))
+	dockerRuntime, ok := dockerClient.(*docker)
+	if !ok {
+		t.Fatalf("Unexpected runtime type %T", dockerClient)
+	}
+
+	return dockerClient, dockerRuntime
 }
 
 func getDockerClient(t *testing.T) *client.Client {
 	t.Helper()
 
-	c, err := (&Config{}).getDockerClient()
+	internalDockerClient, err := (&Config{}).getDockerClient()
 	if err != nil {
 		t.Fatalf("Failed creating Docker client: %v", err)
 	}
 
-	return c
+	dockerClient, ok := internalDockerClient.(*client.Client)
+	if !ok {
+		t.Fatalf("Got unexpected docker client type %T", internalDockerClient)
+	}
+
+	return dockerClient
 }
 
 func deleteImage(t *testing.T, image string) {

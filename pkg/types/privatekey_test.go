@@ -101,10 +101,7 @@ func TestPrivateKeyPickNil(t *testing.T) {
 
 	var c types.PrivateKey
 
-	d := types.PrivateKey("bar")
-	e := types.PrivateKey("baz")
-
-	if c.Pick(d, e) != "bar" {
+	if c.Pick(types.PrivateKey("bar"), types.PrivateKey("baz")) != "bar" {
 		t.Fatalf("First non empty private key should be picked")
 	}
 }
@@ -113,9 +110,8 @@ func TestPrivateKeyPick(t *testing.T) {
 	t.Parallel()
 
 	d := types.PrivateKey("foo")
-	e := types.PrivateKey("baz")
 
-	if d.Pick(e) != "foo" {
+	if d.Pick(types.PrivateKey("baz")) != "foo" {
 		t.Fatalf("First non empty private key should be picked")
 	}
 }

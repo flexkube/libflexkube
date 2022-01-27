@@ -82,7 +82,12 @@ func TestHostConfiguredContainerDeployConfigFile(t *testing.T) {
 		t.Fatalf("Checking host configured container status should succeed, got: %v", err)
 	}
 
-	s := hcc.(*hostConfiguredContainer).container.Status().Status
+	testHCC, ok := hcc.(*hostConfiguredContainer)
+	if !ok {
+		t.Fatalf("Unexpected type for host configured container: %T", hcc)
+	}
+
+	s := testHCC.container.Status().Status
 	if s != "running" {
 		t.Errorf("Host configured container should be running, got status %v", s)
 	}
