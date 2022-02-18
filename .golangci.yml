@@ -44,7 +44,10 @@ linters-settings:
     check-type-assertions: true
     check-blank: true
   gci:
-    local-prefixes: github.com/flexkube/libflexkube
+    sections:
+      - standard
+      - default
+      - prefix(github.com/flexkube/libflexkube)
   godot:
     capital: true
   gofumpt:

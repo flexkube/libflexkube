@@ -2,8 +2,6 @@
 package pki
 
 import (
-
-	//  #nosec G505
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
