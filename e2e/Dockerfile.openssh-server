@@ -1,0 +1,6 @@
+FROM ghcr.io/linuxserver/openssh-server
+
+COPY ./generate-secrets.sh /usr/local/bin/generate-secrets.sh
+COPY ./98-ssh-as-root-with-password /config/custom-cont-init.d/98-ssh-as-root-with-password
+
+RUN chown root:root /config/custom-cont-init.d/98-ssh-as-root-with-password

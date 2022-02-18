@@ -2,14 +2,17 @@
 version: "3.8"
 services:
   generate-secrets:
-    image: ghcr.io/linuxserver/openssh-server
+    build:
+      context: .
+      dockerfile: Dockerfile.openssh-server
     entrypoint:
       - /usr/local/bin/generate-secrets.sh
     volumes:
       - ./secrets:/root/.ssh
-      - ./generate-secrets.sh:/usr/local/bin/generate-secrets.sh
   openssh-server:
-    image: ghcr.io/linuxserver/openssh-server
+    build:
+      context: .
+      dockerfile: Dockerfile.openssh-server
     environment:
       - USER_NAME=core
       - PUID=0
@@ -17,13 +20,9 @@ services:
       - PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
       - PASSWORD_ACCESS=true
       - USER_PASSWORD_FILE=/root/.ssh/password
-      - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
     volumes:
       - ./secrets:/root/.ssh
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./98-ssh-as-root-with-password:/config/custom-cont-init.d/98-ssh-as-root-with-password
     ports:
       - 2222:2222
-    # Workaround for flaky network inside container.
-    network_mode: bridge
