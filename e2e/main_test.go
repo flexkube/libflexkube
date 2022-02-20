@@ -109,15 +109,15 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
-				Version: "0.3.17",
+				Version: "0.3.18",
 			},
 			Kubernetes: chart{
 				Source:  "flexkube/kubernetes",
-				Version: "0.4.19",
+				Version: "0.4.20",
 			},
 			KubeProxy: chart{
 				Source:  "flexkube/kube-proxy",
-				Version: "0.3.17",
+				Version: "0.3.18",
 			},
 			TLSBootstrapping: chart{
 				Source:  "flexkube/tls-bootstrapping",
