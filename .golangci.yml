@@ -78,8 +78,6 @@ linters:
     - exhaustivestruct
     # To allow defensive approach when initializing structs.
     - ireturn
-    # For testing
-    #- varnamelen
     # This linter has been deprecated.
     - golint
     - interfacer
