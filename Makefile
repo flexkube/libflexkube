@@ -239,12 +239,11 @@ install-ci: install-golangci-lint install-cc-test-reporter
 
 .PHONY: install-go-mutesting
 install-go-mutesting:
-	GO111MODULE=off go get github.com/Stebalien/go-mutesting/cmd/go-mutesting
+	go install github.com/Stebalien/go-mutesting/cmd/go-mutesting@master
 
 .PHONY: install-changelog
 install-changelog:
-	go get github.com/rcmachado/changelog@0.7.0
-	go mod tidy
+	go install github.com/rcmachado/changelog@0.7.0
 
 .PHONY: vagrant-up
 vagrant-up:
