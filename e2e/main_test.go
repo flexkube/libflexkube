@@ -284,10 +284,6 @@ func TestE2e(t *testing.T) {
 				Source: "/var/lib/containerd/",
 				Target: "/var/lib/containerd",
 			},
-			{
-				Source: "/run/torcx/unpack/docker/bin/containerd-shim-runc-v2",
-				Target: "/usr/bin/containerd-shim-runc-v2",
-			},
 		}...)
 
 		kubeletExtraArgs = append(kubeletExtraArgs, []string{
