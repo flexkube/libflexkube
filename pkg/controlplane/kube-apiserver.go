@@ -176,8 +176,6 @@ func (k *kubeAPIServer) args() []string {
 		"--enable-bootstrap-token-auth=true",
 		// Allow user to configure service CIDR, so it does not conflict with host nor pods CIDRs.
 		fmt.Sprintf("--service-cluster-ip-range=%s", k.serviceCIDR),
-		// To disable access without authentication.
-		"--insecure-port=0",
 		// Since we will run self-hosted K8s, pods like kube-proxy must run as privileged containers, so we must allow them.
 		"--allow-privileged=true",
 		// Enable RBAC for generic RBAC and Node, so kubelets can use special permissions.
@@ -210,8 +208,6 @@ func (k *kubeAPIServer) args() []string {
 		// - NodeRestriction for extra protection against rogue cluster nodes.
 		// - PodSecurityPolicy for PSP support.
 		"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
-		// To limit memory consumption of bootstrap controlplane, limit it to 512 MB.
-		"--target-ram-mb=512",
 		// Use SO_REUSEPORT, so multiple instances can run on the same controller for smooth upgrades.
 		"--permit-port-sharing=true",
 		// New flags required for TokenRequest feature.

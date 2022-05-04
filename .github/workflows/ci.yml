@@ -79,6 +79,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     - uses: actions/checkout@v2
+    - name: Setup containerd
+      uses: crazy-max/ghaction-setup-containerd@v1.3.0
     - name: Fetch dependencies and configure tests
       run: |
         docker-compose -f e2e/docker-compose.yml up -d
@@ -87,9 +89,10 @@ jobs:
           nodesCIDR: 172.17.0.0/24
           nodeSSHPort: 2222
           workersCount: 0
-          containerRuntime: docker
           cidrIPsOffset: 1
-          kubeletExtraArgs: [--fail-swap-on=false]
+          kubeletExtraArgs:
+          - --fail-swap-on=false
+          - --container-runtime-endpoint=unix:///run/containerd/containerd.sock
           cgroupDriver: cgroupfs
         EOF
         helm repo add flexkube https://flexkube.github.io/charts/

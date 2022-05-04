@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	// DefaultNetworkPlugin is a default NetworkPlugin configured for kubelets.
-	DefaultNetworkPlugin = "cni"
 	// DefaultHairpinMode is a default HairpinMode configured for kubelets.
 	DefaultHairpinMode = "hairpin-veth"
 )
@@ -94,10 +92,6 @@ type Pool struct {
 	// CgroupDriver configures cgroup driver to be used by the kubelet. It must be the same
 	// as configured for container runtime used by the kubelet.
 	CgroupDriver string `json:"cgroupDriver,omitempty"`
-
-	// NetworkPlugin defines which network solution should be used by kubelet to assign
-	// IP addresses to the pods. By default, 'cni' is used. Also 'kubelet' is a valid value.
-	NetworkPlugin string `json:"networkPlugin,omitempty"`
 
 	// SystemReserved configures, how much resources kubelet should mark as used by the operating
 	// system.
@@ -192,7 +186,6 @@ func (p *Pool) propagateKubelet(kubelet *Kubelet) {
 	kubelet.PrivilegedLabels = util.PickStringMap(kubelet.PrivilegedLabels, p.PrivilegedLabels)
 	kubelet.Taints = util.PickStringMap(kubelet.Taints, p.Taints)
 	kubelet.CgroupDriver = util.PickString(kubelet.CgroupDriver, p.CgroupDriver)
-	kubelet.NetworkPlugin = util.PickString(kubelet.NetworkPlugin, p.NetworkPlugin, DefaultNetworkPlugin)
 	kubelet.SystemReserved = util.PickStringMap(kubelet.SystemReserved, p.SystemReserved)
 	kubelet.KubeReserved = util.PickStringMap(kubelet.KubeReserved, p.KubeReserved)
 	kubelet.HairpinMode = util.PickString(kubelet.HairpinMode, p.HairpinMode, DefaultHairpinMode)
