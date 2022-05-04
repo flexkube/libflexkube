@@ -23,3 +23,21 @@ rules:
     message: When wrapping errors, %w must be preceded by space.
     languages: [go]
     severity: ERROR
+  - id: files-must-not-have-trailing-whitespace
+    patterns:
+      - pattern-regex: '[[:blank:]]$'
+    message: Files must not have any trailing whitespace.
+    languages: [generic]
+    severity: ERROR
+  - id: files-must-not-have-trailing-newlines
+    patterns:
+      - pattern-regex: '\n\n\Z'
+    message: Files must not have any trailing newlines.
+    languages: [generic]
+    severity: ERROR
+  - id: all-lines-must-end-with-newline
+    patterns:
+      - pattern-regex: '\S\z'
+    message: All lines must end with newline.
+    languages: [generic]
+    severity: ERROR
