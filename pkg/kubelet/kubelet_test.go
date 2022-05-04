@@ -41,7 +41,6 @@ func TestToHostConfiguredContainer(t *testing.T) {
 	testKubelet := &kubelet.Kubelet{
 		BootstrapConfig:         clientConfig,
 		Name:                    "fooz",
-		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
 		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
 		Host: host.Host{
@@ -174,30 +173,6 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 			},
 		},
 		{
-			MutationF: func(k *kubelet.Kubelet) { k.PodCIDR = "foo" },
-			TestF: func(t *testing.T, err error) { //nolint:thelper // Actual test code.
-				if err == nil {
-					t.Fatalf("Validation of kubelet should fail when network plugin is 'cni' and pod CIDR is set")
-				}
-			},
-		},
-		{
-			MutationF: func(k *kubelet.Kubelet) { k.NetworkPlugin = kubelet.KubenetNetworkPlugin },
-			TestF: func(t *testing.T, err error) { //nolint:thelper // Actual test code.
-				if err == nil {
-					t.Fatalf("Validation of kubelet should fail when network plugin is 'kubelet' and pod CIDR is empty")
-				}
-			},
-		},
-		{
-			MutationF: func(k *kubelet.Kubelet) { k.NetworkPlugin = "doh" },
-			TestF: func(t *testing.T, err error) { //nolint:thelper // Actual test code.
-				if err == nil {
-					t.Fatalf("Validation of kubelet should fail when network plugin is invalid")
-				}
-			},
-		},
-		{
 			MutationF: func(k *kubelet.Kubelet) { k.Host.DirectConfig = nil },
 			TestF: func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err == nil {
@@ -218,7 +193,6 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 			testKubelet := &kubelet.Kubelet{
 				BootstrapConfig:         clientConfig,
 				Name:                    "foo",
-				NetworkPlugin:           "cni",
 				VolumePluginDir:         "/foo",
 				KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
 				Host: host.Host{
@@ -246,7 +220,6 @@ func TestKubeletIncludeExtraMounts(t *testing.T) {
 	testKubeletConfig := &kubelet.Kubelet{
 		BootstrapConfig:         clientConfig,
 		Name:                    "foo",
-		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
 		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
 		Host: host.Host{
@@ -299,7 +272,6 @@ func Test_Kubelet_container_definition_does_include_defined_extra_flags(t *testi
 	testKubeletConfig := &kubelet.Kubelet{
 		BootstrapConfig:         clientConfig,
 		Name:                    "foo",
-		NetworkPlugin:           "cni",
 		VolumePluginDir:         "/var/lib/kubelet/volumeplugins",
 		KubernetesCACertificate: types.Certificate(utiltest.GenerateX509Certificate(t)),
 		Host: host.Host{

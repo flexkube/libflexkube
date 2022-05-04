@@ -260,7 +260,6 @@ func TestE2e(t *testing.T) {
 	bootstrapTokenID := "64vxqx"
 	bootstrapTokenSecret := "z95f5ng9sek5i40v" // #nosec:G101
 
-	networkPlugin := "cni"
 	hairpinMode := "hairpin-veth"
 
 	kubeletExtraMounts := []types.Mount{}
@@ -354,7 +353,6 @@ func TestE2e(t *testing.T) {
 				},
 				WaitForNodeReady: true,
 				CgroupDriver:     testConfig.CgroupDriver,
-				NetworkPlugin:    networkPlugin,
 				HairpinMode:      hairpinMode,
 				VolumePluginDir:  "/var/lib/kubelet/volumeplugins",
 				ClusterDNSIPs:    []string{"11.0.0.10"},
@@ -390,7 +388,6 @@ func TestE2e(t *testing.T) {
 			},
 			WaitForNodeReady: true,
 			CgroupDriver:     testConfig.CgroupDriver,
-			NetworkPlugin:    networkPlugin,
 			HairpinMode:      hairpinMode,
 			VolumePluginDir:  "/var/lib/kubelet/volumeplugins",
 			ClusterDNSIPs:    []string{"11.0.0.10"},

@@ -37,10 +37,8 @@ waitForNodeReady: false
 extraArgs:
 - --baz
 kubelets:
-- networkPlugin: cni
-  name: foo
-- networkPlugin: cni
-  name: bar
+- name: foo
+- name: bar
   extraMounts:
   - source: /doh/
     target: /tmp
@@ -76,8 +74,7 @@ ssh:
   retryInterval: 1s
 volumePluginDir: /var/lib/kubelet/volumeplugins
 kubelets:
-- networkPlugin: cni
-  name: foo
+- name: foo
 `
 
 	if _, err := kubelet.FromYaml([]byte(testConfigRaw)); err == nil {
@@ -241,7 +238,6 @@ func TestPoolPKIIntegration(t *testing.T) {
 			{
 				Name:            "foo",
 				VolumePluginDir: "foo",
-				NetworkPlugin:   "cni",
 			},
 		},
 		PrivilegedLabels: map[string]string{

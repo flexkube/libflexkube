@@ -27,29 +27,6 @@ Vagrant.configure("2") do |config|
   # Make sure there is only one primary VM.
   primary = true
 
-  # Build route table for each node.
-  #
-  # TODO only required when kubenet network plugin is used.
-  routes = []
-
-  # This makes sure outgoing traffic to service CIDR use eth1 interface, so it gets correct source IP address.
-  # Otherwise it use default eth0.
-  r = <<EOF
-[Route]
-Destination=11.0.0.0/24
-Scope=link
-EOF
-  routes.push(r)
-
-  (2..253).each do |i|
-    r = <<EOF
-[Route]
-Gateway=#{nodes_cidr}#{i}
-Destination=10.1.#{i}.0/24
-EOF
-    routes.push(r)
-  end
-
   # Also don't use Virtualbox DNS server, as it does not support TCP queries it seems and this makes CoreDNS complains.
   network_config = <<-EOF
 [Match]
@@ -118,8 +95,6 @@ EOF
       # Controller provisioning.
       config.vm.provision "shell", inline: <<-EOF
         set -e
-        mkdir -p /etc/systemd/network/50-vagrant1.network.d && echo "#{(routes - [routes[i]]).join("\n")}" | sudo tee /etc/systemd/network/50-vagrant1.network.d/routes.conf >/dev/null
-        sudo iptables -t nat -A POSTROUTING -s 10.1.#{i+1}.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
         #{common_provisioning_script}
       EOF
     end
@@ -134,8 +109,6 @@ EOF
       # Provisioning.
       config.vm.provision "shell", inline: <<-EOF
         set -e
-        mkdir -p /etc/systemd/network/50-vagrant1.network.d && echo "#{(routes - [routes[i+controllers]]).join("\n")}" | sudo tee /etc/systemd/network/50-vagrant1.network.d/routes.conf >/dev/null
-        sudo iptables -t nat -A POSTROUTING -s 10.1.#{i+controllers+1}.0/24 -j SNAT --destination 10.0.2.0/24 --to-source 10.0.2.15
         #{common_provisioning_script}
       EOF
     end

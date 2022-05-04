@@ -18,11 +18,6 @@ import (
 	"github.com/flexkube/libflexkube/pkg/types"
 )
 
-const (
-	// KubenetNetworkPlugin is the name of kubenet network plugin.
-	KubenetNetworkPlugin = "kubenet"
-)
-
 // Kubelet represents configuration of single kubelet instance.
 type Kubelet struct {
 	// Address controls, on which IP address kubelet should listen on and which IP address
@@ -85,10 +80,6 @@ type Kubelet struct {
 	// as configured for container runtime used by the kubelet.
 	CgroupDriver string `json:"cgroupDriver,omitempty"`
 
-	// NetworkPlugin defines which network solution should be used by kubelet to assign
-	// IP addresses to the pods. By default, 'cni' is used. Also 'kubelet' is a valid value.
-	NetworkPlugin string `json:"networkPlugin,omitempty"`
-
 	// SystemReserved configures, how much resources kubelet should mark as used by the operating
 	// system.
 	SystemReserved map[string]string `json:"systemReserved,omitempty"`
@@ -107,9 +98,6 @@ type Kubelet struct {
 	// ExtraMounts defines extra mounts from host filesystem, which should be added to kubelet
 	// containers. It will be used unless kubelet instance define it's own extra mounts.
 	ExtraMounts []containertypes.Mount `json:"extraMounts,omitempty"`
-
-	// Depending on the network plugin, this should be optional, but for now it's required.
-	PodCIDR string `json:"podCIDR,omitempty"`
 
 	// WaitForNodeReady controls, if deploy should wait until node becomes ready.
 	WaitForNodeReady bool `json:"waitForNodeReady,omitempty"`
@@ -168,8 +156,6 @@ func (k *Kubelet) Validate() error {
 	if err := k.validateAdminConfig(); err != nil {
 		errors = append(errors, err)
 	}
-
-	errors = append(errors, k.validateNetworkPlugin()...)
 
 	if err := k.Host.Validate(); err != nil {
 		errors = append(errors, fmt.Errorf("validating host configuration: %w", err))
@@ -245,26 +231,6 @@ func (k *Kubelet) adminConfigRequired() util.ValidateErrors {
 	return errors
 }
 
-// validateNetworkPlugin validates NetworkPlugin and related required fields.
-func (k *Kubelet) validateNetworkPlugin() util.ValidateErrors {
-	var errors util.ValidateErrors
-
-	switch k.NetworkPlugin {
-	case "cni":
-		if k.PodCIDR != "" {
-			errors = append(errors, fmt.Errorf("podCIDR has no effect when using 'cni' network plugin"))
-		}
-	case KubenetNetworkPlugin:
-		if k.PodCIDR == "" {
-			errors = append(errors, fmt.Errorf("podCIDR must be set when using 'kubenet' network plugin"))
-		}
-	default:
-		errors = append(errors, fmt.Errorf("networkPlugin must be either 'cni' or 'kubenet'"))
-	}
-
-	return errors
-}
-
 // config return kubelet configuration file content in YAML format.
 func (k *kubelet) configFile() (string, error) {
 	config := &kubeletconfig.KubeletConfiguration{
@@ -312,12 +278,6 @@ func (k *kubelet) configFile() (string, error) {
 		ClusterDNS: k.config.ClusterDNSIPs,
 
 		HairpinMode: k.config.HairpinMode,
-	}
-
-	if k.config.NetworkPlugin == KubenetNetworkPlugin {
-		// CIDR for pods IP addresses. Needed when using 'kubenet' network plugin
-		// and manager-controller is not assigning those.
-		config.PodCIDR = k.config.PodCIDR
 	}
 
 	kubelet, err := yaml.Marshal(config)
@@ -419,11 +379,6 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return
 			Target: "/var/lib/cni",
 		},
 		{
-			// For loading kernel modules for kubenet plugin.
-			Source: "/lib/modules/",
-			Target: "/lib/modules",
-		},
-		{
 			// In this directory, kubelet creates symlinks to container log files, so this directory should be visible
 			// also for other containers. For example for centralised logging, as this is the location, where logging
 			// agent expect to find pods logs.
@@ -460,8 +415,6 @@ func (k *kubelet) args() []string {
 		"--kubeconfig=/var/lib/kubelet/kubeconfig",
 		// kubeconfig with access token for TLS bootstrapping.
 		"--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubeconfig",
-		// Set which network plugin to use.
-		fmt.Sprintf("--network-plugin=%s", k.config.NetworkPlugin),
 		// --node-ip controls where are exposed nodePort services.
 		// Since we want to have them available only on private interface, we specify it equal to address.
 		// TODO make it optional/configurable?
@@ -469,12 +422,6 @@ func (k *kubelet) args() []string {
 		// Make sure we register the node with the name specified by the user.
 		// This is needed to later on patch the Node object when needed.
 		fmt.Sprintf("--hostname-override=%s", k.config.Name),
-		// Tell kubelet where to look for CNI binaries.
-		// Custom CNI plugins may install their binaries in /opt/cni/host on host filesystem.
-		// Also if host filesystem has newer binaries than ones shipped by hyperkube image, those should take precedence.
-		//
-		// TODO This flag should only be set if Docker is used as container runtime.
-		"--cni-bin-dir=/host/opt/cni/bin,/opt/cni/bin",
 	}, k.config.ExtraArgs...)
 
 	if len(k.config.Labels) > 0 {
