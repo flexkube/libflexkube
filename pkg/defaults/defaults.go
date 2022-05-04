@@ -7,19 +7,19 @@ const (
 
 	// KubeAPIServerImage points to a default Docker image, which will be used for
 	// running kube-apiserver.
-	KubeAPIServerImage = "k8s.gcr.io/kube-apiserver:v1.23.6"
+	KubeAPIServerImage = "k8s.gcr.io/kube-apiserver:v1.24.0"
 
 	// KubeControllerManagerImage points to a default Docker image, which will be used for
 	// running kube-apiserver.
-	KubeControllerManagerImage = "k8s.gcr.io/kube-controller-manager:v1.23.6"
+	KubeControllerManagerImage = "k8s.gcr.io/kube-controller-manager:v1.24.0"
 
 	// KubeSchedulerImage points to a default Docker image, which will be used for
 	// running kube-apiserver.
-	KubeSchedulerImage = "k8s.gcr.io/kube-scheduler:v1.23.6"
+	KubeSchedulerImage = "k8s.gcr.io/kube-scheduler:v1.24.0"
 
 	// KubeletImage points to a default Docker image, which will be used for
 	// running kube-apiserver.
-	KubeletImage = "quay.io/flexkube/kubelet:v1.23.6"
+	KubeletImage = "quay.io/flexkube/kubelet:v1.24.0"
 
 	// HAProxyImage is a default container image for APILoadBalancer.
 	HAProxyImage = "haproxy:2.5.6-alpine"
