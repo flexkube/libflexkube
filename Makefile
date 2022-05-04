@@ -146,14 +146,14 @@ test-cover-browse: test-cover cover-browse
 .PHONY: test-e2e-run
 test-e2e-run:
 	helm repo update
-	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e ./e2e/
+	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e -count 1 ./e2e/
 
 .PHONY: test-e2e
 test-e2e: test-e2e-run
 
 .PHONY: test-local-apply
 test-local-apply:
-	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e ./local-testing/
+	env $(TERRAFORM_ENV) $(GOTEST) -v -tags e2e -count 1 ./local-testing/
 
 .PHONY: test-conformance
 test-conformance:SHELL=/bin/bash
