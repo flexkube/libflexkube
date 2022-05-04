@@ -90,7 +90,9 @@ jobs:
           nodeSSHPort: 2222
           workersCount: 0
           cidrIPsOffset: 1
-          kubeletExtraArgs: [--fail-swap-on=false]
+          kubeletExtraArgs:
+          - --fail-swap-on=false
+          - --container-runtime-endpoint=unix:///run/containerd/containerd.sock
           cgroupDriver: cgroupfs
         EOF
         helm repo add flexkube https://flexkube.github.io/charts/

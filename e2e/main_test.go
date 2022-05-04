@@ -49,25 +49,17 @@ type charts struct {
 }
 
 type e2eConfig struct {
-	ControllersCount  int              `json:"controllersCount"`
-	NodesCIDR         string           `json:"nodesCIDR"`
-	WorkersCount      int              `json:"workersCount"`
-	APIPort           int              `json:"apiPort"`
-	NodeSSHPort       int              `json:"nodeSSHPort"`
-	SSHPrivateKeyPath string           `json:"sshPrivatekeyPath"`
-	Charts            charts           `json:"charts"`
-	ContainerRuntime  ContainerRuntime `json:"containerRuntime"`
-	CIDRIPsOffset     int              `json:"cidrIPsOffset"`
-	KubeletExtraArgs  []string         `json:"kubeletExtraArgs"`
-	CgroupDriver      string           `json:"cgroupDriver"`
+	ControllersCount  int      `json:"controllersCount"`
+	NodesCIDR         string   `json:"nodesCIDR"`
+	WorkersCount      int      `json:"workersCount"`
+	APIPort           int      `json:"apiPort"`
+	NodeSSHPort       int      `json:"nodeSSHPort"`
+	SSHPrivateKeyPath string   `json:"sshPrivatekeyPath"`
+	Charts            charts   `json:"charts"`
+	CIDRIPsOffset     int      `json:"cidrIPsOffset"`
+	KubeletExtraArgs  []string `json:"kubeletExtraArgs"`
+	CgroupDriver      string   `json:"cgroupDriver"`
 }
-
-type ContainerRuntime string
-
-const (
-	Docker     ContainerRuntime = "docker"
-	Containerd ContainerRuntime = "containerd"
-)
 
 func parseInt(t *testing.T, envVar string, defaultValue int) int {
 	t.Helper()
@@ -103,7 +95,6 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		APIPort:           8443,
 		NodeSSHPort:       22,
 		SSHPrivateKeyPath: "/root/.ssh/id_rsa",
-		ContainerRuntime:  Containerd,
 		CIDRIPsOffset:     2,
 		CgroupDriver:      "systemd",
 		Charts: charts{
@@ -140,10 +131,13 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 				Version: "0.4.16",
 			},
 		},
+		KubeletExtraArgs: []string{
+			"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
+		},
 	}
 }
 
-//nolint:funlen,gocognit,paralleltest,cyclop,gocyclo,maintidx // Test function, splitting it decreases readability.
+//nolint:funlen,gocognit,paralleltest,cyclop,maintidx // Test function, splitting it decreases readability.
 func TestE2e(t *testing.T) {
 	testConfig := defaultE2EConfig(t)
 
@@ -262,33 +256,22 @@ func TestE2e(t *testing.T) {
 
 	hairpinMode := "hairpin-veth"
 
-	kubeletExtraMounts := []types.Mount{}
+	kubeletExtraMounts := []types.Mount{
+		{
+			Source: "/run/containerd/",
+			Target: "/run/containerd",
+		},
+		{
+			Source: "/var/lib/containerd/",
+			Target: "/var/lib/containerd",
+		},
+	}
 
 	if testConfig.CgroupDriver == "systemd" {
 		kubeletExtraMounts = append(kubeletExtraMounts, types.Mount{
 			Source: "/run/systemd/",
 			Target: "/run/systemd",
 		})
-	}
-
-	kubeletExtraArgs := testConfig.KubeletExtraArgs
-
-	if testConfig.ContainerRuntime == Containerd {
-		kubeletExtraMounts = append(kubeletExtraMounts, []types.Mount{
-			{
-				Source: "/run/containerd/",
-				Target: "/run/containerd",
-			},
-			{
-				Source: "/var/lib/containerd/",
-				Target: "/var/lib/containerd",
-			},
-		}...)
-
-		kubeletExtraArgs = append(kubeletExtraArgs, []string{
-			"--container-runtime=remote",
-			"--container-runtime-endpoint=unix:///run/containerd/containerd.sock",
-		}...)
 	}
 
 	// Generate PKI.
@@ -374,7 +357,7 @@ func TestE2e(t *testing.T) {
 				SSH:         sshConfig,
 				Kubelets:    controllerKubelets,
 				ExtraMounts: kubeletExtraMounts,
-				ExtraArgs:   kubeletExtraArgs,
+				ExtraArgs:   testConfig.KubeletExtraArgs,
 			},
 		},
 		State: &flexkube.ResourceState{},
@@ -405,7 +388,7 @@ func TestE2e(t *testing.T) {
 			SSH:         sshConfig,
 			Kubelets:    workerKubelets,
 			ExtraMounts: kubeletExtraMounts,
-			ExtraArgs:   kubeletExtraArgs,
+			ExtraArgs:   testConfig.KubeletExtraArgs,
 		}
 
 		resource.APILoadBalancerPools["workers"] = &apiloadbalancer.APILoadBalancers{
