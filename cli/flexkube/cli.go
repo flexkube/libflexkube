@@ -12,7 +12,7 @@ import (
 
 const (
 	// Version is a version printed by the --version flag.
-	Version = "v0.8.0"
+	Version = "v0.9.0-unreleased"
 
 	// YesFlag is a const for --yes flag.
 	YesFlag = "yes"
