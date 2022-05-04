@@ -340,4 +340,4 @@ terraform-fmt:
 .PHONY: semgrep
 semgrep: SEMGREP_BIN=semgrep
 semgrep:
-	@if ! which $(SEMGREP_BIN) >/dev/null 2>&1; then echo "$(SEMGREP_BIN) binary not found, skipping extra linting"; else $(SEMGREP_BIN); fi
+	@if ! which $(SEMGREP_BIN) >/dev/null 2>&1; then echo "$(SEMGREP_BIN) binary not found, skipping extra linting"; else $(SEMGREP_BIN) --error; fi
