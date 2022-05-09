@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"strings"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -317,7 +318,7 @@ func (m *MemberConfig) Validate() error {
 
 // peerURLs returns slice of peer urls assigned to member.
 func (m *member) peerURLs() []string {
-	return []string{fmt.Sprintf("https://%s:2380", m.config.PeerAddress)}
+	return []string{fmt.Sprintf("https://%s", net.JoinHostPort(m.config.PeerAddress, "2380"))}
 }
 
 // forwardEndpoints opens forwarding connection for each endpoint
