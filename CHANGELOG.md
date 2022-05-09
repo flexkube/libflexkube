@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2022-05-05
+### Changed
+- When `flexkube` binary is installed using `go install`, it will print version information
+pulled from Go modules.
+- Default Kubernetes version is now v1.24.0.
+- Default etcd version is now v3.5.3
+- Default HAProxy version is now 2.5.6.
+- Binaries are built using Go 1.18.
+
+### Removed
+- As part of Kubernetes v1.24 upgrade support for selecting network plugin in kubelet has been removed.
+
 ## [0.7.0] - 2021-09-02
 ### Added
 - Certificates and private keys in configs are now parsed as part of validation process.
@@ -316,6 +328,7 @@ flaky cluster deployments (#84)
 ### Added
 - Initial release
 
+[0.8.0]: https://github.com/flexkube/libflexkube/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flexkube/libflexkube/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flexkube/libflexkube/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/flexkube/libflexkube/compare/v0.5.0...v0.5.1
