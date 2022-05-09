@@ -76,6 +76,7 @@ linters:
     - goerr113
     # To be able to make use of Go zero-value feature.
     - exhaustivestruct
+    - exhaustruct
     # To allow defensive approach when initializing structs.
     - ireturn
     # This linter has been deprecated.
@@ -99,6 +100,7 @@ linters:
     - errchkjson
     - errname
     - errorlint
+    - execinquery
     - exhaustive
     - exportloopref
     - forbidigo
@@ -135,6 +137,8 @@ linters:
     - nlreturn
     - noctx
     - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
     - paralleltest
     - prealloc
     - predeclared

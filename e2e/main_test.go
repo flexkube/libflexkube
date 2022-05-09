@@ -223,7 +223,7 @@ func TestE2e(t *testing.T) {
 			Host: host,
 		})
 
-		etcdServers = append(etcdServers, fmt.Sprintf("https://%s:2379", controllerIP))
+		etcdServers = append(etcdServers, fmt.Sprintf("https://%s", net.JoinHostPort(controllerIP, "2379")))
 
 		controllerKubelets = append(controllerKubelets, kubelet.Kubelet{
 			Name:    name,
