@@ -79,6 +79,8 @@ linters:
     - exhaustruct
     # To allow defensive approach when initializing structs.
     - ireturn
+    # Panics in v1.46.1
+    - execinquery
     # This linter has been deprecated.
     - golint
     - interfacer
@@ -100,7 +102,6 @@ linters:
     - errchkjson
     - errname
     - errorlint
-    - execinquery
     - exhaustive
     - exportloopref
     - forbidigo
