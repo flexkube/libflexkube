@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine3.14
+FROM golang:1.18-alpine3.15
 
 RUN apk add -U make bash bash-completion vim coreutils
 
@@ -9,7 +9,7 @@ RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
     && chmod +x /usr/local/bin/kubectl \
     && echo -e 'source /usr/share/bash-completion/bash_completion\nsource <(kubectl completion bash)' >> $HOME/.bashrc
 
-RUN VERSION=0.56.6 OS=linux && \
+RUN VERSION=0.56.7 OS=linux && \
     wget "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${VERSION}/sonobuoy_${VERSION}_${OS}_amd64.tar.gz" -O sonobuoy.tar.gz && \
     tar -xzf sonobuoy.tar.gz -C /usr/local/bin && \
     chmod +x /usr/local/bin/sonobuoy && \
