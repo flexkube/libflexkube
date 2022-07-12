@@ -38,6 +38,10 @@ issues:
     - linters:
         - tagliatelle
       text: "(CIDR|CA|DNS|API|CN|SSH).+(Cidr|Ca|Dns|Api|Cn|Ssh)"
+    # Allow shadowing 'err' variables as this is convention. Other shadowing should still be avoided.
+    - linters:
+        - govet
+      text: "shadow: declaration of \"err\" shadows declaration at line"
 
 linters-settings:
   errcheck:
@@ -56,7 +60,6 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment
-      - shadow
   nolintlint:
     allow-leading-space: false
     require-explanation: true
