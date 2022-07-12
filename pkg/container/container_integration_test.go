@@ -266,7 +266,7 @@ func TestDockerDelete(t *testing.T) {
 func randomContainerName(t *testing.T) string {
 	t.Helper()
 
-	token := make([]byte, 32) //nolint:makezero // We do not append here.
+	token := make([]byte, 32)
 
 	if _, err := rand.Read(token); err != nil {
 		t.Fatalf("Generating random container name: %v", err)

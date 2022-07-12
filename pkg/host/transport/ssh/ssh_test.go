@@ -192,7 +192,7 @@ func testMessage(t *testing.T) ([]byte, int) {
 	// We must have at least 1 byte message.
 	length := rand.Intn(maxTestMessageLength) + 1
 
-	message := make([]byte, length) //nolint:makezero // We do not append here.
+	message := make([]byte, length)
 	if _, err := rand.Read(message); err != nil {
 		t.Fatalf("Generating message: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestHandleClientBiDirectional(t *testing.T) {
 	}
 
 	// Read twice as much data as we send to make sure we don't send any extra garbage.
-	receivedRequest := make([]byte, requestLength*2) //nolint:makezero // We do not append here.
+	receivedRequest := make([]byte, requestLength*2)
 
 	bytesRead, err := remoteClient.Read(receivedRequest)
 	if err != nil {

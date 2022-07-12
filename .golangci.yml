@@ -57,8 +57,6 @@ linters-settings:
     disable:
       - fieldalignment
       - shadow
-  makezero:
-    always: true
   nolintlint:
     allow-leading-space: false
     require-explanation: true
