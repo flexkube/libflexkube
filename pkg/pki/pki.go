@@ -459,8 +459,6 @@ func (c *Certificate) generateX509Certificate(certPK *rsa.PrivateKey, caCert *Ce
 	x509CACert := &cert
 
 	if caCert != nil {
-		var err error
-
 		x509CACert, caPK, err = caCert.decodeKeypair()
 		if err != nil {
 			return fmt.Errorf("decoding CA key pair: %w", err)

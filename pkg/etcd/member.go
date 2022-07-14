@@ -333,13 +333,13 @@ func (m *member) forwardEndpoints(endpoints []string) ([]string, error) {
 		return nil, fmt.Errorf("opening forwarding connection to host: %w", err)
 	}
 
-	for _, e := range endpoints {
-		e, err := connectedHost.ForwardTCP(e)
+	for _, endpoint := range endpoints {
+		forwardedEndpoint, err := connectedHost.ForwardTCP(endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("opening forwarding to member: %w", err)
 		}
 
-		newEndpoints = append(newEndpoints, fmt.Sprintf("https://%s", e))
+		newEndpoints = append(newEndpoints, fmt.Sprintf("https://%s", forwardedEndpoint))
 	}
 
 	return newEndpoints, nil
