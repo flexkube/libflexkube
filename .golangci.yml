@@ -42,6 +42,11 @@ issues:
     - linters:
         - govet
       text: "shadow: declaration of \"err\" shadows declaration at line"
+    # Allow using snake case for test and example names for better readability, as those functions are not called
+    # directly by anyone anyway.
+    - linters:
+        - nosnakecase
+      text: "^(Test_|Example)"
 
 linters-settings:
   errcheck:
@@ -87,6 +92,7 @@ linters:
     - interfacer
     - maligned
   enable:
+    - asasalint
     - asciicheck
     - bidichk
     - bodyclose
@@ -140,6 +146,7 @@ linters:
     - noctx
     - nolintlint
     - nonamedreturns
+    - nosnakecase
     - nosprintfhostport
     - paralleltest
     - prealloc
