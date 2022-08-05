@@ -80,7 +80,7 @@ jobs:
           ${{ runner.os }}-go-
     - uses: actions/checkout@v2
     - name: Setup containerd
-      uses: crazy-max/ghaction-setup-containerd@v1.3.0
+      uses: crazy-max/ghaction-setup-containerd@v2
     - name: Fetch dependencies and configure tests
       run: |
         docker-compose -f e2e/docker-compose.yml up -d
