@@ -131,7 +131,6 @@ linters:
     - gomodguard
     - goprintffuncname
     - grouper
-    - ifshort
     - importas
     - ineffassign
     - lll
@@ -164,6 +163,7 @@ linters:
     - typecheck
     - unconvert
     - unparam
+    - usestdlibvars
     - varcheck
     - varnamelen
     - wastedassign

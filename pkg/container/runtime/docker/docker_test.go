@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -317,7 +316,7 @@ func TestRead(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-					return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
+					return io.NopCloser(testTar(t)), dockertypes.ContainerPathStat{
 						Name: defaultPath,
 					}, nil
 				},
@@ -400,7 +399,7 @@ func TestReadVerifyTarArchive(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-					return ioutil.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
+					return io.NopCloser(strings.NewReader("asdasd")), dockertypes.ContainerPathStat{}, nil
 				},
 			}, nil
 		},
@@ -424,7 +423,7 @@ func TestTarToFiles(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				CopyFromContainerF: func(_ context.Context, _, _ string) (io.ReadCloser, dockertypes.ContainerPathStat, error) {
-					return ioutil.NopCloser(testTar(t)), dockertypes.ContainerPathStat{}, nil
+					return io.NopCloser(testTar(t)), dockertypes.ContainerPathStat{}, nil
 				},
 			}, nil
 		},
@@ -627,7 +626,7 @@ func TestCreateSetUser(t *testing.T) {
 					return containertypes.ContainerCreateCreatedBody{}, nil
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-					return ioutil.NopCloser(strings.NewReader("")), nil
+					return io.NopCloser(strings.NewReader("")), nil
 				},
 				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
 					return []dockertypes.ImageSummary{}, nil
@@ -674,7 +673,7 @@ func TestCreateSetUserGroup(t *testing.T) {
 					return containertypes.ContainerCreateCreatedBody{}, nil
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-					return ioutil.NopCloser(strings.NewReader("")), nil
+					return io.NopCloser(strings.NewReader("")), nil
 				},
 				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
 					return []dockertypes.ImageSummary{}, nil
@@ -710,7 +709,7 @@ func TestCreateRuntimeFail(t *testing.T) {
 					return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
-					return ioutil.NopCloser(strings.NewReader("")), nil
+					return io.NopCloser(strings.NewReader("")), nil
 				},
 				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
 					return []dockertypes.ImageSummary{}, nil
