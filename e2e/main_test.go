@@ -6,7 +6,6 @@ package main_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -237,7 +236,7 @@ func TestE2e(t *testing.T) {
 
 	nodeSSHPort := testConfig.NodeSSHPort
 
-	sshPrivateKey, err := ioutil.ReadFile(testConfig.SSHPrivateKeyPath)
+	sshPrivateKey, err := os.ReadFile(testConfig.SSHPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key %q: %v", testConfig.SSHPrivateKeyPath, err)
 	}
@@ -410,7 +409,7 @@ func TestE2e(t *testing.T) {
 		t.Fatalf("Serializing resource configuration: %v", err)
 	}
 
-	if err := ioutil.WriteFile("config.yaml", resourceRaw, 0o600); err != nil {
+	if err := os.WriteFile("config.yaml", resourceRaw, 0o600); err != nil {
 		t.Fatalf("Writing config.yaml file: %v", err)
 	}
 
@@ -575,7 +574,7 @@ resources:
 	files["./values/metrics-server.yaml"] = metricsServerValues
 
 	for file, content := range files {
-		if err := ioutil.WriteFile(file, []byte(content), 0o600); err != nil {
+		if err := os.WriteFile(file, []byte(content), 0o600); err != nil {
 			t.Fatalf("Writing file %q: %v", file, err)
 		}
 	}
@@ -703,7 +702,7 @@ func readYamlFile(file string) ([]byte, error) {
 	// are static.
 	//
 	// #nosec G304
-	fileContentRaw, err := ioutil.ReadFile(file)
+	fileContentRaw, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}

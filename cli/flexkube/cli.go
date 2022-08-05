@@ -3,7 +3,7 @@ package flexkube
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime/debug"
 
@@ -181,7 +181,7 @@ func getTemplate(cliCtx *cli.Context) (string, error) {
 	if cliCtx.NArg() == 1 {
 		p := cliCtx.Args().Get(0)
 
-		c, err := ioutil.ReadFile(p) // #nosec G304
+		c, err := os.ReadFile(p) // #nosec G304
 		if err != nil {
 			return "", fmt.Errorf("reading template file %q: %w", p, err)
 		}
@@ -190,7 +190,7 @@ func getTemplate(cliCtx *cli.Context) (string, error) {
 	}
 
 	if cliCtx.NArg() == 0 {
-		bytes, err := ioutil.ReadAll(os.Stdin)
+		bytes, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			return "", fmt.Errorf("reading template from stdin: %w", err)
 		}

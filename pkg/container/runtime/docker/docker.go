@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -469,7 +468,7 @@ func (d *docker) pullImage(image string) error {
 		return fmt.Errorf("pulling image: %w", err)
 	}
 
-	if _, err := io.Copy(ioutil.Discard, out); err != nil {
+	if _, err := io.Copy(io.Discard, out); err != nil {
 		return fmt.Errorf("discarding pulling messages: %w", err)
 	}
 

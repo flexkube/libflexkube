@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -361,7 +360,7 @@ func readYamlFile(file string) ([]byte, error) {
 	// are static.
 	//
 	// #nosec G304
-	configRaw, err := ioutil.ReadFile(file)
+	configRaw, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
@@ -412,7 +411,7 @@ func (r *Resource) StateToFile(actionErr error) error {
 
 	readWriteOwnerOnly := 0o600
 
-	if err := ioutil.WriteFile("state.yaml", stateRaw, fs.FileMode(readWriteOwnerOnly)); err != nil {
+	if err := os.WriteFile("state.yaml", stateRaw, fs.FileMode(readWriteOwnerOnly)); err != nil {
 		if actionErr == nil {
 			return fmt.Errorf("writing new state to file: %w", err)
 		}
@@ -626,7 +625,7 @@ func (r *Resource) Template(templateContent string) (string, error) {
 
 // TemplateFromFile reads template from a given path and executes it using configuration and state.
 func (r *Resource) TemplateFromFile(templatePath string) (string, error) {
-	t, err := ioutil.ReadFile(templatePath) // #nosec G304
+	t, err := os.ReadFile(templatePath) // #nosec G304
 	if err != nil {
 		return "", fmt.Errorf("reading template file %q: %w", templatePath, err)
 	}

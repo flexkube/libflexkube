@@ -4,7 +4,6 @@
 package apiloadbalancer
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -21,7 +20,7 @@ func TestDeploy(t *testing.T) {
 		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
 	}
 
-	key, err := ioutil.ReadFile(sshPrivateKeyPath)
+	key, err := os.ReadFile(sshPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key shouldn't fail, got: %v", err)
 	}

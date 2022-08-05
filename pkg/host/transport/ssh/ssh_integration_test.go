@@ -6,7 +6,7 @@ package ssh
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -19,7 +19,7 @@ import (
 )
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPasswordAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -29,7 +29,7 @@ func TestPasswordAuth(t *testing.T) {
 		passwordFilePath = "/home/core/.ssh/password"
 	}
 
-	pass, err := ioutil.ReadFile(passwordFilePath)
+	pass, err := os.ReadFile(passwordFilePath)
 	if err != nil {
 		t.Fatalf("Reading password file %q: %v", passwordFilePath, err)
 	}
@@ -55,7 +55,7 @@ func TestPasswordAuth(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPasswordAuthFail(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -80,7 +80,7 @@ func TestPasswordAuthFail(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestPrivateKeyAuth(t *testing.T) {
 	s := withPrivateKey(t)
 
@@ -100,7 +100,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
 	}
 
-	key, err := ioutil.ReadFile(sshPrivateKeyPath)
+	key, err := os.ReadFile(sshPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
 	}
@@ -124,7 +124,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestForwardUnixSocketFull(t *testing.T) {
 	ssh := withPrivateKey(t)
 
@@ -154,7 +154,7 @@ func TestForwardUnixSocketFull(t *testing.T) {
 		t.Fatalf("Writing data to connection: %v", err)
 	}
 
-	response, err := ioutil.ReadAll(conn)
+	response, err := io.ReadAll(conn)
 	if err != nil {
 		t.Fatalf("Reading data from connection should succeed, got: %v", err)
 	}

@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -151,7 +150,7 @@ func (f *FakeClient) ImagePull(
 	options dockertypes.ImagePullOptions,
 ) (io.ReadCloser, error) {
 	if f.ImagePullF == nil {
-		return ioutil.NopCloser(strings.NewReader("")), nil
+		return io.NopCloser(strings.NewReader("")), nil
 	}
 
 	return f.ImagePullF(ctx, ref, options)

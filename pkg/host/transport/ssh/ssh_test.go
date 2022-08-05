@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"os"
@@ -35,7 +35,7 @@ func unsetSSHAuthSockEnv(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNew(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -47,7 +47,7 @@ func TestNew(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSetPassword(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -72,7 +72,7 @@ func TestNewSetPassword(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSetPrivateKey(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -106,7 +106,7 @@ func TestNewValidate(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestValidateRequireAuth(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -221,7 +221,7 @@ func TestHandleClientLocalRemote(t *testing.T) {
 		t.Fatalf("Closing local client failed: %v", err)
 	}
 
-	readMessage, err := ioutil.ReadAll(remoteClient)
+	readMessage, err := io.ReadAll(remoteClient)
 	if err != nil {
 		t.Fatalf("Reading data from connection should succeed, got: %v", err)
 	}
@@ -250,7 +250,7 @@ func TestHandleClientRemoteLocal(t *testing.T) {
 		t.Fatalf("Closing remote client failed: %v", err)
 	}
 
-	readMessage, err := ioutil.ReadAll(client)
+	readMessage, err := io.ReadAll(client)
 	if err != nil {
 		t.Fatalf("Reading data from connection should succeed, got: %v", err)
 	}
@@ -304,7 +304,7 @@ func TestHandleClientBiDirectional(t *testing.T) {
 		t.Fatalf("Closing remote client failed: %v", err)
 	}
 
-	receivedResponse, err := ioutil.ReadAll(client)
+	receivedResponse, err := io.ReadAll(client)
 	if err != nil {
 		t.Fatalf("Reading data from connection should succeed, got: %v", err)
 	}
@@ -426,7 +426,7 @@ func TestForwardConnection(t *testing.T) {
 		t.Fatalf("Failed accepting forwarded connection: %v", err)
 	}
 
-	readData, err := ioutil.ReadAll(c)
+	readData, err := io.ReadAll(c)
 	if err != nil {
 		t.Fatalf("Failed reading data from connection: %v", err)
 	}
@@ -490,7 +490,7 @@ func TestForwardConnectionClosedListener(t *testing.T) {
 // Connect() tests.
 //
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestConnect(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -519,7 +519,7 @@ func TestConnect(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestConnectFail(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -665,7 +665,7 @@ func TestForwardUnixSocketEnsureUnique(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewBadSSHAgentEnv(t *testing.T) {
 	unsetSSHAuthSockEnv(t)
 
@@ -684,7 +684,7 @@ func TestNewBadSSHAgentEnv(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgent(t *testing.T) {
 	agentKeyring := agent.NewKeyring()
 
@@ -730,7 +730,7 @@ func TestNewSSHAgent(t *testing.T) {
 }
 
 //nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-// which is a global variable, so to keep things stable, don't run it in parallel.
+//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgentWrongSocket(t *testing.T) {
 	addr := &net.UnixAddr{
 		Name: "@bar",
