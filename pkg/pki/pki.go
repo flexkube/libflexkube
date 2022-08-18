@@ -212,7 +212,7 @@ func buildAndGenerate(crs ...*certificateRequest) error {
 	for _, certRequest := range crs {
 		cert, err := buildCertificate(certRequest.Certificates...)
 		if err != nil {
-			return fmt.Errorf("builing certificate configuration: %w", err)
+			return fmt.Errorf("building certificate configuration: %w", err)
 		}
 
 		if err := cert.Generate(certRequest.CA); err != nil {
