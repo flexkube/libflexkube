@@ -190,7 +190,7 @@ test-update-linters: test-working-tree-clean
 
 .PHONY: codespell
 codespell:
-	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate,decorder
+	codespell -S .git,state.yaml,go.sum,terraform.tfstate,terraform.tfstate.backup,./local-testing/resources -L uptodate,decorder,complies
 
 .PHONY: codespell-pr
 codespell-pr:

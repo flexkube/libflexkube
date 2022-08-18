@@ -107,7 +107,7 @@ jobs:
     - uses: codespell-project/actions-codespell@master
       with:
         skip: .git,go.sum
-        ignore_words_list: uptodate,decorder
+        ignore_words_list: uptodate,decorder,complies
         check_filenames: true
         check_hidden: true
   vagrant:
