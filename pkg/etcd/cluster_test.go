@@ -601,3 +601,127 @@ func TestClusterNewPKIIntegration(t *testing.T) {
 		t.Fatalf("Creating new cluster with valid PKI should succeed, got: %v", err)
 	}
 }
+
+//nolint:funlen,gocognit,cyclop // Just many test cases.
+func Test_Building_members_config_from_cluster_config(t *testing.T) {
+	t.Parallel()
+
+	t.Run("generates_initial_cluster_with_each_unique_member_when", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("member_has_no_name_set", func(t *testing.T) {
+			t.Parallel()
+
+			cert := utiltest.GenerateX509Certificate(t)
+			key := utiltest.GenerateRSAPrivateKey(t)
+
+			config := &Cluster{
+				Members: map[string]MemberConfig{
+					"foo": {
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "1",
+						CACertificate:     cert,
+					},
+					"bar": {
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "2",
+						CACertificate:     cert,
+					},
+					"baz": {
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "3",
+						CACertificate:     cert,
+					},
+				},
+			}
+
+			cluster, err := config.New()
+			if err != nil {
+				t.Fatalf("Unexpected error initializing cluster: %v", err)
+			}
+
+			initialCluster := ""
+
+			for _, hostConfiguredContainer := range cluster.Containers().DesiredState() {
+				for _, arg := range hostConfiguredContainer.Container.Config.Args {
+					if strings.Contains(arg, "--initial-cluster=") {
+						initialCluster = arg
+					}
+				}
+			}
+
+			expectedInitialCluster := "--initial-cluster=bar=https://2:2380,baz=https://3:2380,foo=https://1:2380"
+			if initialCluster != expectedInitialCluster {
+				t.Fatalf("Unexpected initial cluster argument. Expected %q, got %q", expectedInitialCluster, initialCluster)
+			}
+		})
+
+		t.Run("member_has_name_explicitly_set", func(t *testing.T) {
+			t.Parallel()
+
+			cert := utiltest.GenerateX509Certificate(t)
+			key := utiltest.GenerateRSAPrivateKey(t)
+
+			config := &Cluster{
+				Members: map[string]MemberConfig{
+					"foo": {
+						Name:              "foo",
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "1",
+						CACertificate:     cert,
+					},
+					"bar": {
+						Name:              "bar",
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "2",
+						CACertificate:     cert,
+					},
+					"baz": {
+						Name:              "baz",
+						PeerCertificate:   cert,
+						PeerKey:           key,
+						ServerCertificate: cert,
+						ServerKey:         key,
+						PeerAddress:       "3",
+						CACertificate:     cert,
+					},
+				},
+			}
+
+			cluster, err := config.New()
+			if err != nil {
+				t.Fatalf("Unexpected error initializing cluster: %v", err)
+			}
+
+			initialCluster := ""
+
+			for _, hostConfiguredContainer := range cluster.Containers().DesiredState() {
+				for _, arg := range hostConfiguredContainer.Container.Config.Args {
+					if strings.Contains(arg, "--initial-cluster=") {
+						initialCluster = arg
+					}
+				}
+			}
+
+			expectedInitialCluster := "--initial-cluster=bar=https://2:2380,baz=https://3:2380,foo=https://1:2380"
+			if initialCluster != expectedInitialCluster {
+				t.Fatalf("Unexpected initial cluster argument. Expected %q, got %q", expectedInitialCluster, initialCluster)
+			}
+		})
+	})
+}
