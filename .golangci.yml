@@ -99,7 +99,6 @@ linters:
     - containedctx
     - contextcheck
     - cyclop
-    - deadcode
     - decorder
     - depguard
     - dogsled
@@ -133,7 +132,9 @@ linters:
     - grouper
     - importas
     - ineffassign
+    - interfacebloat
     - lll
+    - logrlint
     - maintidx
     - makezero
     - misspell
@@ -145,16 +146,15 @@ linters:
     - noctx
     - nolintlint
     - nonamedreturns
-    - nosnakecase
     - nosprintfhostport
     - paralleltest
     - prealloc
     - predeclared
     - promlinter
+    - reassign
     - revive
     - rowserrcheck
     - sqlclosecheck
-    - structcheck
     - stylecheck
     - tagliatelle
     - tenv
@@ -164,7 +164,6 @@ linters:
     - unconvert
     - unparam
     - usestdlibvars
-    - varcheck
     - varnamelen
     - wastedassign
     - whitespace
