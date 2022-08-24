@@ -1,3 +1,4 @@
+// Package main provides runnable flexkube CLI binary.
 package main
 
 import (

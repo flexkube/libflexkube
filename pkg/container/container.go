@@ -10,6 +10,8 @@ import (
 )
 
 // Interface represents container capabilities, which may or may not exist.
+//
+//nolint:interfacebloat // Perhaps at some point we can refactor this.
 type Interface interface {
 	// Create creates the container.
 	Create() (InstanceInterface, error)
