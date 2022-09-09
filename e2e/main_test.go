@@ -99,15 +99,15 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 		Charts: charts{
 			KubeAPIServer: chart{
 				Source:  "flexkube/kube-apiserver",
-				Version: "0.4.4",
+				Version: "0.5.0",
 			},
 			Kubernetes: chart{
 				Source:  "flexkube/kubernetes",
-				Version: "0.5.4",
+				Version: "0.6.0",
 			},
 			KubeProxy: chart{
 				Source:  "flexkube/kube-proxy",
-				Version: "0.4.4",
+				Version: "0.5.0",
 			},
 			TLSBootstrapping: chart{
 				Source:  "flexkube/tls-bootstrapping",
@@ -115,19 +115,19 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 			},
 			CoreDNS: chart{
 				Source:  "flexkube/coredns",
-				Version: "2.0.4",
+				Version: "2.0.6",
 			},
 			MetricsServer: chart{
 				Source:  "flexkube/metrics-server",
-				Version: "3.0.6",
+				Version: "3.0.9",
 			},
 			KubeletRubberStamp: chart{
 				Source:  "flexkube/kubelet-rubber-stamp",
-				Version: "0.1.7",
+				Version: "0.1.8",
 			},
 			Calico: chart{
 				Source:  "flexkube/calico",
-				Version: "0.4.20",
+				Version: "0.4.22",
 			},
 		},
 		KubeletExtraArgs: []string{

@@ -79,10 +79,6 @@ func (c *client) ping() (bool, error) {
 		return false, nil
 	}
 
-	if _, err := c.PolicyV1beta1().PodSecurityPolicies().List(context.TODO(), metav1.ListOptions{}); err != nil {
-		return false, nil
-	}
-
 	return true, nil
 }
 
