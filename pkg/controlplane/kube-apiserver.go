@@ -206,8 +206,7 @@ func (k *kubeAPIServer) args() []string {
 		fmt.Sprintf("--etcd-keyfile=%s", path.Join(containerConfigPath, etcdKeyfile)),
 		// Enable additional admission plugins:
 		// - NodeRestriction for extra protection against rogue cluster nodes.
-		// - PodSecurityPolicy for PSP support.
-		"--enable-admission-plugins=NodeRestriction,PodSecurityPolicy",
+		"--enable-admission-plugins=NodeRestriction",
 		// Use SO_REUSEPORT, so multiple instances can run on the same controller for smooth upgrades.
 		"--permit-port-sharing=true",
 		// New flags required for TokenRequest feature.
