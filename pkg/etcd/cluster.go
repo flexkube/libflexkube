@@ -103,7 +103,7 @@ func (c *Cluster) propagateMember(memberName string, memberConfig *MemberConfig)
 
 	for n, m := range c.Members {
 		// If member has no name defined explicitly, use key passed as argument.
-		name := util.PickString(memberConfig.Name, n)
+		name := util.PickString(m.Name, n)
 
 		initialClusterArr = append(initialClusterArr, fmt.Sprintf("%s=https://%s:2380", name, m.PeerAddress))
 		peerCertAllowedCNArr = append(peerCertAllowedCNArr, name)
