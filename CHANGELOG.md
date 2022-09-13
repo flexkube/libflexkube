@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Binaries are built using Go 1.19.
 
 ### Removed
-- As part of Kubernetes v1.24 upgrade, support for PodSecurityPolicies has been removed.
+- As part of Kubernetes v1.25 upgrade, support for PodSecurityPolicies has been removed.
 
 ## [0.8.0] - 2022-05-05
 ### Changed
