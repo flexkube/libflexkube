@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When `flexkube` binary is installed using `go install`, it will print version information
 pulled from Go modules.
 - Default Kubernetes version is now v1.24.0.
-- Default etcd version is now v3.5.3
+- Default etcd version is now v3.5.3.
 - Default HAProxy version is now 2.5.6.
 - Binaries are built using Go 1.18.
 
