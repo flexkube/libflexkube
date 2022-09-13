@@ -5,12 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2022-09-13
+### Changed
+- Default Kubernetes version is now v1.25.0.
+- Default etcd version is now v3.5.4.
+- Default HAProxy version is now 2.6.5.
+- Default Calico CNI version is now v3.24.1.
+- Binaries are built using Go 1.19.
+
+### Removed
+- As part of Kubernetes v1.24 upgrade, support for PodSecurityPolicies has been removed.
+
 ## [0.8.0] - 2022-05-05
 ### Changed
 - When `flexkube` binary is installed using `go install`, it will print version information
 pulled from Go modules.
 - Default Kubernetes version is now v1.24.0.
-- Default etcd version is now v3.5.3
+- Default etcd version is now v3.5.3.
 - Default HAProxy version is now 2.5.6.
 - Binaries are built using Go 1.18.
 
@@ -328,6 +339,7 @@ flaky cluster deployments (#84)
 ### Added
 - Initial release
 
+[0.9.0]: https://github.com/flexkube/libflexkube/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/flexkube/libflexkube/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flexkube/libflexkube/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flexkube/libflexkube/compare/v0.5.1...v0.6.0
