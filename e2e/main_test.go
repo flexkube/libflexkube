@@ -489,6 +489,7 @@ export ETCDCTL_ENDPOINTS=%s
 			absPath(t, "./resources/etcd-cluster/prometheus_client.key"),
 			strings.Join(etcdServers, ","),
 		),
+		//nolint:dupword // Duplicate "root" and "kube-apiserver" is actually fine here.
 		"./resources/etcd-cluster/enable-rbac.sh": `#!/bin/bash
 etcdctl user add --no-password=true root
 etcdctl role add root
