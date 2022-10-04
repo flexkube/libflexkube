@@ -177,7 +177,7 @@ func (c *container) selectRuntime() error {
 	return nil
 }
 
-// Create creates container container from it's definition.
+// Create creates container from it's definition.
 func (c *container) Create() (InstanceInterface, error) {
 	containerID, err := c.runtime.Create(&c.config)
 	if err != nil {
