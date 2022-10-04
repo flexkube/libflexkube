@@ -268,7 +268,7 @@ func (c *containers) ensureExists(containerName string) error {
 	err := c.desiredState.CreateAndStart(containerName)
 
 	// Container creation failed and it does not exist, meaning state is clean.
-	if err != nil && !targetHCC.container.Status().Exists() { //nolint:wsl // Do not cuddle err assignment for readability.
+	if err != nil && !targetHCC.container.Status().Exists() {
 		return fmt.Errorf("creating container: %w", err)
 	}
 

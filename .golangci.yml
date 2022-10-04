@@ -103,6 +103,7 @@ linters:
     - depguard
     - dogsled
     - dupl
+    - dupword
     - durationcheck
     - errcheck
     - errchkjson
@@ -134,7 +135,6 @@ linters:
     - ineffassign
     - interfacebloat
     - lll
-    - logrlint
     - maintidx
     - makezero
     - misspell
@@ -158,6 +158,7 @@ linters:
     - stylecheck
     - tagliatelle
     - tenv
+    - testableexamples
     - thelper
     - tparallel
     - typecheck
