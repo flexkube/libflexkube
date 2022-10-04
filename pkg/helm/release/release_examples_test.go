@@ -3,6 +3,7 @@ package release_test
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/flexkube/libflexkube/pkg/helm/release"
 )
@@ -33,14 +34,15 @@ labels:
 
 	exampleRelease, err := config.New()
 	if err != nil {
-		fmt.Printf("Creating release object failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Creating release object failed: %v\n", err)
 
 		return
 	}
 
 	if err := exampleRelease.Install(context.TODO()); err != nil {
-		fmt.Printf("Installing release failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Installing release failed: %v\n", err)
 
 		return
 	}
+	// Output:
 }
