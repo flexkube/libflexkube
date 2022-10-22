@@ -176,7 +176,7 @@ func (r *release) Install(ctx context.Context) error {
 
 	client := r.installClient()
 
-	chart, err := r.loadChart() //nolint:contextcheck // Helm API does not allow passing contexts here.
+	chart, err := r.loadChart()
 	if err != nil {
 		return fmt.Errorf("loading chart: %w", err)
 	}
@@ -203,7 +203,7 @@ func (r *release) Upgrade(ctx context.Context) error {
 
 	client := r.upgradeClient()
 
-	chart, err := r.loadChart() //nolint:contextcheck // Helm API does not allow passing contexts here.
+	chart, err := r.loadChart()
 	if err != nil {
 		return fmt.Errorf("loading chart: %w", err)
 	}
