@@ -119,7 +119,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 			},
 			MetricsServer: chart{
 				Source:  "flexkube/metrics-server",
-				Version: "3.0.9",
+				Version: "3.0.10",
 			},
 			KubeletRubberStamp: chart{
 				Source:  "flexkube/kubelet-rubber-stamp",
