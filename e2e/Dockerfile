@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine3.15
+FROM golang:1.19-alpine3.17
 
 RUN apk add -U make bash bash-completion vim coreutils
 
