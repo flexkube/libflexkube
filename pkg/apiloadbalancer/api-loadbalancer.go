@@ -101,7 +101,8 @@ frontend kube-apiserver
   default_backend kube-apiserver
 
 backend kube-apiserver
-  option httpchk GET /healthz HTTP/1.1\r\nHost:\ kube-apiserver
+  option httpchk GET /healthz HTTP/1.1
+  http-check send hdr Host kube-apiserver
   {{- range $i, $s := .Servers }}
   server {{ $i }} {{ $s }} verify none check check-ssl
   {{- end }}
