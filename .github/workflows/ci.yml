@@ -80,7 +80,32 @@ jobs:
           ${{ runner.os }}-go-
     - uses: actions/checkout@v2
     - name: Setup containerd
-      uses: crazy-max/ghaction-setup-containerd@v2
+      run: |
+        # From https://docs.docker.com/engine/install/ubuntu/.
+        sudo apt-get remove docker docker-engine docker.io containerd runc
+        sudo apt-get update
+        sudo apt-get install \
+            ca-certificates \
+            curl \
+            gnupg \
+            lsb-release
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+        # From Flatcar default configuration and image-builder containerd role.
+        sudo sed -i 's/^disabled_plugins.*/disabled_plugins = []/g' /etc/containerd/config.toml
+        cat <<EOF | sudo tee -a /etc/containerd/config.toml
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+        # setting runc.options unsets parent settings
+        runtime_type = "io.containerd.runc.v2"
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+        SystemdCgroup = true
+        EOF
+        sudo systemctl restart containerd
     - name: Fetch dependencies and configure tests
       run: |
         docker-compose -f e2e/docker-compose.yml up -d
