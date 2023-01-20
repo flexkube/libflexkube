@@ -400,7 +400,11 @@ func TestContainerEnv(t *testing.T) {
 	t.Parallel()
 
 	env := map[string]string{"foo": "bar"}
-	envSlice := []string{"foo=bar", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+	envSlice := []string{
+		"foo=bar",
+		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
+	}
 
 	testRuntime, testDocker := getDockerRuntime(t)
 
