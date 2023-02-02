@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.50.1
+    container: golangci/golangci-lint:v1.51.1
     steps:
     - uses: actions/cache@v2
       with:

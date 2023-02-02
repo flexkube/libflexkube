@@ -187,7 +187,7 @@ const maxTestMessageLength = 1024
 func testMessage(t *testing.T) ([]byte, int) {
 	t.Helper()
 
-	rand.Seed(time.Now().UTC().UnixNano())
+	rand := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 
 	// We must have at least 1 byte message.
 	length := rand.Intn(maxTestMessageLength) + 1

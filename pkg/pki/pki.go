@@ -320,7 +320,6 @@ func (c *Certificate) decodePrivateKey() (*rsa.PrivateKey, error) {
 func (c *Certificate) DecodeX509Certificate() (*x509.Certificate, error) {
 	der, _ := pem.Decode([]byte(c.X509Certificate))
 	if der == nil {
-		//nolint:stylecheck // Capitaliziation is OK here, as X.509 is a proper noun.
 		return nil, fmt.Errorf("X.509 certificate is not defined in valid PEM format")
 	}
 
