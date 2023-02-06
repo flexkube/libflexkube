@@ -403,6 +403,10 @@ func (k *kubelet) mounts() []containertypes.Mount { //nolint:funlen // We return
 			Source: fmt.Sprintf("%s/", strings.TrimSuffix(k.config.VolumePluginDir, "/")),
 			Target: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec",
 		},
+		{
+			Source: "/etc/machine-id",
+			Target: "/etc/machine-id",
+		},
 	}, k.config.ExtraMounts...)
 }
 
