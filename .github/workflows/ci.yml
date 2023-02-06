@@ -19,7 +19,11 @@ jobs:
           ${{ runner.os }}-go-
     - uses: actions/checkout@v2
     - run: make install-changelog BIN_PATH=/usr/local/bin
-    - run: make build build-test test-update-linters lint test-tidy test-changelog
+    - run: |
+        # Required to avoid error 'fatal: detected dubious ownership in repository at' while calling
+        # 'git status --porcelain'.
+        git config --global --add safe.directory /__w/libflexkube/libflexkube
+        make build build-test test-update-linters lint test-tidy test-changelog
   test:
     runs-on: ubuntu-latest
     steps:
