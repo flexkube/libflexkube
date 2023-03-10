@@ -33,7 +33,7 @@ pulled from Go modules.
 - Certificates and private keys in configs are now parsed as part of validation process.
 - e2e tests has now container runtime, nodes CIDR, and kubelet extra args configurable.
 - e2e tests are now run as part of CI process.
-- CI process now covers Dockerfiles, changelog formatting, go mod tidyness, Vagrantfile and Terraform code.
+- CI process now covers Dockerfiles, changelog formatting, go mod tidiness, Vagrantfile and Terraform code.
 - Custom code style checks using semgrep.
 
 ### Changed
