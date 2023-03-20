@@ -74,7 +74,7 @@ func TestContainerCreatePullImage(t *testing.T) {
 	t.Parallel()
 
 	// Don't use default version of image, to have better chance it can be removed
-	image := "gcr.io/etcd-development/etcd:v3.3.0"
+	image := "quay.io/coreos/etcd:v3.3.0"
 
 	testRuntime, _ := getDockerRuntime(t)
 
