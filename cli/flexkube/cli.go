@@ -160,12 +160,12 @@ func apiLoadBalancerPoolAction(c *cli.Context, resource *Resource) error {
 }
 
 // controlplaneAction implements 'controlplane' subcommand.
-func controlplaneAction(c *cli.Context, r *Resource) error {
+func controlplaneAction(_ *cli.Context, r *Resource) error {
 	return r.RunControlplane()
 }
 
 // etcdAction implements 'etcd' subcommand.
-func etcdAction(c *cli.Context, r *Resource) error {
+func etcdAction(_ *cli.Context, r *Resource) error {
 	return r.RunEtcd()
 }
 
@@ -218,7 +218,7 @@ func templateAction(c *cli.Context, resource *Resource) error {
 	return nil
 }
 
-func kubeconfigAction(c *cli.Context, resource *Resource) error {
+func kubeconfigAction(_ *cli.Context, resource *Resource) error {
 	k, err := resource.Kubeconfig()
 	if err != nil {
 		return fmt.Errorf("generating kubeconfig: %w", err)
@@ -238,7 +238,7 @@ func kubeletPoolAction(c *cli.Context, resource *Resource) error {
 	return resource.RunKubeletPool(poolName)
 }
 
-func pkiAction(c *cli.Context, r *Resource) error {
+func pkiAction(_ *cli.Context, r *Resource) error {
 	return r.RunPKI()
 }
 
