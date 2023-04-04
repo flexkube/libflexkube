@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/flexkube/helm/v3 v3.1.0-rc.1.0.20220909120838-ecd8a196773e
 	github.com/google/go-cmp v0.5.9
