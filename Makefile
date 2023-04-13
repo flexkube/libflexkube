@@ -290,6 +290,7 @@ vagrant-e2e-build:
 .PHONY: vagrant-e2e-kubeconfig
 vagrant-e2e-kubeconfig:
 	ssh -p 2222 -i ~/.vagrant.d/insecure_private_key -o StrictHostKeyChecking=no core@127.0.0.1 sudo cat /home/core/libflexkube/e2e/kubeconfig > ./e2e/kubeconfig
+	chmod 0600 ./e2e/kubeconfig
 
 .PHONY: vagrant-e2e-run
 vagrant-e2e-run: vagrant-up vagrant-rsync vagrant-build-bin vagrant-e2e-build
