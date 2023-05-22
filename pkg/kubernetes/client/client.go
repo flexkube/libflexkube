@@ -107,7 +107,7 @@ func (c *client) CheckNodeReady(name string) func() (bool, error) {
 		}
 
 		for _, condition := range n.Status.Conditions {
-			if condition.Type == "Ready" && condition.Status != v1.ConditionTrue {
+			if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue {
 				return true, nil
 			}
 		}
