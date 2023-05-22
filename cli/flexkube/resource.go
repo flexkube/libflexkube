@@ -238,6 +238,10 @@ func (r *Resource) getContainers(name string) (types.Resource, error) {
 		return nil, fmt.Errorf("group not configured and state not found")
 	}
 
+	if config == nil {
+		config = &container.ContainersState{}
+	}
+
 	containers := &resource.Containers{}
 
 	if configFound {
