@@ -74,19 +74,19 @@ linters-settings:
 
 linters:
   disable:
-    # Triggers on TODOs in the code, which is fine to put.
-    - godox
-    # Disabled until tests are split and moved to the right file names.
-    - testpackage
-    # Disabled until we implement some error types and migrate to use them.
-    - goerr113
+    # We are not that strict with imports to have a whitelist.
+    - depguard
     # To be able to make use of Go zero-value feature.
     - exhaustivestruct
     - exhaustruct
+    # Triggers on TODOs in the code, which is fine to put.
+    - godox
+    # Disabled until we implement some error types and migrate to use them.
+    - goerr113
     # To allow defensive approach when initializing structs.
     - ireturn
-    # Panics in v1.46.1
-    - execinquery
+    # Disabled until tests are split and moved to the right file names.
+    - testpackage
     # This linter has been deprecated.
     - golint
     - interfacer
@@ -100,7 +100,6 @@ linters:
     - contextcheck
     - cyclop
     - decorder
-    - depguard
     - dogsled
     - dupl
     - dupword
@@ -109,6 +108,7 @@ linters:
     - errchkjson
     - errname
     - errorlint
+    - execinquery
     - exhaustive
     - exportloopref
     - forbidigo
@@ -131,6 +131,7 @@ linters:
     - gomoddirectives
     - gomodguard
     - goprintffuncname
+    - gosmopolitan
     - grouper
     - importas
     - ineffassign
@@ -138,6 +139,7 @@ linters:
     - lll
     - maintidx
     - makezero
+    - mirror
     - misspell
     - musttag
     - nakedret
@@ -158,6 +160,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - stylecheck
+    - tagalign
     - tagliatelle
     - tenv
     - testableexamples
@@ -172,3 +175,4 @@ linters:
     - whitespace
     - wrapcheck
     - wsl
+    - zerologlint

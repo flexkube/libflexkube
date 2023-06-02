@@ -347,7 +347,7 @@ func tarToFiles(rc io.Reader) ([]*types.File, error) {
 
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
+		if err == io.EOF {
 			break
 		}
 
