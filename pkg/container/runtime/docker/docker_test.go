@@ -483,7 +483,7 @@ func TestFilesToTar(t *testing.T) {
 					tr := tar.NewReader(r)
 
 					header, err := tr.Next()
-					if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
+					if err == io.EOF {
 						t.Fatalf("At least one file should be found in TAR archive")
 					}
 
@@ -541,7 +541,7 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 					tr := tar.NewReader(r)
 
 					header, err := tr.Next()
-					if err == io.EOF { //nolint:errorlint // io.EOF is special. See https://github.com/golang/go/issues/39155.
+					if err == io.EOF {
 						t.Fatalf("At least one file should be found in TAR archive")
 					}
 
