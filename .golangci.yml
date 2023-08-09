@@ -166,7 +166,6 @@ linters:
     - testableexamples
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - usestdlibvars
