@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
@@ -22,13 +21,13 @@ type FakeClient struct {
 		networkingConfig *networktypes.NetworkingConfig,
 		platform *v1.Platform,
 		containerName string,
-	) (containertypes.ContainerCreateCreatedBody, error)
+	) (containertypes.CreateResponse, error)
 
 	// ContainerStartF will be called by ContainerStart.
 	ContainerStartF func(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
 
 	// ContainerStopF will be called by ContainerStop.
-	ContainerStopF func(ctx context.Context, container string, timeout *time.Duration) error
+	ContainerStopF func(ctx context.Context, container string, timeout containertypes.StopOptions) error
 
 	// ContainerInspectF will be called by ContainerInspect.
 	ContainerInspectF func(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
@@ -70,7 +69,7 @@ func (f *FakeClient) ContainerCreate(
 	networkingConfig *networktypes.NetworkingConfig,
 	platform *v1.Platform,
 	containerName string,
-) (containertypes.ContainerCreateCreatedBody, error) {
+) (containertypes.CreateResponse, error) {
 	return f.ContainerCreateF(ctx, config, hostConfig, networkingConfig, platform, containerName)
 }
 
@@ -84,8 +83,8 @@ func (f *FakeClient) ContainerStart(
 }
 
 // ContainerStop mocks Docker client ContainerStop().
-func (f *FakeClient) ContainerStop(ctx context.Context, container string, timeout *time.Duration) error {
-	return f.ContainerStopF(ctx, container, timeout)
+func (f *FakeClient) ContainerStop(ctx context.Context, container string, options containertypes.StopOptions) error {
+	return f.ContainerStopF(ctx, container, options)
 }
 
 // ContainerInspect mocks Docker client ContainerInspect().

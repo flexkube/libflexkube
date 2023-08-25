@@ -62,6 +62,7 @@ func NewClient(kubeconfig []byte) (Client, error) {
 
 // PingWait waits for Kubernetes API to become available.
 func (c *client) PingWait(pollInterval, retryTimeout time.Duration) error {
+	//nolint:staticcheck // Will migrate once https://github.com/kubernetes/kubernetes/issues/119533 is resolved.
 	return wait.PollImmediate(pollInterval, retryTimeout, c.ping)
 }
 
@@ -118,12 +119,14 @@ func (c *client) CheckNodeReady(name string) func() (bool, error) {
 
 // WaitForNode waits for node object. If object is not found and we reach the timeout, error is returned.
 func (c *client) WaitForNode(name string) error {
+	//nolint:staticcheck // Will migrate once https://github.com/kubernetes/kubernetes/issues/119533 is resolved.
 	return wait.PollImmediate(PollInterval, RetryTimeout, c.CheckNodeExists(name))
 }
 
 // WaitForNode waits for node object to become ready. If object is not found and we reach the timeout,
 // error is returned.
 func (c *client) WaitForNodeReady(name string) error {
+	//nolint:staticcheck // Will migrate once https://github.com/kubernetes/kubernetes/issues/119533 is resolved.
 	return wait.PollImmediate(PollInterval, RetryTimeout, c.CheckNodeReady(name))
 }
 
