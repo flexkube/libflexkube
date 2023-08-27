@@ -5,7 +5,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	componentbaseconfig "k8s.io/component-base/config/v1alpha1"
-	kubeschedulerconfig "k8s.io/kube-scheduler/config/v1beta2"
+	kubeschedulerconfig "k8s.io/kube-scheduler/config/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/flexkube/libflexkube/internal/util"

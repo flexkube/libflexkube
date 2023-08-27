@@ -79,8 +79,8 @@ func TestSanitizeImageName(t *testing.T) {
 					networkingConfig *networktypes.NetworkingConfig,
 					platform *v1.Platform,
 					containerName string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
-					return containertypes.ContainerCreateCreatedBody{}, nil
+				) (containertypes.CreateResponse, error) {
+					return containertypes.CreateResponse{}, nil
 				},
 				ImageListF: func(
 					ctx context.Context,
@@ -135,12 +135,12 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 					networkingConfig *networktypes.NetworkingConfig,
 					platform *v1.Platform,
 					containerName string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
+				) (containertypes.CreateResponse, error) {
 					if config.Image != "foo:v0.1.0" {
 						t.Fatal()
 					}
 
-					return containertypes.ContainerCreateCreatedBody{}, nil
+					return containertypes.CreateResponse{}, nil
 				},
 			}, nil
 		},
@@ -618,12 +618,12 @@ func TestCreateSetUser(t *testing.T) {
 					_ *networktypes.NetworkingConfig,
 					_ *v1.Platform,
 					_ string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
+				) (containertypes.CreateResponse, error) {
 					if config.User != testContainerConfig.User {
 						t.Fatalf("Configured user should be %q, got %q", testContainerConfig.User, config.User)
 					}
 
-					return containertypes.ContainerCreateCreatedBody{}, nil
+					return containertypes.CreateResponse{}, nil
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
@@ -665,12 +665,12 @@ func TestCreateSetUserGroup(t *testing.T) {
 					_ *networktypes.NetworkingConfig,
 					_ *v1.Platform,
 					_ string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
+				) (containertypes.CreateResponse, error) {
 					if config.User != expectedUser {
 						t.Fatalf("Configured user should be %q, got %q", expectedUser, config.User)
 					}
 
-					return containertypes.ContainerCreateCreatedBody{}, nil
+					return containertypes.CreateResponse{}, nil
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
@@ -705,8 +705,8 @@ func TestCreateRuntimeFail(t *testing.T) {
 					_ *networktypes.NetworkingConfig,
 					_ *v1.Platform,
 					_ string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
-					return containertypes.ContainerCreateCreatedBody{}, fmt.Errorf("runtime error")
+				) (containertypes.CreateResponse, error) {
+					return containertypes.CreateResponse{}, fmt.Errorf("runtime error")
 				},
 				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
@@ -791,12 +791,12 @@ func TestConvertContainerConfigEnvVariables(t *testing.T) {
 					networkingConfig *networktypes.NetworkingConfig,
 					platform *v1.Platform,
 					containerName string,
-				) (containertypes.ContainerCreateCreatedBody, error) {
+				) (containertypes.CreateResponse, error) {
 					if !reflect.DeepEqual(config.Env, expectedEnvVariables) {
 						t.Fatalf("Configured environment variables should be included in container configuration")
 					}
 
-					return containertypes.ContainerCreateCreatedBody{}, nil
+					return containertypes.CreateResponse{}, nil
 				},
 			}, nil
 		},

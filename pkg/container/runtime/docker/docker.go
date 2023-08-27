@@ -14,7 +14,7 @@ import (
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
-	containertypes "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
@@ -29,7 +29,7 @@ import (
 
 const (
 	// How long we wait when gracefully stopping the container before force-killing it.
-	stopTimeout = 30 * time.Second
+	stopTimeoutSeconds = 30
 )
 
 // Config struct represents Docker container runtime configuration.
@@ -48,14 +48,14 @@ type Config struct {
 type Client interface {
 	ContainerCreate(
 		ctx context.Context,
-		config *containertypes.Config,
-		hostConfig *containertypes.HostConfig,
+		config *container.Config,
+		hostConfig *container.HostConfig,
 		networkingConfig *networktypes.NetworkingConfig,
 		platform *v1.Platform,
 		containerName string,
-	) (containertypes.ContainerCreateCreatedBody, error)
+	) (container.CreateResponse, error)
 	ContainerStart(ctx context.Context, container string, options dockertypes.ContainerStartOptions) error
-	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
+	ContainerStop(ctx context.Context, container string, options container.StopOptions) error
 	ContainerInspect(ctx context.Context, container string) (dockertypes.ContainerJSON, error)
 	ContainerRemove(ctx context.Context, container string, options dockertypes.ContainerRemoveOptions) error
 	CopyFromContainer(
@@ -186,7 +186,7 @@ func mounts(containerMounts []types.Mount) []mount.Mount {
 	return dockerMounts
 }
 
-func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Config, *containertypes.HostConfig, error) {
+func convertContainerConfig(config *types.ContainerConfig) (*container.Config, *container.HostConfig, error) {
 	// TODO That should be validated at ContainerConfig level!
 	portBindings, exposedPorts, err := buildPorts(config.Ports)
 	if err != nil {
@@ -204,7 +204,7 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 	}
 
 	// Just structs required for starting container.
-	dockerConfig := containertypes.Config{
+	dockerConfig := container.Config{
 		Image:        config.Image,
 		Cmd:          config.Args,
 		Entrypoint:   config.Entrypoint,
@@ -212,14 +212,14 @@ func convertContainerConfig(config *types.ContainerConfig) (*containertypes.Conf
 		User:         user,
 		Env:          env,
 	}
-	hostConfig := containertypes.HostConfig{
+	hostConfig := container.HostConfig{
 		Mounts:       mounts(config.Mounts),
 		PortBindings: portBindings,
 		Privileged:   config.Privileged,
-		NetworkMode:  containertypes.NetworkMode(config.NetworkMode),
-		PidMode:      containertypes.PidMode(config.PidMode),
-		IpcMode:      containertypes.IpcMode(config.IpcMode),
-		RestartPolicy: containertypes.RestartPolicy{
+		NetworkMode:  container.NetworkMode(config.NetworkMode),
+		PidMode:      container.PidMode(config.PidMode),
+		IpcMode:      container.IpcMode(config.IpcMode),
+		RestartPolicy: container.RestartPolicy{
 			Name: "unless-stopped",
 		},
 	}
@@ -255,9 +255,11 @@ func (d *docker) Start(id string) error {
 // Stop stops Docker container.
 func (d *docker) Stop(id string) error {
 	// TODO make timeout configurable?
-	timeout := stopTimeout
+	timeout := stopTimeoutSeconds
 
-	return d.cli.ContainerStop(d.ctx, id, &timeout)
+	return d.cli.ContainerStop(d.ctx, id, container.StopOptions{
+		Timeout: &timeout,
+	})
 }
 
 // Status returns container status.

@@ -71,12 +71,13 @@ func TestPingWaitFakeKubeconfig(t *testing.T) {
 
 	kubeconfig := GetKubeconfig(t)
 
-	c, err := client.NewClient([]byte(kubeconfig))
+	testClient, err := client.NewClient([]byte(kubeconfig))
 	if err != nil {
 		t.Fatalf("Failed creating client: %v", err)
 	}
 
-	if err := c.PingWait(1*time.Second, 1*time.Second); !errors.Is(err, wait.ErrWaitTimeout) {
+	//nolint:staticcheck // Will migrate once https://github.com/kubernetes/kubernetes/issues/119533 is resolved.
+	if err := testClient.PingWait(1*time.Second, 1*time.Second); !errors.Is(err, wait.ErrWaitTimeout) {
 		t.Fatalf("Ping with fake config should always timeout, got: %v", err)
 	}
 }
