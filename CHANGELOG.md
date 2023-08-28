@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2023-08-28
+### Changed
+- Default Kubernetes version is now v1.28.1.
+- Default etcd version is now v3.5.9.
+- Default HAProxy version is now 2.8.1.
+- Default Calico CNI version is now v3.26.1.
+- Binaries are built using Go 1.21.
+- Kubelet now mounts /etc/machine-id from host.
+
+### Fixed
+- Waiting for Nodes to become Ready is now working as expected.
+
 ## [0.9.0] - 2022-09-13
 ### Changed
 - Default Kubernetes version is now v1.25.0.
@@ -339,6 +351,7 @@ flaky cluster deployments (#84)
 ### Added
 - Initial release
 
+[0.10.0]: https://github.com/flexkube/libflexkube/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/flexkube/libflexkube/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/flexkube/libflexkube/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flexkube/libflexkube/compare/v0.6.0...v0.7.0
