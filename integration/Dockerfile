@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.17
+FROM golang:1.21-alpine3.18
 
 # Install dependencies:
 # - docker for spawning further Docker containers
