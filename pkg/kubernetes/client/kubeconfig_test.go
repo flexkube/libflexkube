@@ -2,6 +2,7 @@ package client_test
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -151,7 +152,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 	for n, testCase := range cases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
 			t.Parallel()
 
 			pki := utiltest.GeneratePKI(t)
@@ -250,7 +251,7 @@ func TestValidate(t *testing.T) { //nolint:funlen // There are just many test ca
 	for n, testCase := range cases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
 			t.Parallel()
 
 			pki := utiltest.GeneratePKI(t)

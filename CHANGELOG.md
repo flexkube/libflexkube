@@ -205,7 +205,7 @@ tests on old version in the future.
 - `flexkube` CLI will now print colored diff when configuration changes are detected.
 - `flexkube` CLI will now ask user for confirmation before deploying the resources, unless `--yes` flag is set.
 - `flexkube` CLI now supports `--noop` flag, which allows only checking if the configuration is up to date, without triggering the deployment.
-- `flexkube` CLI now supports `conatiners` sub-command for managing arbitrary groups of containers. This allows to also manage some extra containers not provided by `libflexkube`.
+- `flexkube` CLI now supports `containers` sub-command for managing arbitrary groups of containers. This allows to also manage some extra containers not provided by `libflexkube`.
 - `pkg/kubelet` now supports waiting until node gets into ready state, if `WaitForNodeReady` flag is set to `true`.
 - `kube-apiserver` from static controlplane now use `--target-ram-mb` flag to limit memory usage of bootstrap controlplane.
 

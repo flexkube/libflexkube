@@ -1,7 +1,7 @@
 package host
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/flexkube/libflexkube/pkg/host/transport/direct"
@@ -68,7 +68,7 @@ func TestValidate(t *testing.T) {
 	for n, testCase := range cases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
 			t.Parallel()
 
 			err := testCase.Host.Validate()

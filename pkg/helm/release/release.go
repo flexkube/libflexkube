@@ -24,13 +24,13 @@ type Release interface {
 	ValidateChart() error
 
 	// Install installs configured release. If release already exists, error will be returned.
-	Install(context.Context) error
+	Install(ctx context.Context) error
 
 	// Upgrade upgrades configured release. If release does not exist, error will be returned.
-	Upgrade(context.Context) error
+	Upgrade(ctx context.Context) error
 
 	// InstallOrUpgrade either installs or upgrades the release, depends whether it exists or not.
-	InstallOrUpgrade(context.Context) error
+	InstallOrUpgrade(ctx context.Context) error
 
 	// Exists checks, if release exists. If cluster is not reachable, error is returned.
 	Exists() (bool, error)

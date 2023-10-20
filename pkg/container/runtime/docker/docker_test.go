@@ -29,7 +29,7 @@ func TestNewClient(t *testing.T) {
 	t.Parallel()
 
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
-	// anyway. Or maybe we should simply skip error checking in itegration tests to simplify them?
+	// anyway. Or maybe we should simply skip error checking in integration tests to simplify them?
 	c := &docker.Config{
 		ClientGetter: func(...client.Opt) (docker.Client, error) { return nil, nil },
 	}

@@ -63,7 +63,7 @@ type e2eConfig struct {
 func parseInt(t *testing.T, envVar string, defaultValue int) int {
 	t.Helper()
 
-	iRaw := util.PickString(os.Getenv(envVar), fmt.Sprintf("%d", defaultValue))
+	iRaw := util.PickString(os.Getenv(envVar), strconv.Itoa(defaultValue))
 
 	i, err := strconv.Atoi(iRaw)
 	if err != nil {
