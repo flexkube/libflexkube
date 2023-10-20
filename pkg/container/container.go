@@ -44,10 +44,10 @@ type Interface interface {
 	Runtime() runtime.Runtime
 
 	// SetRuntime allows overriding used container runtime.
-	SetRuntime(runtime.Runtime)
+	SetRuntime(newRuntime runtime.Runtime)
 
 	// SetStatus allows overriding container status.
-	SetStatus(types.ContainerStatus)
+	SetStatus(newStatus types.ContainerStatus)
 }
 
 // InstanceInterface represents operations, which can be executed on existing

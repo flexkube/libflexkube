@@ -48,7 +48,7 @@ type Config interface {
 	GetAddress() string
 
 	// SetAddress allows to override, which URL will be used when talking to container runtime.
-	SetAddress(string)
+	SetAddress(newAddress string)
 
 	// New validates container runtime and returns object, which can be used to create containers etc.
 	New() (Runtime, error)

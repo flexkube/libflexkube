@@ -1,8 +1,8 @@
 package ssh_test
 
 import (
-	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/flexkube/libflexkube/pkg/host/transport/ssh"
@@ -391,7 +391,7 @@ func TestBuildConfig(t *testing.T) { //nolint:funlen,maintidx // Just many test 
 	for i, testCase := range cases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 
 			if nc := ssh.BuildConfig(testCase.config, testCase.defaults); !reflect.DeepEqual(nc, testCase.result) {
