@@ -3,7 +3,7 @@ package defaults
 
 const (
 	// EtcdImage points to a default Docker image, which will be used for running etcd.
-	EtcdImage = "quay.io/coreos/etcd:v3.5.9"
+	EtcdImage = "quay.io/coreos/etcd:v3.5.11"
 
 	// KubeAPIServerImage points to a default Docker image, which will be used for
 	// running kube-apiserver.
