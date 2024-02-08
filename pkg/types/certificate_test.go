@@ -42,7 +42,6 @@ func TestCertificateParse(t *testing.T) {
 			bar := &Foo{}
 
 			err := yaml.Unmarshal([]byte(testCase.YAML), bar)
-
 			if testCase.Error && err == nil {
 				t.Fatalf("Expected error and didn't get any.")
 			}

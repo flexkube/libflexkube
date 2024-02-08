@@ -75,6 +75,7 @@ func TestValidate(t *testing.T) {
 			if testCase.Error && err == nil {
 				t.Fatalf(testCase.Message)
 			}
+
 			if !testCase.Error && err != nil {
 				t.Errorf(testCase.Message)
 			}

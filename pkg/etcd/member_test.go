@@ -159,8 +159,8 @@ func TestValidate(t *testing.T) {
 			t.Parallel()
 
 			m := testCase.mutator(validMember(t))
-			err := m.Validate()
 
+			err := m.Validate()
 			if testCase.expectError && err == nil {
 				t.Fatalf("Expected error")
 			}

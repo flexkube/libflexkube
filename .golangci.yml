@@ -83,6 +83,8 @@ linters:
     - godox
     # Disabled until we implement some error types and migrate to use them.
     - goerr113
+    # We don't really care about sprintf performance.
+    - perfsprint
     # To allow defensive approach when initializing structs.
     - ireturn
     # Disabled until tests are split and moved to the right file names.
@@ -154,7 +156,6 @@ linters:
     - nonamedreturns
     - nosprintfhostport
     - paralleltest
-    - perfsprint
     - prealloc
     - predeclared
     - promlinter
@@ -163,6 +164,7 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
+    - spancheck
     - sqlclosecheck
     - stylecheck
     - tagalign
