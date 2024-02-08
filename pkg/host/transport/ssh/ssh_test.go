@@ -683,8 +683,6 @@ func TestNewBadSSHAgentEnv(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgent(t *testing.T) {
 	agentKeyring := agent.NewKeyring()
 
@@ -729,8 +727,6 @@ func TestNewSSHAgent(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest // This test may access SSHAuthSockEnv environment variable,
-//nolint:paralleltest // which is a global variable, so to keep things stable, don't run it in parallel.
 func TestNewSSHAgentWrongSocket(t *testing.T) {
 	addr := &net.UnixAddr{
 		Name: "@bar",

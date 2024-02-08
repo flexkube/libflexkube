@@ -47,7 +47,6 @@ aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
 			t.Parallel()
 
 			err := pki.ValidatePrivateKey(testCase.key)
-
 			if testCase.err && err == nil {
 				t.Fatalf("Expected error and didn't get any.")
 			}
