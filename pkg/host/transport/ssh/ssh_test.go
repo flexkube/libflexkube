@@ -53,7 +53,7 @@ func TestNewSetPassword(t *testing.T) {
 
 	testConfig := newTestConfig(t)
 	testConfig.PrivateKey = ""
-	testConfig.Dialer = func(network, address string, config *gossh.ClientConfig) (Dialer, error) {
+	testConfig.Dialer = func(_, _ string, config *gossh.ClientConfig) (Dialer, error) {
 		if len(config.Auth) != authMethods {
 			t.Fatalf("Unexpected auth methods, expected %d, got %v", authMethods, config.Auth)
 		}
@@ -78,7 +78,7 @@ func TestNewSetPrivateKey(t *testing.T) {
 
 	testConfig := newTestConfig(t)
 	testConfig.Password = ""
-	testConfig.Dialer = func(network, address string, config *gossh.ClientConfig) (Dialer, error) {
+	testConfig.Dialer = func(_, _ string, config *gossh.ClientConfig) (Dialer, error) {
 		if len(config.Auth) != authMethods {
 			t.Fatalf("Unexpected auth methods, expected %d, got %v", authMethods, config.Auth)
 		}
@@ -503,7 +503,7 @@ func TestConnect(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 		PrivateKey:        generateRSAPrivateKey(t),
-		Dialer: func(n, a string, config *gossh.ClientConfig) (Dialer, error) {
+		Dialer: func(string, string, *gossh.ClientConfig) (Dialer, error) {
 			return &gossh.Client{}, nil
 		},
 	}
@@ -532,7 +532,7 @@ func TestConnectFail(t *testing.T) {
 		RetryInterval:     "1s",
 		Port:              Port,
 		PrivateKey:        generateRSAPrivateKey(t),
-		Dialer: func(n, a string, config *gossh.ClientConfig) (Dialer, error) {
+		Dialer: func(string, string, *gossh.ClientConfig) (Dialer, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -553,7 +553,7 @@ func TestForwardTCP(t *testing.T) {
 
 	connected := testNewConnected(t)
 
-	connected.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(string, string) (net.Listener, error) {
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatalf("Unable to listen on random TCP port: %v", err)
@@ -572,7 +572,7 @@ func TestForwardTCPFailListen(t *testing.T) {
 
 	connected := testNewConnected(t)
 
-	connected.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(string, string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
@@ -586,7 +586,7 @@ func TestForwardTCPValidateAddress(t *testing.T) {
 
 	connected := testNewConnected(t)
 
-	connected.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(string, string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 
@@ -615,7 +615,7 @@ func TestForwardUnixSocketCantListen(t *testing.T) {
 
 	connected := testNewConnected(t)
 
-	connected.listener = func(n, a string) (net.Listener, error) {
+	connected.listener = func(string, string) (net.Listener, error) {
 		return nil, fmt.Errorf("expected")
 	}
 

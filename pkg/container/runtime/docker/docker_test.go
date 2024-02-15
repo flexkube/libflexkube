@@ -73,19 +73,16 @@ func TestSanitizeImageName(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				ContainerCreateF: func(
-					ctx context.Context,
-					config *containertypes.Config,
-					hostConfig *containertypes.HostConfig,
-					networkingConfig *networktypes.NetworkingConfig,
-					platform *v1.Platform,
-					containerName string,
+					context.Context,
+					*containertypes.Config,
+					*containertypes.HostConfig,
+					*networktypes.NetworkingConfig,
+					*v1.Platform,
+					string,
 				) (containertypes.CreateResponse, error) {
 					return containertypes.CreateResponse{}, nil
 				},
-				ImageListF: func(
-					ctx context.Context,
-					options dockertypes.ImageListOptions,
-				) ([]dockertypes.ImageSummary, error) {
+				ImageListF: func(context.Context, dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
 					return []dockertypes.ImageSummary{
 						{
 							ID: "nonemptystring",
@@ -95,11 +92,7 @@ func TestSanitizeImageName(t *testing.T) {
 						},
 					}, nil
 				},
-				ImagePullF: func(
-					ctx context.Context,
-					ref string,
-					options dockertypes.ImagePullOptions,
-				) (io.ReadCloser, error) {
+				ImagePullF: func(context.Context, string, dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					t.Fatalf("Unexpected call to image pull")
 
 					return nil, nil
@@ -129,12 +122,12 @@ func TestSanitizeImageNameWithTag(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				ContainerCreateF: func(
-					ctx context.Context,
+					_ context.Context,
 					config *containertypes.Config,
-					hostConfig *containertypes.HostConfig,
-					networkingConfig *networktypes.NetworkingConfig,
-					platform *v1.Platform,
-					containerName string,
+					_ *containertypes.HostConfig,
+					_ *networktypes.NetworkingConfig,
+					_ *v1.Platform,
+					_ string,
 				) (containertypes.CreateResponse, error) {
 					if config.Image != "foo:v0.1.0" {
 						t.Fatal()
@@ -169,7 +162,7 @@ func TestStatus(t *testing.T) {
 	testConfig := &docker.Config{
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
-				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+				ContainerInspectF: func(context.Context, string) (dockertypes.ContainerJSON, error) {
 					return dockertypes.ContainerJSON{
 						ContainerJSONBase: &dockertypes.ContainerJSONBase{
 							State: &dockertypes.ContainerState{
@@ -207,7 +200,7 @@ func TestStatusNotFound(t *testing.T) {
 	testConfig := &docker.Config{
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
-				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+				ContainerInspectF: func(context.Context, string) (dockertypes.ContainerJSON, error) {
 					return dockertypes.ContainerJSON{}, errdefs.NotFound(fmt.Errorf("not found"))
 				},
 			}, nil
@@ -235,7 +228,7 @@ func TestStatusRuntimeError(t *testing.T) {
 	testConfig := &docker.Config{
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
-				ContainerInspectF: func(ctx context.Context, id string) (dockertypes.ContainerJSON, error) {
+				ContainerInspectF: func(context.Context, string) (dockertypes.ContainerJSON, error) {
 					return dockertypes.ContainerJSON{}, fmt.Errorf("can't check status of container")
 				},
 			}, nil
@@ -474,11 +467,11 @@ func TestFilesToTar(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				CopyToContainerF: func(
-					ctx context.Context,
-					container,
-					path string,
+					_ context.Context,
+					_,
+					_ string,
 					r io.Reader,
-					options dockertypes.CopyToContainerOptions,
+					_ dockertypes.CopyToContainerOptions,
 				) error {
 					tr := tar.NewReader(r)
 
@@ -532,11 +525,11 @@ func TestFilesToTarNumericUserGroup(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				CopyToContainerF: func(
-					ctx context.Context,
-					container,
-					path string,
+					_ context.Context,
+					_,
+					_ string,
 					r io.Reader,
-					options dockertypes.CopyToContainerOptions,
+					_ dockertypes.CopyToContainerOptions,
 				) error {
 					tr := tar.NewReader(r)
 
@@ -584,8 +577,8 @@ func TestCreatePullImageFail(t *testing.T) {
 	testConfig := &docker.Config{
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
-				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-					return []dockertypes.ImageSummary{}, fmt.Errorf("runtime error")
+				ImageListF: func(context.Context, dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return nil, fmt.Errorf("runtime error")
 				},
 			}, nil
 		},
@@ -625,11 +618,11 @@ func TestCreateSetUser(t *testing.T) {
 
 					return containertypes.CreateResponse{}, nil
 				},
-				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				ImagePullF: func(context.Context, string, dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
 				},
-				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-					return []dockertypes.ImageSummary{}, nil
+				ImageListF: func(context.Context, dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return nil, nil
 				},
 			}, nil
 		},
@@ -672,11 +665,11 @@ func TestCreateSetUserGroup(t *testing.T) {
 
 					return containertypes.CreateResponse{}, nil
 				},
-				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				ImagePullF: func(context.Context, string, dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
 				},
-				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-					return []dockertypes.ImageSummary{}, nil
+				ImageListF: func(context.Context, dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return nil, nil
 				},
 			}, nil
 		},
@@ -708,11 +701,11 @@ func TestCreateRuntimeFail(t *testing.T) {
 				) (containertypes.CreateResponse, error) {
 					return containertypes.CreateResponse{}, fmt.Errorf("runtime error")
 				},
-				ImagePullF: func(ctx context.Context, ref string, options dockertypes.ImagePullOptions) (io.ReadCloser, error) {
+				ImagePullF: func(context.Context, string, dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					return io.NopCloser(strings.NewReader("")), nil
 				},
-				ImageListF: func(ctx context.Context, options dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
-					return []dockertypes.ImageSummary{}, nil
+				ImageListF: func(context.Context, dockertypes.ImageListOptions) ([]dockertypes.ImageSummary, error) {
+					return nil, nil
 				},
 			}, nil
 		},
@@ -785,12 +778,12 @@ func TestConvertContainerConfigEnvVariables(t *testing.T) {
 		ClientGetter: func(...client.Opt) (docker.Client, error) {
 			return &docker.FakeClient{
 				ContainerCreateF: func(
-					ctx context.Context,
+					_ context.Context,
 					config *containertypes.Config,
-					hostConfig *containertypes.HostConfig,
-					networkingConfig *networktypes.NetworkingConfig,
-					platform *v1.Platform,
-					containerName string,
+					_ *containertypes.HostConfig,
+					_ *networktypes.NetworkingConfig,
+					_ *v1.Platform,
+					_ string,
 				) (containertypes.CreateResponse, error) {
 					if !reflect.DeepEqual(config.Env, expectedEnvVariables) {
 						t.Fatalf("Configured environment variables should be included in container configuration")

@@ -148,7 +148,7 @@ func TestStatus(t *testing.T) {
 	testContainer := &containerInstance{
 		base: base{
 			runtime: runtime.Fake{
-				StatusF: func(ID string) (types.ContainerStatus, error) {
+				StatusF: func(string) (types.ContainerStatus, error) {
 					return types.ContainerStatus{}, fmt.Errorf("checking status")
 				},
 			},
@@ -177,7 +177,7 @@ func TestContainerUpdateStatusFail(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StatusF: func(ID string) (types.ContainerStatus, error) {
+				StatusF: func(string) (types.ContainerStatus, error) {
 					return types.ContainerStatus{}, fmt.Errorf("checking status")
 				},
 			},
@@ -203,7 +203,7 @@ func TestContainerUpdateStatus(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StatusF: func(ID string) (types.ContainerStatus, error) {
+				StatusF: func(string) (types.ContainerStatus, error) {
 					return expectedStatus, nil
 				},
 			},
@@ -244,7 +244,7 @@ func TestContainerStartRuntimeError(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StartF: func(ID string) error {
+				StartF: func(string) error {
 					return fmt.Errorf("starting container failed")
 				},
 			},
@@ -271,10 +271,10 @@ func TestContainerStart(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StartF: func(ID string) error {
+				StartF: func(string) error {
 					return nil
 				},
-				StatusF: func(ID string) (types.ContainerStatus, error) {
+				StatusF: func(string) (types.ContainerStatus, error) {
 					return expectedStatus, nil
 				},
 			},
@@ -315,7 +315,7 @@ func TestContainerStopRuntimeError(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StopF: func(ID string) error {
+				StopF: func(string) error {
 					return fmt.Errorf("starting container failed")
 				},
 			},
@@ -342,10 +342,10 @@ func TestContainerStop(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				StopF: func(ID string) error {
+				StopF: func(string) error {
 					return nil
 				},
-				StatusF: func(ID string) (types.ContainerStatus, error) {
+				StatusF: func(string) (types.ContainerStatus, error) {
 					return expectedStatus, nil
 				},
 			},
@@ -386,7 +386,7 @@ func TestContainerDeleteRuntimeError(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				DeleteF: func(ID string) error {
+				DeleteF: func(string) error {
 					return fmt.Errorf("starting container failed")
 				},
 			},
@@ -408,7 +408,7 @@ func TestContainerDelete(t *testing.T) {
 	testContainer := &container{
 		base: base{
 			runtime: runtime.Fake{
-				DeleteF: func(ID string) error {
+				DeleteF: func(string) error {
 					return nil
 				},
 			},

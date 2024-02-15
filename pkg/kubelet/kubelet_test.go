@@ -84,7 +84,7 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 		TestF     func(t *testing.T, er error)
 	}{
 		{
-			MutationF: func(k *kubelet.Kubelet) {},
+			MutationF: func(*kubelet.Kubelet) {},
 			TestF: func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err != nil {
 					t.Fatalf("Validation of kubelet should pass, got: %v", err)
@@ -100,8 +100,8 @@ func TestKubeletValidate(t *testing.T) { //nolint:funlen,cyclop // There are jus
 			},
 		},
 		{
-			MutationF: func(k *kubelet.Kubelet) {},
-			TestF:     func(t *testing.T, err error) {}, //nolint:thelper // Actual test code.
+			MutationF: func(*kubelet.Kubelet) {},
+			TestF:     func(*testing.T, error) {},
 		},
 		{
 			MutationF: func(k *kubelet.Kubelet) { k.KubernetesCACertificate = "" },

@@ -134,7 +134,7 @@ func TestGetIDFailToListMembers(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -150,7 +150,7 @@ func TestGetIDNotFound(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{}, nil
 		},
 	}
@@ -171,7 +171,7 @@ func TestGetIDByName(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -203,7 +203,7 @@ func TestGetIDByPeerURL(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -273,7 +273,7 @@ func TestRemove(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -284,7 +284,7 @@ func TestRemove(t *testing.T) {
 				},
 			}, nil
 		},
-		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
+		memberRemoveF: func(context.Context, uint64) (*clientv3.MemberRemoveResponse, error) {
 			return &clientv3.MemberRemoveResponse{}, nil
 		},
 	}
@@ -304,12 +304,12 @@ func TestRemoveNonExistent(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{},
 			}, nil
 		},
-		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
+		memberRemoveF: func(context.Context, uint64) (*clientv3.MemberRemoveResponse, error) {
 			return &clientv3.MemberRemoveResponse{}, nil
 		},
 	}
@@ -325,7 +325,7 @@ func TestRemoveMemberFail(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -336,7 +336,7 @@ func TestRemoveMemberFail(t *testing.T) {
 				},
 			}, nil
 		},
-		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
+		memberRemoveF: func(context.Context, uint64) (*clientv3.MemberRemoveResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -360,7 +360,7 @@ func TestRemoveGetIDFail(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -377,7 +377,7 @@ func TestAddMember(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -388,7 +388,7 @@ func TestAddMember(t *testing.T) {
 				},
 			}, nil
 		},
-		memberAddF: func(context context.Context, peerURLs []string) (*clientv3.MemberAddResponse, error) {
+		memberAddF: func(context.Context, []string) (*clientv3.MemberAddResponse, error) {
 			return &clientv3.MemberAddResponse{}, nil
 		},
 	}
@@ -406,7 +406,7 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -417,7 +417,7 @@ func TestAddMemberAlreadyExists(t *testing.T) {
 				},
 			}, nil
 		},
-		memberAddF: func(context context.Context, peerURLs []string) (*clientv3.MemberAddResponse, error) {
+		memberAddF: func(context.Context, []string) (*clientv3.MemberAddResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -437,7 +437,7 @@ func TestAddMemberFail(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -448,7 +448,7 @@ func TestAddMemberFail(t *testing.T) {
 				},
 			}, nil
 		},
-		memberAddF: func(context context.Context, peerURLs []string) (*clientv3.MemberAddResponse, error) {
+		memberAddF: func(context.Context, []string) (*clientv3.MemberAddResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -466,7 +466,7 @@ func TestAddGetIDFail(t *testing.T) {
 	t.Parallel()
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}

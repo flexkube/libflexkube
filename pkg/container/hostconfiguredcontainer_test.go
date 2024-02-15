@@ -135,7 +135,7 @@ func TestHostConfiguredContainerStatus(t *testing.T) {
 			base: base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						StatusF: func(id string) (types.ContainerStatus, error) {
+						StatusF: func(string) (types.ContainerStatus, error) {
 							return types.ContainerStatus{}, nil
 						},
 					},
@@ -160,7 +160,7 @@ func TestHostConfiguredContainerCreateConfigurationContainer(t *testing.T) {
 		container: &container{
 			base: base{
 				runtime: &runtime.Fake{
-					CreateF: func(config *types.ContainerConfig) (string, error) {
+					CreateF: func(*types.ContainerConfig) (string, error) {
 						return "", fmt.Errorf("creating failed")
 					},
 				},
@@ -184,7 +184,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainer(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatusF: func(id string) (types.ContainerStatus, error) {
+					StatusF: func(string) (types.ContainerStatus, error) {
 						return types.ContainerStatus{
 							ID: expectedContainerID,
 						}, nil
@@ -222,7 +222,7 @@ func TestHostConfiguredContainerRemoveConfigurationContainerFailStatus(t *testin
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatusF: func(id string) (types.ContainerStatus, error) {
+					StatusF: func(string) (types.ContainerStatus, error) {
 						return types.ContainerStatus{}, fmt.Errorf("checking status failed")
 					},
 				},
@@ -255,8 +255,8 @@ func TestStatMountsRuntimeError(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
-						return map[string]os.FileMode{}, fmt.Errorf("stating failed")
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
+						return nil, fmt.Errorf("stating failed")
 					},
 				},
 			},
@@ -291,7 +291,7 @@ func TestStatMounts(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
 						return expectedStatResult, nil
 					},
 				},
@@ -329,8 +329,8 @@ func TestCreateMissingMountpointsStatFail(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
-						return map[string]os.FileMode{}, fmt.Errorf("stat failed")
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
+						return nil, fmt.Errorf("stat failed")
 					},
 				},
 			},
@@ -361,7 +361,7 @@ func TestCreateMissingMountpointsMountpointFile(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
 						return map[string]os.FileMode{
 							path.Join(ConfigMountpoint, "/etc"): os.ModePerm,
 						}, nil
@@ -395,7 +395,7 @@ func TestCreateMissingMountpointsNoMountsToCreate(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
 						return map[string]os.FileMode{
 							path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
 						}, nil
@@ -430,10 +430,10 @@ func TestCreateMissingMountpointsCopyFail(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
 						return map[string]os.FileMode{}, nil
 					},
-					CopyF: func(id string, files []*types.File) error {
+					CopyF: func(string, []*types.File) error {
 						return fmt.Errorf("copying failed")
 					},
 				},
@@ -475,10 +475,10 @@ func TestCreateMissingMountpoints(t *testing.T) {
 		configContainer: &containerInstance{
 			base: base{
 				runtime: &runtime.Fake{
-					StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+					StatF: func(string, []string) (map[string]os.FileMode, error) {
 						return map[string]os.FileMode{}, nil
 					},
-					CopyF: func(id string, files []*types.File) error {
+					CopyF: func(_ string, files []*types.File) error {
 						if diff := cmp.Diff(files, expectedFiles); diff != "" {
 							t.Fatalf("Received files for creating differs from expected: %s", diff)
 						}
@@ -623,16 +623,16 @@ func TestHostConfiguredContainerCreateFailMountpoints(t *testing.T) {
 			base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						CreateF: func(config *types.ContainerConfig) (string, error) {
+						CreateF: func(*types.ContainerConfig) (string, error) {
 							return testContainerID, nil
 						},
-						DeleteF: func(id string) error {
+						DeleteF: func(string) error {
 							return nil
 						},
-						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
-							return map[string]os.FileMode{}, fmt.Errorf("stat failed")
+						StatF: func(string, []string) (map[string]os.FileMode, error) {
+							return nil, fmt.Errorf("stat failed")
 						},
-						StatusF: func(id string) (types.ContainerStatus, error) {
+						StatusF: func(string) (types.ContainerStatus, error) {
 							return types.ContainerStatus{}, nil
 						},
 					},
@@ -667,7 +667,7 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 			base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						CreateF: func(config *types.ContainerConfig) (string, error) {
+						CreateF: func(*types.ContainerConfig) (string, error) {
 							if fail {
 								return "", fmt.Errorf("2nd create fails")
 							}
@@ -676,15 +676,15 @@ func TestHostConfiguredContainerCreateFail(t *testing.T) {
 
 							return testContainerID, nil
 						},
-						DeleteF: func(id string) error {
+						DeleteF: func(string) error {
 							return nil
 						},
-						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+						StatF: func(string, []string) (map[string]os.FileMode, error) {
 							return map[string]os.FileMode{
 								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
 							}, nil
 						},
-						StatusF: func(id string) (types.ContainerStatus, error) {
+						StatusF: func(string) (types.ContainerStatus, error) {
 							return types.ContainerStatus{}, nil
 						},
 					},
@@ -719,18 +719,18 @@ func TestHostConfiguredContainerCreateFailStatus(t *testing.T) {
 			base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						CreateF: func(config *types.ContainerConfig) (string, error) {
+						CreateF: func(*types.ContainerConfig) (string, error) {
 							return testContainerID, nil
 						},
-						DeleteF: func(id string) error {
+						DeleteF: func(string) error {
 							return nil
 						},
-						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+						StatF: func(string, []string) (map[string]os.FileMode, error) {
 							return map[string]os.FileMode{
 								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
 							}, nil
 						},
-						StatusF: func(id string) (types.ContainerStatus, error) {
+						StatusF: func(string) (types.ContainerStatus, error) {
 							if fail {
 								return types.ContainerStatus{}, fmt.Errorf("2nd status fails")
 							}
@@ -769,18 +769,18 @@ func TestHostConfiguredContainerCreate(t *testing.T) {
 			base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						CreateF: func(config *types.ContainerConfig) (string, error) {
+						CreateF: func(*types.ContainerConfig) (string, error) {
 							return testContainerID, nil
 						},
-						DeleteF: func(id string) error {
+						DeleteF: func(string) error {
 							return nil
 						},
-						StatF: func(ID string, paths []string) (map[string]os.FileMode, error) {
+						StatF: func(string, []string) (map[string]os.FileMode, error) {
 							return map[string]os.FileMode{
 								path.Join(ConfigMountpoint, "/etc/"): os.ModeDir,
 							}, nil
 						},
-						StatusF: func(id string) (types.ContainerStatus, error) {
+						StatusF: func(string) (types.ContainerStatus, error) {
 							return types.ContainerStatus{
 								ID: "bar",
 							}, nil
@@ -820,10 +820,10 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNoAction(t *testing.T) 
 			base{
 				runtimeConfig: &runtime.FakeConfig{
 					Runtime: &runtime.Fake{
-						CreateF: func(config *types.ContainerConfig) (string, error) {
+						CreateF: func(*types.ContainerConfig) (string, error) {
 							return testContainerID, nil
 						},
-						DeleteF: func(id string) error {
+						DeleteF: func(string) error {
 							return nil
 						},
 					},
@@ -850,13 +850,13 @@ func TestHostConfiguredContainerUpdateConfigurationStatusFileMissing(t *testing.
 		configContainer: &containerInstance{
 			base{
 				runtime: &runtime.Fake{
-					CreateF: func(config *types.ContainerConfig) (string, error) {
+					CreateF: func(*types.ContainerConfig) (string, error) {
 						return testContainerID, nil
 					},
-					DeleteF: func(id string) error {
+					DeleteF: func(string) error {
 						return nil
 					},
-					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
+					ReadF: func(_ string, srcPath []string) ([]*types.File, error) {
 						if diff := cmp.Diff(srcPath, []string{path.Join(ConfigMountpoint, "/foo")}); diff != "" {
 							t.Fatalf("Unexpected srcPath: %s", diff)
 						}
@@ -890,13 +890,13 @@ func TestHostConfiguredContainerUpdateConfigurationStatusNewContent(t *testing.T
 		configContainer: &containerInstance{
 			base{
 				runtime: &runtime.Fake{
-					CreateF: func(config *types.ContainerConfig) (string, error) {
+					CreateF: func(*types.ContainerConfig) (string, error) {
 						return testContainerID, nil
 					},
-					DeleteF: func(id string) error {
+					DeleteF: func(string) error {
 						return nil
 					},
-					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
+					ReadF: func(string, []string) ([]*types.File, error) {
 						return []*types.File{
 							{
 								Path:    path.Join(ConfigMountpoint, "/foo"),
@@ -935,14 +935,14 @@ func TestHostConfiguredContainerUpdateConfigurationStatusReadRuntimeError(t *tes
 		configContainer: &containerInstance{
 			base{
 				runtime: &runtime.Fake{
-					CreateF: func(config *types.ContainerConfig) (string, error) {
+					CreateF: func(*types.ContainerConfig) (string, error) {
 						return testContainerID, nil
 					},
-					DeleteF: func(id string) error {
+					DeleteF: func(string) error {
 						return nil
 					},
-					ReadF: func(id string, srcPath []string) ([]*types.File, error) {
-						return []*types.File{}, fmt.Errorf("reading")
+					ReadF: func(string, []string) ([]*types.File, error) {
+						return nil, fmt.Errorf("reading")
 					},
 				},
 			},

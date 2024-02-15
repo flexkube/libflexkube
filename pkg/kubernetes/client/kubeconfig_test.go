@@ -106,7 +106,7 @@ func TestToYAMLStringNew(t *testing.T) { //nolint:funlen // Just many test cases
 			},
 		},
 		{
-			func(c *client.Config) {},
+			func(*client.Config) {},
 			func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
@@ -239,7 +239,7 @@ func TestValidate(t *testing.T) { //nolint:funlen // There are just many test ca
 		},
 
 		{
-			func(c *client.Config) {},
+			func(*client.Config) {},
 			func(t *testing.T, err error) { //nolint:thelper // Actual test code.
 				if err != nil {
 					t.Errorf("Valid config shouldn't return error, got: %v", err)
