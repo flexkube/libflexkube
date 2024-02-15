@@ -516,7 +516,7 @@ func (r *Resource) RunAPILoadBalancerPool(name string) error {
 		return fmt.Errorf("getting API Load Balancer pool %q from configuration: %w", name, err)
 	}
 
-	saveStateF := func(rs types.Resource) {
+	saveStateF := func(types.Resource) {
 		if r.State.APILoadBalancerPools == nil {
 			r.State.APILoadBalancerPools = map[string]*container.ContainersState{}
 		}
@@ -534,7 +534,7 @@ func (r *Resource) RunControlplane() error {
 		return fmt.Errorf("getting controlplane from the configuration: %w", err)
 	}
 
-	saveStateF := func(rs types.Resource) {
+	saveStateF := func(types.Resource) {
 		r.State.Controlplane = &controlplaneResource.Containers().ToExported().PreviousState
 	}
 
@@ -548,7 +548,7 @@ func (r *Resource) RunEtcd() error {
 		return fmt.Errorf("getting etcd from the configuration: %w", err)
 	}
 
-	saveStateF := func(rs types.Resource) {
+	saveStateF := func(types.Resource) {
 		r.State.Etcd = &etcdResource.Containers().ToExported().PreviousState
 	}
 
@@ -562,7 +562,7 @@ func (r *Resource) RunKubeletPool(name string) error {
 		return fmt.Errorf("getting kubelet pool %q from configuration: %w", name, err)
 	}
 
-	saveStateF := func(rs types.Resource) {
+	saveStateF := func(types.Resource) {
 		if r.State.KubeletPools == nil {
 			r.State.KubeletPools = map[string]*container.ContainersState{}
 		}
@@ -600,7 +600,7 @@ func (r *Resource) RunContainers(name string) error {
 		return fmt.Errorf("getting containers group %q from configuration: %w", name, err)
 	}
 
-	saveStateF := func(rs types.Resource) {
+	saveStateF := func(types.Resource) {
 		if r.State.Containers == nil {
 			r.State.Containers = map[string]*container.ContainersState{}
 		}

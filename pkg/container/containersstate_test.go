@@ -62,7 +62,7 @@ func TestContainersStateCheckStateFailStatus(t *testing.T) {
 				base: base{
 					runtimeConfig: &runtime.FakeConfig{
 						Runtime: &runtime.Fake{
-							StatusF: func(id string) (types.ContainerStatus, error) {
+							StatusF: func(string) (types.ContainerStatus, error) {
 								return types.ContainerStatus{}, fmt.Errorf("fail")
 							},
 						},
@@ -100,13 +100,13 @@ func TestContainersStateCheckStateGone(t *testing.T) {
 				base: base{
 					runtimeConfig: &runtime.FakeConfig{
 						Runtime: &runtime.Fake{
-							CreateF: func(config *types.ContainerConfig) (string, error) {
+							CreateF: func(*types.ContainerConfig) (string, error) {
 								return testContainerID, nil
 							},
-							DeleteF: func(id string) error {
+							DeleteF: func(string) error {
 								return nil
 							},
-							StatusF: func(id string) (types.ContainerStatus, error) {
+							StatusF: func(string) (types.ContainerStatus, error) {
 								return types.ContainerStatus{}, nil
 							},
 						},
@@ -143,7 +143,7 @@ func TestRemoveContainerDontStopStopped(t *testing.T) {
 	t.Parallel()
 
 	failingStopRuntime := failingStopRuntime()
-	failingStopRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+	failingStopRuntime.StatusF = func(string) (types.ContainerStatus, error) {
 		return types.ContainerStatus{
 			Status: "stopped",
 			ID:     "foo",
@@ -188,10 +188,10 @@ func TestRemoveContainerDontRemoveMissing(t *testing.T) {
 					},
 					runtimeConfig: &runtime.FakeConfig{
 						Runtime: &runtime.Fake{
-							DeleteF: func(id string) error {
+							DeleteF: func(string) error {
 								return fmt.Errorf("deleting failed")
 							},
-							StopF: func(id string) error {
+							StopF: func(string) error {
 								return nil
 							},
 						},
@@ -210,7 +210,7 @@ func TestRemoveContainerPropagateStopError(t *testing.T) {
 	t.Parallel()
 
 	failingStopRuntime := failingStopRuntime()
-	failingStopRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+	failingStopRuntime.StatusF = func(string) (types.ContainerStatus, error) {
 		return types.ContainerStatus{
 			Status: "running",
 			ID:     "foo",
@@ -255,16 +255,16 @@ func TestRemoveContainerPropagateDeleteError(t *testing.T) {
 					},
 					runtimeConfig: &runtime.FakeConfig{
 						Runtime: &runtime.Fake{
-							DeleteF: func(id string) error {
+							DeleteF: func(string) error {
 								return fmt.Errorf("deleting failed")
 							},
-							StatusF: func(id string) (types.ContainerStatus, error) {
+							StatusF: func(string) (types.ContainerStatus, error) {
 								return types.ContainerStatus{
 									Status: "running",
 									ID:     "foo",
 								}, nil
 							},
-							StopF: func(id string) error {
+							StopF: func(string) error {
 								return nil
 							},
 						},

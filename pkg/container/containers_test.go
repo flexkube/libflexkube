@@ -508,7 +508,7 @@ func TestEnsureExistsFailCreate(t *testing.T) {
 	t.Parallel()
 
 	failingCreateRuntime := fakeRuntime()
-	failingCreateRuntime.CreateF = func(config *types.ContainerConfig) (string, error) {
+	failingCreateRuntime.CreateF = func(*types.ContainerConfig) (string, error) {
 		return "", fmt.Errorf("create fail")
 	}
 
@@ -1173,13 +1173,13 @@ func TestEnsureConfiguredNoStateUpdateOnFail(t *testing.T) {
 						},
 						runtimeConfig: &runtime.FakeConfig{
 							Runtime: &runtime.Fake{
-								CreateF: func(config *types.ContainerConfig) (string, error) {
+								CreateF: func(*types.ContainerConfig) (string, error) {
 									return testContainerID, nil
 								},
-								StatusF: func(id string) (types.ContainerStatus, error) {
+								StatusF: func(string) (types.ContainerStatus, error) {
 									return types.ContainerStatus{}, nil
 								},
-								CopyF: func(id string, files []*types.File) error {
+								CopyF: func(string, []*types.File) error {
 									return fmt.Errorf("fail")
 								},
 							},
@@ -1340,7 +1340,7 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 	t.Parallel()
 
 	fooRuntime := fakeRuntime()
-	fooRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+	fooRuntime.StatusF = func(string) (types.ContainerStatus, error) {
 		return types.ContainerStatus{
 			Status: "running",
 			ID:     "foo",
@@ -1348,7 +1348,7 @@ func TestUpdateExistingContainersRemoveAllOld(t *testing.T) {
 	}
 
 	barRuntime := fakeRuntime()
-	barRuntime.StatusF = func(id string) (types.ContainerStatus, error) {
+	barRuntime.StatusF = func(string) (types.ContainerStatus, error) {
 		return types.ContainerStatus{
 			Status: "running",
 			ID:     "bar",
@@ -1480,21 +1480,21 @@ func TestEnsureCurrentContainerNonExisting(t *testing.T) {
 
 func fakeRuntime() *runtime.Fake {
 	return &runtime.Fake{
-		CreateF: func(config *types.ContainerConfig) (string, error) {
+		CreateF: func(*types.ContainerConfig) (string, error) {
 			return testContainerID, nil
 		},
-		StatusF: func(id string) (types.ContainerStatus, error) {
+		StatusF: func(string) (types.ContainerStatus, error) {
 			return types.ContainerStatus{
 				ID: testAnotherContainerID,
 			}, nil
 		},
-		DeleteF: func(id string) error {
+		DeleteF: func(string) error {
 			return nil
 		},
-		StartF: func(id string) error {
+		StartF: func(string) error {
 			return nil
 		},
-		StopF: func(id string) error {
+		StopF: func(string) error {
 			return nil
 		},
 	}

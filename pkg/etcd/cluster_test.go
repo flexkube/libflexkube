@@ -442,7 +442,7 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 	}
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(_ context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{
 					{
@@ -453,7 +453,7 @@ func TestUpdateMembersRemoveMember(t *testing.T) {
 				},
 			}, nil
 		},
-		memberRemoveF: func(context context.Context, id uint64) (*clientv3.MemberRemoveResponse, error) {
+		memberRemoveF: func(context.Context, uint64) (*clientv3.MemberRemoveResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
@@ -495,12 +495,12 @@ func TestUpdateMembersAddMember(t *testing.T) {
 	}
 
 	testClient := &fakeClient{
-		memberListF: func(context context.Context) (*clientv3.MemberListResponse, error) {
+		memberListF: func(context.Context) (*clientv3.MemberListResponse, error) {
 			return &clientv3.MemberListResponse{
 				Members: []*etcdserverpb.Member{},
 			}, nil
 		},
-		memberAddF: func(context context.Context, peerURLs []string) (*clientv3.MemberAddResponse, error) {
+		memberAddF: func(context.Context, []string) (*clientv3.MemberAddResponse, error) {
 			return nil, fmt.Errorf("expected")
 		},
 	}
