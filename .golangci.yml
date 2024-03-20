@@ -93,6 +93,8 @@ linters:
     - golint
     - interfacer
     - maligned
+    - copyloopvar
+    - intrange
   enable:
     - asasalint
     - asciicheck
