@@ -5,6 +5,7 @@ package docker
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -401,9 +402,9 @@ func TestContainerEnv(t *testing.T) {
 
 	env := map[string]string{"foo": "bar"}
 	envSlice := []string{
-		"foo=bar",
-		"SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
 		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
+		"foo=bar",
 	}
 
 	testRuntime, testDocker := getDockerRuntime(t)
@@ -422,6 +423,8 @@ func TestContainerEnv(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Inspecting created container should succeed, got: %v", err)
 	}
+
+	slices.Sort(data.Config.Env)
 
 	if !reflect.DeepEqual(data.Config.Env, envSlice) {
 		t.Fatalf("Container created with environment variables set should have environment variables set"+
