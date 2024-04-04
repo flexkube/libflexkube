@@ -42,7 +42,7 @@ If you have `go` binary available in your system, you can start using Flexkube f
 echo 'pki:
   kubernetes: {}
   etcd: {}' > config.yaml
-go run github.com/flexkube/libflexkube/cmd/flexkube pki
+go run github.com/flexkube/libflexkube/cmd/flexkube@latest pki
 ```
 
 It will create `config.yaml` configuration file which will be consumed by `flexkube` CLI tool, which will then generate the certificates into `state.yaml` file.
@@ -57,7 +57,7 @@ terraform {
   required_providers {
     flexkube = {
       source  = "flexkube/flexkube"
-      version = "0.4.1"
+      version = "0.9.0"
     }
   }
 }
