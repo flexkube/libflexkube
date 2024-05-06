@@ -82,7 +82,7 @@ linters:
     # Triggers on TODOs in the code, which is fine to put.
     - godox
     # Disabled until we implement some error types and migrate to use them.
-    - goerr113
+    - err113
     # We don't really care about sprintf performance.
     - perfsprint
     # To allow defensive approach when initializing structs.
@@ -100,6 +100,7 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
+    - canonicalheader
     - containedctx
     - contextcheck
     - cyclop
@@ -112,9 +113,9 @@ linters:
     - errchkjson
     - errname
     - errorlint
-    - execinquery
     - exhaustive
     - exportloopref
+    - fatcontext
     - forbidigo
     - forcetypeassert
     - funlen
@@ -132,21 +133,25 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    - gomnd
     - gomoddirectives
     - gomodguard
     - goprintffuncname
+    - gosec
+    - gosimple
     - gosmopolitan
+    - govet
     - grouper
     - importas
     - inamedparam
     - ineffassign
     - interfacebloat
     - lll
+    - loggercheck
     - maintidx
     - makezero
     - mirror
     - misspell
+    - mnd
     - musttag
     - nakedret
     - nestif
@@ -168,6 +173,7 @@ linters:
     - sloglint
     - spancheck
     - sqlclosecheck
+    - staticcheck
     - stylecheck
     - tagalign
     - tagliatelle
@@ -178,6 +184,7 @@ linters:
     - tparallel
     - unconvert
     - unparam
+    - unused
     - usestdlibvars
     - varnamelen
     - wastedassign

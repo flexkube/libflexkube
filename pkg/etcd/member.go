@@ -233,8 +233,10 @@ func (m *member) ToHostConfiguredContainer() (*container.HostConfiguredContainer
 		},
 	}
 
+	//#nosec G101 // False positive.
 	initialClusterTokenArgument := "--initial-cluster-state=existing"
 	if m.config.NewCluster {
+		//#nosec G101 // False positive.
 		initialClusterTokenArgument = "--initial-cluster-token=etcd-cluster-2"
 	}
 

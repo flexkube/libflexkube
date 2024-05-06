@@ -84,6 +84,7 @@ func TestParsePrivateKeyEC(t *testing.T) {
 func TestParsePrivateKeyBad(t *testing.T) {
 	t.Parallel()
 
+	//#nosec G101 // Just bad test data.
 	privateKey := `---
 bar: |
   -----BEGIN RSA PRIVATE KEY-----

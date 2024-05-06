@@ -20,6 +20,7 @@ func TestDeploy(t *testing.T) {
 		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
 	}
 
+	//#nosec G304 // Expected path customization.
 	key, err := os.ReadFile(sshPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key shouldn't fail, got: %v", err)

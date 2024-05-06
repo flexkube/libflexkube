@@ -2,13 +2,13 @@ package ssh
 
 import (
 	"bytes"
-	cryptorand "crypto/rand"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io"
-	"math/rand"
+	"math/big"
 	"net"
 	"os"
 	"reflect"
@@ -167,7 +167,7 @@ func newTestConfig(t *testing.T) *Config {
 func generateRSAPrivateKey(t *testing.T) string {
 	t.Helper()
 
-	privateKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("Generating key failed: %v", err)
 	}
@@ -187,10 +187,13 @@ const maxTestMessageLength = 1024
 func testMessage(t *testing.T) ([]byte, int) {
 	t.Helper()
 
-	rand := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+	randLength, err := rand.Int(rand.Reader, big.NewInt(maxTestMessageLength))
+	if err != nil {
+		t.Fatalf("Generating random length: %v", err)
+	}
 
 	// We must have at least 1 byte message.
-	length := rand.Intn(maxTestMessageLength) + 1
+	length := randLength.Int64() + 1
 
 	message := make([]byte, length)
 	if _, err := rand.Read(message); err != nil {
