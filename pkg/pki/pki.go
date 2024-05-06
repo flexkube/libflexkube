@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -420,10 +420,12 @@ func (c *Certificate) decodeKeyUsage() (x509.KeyUsage, []x509.ExtKeyUsage) {
 }
 
 func (c *Certificate) generateX509Certificate(certPK *rsa.PrivateKey, caCert *Certificate) error {
+	var serialNumberLimitBase uint = 128
+
 	// Generate serial number for X.509 certificate.
 	//
 	//nolint:gomnd // As in https://golang.org/src/crypto/tls/generate_cert.go.
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), serialNumberLimitBase)
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -485,7 +487,7 @@ func (c *Certificate) createAndPersist(cert, caCert *x509.Certificate, certPK, c
 
 // Taken from https://play.golang.org/p/tispiUVmdm.
 func bigIntHash(n *big.Int) ([]byte, error) {
-	hash := sha1.New() // #nosec G401
+	hash := sha256.New() // #nosec G401
 
 	if _, err := hash.Write(n.Bytes()); err != nil {
 		return nil, fmt.Errorf("writing bytes to SHA1 function: %w", err)

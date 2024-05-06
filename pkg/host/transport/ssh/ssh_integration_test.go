@@ -26,9 +26,11 @@ func TestPasswordAuth(t *testing.T) {
 	passwordFilePath := os.Getenv("TEST_INTEGRATION_SSH_PASSWORD_FILE")
 
 	if passwordFilePath == "" {
+		//#nosec 101 // Expected default path.
 		passwordFilePath = "/home/core/.ssh/password"
 	}
 
+	//#nosec G304 // Expected test path customization.
 	pass, err := os.ReadFile(passwordFilePath)
 	if err != nil {
 		t.Fatalf("Reading password file %q: %v", passwordFilePath, err)
@@ -100,6 +102,7 @@ func withPrivateKey(t *testing.T) transport.Interface {
 		sshPrivateKeyPath = "/home/core/.ssh/id_rsa"
 	}
 
+	//#nosec G304 // Expected test path customization.
 	key, err := os.ReadFile(sshPrivateKeyPath)
 	if err != nil {
 		t.Fatalf("Reading SSH private key from %q shouldn't fail, got: %v", sshPrivateKeyPath, err)
@@ -197,6 +200,8 @@ func prepareTestSocket(t *testing.T, socket string) net.Listener {
 	} {
 		// We may SSH into host as unprivileged user, so make sure we are allowed to access the
 		// socket file.
+		//
+		//nolint:gosec // Nosec rule does not work, this is expected test permissions.
 		if err := os.Chmod(path, 0o777); err != nil {
 			fmt.Printf("Socket chmod should succeed, got: %v\n", err)
 			t.Fail()
