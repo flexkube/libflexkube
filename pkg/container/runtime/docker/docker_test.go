@@ -31,6 +31,7 @@ func TestNewClient(t *testing.T) {
 	// TODO does this kind of simple tests make sense? Integration tests calls the same thing
 	// anyway. Or maybe we should simply skip error checking in integration tests to simplify them?
 	c := &docker.Config{
+		//nolint:nilnil // Just test code.
 		ClientGetter: func(...client.Opt) (docker.Client, error) { return nil, nil },
 	}
 
@@ -54,6 +55,7 @@ func TestNewClientWithHost(t *testing.T) {
 				t.Log(k, v)
 			}
 
+			//nolint:nilnil // Just test code.
 			return nil, nil
 		},
 	}
@@ -95,7 +97,7 @@ func TestSanitizeImageName(t *testing.T) {
 				ImagePullF: func(context.Context, string, dockertypes.ImagePullOptions) (io.ReadCloser, error) {
 					t.Fatalf("Unexpected call to image pull")
 
-					return nil, nil
+					return nil, fmt.Errorf("unexpected call to image pull")
 				},
 			}, nil
 		},
