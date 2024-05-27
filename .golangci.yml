@@ -77,7 +77,6 @@ linters:
     # We are not that strict with imports to have a whitelist.
     - depguard
     # To be able to make use of Go zero-value feature.
-    - exhaustivestruct
     - exhaustruct
     # Triggers on TODOs in the code, which is fine to put.
     - godox
@@ -90,9 +89,6 @@ linters:
     # Disabled until tests are split and moved to the right file names.
     - testpackage
     # This linter has been deprecated.
-    - golint
-    - interfacer
-    - maligned
     - copyloopvar
     - intrange
   enable:
@@ -120,6 +116,7 @@ linters:
     - forcetypeassert
     - funlen
     - gci
+    - ginkgolinter
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
