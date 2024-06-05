@@ -127,7 +127,7 @@ func defaultE2EConfig(t *testing.T) e2eConfig {
 			},
 			Calico: chart{
 				Source:  "flexkube/calico",
-				Version: "0.6.2",
+				Version: "0.7.0",
 			},
 		},
 		KubeletExtraArgs: []string{
