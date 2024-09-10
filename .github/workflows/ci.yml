@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.59.1
+    container: golangci/golangci-lint:v1.61.0
     steps:
     - uses: actions/cache@v2
       with:
@@ -29,7 +29,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v2
       with:
-        go-version: '1.22'
+        go-version: '1.23'
     - uses: actions/cache@v2
       with:
         path: |
@@ -73,7 +73,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v2
       with:
-        go-version: '1.22'
+        go-version: '1.23'
     - uses: actions/cache@v2
       with:
         path: |
