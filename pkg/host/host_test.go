@@ -73,11 +73,11 @@ func TestValidate(t *testing.T) {
 
 			err := testCase.Host.Validate()
 			if testCase.Error && err == nil {
-				t.Fatalf(testCase.Message)
+				t.Fatal(testCase.Message)
 			}
 
 			if !testCase.Error && err != nil {
-				t.Errorf(testCase.Message)
+				t.Error(testCase.Message)
 			}
 		})
 	}

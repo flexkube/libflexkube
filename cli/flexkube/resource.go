@@ -415,6 +415,7 @@ func (r *Resource) StateToFile(actionErr error) error {
 
 	readWriteOwnerOnly := 0o600
 
+	// #nosec G115 // Constant conversion.
 	if err := os.WriteFile("state.yaml", stateRaw, fs.FileMode(readWriteOwnerOnly)); err != nil {
 		if actionErr == nil {
 			return fmt.Errorf("writing new state to file: %w", err)
