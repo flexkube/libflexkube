@@ -44,9 +44,9 @@ jobs:
         fetch-depth: 0
     - name: Install required binaries
       run: |
-        docker-compose -f e2e/docker-compose.yml up generate-secrets
+        docker compose -f e2e/docker-compose.yml up generate-secrets
         sudo chown $(whoami): ./e2e/secrets/*
-        docker-compose -f e2e/docker-compose.yml up -d
+        docker compose -f e2e/docker-compose.yml up -d
         make install-cc-test-reporter BIN_PATH=/usr/local/bin
     - run: |
         export TEST_INTEGRATION_SSH_PORT=2222
@@ -112,7 +112,7 @@ jobs:
         sudo systemctl restart containerd
     - name: Fetch dependencies and configure tests
       run: |
-        docker-compose -f e2e/docker-compose.yml up -d
+        docker compose -f e2e/docker-compose.yml up -d
         cat <<EOF > e2e/test-config.yaml
           sshPrivateKeyPath: $(pwd)/e2e/secrets/id_rsa
           nodesCIDR: 172.17.0.0/24
